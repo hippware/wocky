@@ -3,7 +3,9 @@ defmodule WockyAPI.Callbacks.CurrentLocation do
   Callbacks for DB user current location changes
   """
 
-  use Wocky.Watcher, type: Wocky.User.CurrentLocation, events: [:insert, :update]
+  use Wocky.Watcher,
+    type: Wocky.User.CurrentLocation,
+    events: [:insert, :update]
 
   alias Wocky.User.CurrentLocation
   alias WockyAPI.Resolvers.User, as: UserResolver

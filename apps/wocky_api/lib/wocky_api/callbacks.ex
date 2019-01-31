@@ -12,7 +12,14 @@ defmodule WockyAPI.Callbacks do
     User
   }
 
-  @modules [BotSubscription, CurrentLocation, Message, Notification, RosterItem, User]
+  @modules [
+    BotSubscription,
+    CurrentLocation,
+    Message,
+    Notification,
+    RosterItem,
+    User
+  ]
 
   def register do
     Enum.each(@modules, fn m -> m.register() end)
