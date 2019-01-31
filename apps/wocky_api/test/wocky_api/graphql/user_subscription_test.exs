@@ -107,7 +107,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
 
     setup %{user: user, socket: socket} do
       expiry = Timestamp.shift(days: 5)
-      [friend, stranger] = Factory.insert_list(2, :user)
+      friend = Factory.insert(:user)
 
       Roster.befriend(friend, user)
       User.start_sharing_location(friend, user, expiry)
@@ -115,8 +115,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
       ref = push_doc(socket, @query)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      {:ok,
-       friend: friend, stranger: stranger, subscription_id: subscription_id}
+      {:ok, friend: friend, subscription_id: subscription_id}
     end
 
     test "updating location sends a message", %{
