@@ -23,9 +23,11 @@ defmodule WockyAPI.GraphQL.NotificationTest do
     end
 
     @query """
-    query ($first: Int, $last: Int, $beforeId: AInt, $afterId: AInt) {
+    query ($first: Int, $last: Int,
+           $beforeId: AInt, $afterId: AInt,
+           $types: [NotificationType]) {
       notifications (first: $first, last: $last,
-                     beforeId: $beforeId, afterId: $afterId) {
+                     beforeId: $beforeId, afterId: $afterId, types: $types) {
         edges {
           node {
             id
@@ -128,6 +130,49 @@ defmodule WockyAPI.GraphQL.NotificationTest do
                            "__typename" => "GeofenceEventNotification"
                          },
                          "id" => ^expected_id
+                       }
+                     }
+                   ]
+                 }
+               }
+             } = result
+    end
+
+    test "filter by type", shared do
+      result =
+        run_query(@query, shared.user, %{
+          "first" => 10,
+          "types" => [
+            "BOT_INVITATION_NOTIFICATION",
+            "BOT_INVITATION_RESPONSE_NOTIFICATION"
+          ]
+        })
+
+      expected_id = to_string(Enum.at(shared.notifications, 3).id)
+      expected_id2 = to_string(Enum.at(shared.notifications, 2).id)
+
+      refute has_errors(result)
+
+      assert %{
+               data: %{
+                 "notifications" => %{
+                   "edges" => [
+                     %{
+                       "node" => %{
+                         "created_at" => _,
+                         "data" => %{
+                           "__typename" => "BotInvitationResponseNotification"
+                         },
+                         "id" => ^expected_id
+                       }
+                     },
+                     %{
+                       "node" => %{
+                         "created_at" => _,
+                         "data" => %{
+                           "__typename" => "BotInvitationNotification"
+                         },
+                         "id" => ^expected_id2
                        }
                      }
                    ]
