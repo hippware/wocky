@@ -255,6 +255,32 @@ defmodule Wocky.User.NotificationTest do
              )
     end
 
+    test "filter on notification type", ctx do
+      assert ids_match(
+               ctx.user
+               |> Notification.user_query(
+                 hd(ctx.notifications).id,
+                 nil,
+                 [:bot_item]
+               )
+               |> order_by(desc: :updated_at)
+               |> Repo.all(),
+               []
+             )
+
+      assert ids_match(
+               ctx.user
+               |> Notification.user_query(
+                 hd(ctx.notifications).id,
+                 nil,
+                 [:geofence_event]
+               )
+               |> order_by(desc: :updated_at)
+               |> Repo.all(),
+               Enum.slice(ctx.notifications, 1..4)
+             )
+    end
+
     defp ids_match(a, b), do: Enum.map(a, & &1.id) == Enum.map(b, & &1.id)
   end
 end

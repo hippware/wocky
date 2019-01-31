@@ -28,6 +28,23 @@ defmodule WockyAPI.Schema.NotificationTypes do
     field :created_at, non_null(:datetime)
   end
 
+  enum :notification_type do
+    @desc "BotItemNotification type"
+    value :bot_item_notification
+
+    @desc "GeofenceEventNotification type"
+    value :geofence_event_notification
+
+    @desc "BotInvitationNotification type"
+    value :bot_invitation_notification
+
+    @desc "BotInvitationResponseNotification type"
+    value :bot_invitation_response_notification
+
+    @desc "UserInvitationNotification type"
+    value :user_invitation_notification
+  end
+
   union :notification_data do
     types [
       :bot_item_notification,
@@ -135,6 +152,12 @@ defmodule WockyAPI.Schema.NotificationTypes do
       arg :after_id, :aint
       @desc "ID which all results should be older than"
       arg :before_id, :aint
+
+      @desc """
+      Filter for types of notification to retrieve. If null, all types
+      will be included
+      """
+      arg :types, list_of(:notification_type)
 
       connection_complexity()
       resolve &Notification.get_notifications/3
