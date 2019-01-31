@@ -1,6 +1,8 @@
 defmodule Wocky.Repo.Migrations.CurrentLocation do
   use Wocky.Repo.Migration
 
+  alias Wocky.Repo.Migration.Utils
+
   def change do
     create table(:user_current_location, primary_key: false) do
       add :user_id, references(:users, type: :uuid, on_delete: :delete_all), primary_key: true
@@ -24,5 +26,7 @@ defmodule Wocky.Repo.Migrations.CurrentLocation do
 
       timestamps()
     end
+
+    Utils.update_notify(:user_current_location, [:insert, :update])
   end
 end

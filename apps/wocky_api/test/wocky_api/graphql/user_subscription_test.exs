@@ -110,7 +110,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
       [friend, stranger] = Factory.insert_list(2, :user)
 
       Roster.befriend(friend, user)
-      User.start_sharing_location(user, friend, expiry)
+      User.start_sharing_location(friend, user, expiry)
 
       ref = push_doc(socket, @query)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
