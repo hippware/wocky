@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: bamboo (PR #2193)
+
+
+# 2019.1.29+r24a524e
+
 * Fix Twilio error handling; Use hardwired CC for bypass numbers (#2189)
   * Fixes crash #2181
 * Live location sharing, part 1 (PR #2185)
