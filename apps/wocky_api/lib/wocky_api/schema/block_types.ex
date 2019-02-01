@@ -4,7 +4,6 @@ defmodule WockyAPI.Schema.BlockTypes do
   """
 
   use WockyAPI.Schema.Notation
-  use Absinthe.Ecto, repo: Wocky.Repo
 
   import Kronky.Payload
 

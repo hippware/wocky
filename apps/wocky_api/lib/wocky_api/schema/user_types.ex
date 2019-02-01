@@ -4,8 +4,8 @@ defmodule WockyAPI.Schema.UserTypes do
   """
 
   use WockyAPI.Schema.Notation
-  use Absinthe.Ecto, repo: Wocky.Repo
 
+  import Absinthe.Resolution.Helpers
   import Kronky.Payload
 
   alias WockyAPI.Resolvers.{
@@ -266,10 +266,10 @@ defmodule WockyAPI.Schema.UserTypes do
   @desc "An invitation from one user to another to become a friend"
   object :invitation do
     @desc "The sender"
-    field :sender, :user, resolve: assoc(:user)
+    field :sender, :user, resolve: dataloader(Wocky, :user)
 
     @desc "The recipient"
-    field :recipient, :user, resolve: assoc(:invitee)
+    field :recipient, :user, resolve: dataloader(Wocky, :invitee)
 
     @desc "When the invitation was created"
     field :created_at, non_null(:datetime)
@@ -345,7 +345,7 @@ defmodule WockyAPI.Schema.UserTypes do
   @desc "A user location event entry"
   object :location_event do
     @desc "The bot whose boundary was entered or exited"
-    field :bot, non_null(:bot), resolve: assoc(:bot)
+    field :bot, non_null(:bot), resolve: dataloader(Wocky)
 
     @desc "The type of the event (enter, exit, etc)"
     field :event, non_null(:location_event_type)
@@ -354,7 +354,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :created_at, non_null(:datetime)
 
     @desc "The location update that triggered this event (if any)"
-    field :location, :location, resolve: assoc(:location)
+    field :location, :location, resolve: dataloader(Wocky)
   end
 
   @desc "User location event type"

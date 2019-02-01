@@ -4,6 +4,7 @@ defmodule WockyAPI.Schema do
   use Absinthe.Schema
   use Absinthe.Relay.Schema, :modern
 
+  alias Wocky.Dataloader
   alias WockyAPI.Middleware.Auth
   alias WockyAPI.Middleware.Instrumenter
 
@@ -56,4 +57,8 @@ defmodule WockyAPI.Schema do
     |> Instrumenter.instrument(field, object)
     |> Enum.into([ApolloTracing.Middleware.Tracing])
   end
+
+  def plugins, do: [Absinthe.Middleware.Dataloader | Absinthe.Plugin.defaults()]
+
+  def context(ctx), do: Map.put(ctx, :loader, Dataloader.get(ctx))
 end

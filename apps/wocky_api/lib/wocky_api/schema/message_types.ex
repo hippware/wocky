@@ -4,7 +4,6 @@ defmodule WockyAPI.Schema.MessageTypes do
   """
 
   use WockyAPI.Schema.Notation
-  use Absinthe.Ecto, repo: Wocky.Repo
 
   import Kronky.Payload
 
@@ -16,7 +15,7 @@ defmodule WockyAPI.Schema.MessageTypes do
     field :id, non_null(:integer)
 
     @desc "The user who sent or received the message"
-    field :other_user, non_null(:user), resolve: assoc(:other_user)
+    field :other_user, non_null(:user)
 
     @desc "The message content"
     field :content, :string
