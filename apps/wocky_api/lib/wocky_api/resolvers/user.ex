@@ -133,16 +133,6 @@ defmodule WockyAPI.Resolvers.User do
     end
   end
 
-  # This is kind of dumb - an anonymous user can see more than an authenticated
-  # but blocked user...
-  def get_user(_root, %{id: id}, _info) do
-    with %User{} = user <- User.get_user(id) do
-      {:ok, user}
-    else
-      _ -> user_not_found(id)
-    end
-  end
-
   def search_users(_root, %{limit: limit}, _info) when limit < 0 do
     {:error, "limit cannot be less than 0"}
   end
