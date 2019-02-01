@@ -60,5 +60,5 @@ defmodule WockyAPI.Schema do
 
   def plugins, do: [Absinthe.Middleware.Dataloader | Absinthe.Plugin.defaults()]
 
-  def context(ctx), do: Map.put(ctx, :loader, Dataloader.get())
+  def context(ctx), do: Map.put(ctx, :loader, Dataloader.get(ctx))
 end
