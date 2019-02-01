@@ -122,6 +122,7 @@ defmodule Wocky.Mixfile do
       # TODO: go back to hex version once changes are merged
       {:slack_ex, github: "hippware/slack_ex", branch: "master"},
       {:stringprep, "~> 1.0"},
+      {:swarm, "~> 3.0"},
       {:sweet_xml, "~> 0.6"},
       {:timex, "~> 3.1"},
       {:wocky_db_watcher,

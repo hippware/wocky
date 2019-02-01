@@ -11,6 +11,7 @@ defmodule Wocky.Application do
 
   alias Wocky.Callbacks
   alias Wocky.Mailer
+  alias Wocky.User.Location.Supervisor, as: LocationSupervisor
 
   require Prometheus.Registry
 
@@ -36,7 +37,12 @@ defmodule Wocky.Application do
            host: redis_config[:host],
            port: redis_config[:port],
            database: redis_config[:db],
-           name: Redix}
+           name: Redix},
+          %{
+            id: LocationSupervisor,
+            start: {LocationSupervisor, :start_link, []},
+            type: :supervisor
+          }
         ],
         strategy: :one_for_one,
         name: Wocky.Supervisor

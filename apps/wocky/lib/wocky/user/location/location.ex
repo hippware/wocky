@@ -3,8 +3,9 @@ defmodule Wocky.User.Location do
 
   use Wocky.Repo.Schema
 
-  alias Wocky.User
+  alias Wocky.{Bot, User}
   alias Wocky.User.BotEvent
+  alias Wocky.User.Location.Handler
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -76,6 +77,22 @@ defmodule Wocky.User.Location do
     :battery_charging,
     :is_fetch
   ]
+
+  @spec set_location(User.t(), Location.t()) ::
+          {:ok, Location.t()} | {:error, any()}
+  def set_location(user, location) do
+    user
+    |> Handler.get_handler()
+    |> GenServer.call({:set_location, location})
+  end
+
+  @spec set_location_for_bot(User.t(), Location.t(), Bot.t()) ::
+          {:ok, Location.t()} | {:error, any()}
+  def set_location_for_bot(user, location, bot) do
+    user
+    |> Handler.get_handler()
+    |> GenServer.call({:set_location_for_bot, location, bot})
+  end
 
   @doc false
   def fields, do: @insert_fields
