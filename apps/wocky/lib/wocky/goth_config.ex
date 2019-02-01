@@ -1,4 +1,8 @@
 defmodule Wocky.GothConfig do
+  @moduledoc """
+  Callback config module to handle `goth`'s JSON config
+  """
+
   use Goth.Config
 
   def init(config) do
