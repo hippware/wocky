@@ -5,6 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: ecto_homoiconic_enum (PR #2197)
+* Fix dialyzer warnings (PR #2196)
+* Use secure redis cluster [take 2] (PR #2190), then reverted (PR #2199)
+* Live location sharing, part 2 (PR #2198)
+  * Part of: New APIs for live location sharing (#2146)
+
+
 # 2019.1.31+r43318c4
 
 * Update: bamboo (PR #2193)
