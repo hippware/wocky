@@ -3,8 +3,15 @@ defmodule Wocky.SMS.Sandbox do
 
   @behaviour Wocky.SMS.Messenger
 
-  def send(_recipient, _body) do
-    Confex.get_env(:wocky, :sms_send_result, :ok)
+  require Logger
+
+  def send(recipient, body) do
+    result = Confex.get_env(:wocky, :sms_send_result, :ok)
+    Logger.info("""
+      SMS Sandbox was requested to send "#{body}" to "#{recipient}"
+      and return #{inspect result}
+      """)
+    result
   end
 
   def set_result(result),
