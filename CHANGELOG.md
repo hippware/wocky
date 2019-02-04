@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Replace absinthe_ecto's assoc helper with dataloader (PR #2201)
+* Serialise user location updates through a single per-user process (#2030, PR #2200)
+* Update: absinthe (PR #2209)
+* Remove call to delete current location (#2210) / Fixes crash #2205
+
+
 # 2019.2.1+refd5789
 
 (Skipped 2019.2.1+r36cfa26)
