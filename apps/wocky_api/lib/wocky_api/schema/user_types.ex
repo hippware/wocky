@@ -53,7 +53,7 @@ defmodule WockyAPI.Schema.UserTypes do
     end
 
     @desc """
-    The user's contacts (ie the XMPP roster) optionally filtered by relationship
+    The user's contacts optionally filtered by relationship
     """
     connection field :contacts, node_type: :contacts do
       connection_complexity()

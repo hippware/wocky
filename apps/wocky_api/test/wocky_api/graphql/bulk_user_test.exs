@@ -23,6 +23,7 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
         phone_number
         e164_phone_number
         user { id }
+        relationship
       }
     }
     """
@@ -42,7 +43,8 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
           &%{
             "phone_number" => &1.phone_number,
             "e164_phone_number" => &1.phone_number,
-            "user" => %{"id" => &1.id}
+            "user" => %{"id" => &1.id},
+            "relationship" => "NONE"
           }
         )
         |> Enum.sort()
@@ -63,7 +65,12 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
       expected =
         numbers
         |> Enum.map(
-          &%{"phone_number" => &1, "e164_phone_number" => &1, "user" => nil}
+          &%{
+            "phone_number" => &1,
+            "e164_phone_number" => &1,
+            "user" => nil,
+            "relationship" => nil
+          }
         )
         |> Enum.sort()
 
@@ -87,14 +94,20 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
       expected =
         Enum.map(
           unused_numbers,
-          &%{"phone_number" => &1, "e164_phone_number" => &1, "user" => nil}
+          &%{
+            "phone_number" => &1,
+            "e164_phone_number" => &1,
+            "user" => nil,
+            "relationship" => nil
+          }
         ) ++
           Enum.map(
             ctx.users,
             &%{
               "phone_number" => &1.phone_number,
               "e164_phone_number" => &1.phone_number,
-              "user" => %{"id" => &1.id}
+              "user" => %{"id" => &1.id},
+              "relationship" => "NONE"
             }
           )
 
@@ -125,7 +138,8 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
                  %{
                    "phone_number" => blocked.phone_number,
                    "e164_phone_number" => blocked.phone_number,
-                   "user" => nil
+                   "user" => nil,
+                   "relationship" => nil
                  }
                ]
              } == result.data
@@ -146,10 +160,62 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
                    "e164_phone_number" => full_number,
                    "user" => %{
                      "id" => hd(ctx.users).id
-                   }
+                   },
+                   "relationship" => "NONE"
                  }
                ]
              } == result.data
+    end
+
+    test "should return the correct relationship for target users", ctx do
+      [friend, inviter, invitee] = Enum.slice(ctx.users, 0..2)
+      Roster.befriend(ctx.user, friend)
+      Roster.invite(inviter, ctx.user)
+      Roster.invite(ctx.user, invitee)
+
+      result =
+        run_query(@query, ctx.user, %{
+          "phone_numbers" => [
+            friend.phone_number,
+            inviter.phone_number,
+            invitee.phone_number
+          ]
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userBulkLookup" => results
+             } = result.data
+
+      expected = [
+        %{
+          "phone_number" => friend.phone_number,
+          "e164_phone_number" => friend.phone_number,
+          "user" => %{
+            "id" => friend.id
+          },
+          "relationship" => "FRIEND"
+        },
+        %{
+          "phone_number" => inviter.phone_number,
+          "e164_phone_number" => inviter.phone_number,
+          "user" => %{
+            "id" => inviter.id
+          },
+          "relationship" => "INVITED_BY"
+        },
+        %{
+          "phone_number" => invitee.phone_number,
+          "e164_phone_number" => invitee.phone_number,
+          "user" => %{
+            "id" => invitee.id
+          },
+          "relationship" => "INVITED"
+        }
+      ]
+
+      assert Enum.sort(expected) == Enum.sort(results)
     end
 
     test "should fail when too many numbers are requested", ctx do

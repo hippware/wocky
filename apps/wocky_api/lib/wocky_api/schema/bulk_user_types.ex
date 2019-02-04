@@ -9,10 +9,13 @@ defmodule WockyAPI.Schema.BulkUserTypes do
 
   alias WockyAPI.Resolvers.BulkUser
 
-  object :bulk_user_result do
+  object :user_bulk_lookup_result do
     field :phone_number, non_null(:string)
-    field :e164_phone_number, non_null(:string)
+    field :e164_phone_number, :string
     field :user, :user
+
+    @desc "The relationship of the requestor to the returned user"
+    field :relationship, :user_contact_relationship
   end
 
   object :friend_bulk_invite_result do
@@ -41,7 +44,7 @@ defmodule WockyAPI.Schema.BulkUserTypes do
   )
 
   object :bulk_user_queries do
-    field :user_bulk_lookup, type: list_of(:bulk_user_result) do
+    field :user_bulk_lookup, type: list_of(:user_bulk_lookup_result) do
       arg :phone_numbers, non_null(list_of(non_null(:string)))
       resolve &BulkUser.lookup/3
     end

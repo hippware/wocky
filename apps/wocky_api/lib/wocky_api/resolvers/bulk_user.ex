@@ -1,7 +1,7 @@
 defmodule WockyAPI.Resolvers.BulkUser do
   @moduledoc "GraphQL resolver for bulk user operations"
 
-  alias Wocky.{PhoneNumber, User}
+  alias Wocky.{PhoneNumber, Roster, User}
   alias Wocky.Roster.BulkInvitation
 
   @max_lookups 100
@@ -20,7 +20,7 @@ defmodule WockyAPI.Resolvers.BulkUser do
         prepared_numbers
         |> Map.keys()
         |> User.get_by_phone_number(user)
-        |> Enum.reduce(prepared_numbers, &merge_lookup_result/2)
+        |> Enum.reduce(prepared_numbers, &merge_lookup_result(&1, &2, user))
         |> Enum.map(&normalise_result/1)
         |> add_failed_results(numbers)
 
@@ -49,7 +49,8 @@ defmodule WockyAPI.Resolvers.BulkUser do
 
   defp merge_lookup_result(
          %User{phone_number: phone_number} = user,
-         prepared_numbers
+         prepared_numbers,
+         requestor
        ) do
     Map.put(
       prepared_numbers,
@@ -57,6 +58,7 @@ defmodule WockyAPI.Resolvers.BulkUser do
       prepared_numbers
       |> Map.get(phone_number)
       |> Map.put(:user, user)
+      |> Map.put(:relationship, Roster.relationship(requestor, user))
     )
   end
 
@@ -64,7 +66,8 @@ defmodule WockyAPI.Resolvers.BulkUser do
     %{
       phone_number: data[:phone_number],
       e164_phone_number: normalised_number,
-      user: data[:user]
+      user: data[:user],
+      relationship: data[:relationship]
     }
   end
 
