@@ -47,7 +47,7 @@
   "ex_phone_number": {:hex, :ex_phone_number, "0.1.1", "3c36fdd48b6c88c5daa17f3fd27973742627578fa6664161306c51ce74a3b477", [:mix], [{:sweet_xml, "~> 0.6.5", [hex: :sweet_xml, repo: "hexpm", optional: false]}], "hexpm"},
   "ex_twilio": {:hex, :ex_twilio, "0.6.1", "2c2b65f21eeb9b88532202280c6c064c2f6241f2d520d7992941504d12dbf8de", [:mix], [{:httpoison, ">= 0.9.0", [hex: :httpoison, repo: "hexpm", optional: false]}, {:inflex, "~> 1.0", [hex: :inflex, repo: "hexpm", optional: false]}, {:joken, "~> 1.5", [hex: :joken, repo: "hexpm", optional: false]}, {:poison, "~> 3.0", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
   "exconstructor": {:hex, :exconstructor, "1.1.0", "272623a7b203cb2901c20cbb92c5c3ab103cc0087ff7c881979e046043346752", [:mix], [], "hexpm"},
-  "excoveralls": {:hex, :excoveralls, "0.10.4", "b86230f0978bbc630c139af5066af7cd74fd16536f71bc047d1037091f9f63a9", [:mix], [{:hackney, "~> 1.13", [hex: :hackney, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm"},
+  "excoveralls": {:hex, :excoveralls, "0.10.5", "7c912c4ec0715a6013647d835c87cde8154855b9b84e256bc7a63858d5f284e3", [:mix], [{:hackney, "~> 1.13", [hex: :hackney, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm"},
   "exml": {:git, "https://github.com/esl/exml.git", "80a4ecf584fb1908b8671a1e53193106fa30d4f3", [tag: "3.0.3"]},
   "exometer_core": {:git, "https://github.com/hippware/exometer_core.git", "263adb7a42acc04109e30cbf2134e9cddded7328", [branch: "working"]},
   "exometer_prometheus": {:git, "https://github.com/GalaxyGorilla/exometer_prometheus.git", "5c37df514fa04f8fed4359ff5e5561fe5a0fb97d", [branch: "master"]},
