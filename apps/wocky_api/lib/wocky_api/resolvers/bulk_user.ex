@@ -11,10 +11,10 @@ defmodule WockyAPI.Resolvers.BulkUser do
 
     with :ok <- check_lookup_count(numbers),
          {:ok, cc} <- PhoneNumber.country_code(user.phone_number) do
+      unique_numbers = Enum.uniq(numbers)
+
       prepared_numbers =
-        numbers
-        |> Enum.uniq()
-        |> Enum.reduce(%{}, &maybe_prepare_number(&1, cc, &2))
+        Enum.reduce(unique_numbers, %{}, &maybe_prepare_number(&1, cc, &2))
 
       lookup_results =
         prepared_numbers
@@ -22,7 +22,7 @@ defmodule WockyAPI.Resolvers.BulkUser do
         |> User.get_by_phone_number(user)
         |> Enum.reduce(prepared_numbers, &merge_lookup_result/2)
         |> Enum.map(&normalise_result/1)
-        |> add_failed_results(numbers)
+        |> add_failed_results(unique_numbers)
 
       {:ok, lookup_results}
     end
