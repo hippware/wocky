@@ -244,7 +244,8 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
                  %{
                    "e164_phone_number" => n,
                    "phone_number" => n,
-                   "user" => nil
+                   "user" => nil,
+                   "relationship" => nil
                  }
                ]
              } == result.data
