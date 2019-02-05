@@ -6,6 +6,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   use WockyAPI.Schema.Notation
 
   import Absinthe.Resolution.Helpers
+  import Kronky.Payload
 
   alias WockyAPI.Resolvers.Notification
   alias WockyAPI.Resolvers.User
@@ -146,6 +147,13 @@ defmodule WockyAPI.Schema.NotificationTypes do
     value :exit
   end
 
+  input_object :notification_delete_input do
+    @desc "The id of the notification to delete"
+    field :id, non_null(:aint)
+  end
+
+  payload_object(:notification_delete_payload, :boolean)
+
   object :notification_queries do
     @desc "Get the notifications for the current user"
     connection field :notifications, node_type: :notifications do
@@ -162,6 +170,18 @@ defmodule WockyAPI.Schema.NotificationTypes do
 
       connection_complexity()
       resolve &Notification.get_notifications/3
+    end
+  end
+
+  object :notification_mutations do
+    @desc """
+    Delete an existing notification. If the notification does not exist
+    then the request will succeed but no action will be taken
+    """
+    field :notification_delete, type: :notification_delete_payload do
+      arg :input, non_null(:notification_delete_input)
+      resolve &Notification.delete/3
+      middleware &build_payload/2
     end
   end
 

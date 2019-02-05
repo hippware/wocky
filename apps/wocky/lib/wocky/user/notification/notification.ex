@@ -105,8 +105,16 @@ defmodule Wocky.User.Notification do
     |> maybe_add_after_id(after_id)
   end
 
-  @spec delete(User.t(), User.t()) :: :ok
-  def delete(user, other_user) do
+  @spec delete(id() | User.t(), User.t()) :: :ok
+  def delete(id, requestor) when is_integer(id) do
+    Notification
+    |> where([i], i.user_id == ^requestor.id and i.id == ^id)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
+  def delete(%User{} = user, other_user) do
     Notification
     |> where([i], i.user_id == ^user.id and i.other_user_id == ^other_user.id)
     |> Repo.delete_all()

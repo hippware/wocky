@@ -23,6 +23,12 @@ defmodule WockyAPI.Resolvers.Notification do
     |> Utils.map_edges(&to_graphql/1)
   end
 
+  def delete(_root, args, %{context: %{current_user: requestor}}) do
+    Notification.delete(args.input.id, requestor)
+
+    {:ok, true}
+  end
+
   def to_graphql(%Notification{id: id, created_at: created_at} = n),
     do: %{data: n, id: id, created_at: created_at}
 
