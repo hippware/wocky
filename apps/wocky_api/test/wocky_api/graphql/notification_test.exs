@@ -1,12 +1,16 @@
 defmodule WockyAPI.GraphQL.NotificationTest do
   use WockyAPI.GraphQLCase, async: true
 
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
+  alias Wocky.User.Notification
 
-  describe "initial notification retrieval" do
-    setup do
-      user = Factory.insert(:user)
+  setup do
+    {:ok, user: Factory.insert(:user)}
+  end
 
+  describe "notification retrieval" do
+    setup ctx do
       notifications =
         [
           :bot_item_notification,
@@ -16,10 +20,10 @@ defmodule WockyAPI.GraphQL.NotificationTest do
           :user_invitation_notification
         ]
         |> Enum.map(
-          &Factory.insert(&1, user: user, other_user: Factory.insert(:user))
+          &Factory.insert(&1, user: ctx.user, other_user: Factory.insert(:user))
         )
 
-      {:ok, user: user, notifications: notifications}
+      {:ok, notifications: notifications}
     end
 
     @query """
@@ -179,6 +183,60 @@ defmodule WockyAPI.GraphQL.NotificationTest do
                  }
                }
              } = result
+    end
+  end
+
+  describe "delete" do
+    setup ctx do
+      n = Factory.insert(:geofence_event_notification, user: ctx.user)
+      n2 = Factory.insert(:geofence_event_notification)
+      {:ok, id: n.id, id2: n2.id}
+    end
+
+    @query """
+    mutation ($id: AInt!) {
+      notificationDelete (input: {id: $id}) {
+        successful
+        result
+      }
+    }
+    """
+    test "should delete a notification", ctx do
+      result = run_query(@query, ctx.user, %{"id" => to_string(ctx.id)})
+
+      assert result.data == %{
+               "notificationDelete" => %{
+                 "successful" => true,
+                 "result" => true
+               }
+             }
+
+      assert Repo.get(Notification, ctx.id) == nil
+    end
+
+    test "should not delete another user's notification", ctx do
+      result = run_query(@query, ctx.user, %{"id" => to_string(ctx.id2)})
+
+      assert result.data == %{
+               "notificationDelete" => %{
+                 "successful" => true,
+                 "result" => true
+               }
+             }
+
+      refute Repo.get(Notification, ctx.id) == nil
+    end
+
+    test "should not fail on non-existant notification", ctx do
+      result =
+        run_query(@query, ctx.user, %{"id" => to_string(:rand.uniform(100))})
+
+      assert result.data == %{
+               "notificationDelete" => %{
+                 "successful" => true,
+                 "result" => true
+               }
+             }
     end
   end
 end
