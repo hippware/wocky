@@ -228,6 +228,27 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
 
       assert error_msg(result) =~ "Maximum bulk operation"
     end
+
+    test "should not produce errors on multiple idential input", ctx do
+      [n] = unused_numbers(ctx.phone_numbers, 1)
+
+      result =
+        run_query(@query, ctx.user, %{
+          "phone_numbers" => [n, n]
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userBulkLookup" => [
+                 %{
+                   "e164_phone_number" => n,
+                   "phone_number" => n,
+                   "user" => nil
+                 }
+               ]
+             } == result.data
+    end
   end
 
   @query """
