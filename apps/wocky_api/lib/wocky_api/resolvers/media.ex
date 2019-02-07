@@ -22,8 +22,8 @@ defmodule WockyAPI.Resolvers.Media do
 
   defp get_urls(tros_url, wait?, timeout) do
     with {:ok, file_id} <- TROS.parse_url(tros_url),
-         {:ok, %Metadata{} = metadata} <- TROS.get_metadata(file_id),
-         :ok <- maybe_wait(wait?, file_id, timeout) do
+         :ok <- maybe_wait(wait?, file_id, timeout),
+         {:ok, %Metadata{} = metadata} <- TROS.get_metadata(file_id) do
       [full_url, thumbnail_url] =
         TROS.get_download_urls(metadata, [:full, :thumbnail])
 
@@ -96,8 +96,6 @@ defmodule WockyAPI.Resolvers.Media do
   end
 
   defp file_ready(file_id) do
-    TROS.get_metadata(file_id)
-
     case TROS.get_metadata(file_id) do
       {:ok, %Metadata{ready: true}} -> true
       _ -> false

@@ -25,6 +25,8 @@ defmodule Wocky.TROS.Store.Test do
     {[], resp_fields}
   end
 
+  def get_download_url(%{ready: false}, _file_name), do: ""
+
   def get_download_url(_metadata, file_name) do
     record(file_name)
     "https://" <> Wocky.host() <> "/" <> file_name
