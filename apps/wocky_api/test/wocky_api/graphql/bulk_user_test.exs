@@ -124,6 +124,26 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
              } = result.data
     end
 
+    test "should work when requestor's number is included", ctx do
+      result =
+        run_query(@query, ctx.user, %{
+          "phone_numbers" => [ctx.user.phone_number]
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userBulkLookup" => [
+                 %{
+                   "phone_number" => ctx.user.phone_number,
+                   "e164_phone_number" => ctx.user.phone_number,
+                   "user" => %{"id" => ctx.user.id},
+                   "relationship" => "SELF"
+                 }
+               ]
+             } == result.data
+    end
+
     test "should not return blocked users", ctx do
       blocked = hd(ctx.users)
       Block.block(blocked, ctx.user)

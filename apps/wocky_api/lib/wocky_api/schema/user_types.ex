@@ -213,6 +213,9 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "The users have no relationship"
     value :none
 
+    @desc "The user is the requesting user"
+    value :self
+
     @desc "DEPRECATED - use INVITED instead"
     value :follower
 
