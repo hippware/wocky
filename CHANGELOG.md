@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix crash when own number is in bulk lookup (PR #2225)
+* Fix image ready check and handling (PR #2226)
+* Update: ex_phone_number (PR #2228), dataloader (PR #2227)
+
+
 # 2019.2.5+ra60052c
 
 * Replace absinthe_ecto's assoc helper with dataloader (PR #2201)
