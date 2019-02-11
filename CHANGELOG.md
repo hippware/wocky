@@ -8,6 +8,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Fix crash when own number is in bulk lookup (PR #2225)
 * Fix image ready check and handling (PR #2226)
 * Update: ex_phone_number (PR #2228), dataloader (PR #2227)
+* Enable Twilio SMS sending on `next` and staging (PR #2230)
 
 
 # 2019.2.5+ra60052c
