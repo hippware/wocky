@@ -68,7 +68,7 @@ defmodule Wocky.Mixfile do
   defp deps do
     [
       {:bamboo, "~> 1.0"},
-      {:bcrypt_elixir, "~> 1.0"},
+      {:bcrypt_elixir, "~> 2.0"},
       {:confex, "~> 3.4"},
       {:csv, "~> 2.0"},
       {:dawdle, "~> 0.4.0"},
