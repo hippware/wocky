@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: geo_postgis (PR #2235), bcrypt_elixir (PR #2234), redix (PR #2233)
+
+
 # 2019.2.11+re4e2a40
 
 * Fix crash when own number is in bulk lookup (PR #2225)
