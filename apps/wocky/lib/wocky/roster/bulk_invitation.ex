@@ -108,6 +108,10 @@ defmodule Wocky.Roster.BulkInvitation do
           r
           |> Map.put(:result, :sms_error)
           |> Map.put(:error, inspect(e))
+        {:error, e, code} ->
+          r
+          |> Map.put(:result, :sms_error)
+          |> Map.put(:error, "#{inspect(e)}, #{inspect(code)}")
       end
 
     {r, Map.put(sent_numbers, number, {r[:result], r[:error]})}
