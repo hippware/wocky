@@ -31,17 +31,20 @@ defmodule WockyAPI.Schema.NotificationTypes do
   end
 
   enum :notification_type do
+    @desc "BotInvitationNotification type"
+    value :bot_invitation_notification
+
+    @desc "BotInvitationResponseNotification type"
+    value :bot_invitation_response_notification
+
     @desc "BotItemNotification type"
     value :bot_item_notification
 
     @desc "GeofenceEventNotification type"
     value :geofence_event_notification
 
-    @desc "BotInvitationNotification type"
-    value :bot_invitation_notification
-
-    @desc "BotInvitationResponseNotification type"
-    value :bot_invitation_response_notification
+    @desc "LocationShareNotification type"
+    value :location_share_notification
 
     @desc "UserInvitationNotification type"
     value :user_invitation_notification
@@ -49,10 +52,11 @@ defmodule WockyAPI.Schema.NotificationTypes do
 
   union :notification_data do
     types [
-      :bot_item_notification,
-      :geofence_event_notification,
       :bot_invitation_notification,
       :bot_invitation_response_notification,
+      :bot_item_notification,
+      :geofence_event_notification,
+      :location_share_notification,
       :user_invitation_notification
     ]
 
@@ -72,31 +76,6 @@ defmodule WockyAPI.Schema.NotificationTypes do
   object :notification_deleted do
     @desc "The id of the deleted notification"
     field :id, non_null(:aint)
-  end
-
-  @desc "A notification for posting or updating a bot item"
-  object :bot_item_notification do
-    @desc "The user who made the change"
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
-
-    @desc "The bot to which the item belongs"
-    field :bot, non_null(:bot), resolve: dataloader(Wocky)
-
-    @desc "The bot item that has been posted or edited"
-    field :bot_item, non_null(:bot_item), resolve: dataloader(Wocky)
-  end
-
-  @desc "A notification that a user has entered or exited a subscribed bot"
-  object :geofence_event_notification do
-    @desc "The user who entered or exited"
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
-
-    @desc "The bot that was entered or exited"
-    field :bot, non_null(:bot), resolve: dataloader(Wocky)
-
-    @desc "The action that occurred"
-    field :event, :geofence_event,
-      resolve: fn n, _, _ -> {:ok, n.geofence_event} end
   end
 
   @desc "A notification that a user has invited the recipient to a bot"
@@ -129,6 +108,39 @@ defmodule WockyAPI.Schema.NotificationTypes do
     @desc "Whether the invitation was accepted or not"
     field :accepted, non_null(:boolean),
       resolve: fn n, _, _ -> {:ok, n.bot_invitation_accepted} end
+  end
+
+  @desc "A notification for posting or updating a bot item"
+  object :bot_item_notification do
+    @desc "The user who made the change"
+    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+
+    @desc "The bot to which the item belongs"
+    field :bot, non_null(:bot), resolve: dataloader(Wocky)
+
+    @desc "The bot item that has been posted or edited"
+    field :bot_item, non_null(:bot_item), resolve: dataloader(Wocky)
+  end
+
+  @desc "A notification that a user has entered or exited a subscribed bot"
+  object :geofence_event_notification do
+    @desc "The user who entered or exited"
+    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+
+    @desc "The bot that was entered or exited"
+    field :bot, non_null(:bot), resolve: dataloader(Wocky)
+
+    @desc "The action that occurred"
+    field :event, :geofence_event,
+      resolve: fn n, _, _ -> {:ok, n.geofence_event} end
+  end
+
+  @desc """
+  A notification that a user has begun sharing their location with the recipient
+  """
+  object :location_share_notification do
+    @desc "The user sharing their location"
+    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
   end
 
   @desc """

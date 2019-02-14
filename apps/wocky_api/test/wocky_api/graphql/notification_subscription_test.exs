@@ -4,11 +4,9 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   import Wocky.Eventually
   import WockyAPI.ChannelHelper
 
-  alias Wocky.Bot
+  alias Wocky.{Bot, Repo, Roster, User}
   alias Wocky.Bot.{Invitation, Subscription}
-  alias Wocky.Repo
-  alias Wocky.Repo.Factory
-  alias Wocky.Roster
+  alias Wocky.Repo.{Factory, Timestamp}
 
   setup_all do
     setup_watcher()
@@ -21,16 +19,6 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       ... on Notification {
         data {
           __typename
-          ... on BotItemNotification {
-            user { id }
-            bot { id }
-            bot_item { id }
-          }
-          ... on GeofenceEventNotification {
-            user { id }
-            bot { id }
-            event
-          }
           ... on BotInvitationNotification {
             invitation { id }
             user { id }
@@ -41,6 +29,19 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
             user { id }
             bot { id }
             accepted
+          }
+          ... on BotItemNotification {
+            user { id }
+            bot { id }
+            bot_item { id }
+          }
+          ... on GeofenceEventNotification {
+            user { id }
+            bot { id }
+            event
+          }
+          ... on LocationShareNotification {
+            user { id }
           }
           ... on UserInvitationNotification {
             user { id }
@@ -171,6 +172,22 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
       assert_notification_update(push, subscription_id, %{
         "__typename" => "UserInvitationNotification",
+        "user" => %{"id" => user2.id}
+      })
+    end
+
+    test "user shares a notificataion", %{
+      user: user,
+      user2: user2,
+      subscription_id: subscription_id
+    } do
+      Roster.befriend(user, user2)
+      User.start_sharing_location(user2, user, Timestamp.shift(days: 1))
+
+      assert_push "subscription:data", push, 2000
+
+      assert_notification_update(push, subscription_id, %{
+        "__typename" => "LocationShareNotification",
         "user" => %{"id" => user2.id}
       })
     end

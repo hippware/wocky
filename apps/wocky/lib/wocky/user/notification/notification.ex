@@ -15,6 +15,7 @@ defmodule Wocky.User.Notification do
     BotInvitationResponse,
     BotItem,
     GeofenceEvent,
+    LocationShare,
     UserInvitation
   }
 
@@ -23,10 +24,11 @@ defmodule Wocky.User.Notification do
   alias __MODULE__, as: Notification
 
   defenum NotificationType, [
-    :bot_item,
-    :geofence_event,
     :bot_invitation,
     :bot_invitation_response,
+    :bot_item,
+    :geofence_event,
+    :location_share,
     :user_invitation
   ]
 
@@ -48,10 +50,11 @@ defmodule Wocky.User.Notification do
   @type id() :: non_neg_integer()
 
   @type t() ::
-          BotItem.t()
-          | GeofenceEvent.t()
-          | BotInvitation.t()
+          BotInvitation.t()
           | BotInvitationResponse.t()
+          | BotItem.t()
+          | GeofenceEvent.t()
+          | LocationShare.t()
           | UserInvitation.t()
 
   @type base() :: %__MODULE__{}
@@ -69,10 +72,11 @@ defmodule Wocky.User.Notification do
   def decode(%Notification{type: type} = params) do
     struct =
       case type do
-        :bot_item -> %BotItem{}
-        :geofence_event -> %GeofenceEvent{}
         :bot_invitation -> %BotInvitation{}
         :bot_invitation_response -> %BotInvitationResponse{}
+        :bot_item -> %BotItem{}
+        :geofence_event -> %GeofenceEvent{}
+        :location_share -> %LocationShare{}
         :user_invitation -> %UserInvitation{}
       end
 

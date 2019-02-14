@@ -175,6 +175,26 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
+  def bot_invitation_notification_factory do
+    inviter = build(:user)
+    bot = build(:bot, user: inviter)
+
+    %Notification{
+      type: :bot_invitation,
+      user: build(:user),
+      other_user: inviter,
+      bot: bot
+    }
+  end
+
+  def bot_invitation_response_notification_factory do
+    %{
+      bot_invitation_notification_factory()
+      | type: :bot_invitation_response,
+        bot_invitation_accepted: true
+    }
+  end
+
   def bot_item_notification_factory do
     owner = build(:user)
     bot = build(:bot, user: owner)
@@ -198,23 +218,11 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def bot_invitation_notification_factory do
-    inviter = build(:user)
-    bot = build(:bot, user: inviter)
-
+  def location_share_notification_factory do
     %Notification{
-      type: :bot_invitation,
+      type: :location_share,
       user: build(:user),
-      other_user: inviter,
-      bot: bot
-    }
-  end
-
-  def bot_invitation_response_notification_factory do
-    %{
-      bot_invitation_notification_factory()
-      | type: :bot_invitation_response,
-        bot_invitation_accepted: true
+      other_user: build(:user)
     }
   end
 
