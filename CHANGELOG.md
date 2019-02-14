@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: mock (PR #2237), phoenix (PR #2238)
+* Correctly handle error on invalid SMS target number (PR #2240)
+
+
+# 2019.2.12+r097e263
+
 * Update: geo_postgis (PR #2235), bcrypt_elixir (PR #2234), redix (PR #2233)
 
 
