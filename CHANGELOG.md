@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Retrieve accounts which are sharing location to the queryer (#2243)
+
+
+# 2019.2.13+r3f29a23
+
 * Update: mock (PR #2237), phoenix (PR #2238)
 * Correctly handle error on invalid SMS target number (PR #2240)
 
