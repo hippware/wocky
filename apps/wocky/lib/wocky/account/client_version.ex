@@ -19,7 +19,6 @@ defmodule Wocky.Account.ClientVersion do
     belongs_to :user, User, define_field: false
   end
 
-  @agent_rx ~r/TinyRobot\/((?:\d+\.?)+)(?: \((.*)\))?/
   @record_fields [:user_id, :device, :version, :attributes]
 
   def record(user, device, agent_str) do
@@ -55,10 +54,10 @@ defmodule Wocky.Account.ClientVersion do
   end
 
   defp parse_agent(agent_str) do
-    case Regex.run(@agent_rx, agent_str) do
+    case Regex.run(agent_re(), agent_str) do
       nil -> {:error, :unknown_client}
-      [_, version] -> {:ok, version, []}
-      [_, version, attrs] -> {:ok, version, parse_attrs(attrs)}
+      [_, _, version] -> {:ok, version, []}
+      [_, _, version, attrs] -> {:ok, version, parse_attrs(attrs)}
     end
   end
 
@@ -73,5 +72,14 @@ defmodule Wocky.Account.ClientVersion do
   defp supported?(_version, _attrs) do
     # Always return true for now
     true
+  end
+
+  def agent_re do
+    agents =
+      :wocky
+      |> Confex.get_env(:permitted_agents)
+      |> Enum.join("|")
+
+    ~r/(#{agents})\/((?:\d+\.?)+)(?: \((.*)\))?/
   end
 end

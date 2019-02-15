@@ -27,6 +27,9 @@ config :wocky,
     {:system, "WOCKY_SERVER_JWT_SIGNING_KEY",
      "+K+XxznYgxCGLa5hZo9Qyb7QtpmmRPOgNXM4UYfKViYnuiIjTySItwSk7rH+Uv2g"},
 
+  # Permitted agents
+  permitted_agents: ["TinyRobot", "Overseer"],
+
   # Welcome email
   send_welcome_email: {:system, :boolean, "SEND_WELCOME_EMAIL", false},
   welcome_email_template: "official_tr_welcome_email",
