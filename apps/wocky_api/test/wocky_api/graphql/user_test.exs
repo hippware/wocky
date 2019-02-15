@@ -591,7 +591,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     }
     """
 
-    test "get sharing sessions", %{user: user, user2: user2} do
+    test "get user's sharing sessions", %{user: user, user2: user2} do
       shared_with = user2.id
       expiry = sharing_expiry()
 
@@ -620,6 +620,51 @@ defmodule WockyAPI.GraphQL.UserTest do
              } = result.data
     end
 
+    @query """
+    query {
+      currentUser {
+        locationSharers (first: 1) {
+          totalCount
+          edges {
+            node {
+              id
+              sharedWith { id }
+              expiresAt
+            }
+          }
+        }
+      }
+    }
+    """
+
+    test "get sharing sessions with user", %{user: user, user2: user2} do
+      shared_with = user2.id
+      expiry = sharing_expiry()
+
+      {:ok, share} = User.start_sharing_location(user, user2, expiry)
+      id = share.id
+
+      result = run_query(@query, user2, %{})
+
+      refute has_errors(result)
+
+      assert %{
+               "currentUser" => %{
+                 "locationSharers" => %{
+                   "edges" => [
+                     %{
+                       "node" => %{
+                         "id" => ^id,
+                         "sharedWith" => %{"id" => ^shared_with},
+                         "expiresAt" => ^expiry
+                       }
+                     }
+                   ],
+                   "totalCount" => 1
+                 }
+               }
+             } = result.data
+    end
     @query """
     mutation ($input: UserLocationLiveShareInput!) {
       userLocationLiveShare (input: $input) {

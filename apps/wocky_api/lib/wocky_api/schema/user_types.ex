@@ -123,6 +123,12 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &User.get_location_shares/3
     end
 
+    @desc "The live location sharing sessions with the user"
+    connection field :location_sharers, node_type: :user_location_live_shares do
+      connection_complexity()
+      resolve &User.get_location_sharers/3
+    end
+
     @desc "The user's archive of messages sorted from oldest to newest"
     connection field :messages, node_type: :messages do
       connection_complexity()

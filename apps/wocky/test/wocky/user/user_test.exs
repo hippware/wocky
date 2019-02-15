@@ -717,6 +717,7 @@ defmodule Wocky.User.UserTest do
 
       assert {:ok, _} = User.start_sharing_location(ctx.user, ctx.user2, expiry)
       assert [%LocationShare{} = share] = User.get_location_shares(ctx.user)
+      assert [%LocationShare{} = ^share] = User.get_location_sharers(ctx.user2)
       assert share.shared_with_id == ctx.user2.id
       assert share.expires_at == expiry
     end
@@ -794,6 +795,22 @@ defmodule Wocky.User.UserTest do
       Repo.insert!(share)
 
       assert User.get_location_shares(ctx.user) == []
+    end
+  end
+
+  describe "get_location_sharers/1" do
+    setup :setup_location_sharing
+
+    test "should not return expired location shares", ctx do
+      share = %LocationShare{
+        user: ctx.user,
+        shared_with: ctx.user2,
+        expires_at: sharing_expiry(-1)
+      }
+
+      Repo.insert!(share)
+
+      assert User.get_location_sharers(ctx.user2) == []
     end
   end
 
