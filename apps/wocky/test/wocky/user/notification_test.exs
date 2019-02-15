@@ -245,6 +245,11 @@ defmodule Wocky.User.NotificationTest do
       assert %LocationShare{} = Notification.decode(notification)
     end
 
+    test "location share end" do
+      notification = Factory.build(:location_share_end_notification)
+      assert %LocationShareEnd{} = Notification.decode(notification)
+    end
+
     test "user invitation" do
       notification = Factory.build(:user_invitation_notification)
       assert %UserInvitation{} = Notification.decode(notification)

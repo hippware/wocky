@@ -21,6 +21,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Push.Log, as: PushLog
   alias Wocky.Push.Token, as: PushToken
   alias Wocky.Repo.ID
+  alias Wocky.Repo.Timestamp
   alias Wocky.Roster.Invitation, as: RosterInvitation
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TrafficLog
@@ -28,6 +29,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User
   alias Wocky.User.Location
+  alias Wocky.User.LocationShare
   alias Wocky.User.Notification
 
   def user_factory do
@@ -110,6 +112,14 @@ defmodule Wocky.Repo.Factory do
     %RosterInvitation{
       user: build(:user),
       invitee: build(:user)
+    }
+  end
+
+  def user_location_share_factory do
+    %LocationShare{
+      user: build(:user),
+      shared_with: build(:user),
+      expires_at: Timestamp.shift(days: 1)
     }
   end
 
@@ -221,6 +231,14 @@ defmodule Wocky.Repo.Factory do
   def location_share_notification_factory do
     %Notification{
       type: :location_share,
+      user: build(:user),
+      other_user: build(:user)
+    }
+  end
+
+  def location_share_end_notification_factory do
+    %Notification{
+      type: :location_share_end,
       user: build(:user),
       other_user: build(:user)
     }
