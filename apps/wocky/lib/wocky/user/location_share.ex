@@ -1,10 +1,11 @@
 defmodule Wocky.User.LocationShare do
   @moduledoc false
 
+  import Ecto.Query
+
   use Wocky.Repo.Schema
 
-  alias Wocky.Roster
-  alias Wocky.User
+  alias Wocky.{Repo, Roster, User}
 
   @foreign_key_type :binary_id
   schema "user_location_shares" do
@@ -45,5 +46,12 @@ defmodule Wocky.User.LocationShare do
         [shared_with_id: "must be a friend"]
       end
     end)
+  end
+
+  @spec clean_expired() :: {non_neg_integer(), term()}
+  def clean_expired do
+    LocationShare
+    |> where([l], l.expires_at <= ^DateTime.utc_now())
+    |> Repo.delete_all(timeout: :infinity)
   end
 end

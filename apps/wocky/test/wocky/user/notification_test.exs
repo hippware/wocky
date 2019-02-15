@@ -10,6 +10,8 @@ defmodule Wocky.User.NotificationTest do
     BotInvitationResponse,
     BotItem,
     GeofenceEvent,
+    LocationShare,
+    LocationShareEnd,
     UserInvitation
   }
 
@@ -24,6 +26,33 @@ defmodule Wocky.User.NotificationTest do
   end
 
   describe "create notification" do
+    test "bot invitation", ctx do
+      assert {:ok, %Notification{} = notification} =
+               Notification.notify(%BotInvitation{
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id,
+                 bot_id: ctx.bot.id,
+                 bot_invitation_id: ctx.bot_invitation.id
+               })
+
+      assert %Notification{type: :bot_invitation} =
+               Repo.get_by(Notification, id: notification.id)
+    end
+
+    test "bot invitation response", ctx do
+      assert {:ok, %Notification{} = notification} =
+               Notification.notify(%BotInvitationResponse{
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id,
+                 bot_id: ctx.bot.id,
+                 bot_invitation_id: ctx.bot_invitation.id,
+                 bot_invitation_accepted: true
+               })
+
+      assert %Notification{type: :bot_invitation_response} =
+               Repo.get_by(Notification, id: notification.id)
+    end
+
     test "bot item", ctx do
       item = Factory.insert(:item, bot: ctx.bot, user: ctx.user2)
 
@@ -52,30 +81,25 @@ defmodule Wocky.User.NotificationTest do
                Repo.get_by(Notification, id: notification.id)
     end
 
-    test "bot invitation", ctx do
+    test "location share", ctx do
       assert {:ok, %Notification{} = notification} =
-               Notification.notify(%BotInvitation{
+               Notification.notify(%LocationShare{
                  user_id: ctx.user.id,
-                 other_user_id: ctx.user2.id,
-                 bot_id: ctx.bot.id,
-                 bot_invitation_id: ctx.bot_invitation.id
+                 other_user_id: ctx.user2.id
                })
 
-      assert %Notification{type: :bot_invitation} =
+      assert %Notification{type: :location_share} =
                Repo.get_by(Notification, id: notification.id)
     end
 
-    test "bot invitation response", ctx do
+    test "location share end", ctx do
       assert {:ok, %Notification{} = notification} =
-               Notification.notify(%BotInvitationResponse{
+               Notification.notify(%LocationShareEnd{
                  user_id: ctx.user.id,
-                 other_user_id: ctx.user2.id,
-                 bot_id: ctx.bot.id,
-                 bot_invitation_id: ctx.bot_invitation.id,
-                 bot_invitation_accepted: true
+                 other_user_id: ctx.user2.id
                })
 
-      assert %Notification{type: :bot_invitation_response} =
+      assert %Notification{type: :location_share_end} =
                Repo.get_by(Notification, id: notification.id)
     end
 
@@ -95,6 +119,27 @@ defmodule Wocky.User.NotificationTest do
     setup ctx do
       Block.block(ctx.user, ctx.user2)
       :ok
+    end
+
+    test "bot invitation", ctx do
+      assert {:error, :invalid_user} ==
+               Notification.notify(%BotInvitation{
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id,
+                 bot_id: ctx.bot.id,
+                 bot_invitation_id: ctx.bot_invitation.id
+               })
+    end
+
+    test "bot invitation response", ctx do
+      assert {:error, :invalid_user} ==
+               Notification.notify(%BotInvitationResponse{
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id,
+                 bot_id: ctx.bot.id,
+                 bot_invitation_id: ctx.bot_invitation.id,
+                 bot_invitation_accepted: true
+               })
     end
 
     test "bot item", ctx do
@@ -119,24 +164,19 @@ defmodule Wocky.User.NotificationTest do
                })
     end
 
-    test "invitation", ctx do
+    test "location_share", ctx do
       assert {:error, :invalid_user} ==
-               Notification.notify(%BotInvitation{
+               Notification.notify(%LocationShare{
                  user_id: ctx.user.id,
-                 other_user_id: ctx.user2.id,
-                 bot_id: ctx.bot.id,
-                 bot_invitation_id: ctx.bot_invitation.id
+                 other_user_id: ctx.user2.id
                })
     end
 
-    test "invitation response", ctx do
+    test "location_share_end", ctx do
       assert {:error, :invalid_user} ==
-               Notification.notify(%BotInvitationResponse{
+               Notification.notify(%LocationShareEnd{
                  user_id: ctx.user.id,
-                 other_user_id: ctx.user2.id,
-                 bot_id: ctx.bot.id,
-                 bot_invitation_id: ctx.bot_invitation.id,
-                 bot_invitation_accepted: true
+                 other_user_id: ctx.user2.id
                })
     end
 
@@ -180,6 +220,16 @@ defmodule Wocky.User.NotificationTest do
   end
 
   describe "decode notification" do
+    test "invitation" do
+      notification = Factory.build(:bot_invitation_notification)
+      assert %BotInvitation{} = Notification.decode(notification)
+    end
+
+    test "invitation response" do
+      notification = Factory.build(:bot_invitation_response_notification)
+      assert %BotInvitationResponse{} = Notification.decode(notification)
+    end
+
     test "bot item" do
       notification = Factory.build(:bot_item_notification)
       assert %BotItem{} = Notification.decode(notification)
@@ -190,14 +240,14 @@ defmodule Wocky.User.NotificationTest do
       assert %GeofenceEvent{} = Notification.decode(notification)
     end
 
-    test "invitation" do
-      notification = Factory.build(:bot_invitation_notification)
-      assert %BotInvitation{} = Notification.decode(notification)
+    test "location share" do
+      notification = Factory.build(:location_share_notification)
+      assert %LocationShare{} = Notification.decode(notification)
     end
 
-    test "invitation response" do
-      notification = Factory.build(:bot_invitation_response_notification)
-      assert %BotInvitationResponse{} = Notification.decode(notification)
+    test "location share end" do
+      notification = Factory.build(:location_share_end_notification)
+      assert %LocationShareEnd{} = Notification.decode(notification)
     end
 
     test "user invitation" do

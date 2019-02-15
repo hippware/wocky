@@ -665,6 +665,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              } = result.data
     end
+
     @query """
     mutation ($input: UserLocationLiveShareInput!) {
       userLocationLiveShare (input: $input) {
