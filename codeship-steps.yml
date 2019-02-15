@@ -57,5 +57,5 @@
     dockercfg_service: aws-dockercfg
   - name: kick_circleci
     tag: ^master$
-    service: curl-ssl-jq
+    service: curl-ssl
     command: ./kick-circleci
