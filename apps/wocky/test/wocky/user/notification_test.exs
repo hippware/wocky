@@ -11,6 +11,7 @@ defmodule Wocky.User.NotificationTest do
     BotItem,
     GeofenceEvent,
     LocationShare,
+    LocationShareEnd,
     UserInvitation
   }
 
@@ -91,6 +92,17 @@ defmodule Wocky.User.NotificationTest do
                Repo.get_by(Notification, id: notification.id)
     end
 
+    test "location share end", ctx do
+      assert {:ok, %Notification{} = notification} =
+               Notification.notify(%LocationShareEnd{
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id
+               })
+
+      assert %Notification{type: :location_share_end} =
+               Repo.get_by(Notification, id: notification.id)
+    end
+
     test "user invitation", ctx do
       assert {:ok, %Notification{} = notification} =
                Notification.notify(%UserInvitation{
@@ -155,6 +167,14 @@ defmodule Wocky.User.NotificationTest do
     test "location_share", ctx do
       assert {:error, :invalid_user} ==
                Notification.notify(%LocationShare{
+                 user_id: ctx.user.id,
+                 other_user_id: ctx.user2.id
+               })
+    end
+
+    test "location_share_end", ctx do
+      assert {:error, :invalid_user} ==
+               Notification.notify(%LocationShareEnd{
                  user_id: ctx.user.id,
                  other_user_id: ctx.user2.id
                })

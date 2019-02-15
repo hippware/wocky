@@ -46,6 +46,9 @@ defmodule WockyAPI.Schema.NotificationTypes do
     @desc "LocationShareNotification type"
     value :location_share_notification
 
+    @desc "LocationShareEndNotification type"
+    value :location_share_end_notification
+
     @desc "UserInvitationNotification type"
     value :user_invitation_notification
   end
@@ -57,6 +60,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
       :bot_item_notification,
       :geofence_event_notification,
       :location_share_notification,
+      :location_share_end_notification,
       :user_invitation_notification
     ]
 
@@ -139,6 +143,15 @@ defmodule WockyAPI.Schema.NotificationTypes do
   A notification that a user has begun sharing their location with the recipient
   """
   object :location_share_notification do
+    @desc "The user sharing their location"
+    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+  end
+
+  @desc """
+  A notification that a user has stopped sharing their location with the
+  recipient
+  """
+  object :location_share_end_notification do
     @desc "The user sharing their location"
     field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
   end

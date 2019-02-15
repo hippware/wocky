@@ -10,6 +10,7 @@ defmodule WockyAPI.Resolvers.Notification do
     {:bot_item, :bot_item_notification},
     {:geofence_event, :geofence_event_notification},
     {:location_share, :location_share_notification},
+    {:location_share_end, :location_share_end_notification},
     {:user_invitation, :user_invitation_notification}
   ]
 

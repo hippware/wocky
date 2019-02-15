@@ -16,6 +16,7 @@ defmodule Wocky.User.Notification do
     BotItem,
     GeofenceEvent,
     LocationShare,
+    LocationShareEnd,
     UserInvitation
   }
 
@@ -29,6 +30,7 @@ defmodule Wocky.User.Notification do
     :bot_item,
     :geofence_event,
     :location_share,
+    :location_share_end,
     :user_invitation
   ]
 
@@ -55,6 +57,7 @@ defmodule Wocky.User.Notification do
           | BotItem.t()
           | GeofenceEvent.t()
           | LocationShare.t()
+          | LocationShareEnd.t()
           | UserInvitation.t()
 
   @type base() :: %__MODULE__{}
@@ -77,6 +80,7 @@ defmodule Wocky.User.Notification do
         :bot_item -> %BotItem{}
         :geofence_event -> %GeofenceEvent{}
         :location_share -> %LocationShare{}
+        :location_share_end -> %LocationShareEnd{}
         :user_invitation -> %UserInvitation{}
       end
 

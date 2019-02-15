@@ -43,6 +43,9 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
           ... on LocationShareNotification {
             user { id }
           }
+          ... on LocationShareEndNotification {
+            user { id }
+          }
           ... on UserInvitationNotification {
             user { id }
           }
@@ -176,7 +179,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       })
     end
 
-    test "user shares a notificataion", %{
+    test "user shares their location", %{
       user: user,
       user2: user2,
       subscription_id: subscription_id
@@ -188,6 +191,31 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
       assert_notification_update(push, subscription_id, %{
         "__typename" => "LocationShareNotification",
+        "user" => %{"id" => user2.id}
+      })
+    end
+
+    test "user stops sharing their location", %{
+      user: user,
+      user2: user2,
+      subscription_id: subscription_id
+    } do
+      Roster.befriend(user, user2)
+      User.start_sharing_location(user2, user, Timestamp.shift(days: 1))
+
+      assert_push "subscription:data", push, 2000
+
+      assert_notification_update(push, subscription_id, %{
+        "__typename" => "LocationShareNotification",
+        "user" => %{"id" => user2.id}
+      })
+
+      User.stop_sharing_location(user2, user)
+
+      assert_push "subscription:data", push, 2000
+
+      assert_notification_update(push, subscription_id, %{
+        "__typename" => "LocationShareEndNotification",
         "user" => %{"id" => user2.id}
       })
     end
