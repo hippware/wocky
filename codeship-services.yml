@@ -65,8 +65,8 @@ eks-deploy:
     - k8s:/k8s
     - wocky-deploy:/wocky-deploy
     - DB_WATCHER_VERSION:/DB_WATCHER_VERSION
-curl-ssl-jq:
-  image: paasmule/curl-ssl-jq:latest
+curl-ssl:
+  image: governmentpaas/curl-ssl
   encrypted_env_file: codeship/circleci.env.encrypted
   volumes:
     - kick-circleci:/kick-circleci
