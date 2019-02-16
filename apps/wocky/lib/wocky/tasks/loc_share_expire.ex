@@ -6,7 +6,10 @@ defmodule Wocky.Tasks.LocShareExpire do
   alias Wocky.User.LocationShare
 
   def run do
+    {:ok, _} = Application.ensure_all_started(:wocky)
+
     expire_loc_shares()
+
     :init.stop()
   end
 
