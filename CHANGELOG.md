@@ -6,6 +6,15 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Retrieve accounts which are sharing location to the queryer (#2243)
+* Authenticate a whitelist of agent names (#2231)
+* Location share notifications (PR #2242)
+  * Sharing location should generate a new notification (#2236)
+  * When location sharing ends, generate a new notification (#2244)
+  * Rename share expiration cronjob manifests (PR #2252)
+  * Start the application when expiring location shares (PR #2253)
+* Use a new curl image in the CI process (PR #2249)
+* Add missing command definition to Distillery (PR #2251)
+* Update alpine and erlang/elixir versions (PR #2247)
 
 
 # 2019.2.13+r3f29a23
