@@ -219,11 +219,17 @@ defmodule Wocky.User do
         __MODULE__.update(user.id, %{smss_sent: u.smss_sent + 1})
         true
       else
-        false
+        allowed_unlimited_smss?(user)
       end
     else
       _ -> false
     end
+  end
+
+  defp allowed_unlimited_smss?(user) do
+    :wocky
+    |> Confex.get_env(:unlimited_sms_numbers)
+    |> Enum.member?(user.phone_number)
   end
 
   defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok
