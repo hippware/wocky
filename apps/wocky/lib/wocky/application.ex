@@ -29,18 +29,17 @@ defmodule Wocky.Application do
     sup =
       Supervisor.start_link(
         [
+          worker(Wocky.Repo, []),
+          worker(Wocky.Push.Sandbox, []),
+          worker(Wocky.Watcher.Client, []),
+          %{id: Dawdle, start: {Dawdle, :start_link, []}},
           {Redix,
            host: redis_config[:host],
            port: redis_config[:port],
            ssl: redis_config[:ssl],
            database: redis_config[:db],
            password: redis_config[:password],
-           sync_connect: true,
            name: Redix},
-          worker(Wocky.Repo, []),
-          worker(Wocky.Push.Sandbox, []),
-          worker(Wocky.Watcher.Client, []),
-          %{id: Dawdle, start: {Dawdle, :start_link, []}},
           %{
             id: LocationSupervisor,
             start: {LocationSupervisor, :start_link, []},
