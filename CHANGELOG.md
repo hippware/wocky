@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.2.16+r3e13b29
+
 * Retrieve accounts which are sharing location to the queryer (#2243)
 * Authenticate a whitelist of agent names (#2231)
 * Location share notifications (PR #2242)
