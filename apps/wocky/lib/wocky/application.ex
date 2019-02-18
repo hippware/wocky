@@ -36,9 +36,7 @@ defmodule Wocky.Application do
           {Redix,
            host: redis_config[:host],
            port: redis_config[:port],
-           ssl: redis_config[:ssl],
            database: redis_config[:db],
-           password: redis_config[:password],
            name: Redix},
           %{
             id: LocationSupervisor,
