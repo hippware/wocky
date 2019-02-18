@@ -258,9 +258,14 @@ defmodule WockyAPI.Resolvers.User do
   def notify_location(location) do
     location = Repo.preload(location, :user)
 
-    location.user
-    |> User.get_location_shares()
-    |> Enum.each(&do_notify_location(&1, location))
+    # Sometimes in the client tests a user is deleted immediately after or
+    # during a location update. Therefore, the user is not guaranteed to exist
+    # by the time the database callback fires.
+    if location.user do
+      location.user
+      |> User.get_location_shares()
+      |> Enum.each(&do_notify_location(&1, location))
+    end
   end
 
   defp do_notify_location(share, location) do
