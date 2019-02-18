@@ -34,7 +34,7 @@ defmodule WockyAPI.Application do
              ]
            ]}
       },
-      {Redlock, Confex.get_env(:wocky, :redlock)},
+      {Redlock, Confex.get_env(:wocky_api, :redlock)},
       # Start the endpoints when the application starts
       WockyAPI.Endpoint,
       {Absinthe.Subscription, WockyAPI.Endpoint},

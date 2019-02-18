@@ -37,6 +37,7 @@ defmodule Wocky.Application do
     Mailer.init()
 
     sup =
+      {:ok, _pid} =
       Supervisor.start_link(
         [
           worker(Wocky.Repo, []),
@@ -46,7 +47,10 @@ defmodule Wocky.Application do
           {Redix,
            host: redis_config[:host],
            port: redis_config[:port],
+           ssl: redis_config[:ssl],
            database: redis_config[:db],
+           password: redis_config[:password],
+           sync_connect: true,
            name: Redix},
           %{
             id: LocationSupervisor,
