@@ -4,7 +4,7 @@ metadata:
   name: wocky-deploy
   namespace: wocky-next
   labels:
-    app: wocky
+    app: wocky-cron
     mod: deploy
     env: next
 spec:
