@@ -78,8 +78,6 @@ config :wocky,
 config :wocky, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},
   port: {:system, :integer, "REDIS_PORT", 6379},
-  ssl: {:system, :boolean, "REDIS_SSL", false},
-  password: {:system, :integer, "REDIS_PASSWORD", nil},
   db: {:system, :integer, "REDIS_DB", 0}
 
 config :wocky, :redlock,
