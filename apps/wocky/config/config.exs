@@ -5,6 +5,9 @@ use Mix.Config
 config :wocky,
   ecto_repos: [Wocky.Repo],
 
+  # Deployment notifications
+  deploy_notify_channels: ["#dev-deployments"],
+
   # TROS file storage in test storage system
   tros_backend: {:system, :module, "WOCKY_TROS_STORE", Wocky.TROS.Store.Test},
   tros_s3_bucket: {:system, "WOCKY_TROS_S3_BUCKET", "wocky-tros-test"},
