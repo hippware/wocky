@@ -35,10 +35,9 @@ defmodule Wocky.Tasks.Notify do
     Application.ensure_all_started(:slack_ex)
     client = :wocky |> Confex.get_env(:slack_token) |> Slack.client()
 
-    Enum.each(
-      ["#development", "#dev-deployments"],
-      &send_notification(client, &1, message)
-    )
+    :wocky
+    |> Confex.get_env(:deploy_notify_channels)
+    |> Enum.each(&send_notification(client, &1, message))
   end
 
   defp send_notification(client, channel, message) do
