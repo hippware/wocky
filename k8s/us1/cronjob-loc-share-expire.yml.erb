@@ -4,11 +4,11 @@ metadata:
   name: wocky-loc-share-expire
   namespace: wocky-testing
   labels:
-    app: wocky
+    app: wocky-cron
     mod: loc_share_expire
     env: testing
 spec:
-  schedule: "0/1 * * * *"
+  schedule: "0/2 * * * *"
   jobTemplate:
     spec:
       template:
