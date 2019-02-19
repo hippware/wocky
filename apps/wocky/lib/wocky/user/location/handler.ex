@@ -34,7 +34,7 @@ defmodule Wocky.User.Location.Handler do
   #   - `:ignore`, to leave the process running on its current node
   #
   def handle_call({:swarm, :begin_handoff}, _from, user),
-    do: {:reply, :restart, user}
+    do: {:reply, {:resume, user}, user}
 
   def handle_call({:set_location, location}, _from, user) do
     reply =
