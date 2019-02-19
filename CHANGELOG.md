@@ -5,6 +5,17 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* The user may not exist during location callback (PR #2264)
+  * Fixes crash #2263
+* Remove deployment notifications from #development (#2266)
+
+
+# 2019.2.18+rad3b125
+
+* Add whitelist of numbers that can exceed sent SMS limit. (#2250)
+* Change cronjob app tag; space out loc share jobs a little (PR #2265)
+
+
 # 2019.2.16+r3e13b29
 
 * Retrieve accounts which are sharing location to the queryer (#2243)
