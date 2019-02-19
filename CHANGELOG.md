@@ -5,9 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.2.19+r8eb3a56
+
 * The user may not exist during location callback (PR #2264)
   * Fixes crash #2263
 * Remove deployment notifications from #development (#2266)
+* Maintain state in swarm worker handoff (PR #2273)
+  * Fixes crash #2269
 
 
 # 2019.2.18+rad3b125
