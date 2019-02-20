@@ -199,6 +199,12 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, true}
   end
 
+  def cancel_all_location_shares(_root, _args, %{context: %{current_user: user}}) do
+    :ok = User.stop_sharing_location(user)
+
+    {:ok, true}
+  end
+
   def get_location_shares(_root, args, %{context: %{current_user: user}}) do
     user
     |> User.get_location_shares_query()
