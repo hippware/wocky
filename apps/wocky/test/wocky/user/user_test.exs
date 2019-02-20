@@ -782,6 +782,22 @@ defmodule Wocky.User.UserTest do
     end
   end
 
+  describe "stop_sharing_location/1" do
+    setup :setup_location_sharing
+
+    test "should remove existing location share", ctx do
+      expiry = sharing_expiry()
+      User.start_sharing_location(ctx.user, ctx.user2, expiry)
+
+      assert :ok = User.stop_sharing_location(ctx.user)
+      assert User.get_location_shares(ctx.user) == []
+    end
+
+    test "should succeed if no location share exists", ctx do
+      assert :ok = User.stop_sharing_location(ctx.user)
+    end
+  end
+
   describe "get_location_shares/1" do
     setup :setup_location_sharing
 

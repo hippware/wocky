@@ -765,6 +765,12 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &User.cancel_location_share/3
       changeset_mutation_middleware()
     end
+
+    @desc "Cancel all live location shares"
+    field :user_location_cancel_all_shares, type: :user_location_cancel_share_payload do
+      resolve &User.cancel_all_location_shares/3
+      changeset_mutation_middleware()
+    end
   end
 
   enum :presence_status do

@@ -765,6 +765,32 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              } = result.data
     end
+
+    @query """
+    mutation {
+      userLocationCancelAllShares {
+        successful
+        result
+      }
+    }
+    """
+
+    test "stop all location sharing", %{user: user, user2: user2} do
+      expiry = sharing_expiry()
+
+      {:ok, _} = User.start_sharing_location(user, user2, expiry)
+
+      result = run_query(@query, user, %{})
+
+      refute has_errors(result)
+
+      assert %{
+               "userLocationCancelAllShares" => %{
+                 "successful" => true,
+                 "result" => true
+               }
+             } = result.data
+    end
   end
 
   describe "contacts" do

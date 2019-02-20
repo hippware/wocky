@@ -590,6 +590,15 @@ defmodule Wocky.User do
     :ok
   end
 
+  @spec stop_sharing_location(User.t()) :: :ok
+  def stop_sharing_location(%User{id: user_id}) do
+    LocationShare
+    |> where(user_id: ^user_id)
+    |> Repo.delete_all()
+
+    :ok
+  end
+
   @spec get_location_shares(User.t()) :: [LocationShare.t()]
   def get_location_shares(user) do
     user
