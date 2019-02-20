@@ -10,6 +10,7 @@ defmodule Wocky.Callbacks do
     BotItem,
     LocationShare,
     Message,
+    RosterItem,
     TROSMetadata,
     User,
     UserInvitation
@@ -22,6 +23,7 @@ defmodule Wocky.Callbacks do
     BotItem,
     LocationShare,
     Message,
+    RosterItem,
     TROSMetadata,
     User,
     UserInvitation

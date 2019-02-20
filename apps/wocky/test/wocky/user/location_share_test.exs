@@ -1,7 +1,7 @@
 defmodule Wocky.User.LocationShareTest do
   use Wocky.WatcherHelper
 
-  alias Wocky.{Repo, Roster, User}
+  alias Wocky.{Block, Repo, Roster, User}
   alias Wocky.Repo.{Factory, Timestamp}
   alias Wocky.Tasks.LocShareExpire
   alias Wocky.User.Notification
@@ -39,6 +39,35 @@ defmodule Wocky.User.LocationShareTest do
 
       assert %Notification{type: :location_share_end, other_user_id: ^other_id} =
                Repo.get_by(Notification, user_id: ctx.user.id)
+    end
+  end
+
+  defp sharing_expiry(days \\ 5) do
+    Timestamp.shift(days: days)
+    |> DateTime.truncate(:second)
+  end
+
+  describe "automatic cancellation" do
+    setup ctx do
+      Roster.befriend(ctx.user, ctx.other_user)
+
+      :ok
+    end
+
+    test "should be canceled on block", ctx do
+      expiry = sharing_expiry()
+      User.start_sharing_location(ctx.user, ctx.other_user, expiry)
+
+      assert Block.block(ctx.user, ctx.other_user)
+      assert_eventually(User.get_location_shares(ctx.user) == [])
+    end
+
+    test "should be canceled on unfriend", ctx do
+      expiry = sharing_expiry()
+      User.start_sharing_location(ctx.user, ctx.other_user, expiry)
+
+      assert Roster.unfriend(ctx.user, ctx.other_user)
+      assert_eventually(User.get_location_shares(ctx.user) == [])
     end
   end
 
