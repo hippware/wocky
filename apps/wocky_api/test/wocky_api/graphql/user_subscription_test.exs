@@ -148,8 +148,8 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
                subscriptionId: ^subscription_id
              } = push
 
-      assert Float.round(lat, 10) == Float.round(loc.lat, 10)
-      assert Float.round(lon, 10) == Float.round(loc.lon, 10)
+      assert Float.round(lat, 8) == Float.round(loc.lat, 8)
+      assert Float.round(lon, 8) == Float.round(loc.lon, 8)
     end
   end
 end
