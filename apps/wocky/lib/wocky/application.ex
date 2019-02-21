@@ -13,14 +13,24 @@ defmodule Wocky.Application do
   alias Wocky.Mailer
   alias Wocky.User.Location.Supervisor, as: LocationSupervisor
 
+  require Logger
   require Prometheus.Registry
 
-  def start(_type, _args) do
-    import Supervisor.Spec, warn: false
+  import Supervisor.Spec, warn: false
 
+  def start(_type, _args) do
     if Confex.get_env(:wocky, :start_watcher) do
       Application.ensure_all_started(:wocky_db_watcher)
     end
+
+    case Confex.get_env(:wocky, :db_only_mode) do
+      false -> start_full()
+      true -> start_db_only()
+    end
+  end
+
+  defp start_full() do
+    Logger.info("Starting wocky in full mode")
 
     redis_config = Confex.get_env(:wocky, :redis)
 
@@ -51,5 +61,15 @@ defmodule Wocky.Application do
     Callbacks.register()
 
     sup
+  end
+
+  defp start_db_only() do
+    Logger.info("Starting wocky in DB only mode")
+
+    Supervisor.start_link(
+      [worker(Wocky.Repo, [])],
+      strategy: :one_for_one,
+      name: Wocky.Supervisor
+    )
   end
 end
