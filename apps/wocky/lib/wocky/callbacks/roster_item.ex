@@ -12,8 +12,10 @@ defmodule Wocky.Callbacks.RosterItem do
     item = Repo.preload(old, [:user, :contact])
 
     # Cancel location sharing
-    User.stop_sharing_location(item.user, item.contact)
-    User.stop_sharing_location(item.contact, item.user)
+    if item.user != nil and item.contact != nil do
+      User.stop_sharing_location(item.user, item.contact)
+      User.stop_sharing_location(item.contact, item.user)
+    end
 
     :ok
   end
