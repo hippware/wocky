@@ -5,10 +5,15 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.2.21+rbe01364
+
 * Update: ex_phone_number (PR #2277)
 * Add API to cancel all active location shares (#2276)
 * Cancel location sharing on block or unfriend (#2268)
 * Install newer db watcher (PR #2281, PR #2282)
+* Make tasks only start the wocky DB subsystem (PR #2283)
+  * Fixes: Cron tasks delaying DB callbacks and notifications (#2275)
+* Fix callback crash on deleted user (PR #2284)
 
 
 # 2019.2.20+r861d0ac
