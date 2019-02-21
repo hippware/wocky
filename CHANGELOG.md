@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.2.21+r218339f
+
+* Fix more cronjob app tags (PR #2285)
+
+
 # 2019.2.21+rbe01364
 
 * Update: ex_phone_number (PR #2277)
