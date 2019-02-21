@@ -14,7 +14,7 @@ spec:
       template:
         metadata:
           labels:
-            app: wocky
+            app: wocky-deploy
             mod: deploy
             env: next
         spec:
