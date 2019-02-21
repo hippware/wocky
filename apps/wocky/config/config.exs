@@ -4,6 +4,7 @@ use Mix.Config
 
 config :wocky,
   ecto_repos: [Wocky.Repo],
+  db_only_mode: false,
 
   # Deployment notifications
   deploy_notify_channels: ["#dev-deployments"],
