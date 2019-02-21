@@ -29,7 +29,7 @@ defmodule Wocky.Application do
     end
   end
 
-  defp start_full() do
+  defp start_full do
     Logger.info("Starting wocky in full mode")
 
     redis_config = Confex.get_env(:wocky, :redis)
@@ -63,7 +63,7 @@ defmodule Wocky.Application do
     sup
   end
 
-  defp start_db_only() do
+  defp start_db_only do
     Logger.info("Starting wocky in DB only mode")
 
     Supervisor.start_link(
