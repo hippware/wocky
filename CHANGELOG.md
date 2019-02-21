@@ -5,6 +5,17 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: ex_phone_number (PR #2277)
+* Add API to cancel all active location shares (#2276)
+* Cancel location sharing on block or unfriend (#2268)
+* Install newer db watcher (PR #2281, PR #2282)
+
+
+# 2019.2.20+r861d0ac
+
+* Add rexbug (PR #2274)
+
+
 # 2019.2.19+r8eb3a56
 
 * The user may not exist during location callback (PR #2264)
