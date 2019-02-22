@@ -3,10 +3,12 @@ defmodule Wocky.User.Location.Handler do
   This is the per-user location update handler process
   """
 
+  use GenServer
+
   alias Wocky.{GeoUtils, Location, Repo, User}
   alias Wocky.User.{GeoFence, Location}
 
-  use GenServer
+  require Logger
 
   @spec start_link(User.t()) :: {:ok, pid()}
   def start_link(user), do: GenServer.start_link(__MODULE__, user)
@@ -24,25 +26,14 @@ defmodule Wocky.User.Location.Handler do
     pid
   end
 
-  def init(user), do: {:ok, user}
-
-  # called when a handoff has been initiated due to changes
-  # in cluster topology, valid response values are:
-  #
-  #   - `:restart`, to simply restart the process on the new node
-  #   - `{:resume, state}`, to hand off some state to the new process
-  #   - `:ignore`, to leave the process running on its current node
-  #
-  def handle_call({:swarm, :begin_handoff}, _from, user),
-    do: {:reply, {:resume, user}, user}
-
-  # called after the process has been restarted on its new node,
-  # and the old process' state is being handed off. This is only
-  # sent if the return to `begin_handoff` was `{:resume, state}`.
-  def handle_cast({:swarm, :end_handoff, _user}, user),
-    do: {:noreply, user}
+  def init(user) do
+    Logger.info("Swarm initializing worker for #{user.id}")
+    {:ok, user}
+  end
 
   def handle_call({:set_location, location}, _from, user) do
+    Logger.info("Swarm set location with user #{inspect(user, pretty: true)}")
+
     reply =
       with {:ok, loc} = result <- prepare_location(user, location) do
         GeoFence.check_for_bot_events(loc, user)
@@ -53,6 +44,10 @@ defmodule Wocky.User.Location.Handler do
   end
 
   def handle_call({:set_location_for_bot, location, bot}, _from, user) do
+    Logger.info(
+      "Swarm set location for bot with user #{inspect(user, pretty: true)}"
+    )
+
     reply =
       with {:ok, loc} = result <- prepare_location(user, location) do
         GeoFence.check_for_bot_event(bot, loc, user)
@@ -62,13 +57,40 @@ defmodule Wocky.User.Location.Handler do
     {:reply, reply, user}
   end
 
+  # called when a handoff has been initiated due to changes
+  # in cluster topology, valid response values are:
+  #
+  #   - `:restart`, to simply restart the process on the new node
+  #   - `{:resume, state}`, to hand off some state to the new process
+  #   - `:ignore`, to leave the process running on its current node
+  #
+  def handle_call({:swarm, :begin_handoff}, _from, user) do
+    Logger.info("Swarm handing off state for user #{user.id}")
+    {:reply, {:resume, user}, user}
+  end
+
+  # called after the process has been restarted on its new node,
+  # and the old process' state is being handed off. This is only
+  # sent if the return to `begin_handoff` was `{:resume, state}`.
+  def handle_cast({:swarm, :end_handoff, user1}, user2) do
+    Logger.info("""
+      Swarm state handoff complete.\n
+      user1: #{inspect(user1, pretty: true)}\n
+      user2: #{inspect(user2, pretty: true)}
+    """)
+
+    {:noreply, user2}
+  end
+
   # called when a network split is healed and the local process
   # should continue running, but a duplicate process on the other
   # side of the split is handing off its state to us. You can choose
   # to ignore the handoff state, or apply your own conflict resolution
   # strategy
-  def handle_cast({:swarm, :resolve_conflict, _state}, state),
-    do: {:noreply, state}
+  def handle_cast({:swarm, :resolve_conflict, _state}, state) do
+    Logger.info("Swarm conflict resolution.\n#{inspect(state, pretty: true)}")
+    {:noreply, state}
+  end
 
   # this message is sent when this process should die
   # because it is being moved, use this as an opportunity
