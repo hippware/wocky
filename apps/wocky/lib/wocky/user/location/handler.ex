@@ -36,6 +36,12 @@ defmodule Wocky.User.Location.Handler do
   def handle_call({:swarm, :begin_handoff}, _from, user),
     do: {:reply, {:resume, user}, user}
 
+  # called after the process has been restarted on its new node,
+  # and the old process' state is being handed off. This is only
+  # sent if the return to `begin_handoff` was `{:resume, state}`.
+  def handle_cast({:swarm, :end_handoff, _user}, user),
+    do: {:noreply, user}
+
   def handle_call({:set_location, location}, _from, user) do
     reply =
       with {:ok, loc} = result <- prepare_location(user, location) do
