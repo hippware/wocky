@@ -5,7 +5,8 @@ defmodule Wocky.User.Notification.LocationShare do
 
   defstruct [
     :user_id,
-    :other_user_id
+    :other_user_id,
+    :expires_at
   ]
 
   @type t :: %__MODULE__{}
@@ -13,7 +14,8 @@ defmodule Wocky.User.Notification.LocationShare do
   def notify(share) do
     Notification.notify(%__MODULE__{
       user_id: share.shared_with_id,
-      other_user_id: share.user_id
+      other_user_id: share.user_id,
+      expires_at: share.expires_at
     })
   end
 end
@@ -21,19 +23,20 @@ end
 defimpl Wocky.User.Notifier, for: Wocky.User.Notification.LocationShare do
   alias Wocky.User.Notification
 
-  def notify(invitation) do
+  def notify(share) do
     Notification.put(
-      invitation,
+      share,
       :location_share,
-      [:user_id, :other_user_id]
+      [:user_id, :other_user_id, :expires_at]
     )
   end
 
-  def decode(invitation, params) do
+  def decode(share, params) do
     %{
-      invitation
+      share
       | user_id: params.user_id,
-        other_user_id: params.other_user_id
+        other_user_id: params.other_user_id,
+        expires_at: params.expires_at
     }
   end
 end

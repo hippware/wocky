@@ -39,6 +39,7 @@ defmodule Wocky.User.Notification do
     field :type, NotificationType, null: false
     field :geofence_event, GeofenceEvent.GeofenceEventType
     field :bot_invitation_accepted, :boolean
+    field :expires_at, :utc_datetime
 
     belongs_to :user, User
     belongs_to :other_user, User
@@ -157,6 +158,7 @@ defmodule Wocky.User.Notification do
       :type,
       :user_id,
       :other_user_id,
+      :expires_at,
       :bot_id,
       :bot_item_id,
       :bot_invitation_id,

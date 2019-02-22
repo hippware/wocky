@@ -85,7 +85,8 @@ defmodule Wocky.User.NotificationTest do
       assert {:ok, %Notification{} = notification} =
                Notification.notify(%LocationShare{
                  user_id: ctx.user.id,
-                 other_user_id: ctx.user2.id
+                 other_user_id: ctx.user2.id,
+                 expires_at: DateTime.utc_now()
                })
 
       assert %Notification{type: :location_share} =
@@ -168,7 +169,8 @@ defmodule Wocky.User.NotificationTest do
       assert {:error, :invalid_user} ==
                Notification.notify(%LocationShare{
                  user_id: ctx.user.id,
-                 other_user_id: ctx.user2.id
+                 other_user_id: ctx.user2.id,
+                 expires_at: DateTime.utc_now()
                })
     end
 

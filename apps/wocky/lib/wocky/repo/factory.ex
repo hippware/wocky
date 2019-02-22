@@ -232,7 +232,8 @@ defmodule Wocky.Repo.Factory do
     %Notification{
       type: :location_share,
       user: build(:user),
-      other_user: build(:user)
+      other_user: build(:user),
+      expires_at: Timestamp.shift(days: 1)
     }
   end
 
