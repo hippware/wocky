@@ -186,6 +186,60 @@ defmodule WockyAPI.GraphQL.NotificationTest do
     end
   end
 
+  describe "all fields" do
+    setup ctx do
+      n = Factory.insert(:location_share_notification, user: ctx.user)
+      {:ok, notification: n}
+    end
+
+    @query """
+    query {
+      notifications (first: 1) {
+        edges {
+          node {
+            id
+            data {
+              ... on LocationShareNotification {
+                user { id }
+                expires_at
+              }
+            }
+            created_at
+          }
+        }
+      }
+    }
+    """
+
+    test "should get notification-specific fields", ctx do
+      result = run_query(@query, ctx.user)
+
+      refute has_errors(result)
+
+      id = to_string(ctx.notification.id)
+      created_at = DateTime.to_iso8601(ctx.notification.created_at)
+      expires_at = DateTime.to_iso8601(ctx.notification.expires_at)
+      user_id = ctx.notification.other_user.id
+
+      assert %{
+               "notifications" => %{
+                 "edges" => [
+                   %{
+                     "node" => %{
+                       "created_at" => ^created_at,
+                       "data" => %{
+                         "expires_at" => ^expires_at,
+                         "user" => %{"id" => ^user_id}
+                       },
+                       "id" => ^id
+                     }
+                   }
+                 ]
+               }
+             } = result.data
+    end
+  end
+
   describe "delete" do
     setup ctx do
       n = Factory.insert(:geofence_event_notification, user: ctx.user)

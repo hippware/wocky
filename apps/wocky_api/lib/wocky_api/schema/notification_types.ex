@@ -145,6 +145,9 @@ defmodule WockyAPI.Schema.NotificationTypes do
   object :location_share_notification do
     @desc "The user sharing their location"
     field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+
+    @desc "When the share is scheduled to automatically expire"
+    field :expires_at, :datetime
   end
 
   @desc """
