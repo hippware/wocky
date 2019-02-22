@@ -712,7 +712,10 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "ID for this sharing session"
     field :id, non_null(:integer)
 
-    @desc "The user with whom to share location"
+    @desc "The user sharing their location"
+    field :user, non_null(:other_user)
+
+    @desc "The user with whom the location is being shared"
     field :shared_with, non_null(:other_user)
 
     @desc "When the share was created"
@@ -767,7 +770,8 @@ defmodule WockyAPI.Schema.UserTypes do
     end
 
     @desc "Cancel all live location shares"
-    field :user_location_cancel_all_shares, type: :user_location_cancel_share_payload do
+    field :user_location_cancel_all_shares,
+      type: :user_location_cancel_share_payload do
       resolve &User.cancel_all_location_shares/3
       changeset_mutation_middleware()
     end
