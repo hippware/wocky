@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.2.22+rf3e6e9e
+
+* Fix post-handoff crash (PR #2293). Fixes crash #2287.
+
+
 # 2019.2.22+r7377a3b
 
 * Update: wocky_db_watcher (PR #2286)
