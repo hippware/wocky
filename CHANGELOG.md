@@ -5,8 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.2.22+r7377a3b
+
 * Update: wocky_db_watcher (PR #2286)
 * Add sharer field to location share object (#2290, PR #2291)
+* Add `createdAt` and `expiresAt` to LocationShareNotification (#2289)
 
 
 # 2019.2.21+r218339f
