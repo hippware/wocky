@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: wocky_db_watcher (PR #2286)
+* Add sharer field to location share object (#2290, PR #2291)
+
+
 # 2019.2.21+r218339f
 
 * Fix more cronjob app tags (PR #2285)
