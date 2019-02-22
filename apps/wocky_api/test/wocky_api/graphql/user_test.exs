@@ -582,6 +582,7 @@ defmodule WockyAPI.GraphQL.UserTest do
           edges {
             node {
               id
+              user { id }
               sharedWith { id }
               expiresAt
             }
@@ -592,6 +593,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get user's sharing sessions", %{user: user, user2: user2} do
+      sharer = user.id
       shared_with = user2.id
       expiry = sharing_expiry()
 
@@ -609,6 +611,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                      %{
                        "node" => %{
                          "id" => ^id,
+                         "user" => %{"id" => ^sharer},
                          "sharedWith" => %{"id" => ^shared_with},
                          "expiresAt" => ^expiry
                        }
@@ -628,6 +631,7 @@ defmodule WockyAPI.GraphQL.UserTest do
           edges {
             node {
               id
+              user { id }
               sharedWith { id }
               expiresAt
             }
@@ -638,6 +642,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get sharing sessions with user", %{user: user, user2: user2} do
+      sharer = user.id
       shared_with = user2.id
       expiry = sharing_expiry()
 
@@ -655,6 +660,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                      %{
                        "node" => %{
                          "id" => ^id,
+                         "user" => %{"id" => ^sharer},
                          "sharedWith" => %{"id" => ^shared_with},
                          "expiresAt" => ^expiry
                        }
@@ -675,6 +681,7 @@ defmodule WockyAPI.GraphQL.UserTest do
           message
         }
         result {
+          user { id }
           sharedWith { id }
           expiresAt
         }
@@ -683,6 +690,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "start sharing location", %{user: user, user2: user2} do
+      sharer = user.id
       shared_with = user2.id
       expiry = sharing_expiry()
 
@@ -700,6 +708,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                "userLocationLiveShare" => %{
                  "successful" => true,
                  "result" => %{
+                   "user" => %{"id" => ^sharer},
                    "sharedWith" => %{"id" => ^shared_with},
                    "expiresAt" => ^expiry
                  }

@@ -182,7 +182,7 @@ defmodule WockyAPI.Resolvers.User do
     with %User{} = shared_with <- User.get_user(input.shared_with_id, user),
          {:ok, share} <-
            User.start_sharing_location(user, shared_with, input.expires_at) do
-      {:ok, Repo.preload(share, :shared_with)}
+      {:ok, Repo.preload(share, [:shared_with, :user])}
     else
       nil -> user_not_found(input.shared_with_id)
       error -> error
