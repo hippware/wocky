@@ -42,6 +42,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
           }
           ... on LocationShareNotification {
             user { id }
+            expiresAt
           }
           ... on LocationShareEndNotification {
             user { id }
@@ -50,7 +51,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
             user { id }
           }
         }
-        created_at
+        createdAt
       }
       ... on NotificationDeleted {
         id
@@ -184,14 +185,16 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
+      expires_at = Timestamp.shift(days: 1) |> DateTime.truncate(:second)
       Roster.befriend(user, user2)
-      User.start_sharing_location(user2, user, Timestamp.shift(days: 1))
+      User.start_sharing_location(user2, user, expires_at)
 
       assert_push "subscription:data", push, 2000
 
       assert_notification_update(push, subscription_id, %{
         "__typename" => "LocationShareNotification",
-        "user" => %{"id" => user2.id}
+        "user" => %{"id" => user2.id},
+        "expiresAt" => Timestamp.to_string!(expires_at)
       })
     end
 
@@ -200,14 +203,16 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
+      expires_at = Timestamp.shift(days: 1) |> DateTime.truncate(:second)
       Roster.befriend(user, user2)
-      User.start_sharing_location(user2, user, Timestamp.shift(days: 1))
+      User.start_sharing_location(user2, user, expires_at)
 
       assert_push "subscription:data", push, 2000
 
       assert_notification_update(push, subscription_id, %{
         "__typename" => "LocationShareNotification",
-        "user" => %{"id" => user2.id}
+        "user" => %{"id" => user2.id},
+        "expiresAt" => Timestamp.to_string!(expires_at)
       })
 
       User.stop_sharing_location(user2, user)
@@ -256,7 +261,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
                data: %{
                  "notifications" => %{
                    "__typename" => "Notification",
-                   "created_at" => _,
+                   "createdAt" => _,
                    "data" => ^data
                  }
                }
