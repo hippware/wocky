@@ -67,13 +67,6 @@ defmodule Wocky.User.Location.Handler do
     {:reply, :restart, user}
   end
 
-  # called after the process has been restarted on its new node,
-  # and the old process' state is being handed off. This is only
-  # sent if the return to `begin_handoff` was `{:resume, state}`.
-  def handle_cast({:swarm, :end_handoff, _state}, user) do
-    {:noreply, user}
-  end
-
   # called when a network split is healed and the local process
   # should continue running, but a duplicate process on the other
   # side of the split is handing off its state to us. You can choose
