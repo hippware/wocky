@@ -74,9 +74,7 @@ defmodule WockyAPI.Mixfile do
       {:prometheus_plugs, "~> 1.1"},
       {:redix, "~> 0.9", override: true},
       # TODO: Move back to official repo when SSL changes are merged
-      {:redlock,
-        github: "hippware/redlock",
-        branch: "add-ssl-config"},
+      {:redlock, "~> 1.0.8"},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.6", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
