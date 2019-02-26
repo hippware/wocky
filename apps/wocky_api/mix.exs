@@ -72,9 +72,7 @@ defmodule WockyAPI.Mixfile do
       {:prometheus_ex, "~> 3.0", override: true},
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
-      {:redix, "~> 0.9", override: true},
-      # TODO: Move back to official repo when auth changes are merged
-      {:redlock, github: "hippware/redlock", branch: "fix-auth"},
+      {:redlock, "~> 1.0.9"},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.6", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
