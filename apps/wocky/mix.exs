@@ -118,7 +118,7 @@ defmodule Wocky.Mixfile do
       # {:prometheus_ecto, "~> 1.0"},
       {:prometheus_ex, "~> 3.0"},
       {:recon, "~> 2.3"},
-      {:redix, "~> 0.9", override: true},
+      {:redix, "~> 0.9.2"},
       {:rexbug, ">= 1.0.0"},
       # TODO: go back to hex version once changes are merged
       {:slack_ex, github: "hippware/slack_ex", branch: "master"},
