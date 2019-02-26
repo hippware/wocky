@@ -7,6 +7,10 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Added logging for Swarm operations (PR #2294)
 * Cleanup location handler (PR #2295)
+* Update: sweet_xml (PR #2298), phoenix_pubsub (PR #2300)
+  * redlock (PR #2299)
+* Add password to Elasticache/Redis server (#2165)
+  * Use secure redis cluster (PR #2297) / Fix redlock auth (PR #2302)
 
 
 # 2019.2.22+rf3e6e9e
