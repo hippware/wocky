@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: wocky_db_watcher (PR #2309), bcrypt_elixir (PR #2310)
+
+
+# 2019.2.26+r288db8d
+
 * Added logging for Swarm operations (PR #2294)
 * Cleanup location handler (PR #2295)
 * Update: sweet_xml (PR #2298), phoenix_pubsub (PR #2300)
