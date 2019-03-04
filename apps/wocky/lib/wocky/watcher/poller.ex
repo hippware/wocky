@@ -18,7 +18,7 @@ defmodule Wocky.Watcher.Poller do
     source.delete(messages)
   rescue
     exception ->
-      Honeybadger.notify(exception)
+      Honeybadger.notify(exception, %{}, __STACKTRACE__)
   after
     poll(source, send_to)
   end
