@@ -705,6 +705,9 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The expiry for the share"
     field :expires_at, non_null(:datetime)
+
+    @desc "The user's current location"
+    field :location, :user_location_update_input
   end
 
   @desc "Attributes of a user location live sharing session"
