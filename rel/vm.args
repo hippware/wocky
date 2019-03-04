@@ -5,7 +5,7 @@
 -name wocky@${KUBE_POD_IP}
 
 ## Cookie for distributed erlang
--setcookie ejabberd
+-setcookie ${KUBE_POD_NS}
 
 ## Heartbeat management; auto-restarts VM if it dies or becomes unresponsive
 ## (Disabled by default..use with caution!)
