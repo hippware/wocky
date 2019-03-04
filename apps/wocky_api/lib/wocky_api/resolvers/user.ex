@@ -267,6 +267,23 @@ defmodule WockyAPI.Resolvers.User do
     Subscription.publish(Endpoint, user, [{:friends, topic}])
   end
 
+  def location_catchup(user) do
+    user
+    |> User.get_location_sharers()
+    |> Enum.each(&do_location_catchup/1)
+  end
+
+  defp do_location_catchup(share) do
+    location =
+      share.user
+      |> User.get_current_location()
+      |> Repo.preload(:user)
+
+    if location do
+      do_notify_location(share, location)
+    end
+  end
+
   def notify_location(location) do
     location = Repo.preload(location, :user)
 

@@ -833,7 +833,15 @@ defmodule WockyAPI.Schema.UserTypes do
     Receive an update when a friend's shared location changes
     """
     field :shared_locations, non_null(:user_location_update) do
-      user_subscription_config(&User.location_subscription_topic/1)
+      config fn
+        _, %{context: %{current_user: user}} ->
+          {:ok,
+           topic: User.location_subscription_topic(user.id),
+           catchup: fn -> User.location_catchup(user) end}
+
+        _, _ ->
+          {:error, "This operation requires an authenticated user"}
+      end
     end
   end
 end
