@@ -104,7 +104,7 @@ defmodule Wocky.RosterTest do
 
   describe "friends_query/2" do
     setup ctx do
-      blocked_user = Factory.insert(:user, %{first_name: "BLOCKYMCBLOCK"})
+      blocked_user = Factory.insert(:user, %{name: "BLOCKYMCBLOCK"})
       Block.block(blocked_user, ctx.blocked_viewer)
       {:ok, blocked_user: blocked_user}
     end

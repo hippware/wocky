@@ -12,7 +12,7 @@ defmodule Wocky.User.WelcomeEmail do
   @spec send(User.t()) :: :ok
   def send(user) do
     new_email()
-    |> to({User.full_name(user), user.email})
+    |> to({user.name, user.email})
     |> from(Confex.get_env(:wocky, :welcome_email_from))
     |> subject(Confex.get_env(:wocky, :welcome_email_subject))
     |> MandrillHelper.put_param("global_merge_vars", make_merge_vars(user))

@@ -26,10 +26,6 @@ defmodule Wocky.User.UserTest do
      phone_number: user.phone_number}
   end
 
-  test "full_name/1", ctx do
-    assert ctx.user |> User.full_name() |> is_binary()
-  end
-
   describe "get_user/2" do
     test "should return the requested user", ctx do
       assert %User{} = User.get_user(ctx.id)
@@ -160,7 +156,10 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should fail a name with more than the limit", ctx do
-      refute set_name(ctx, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").valid?
+      refute set_name(
+               ctx,
+               "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+             ).valid?
     end
 
     test "should accept an empty name", ctx do
@@ -230,8 +229,7 @@ defmodule Wocky.User.UserTest do
       fields = %{
         device: ID.new(),
         handle: Factory.handle(),
-        first_name: Name.first_name(),
-        last_name: Name.last_name(),
+        name: Name.name(),
         email: Internet.email(),
         tagline: Lorem.sentence()
       }
@@ -243,8 +241,7 @@ defmodule Wocky.User.UserTest do
       fields = %{
         device: ID.new(),
         handle: Factory.handle(),
-        first_name: Name.first_name(),
-        last_name: Name.last_name(),
+        name: Name.name(),
         email: Internet.email(),
         tagline: Lorem.sentence()
       }
@@ -253,8 +250,7 @@ defmodule Wocky.User.UserTest do
 
       new_user = Repo.get(User, ctx.id)
       assert new_user.handle == fields.handle
-      assert new_user.first_name == fields.first_name
-      assert new_user.last_name == fields.last_name
+      assert new_user.name == fields.name
       assert new_user.email == fields.email
       assert new_user.tagline == fields.tagline
       refute new_user.device
@@ -334,8 +330,7 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should not delete the avatar when a new one is not set", ctx do
-      assert {:ok, _} =
-               User.update(ctx.user.id, %{first_name: Name.first_name()})
+      assert {:ok, _} = User.update(ctx.user.id, %{name: Name.name()})
 
       assert Repo.get(Metadata, ctx.avatar.id)
     end
@@ -374,8 +369,7 @@ defmodule Wocky.User.UserTest do
     end
 
     test "should not delete the avatar when one is not set", ctx do
-      assert {:ok, _} =
-               User.update(ctx.user.id, %{first_name: Name.first_name()})
+      assert {:ok, _} = User.update(ctx.user.id, %{name: Name.name()})
 
       assert Repo.get(Metadata, ctx.avatar.id)
     end
@@ -907,8 +901,6 @@ defmodule Wocky.User.UserTest do
   defp set_handle(ctx, handle),
     do: User.changeset(ctx.user, %{handle: handle})
 
-  defp set_name(ctx, name) do
-    field = Enum.random([:first_name, :last_name])
-    User.changeset(ctx.user, %{field => name})
-  end
+  defp set_name(ctx, name),
+    do: User.changeset(ctx.user, %{name: name})
 end

@@ -12,7 +12,7 @@ defmodule Wocky.User.WelcomeEmailTest do
 
     assert WelcomeEmail.send(user) == :ok
 
-    assert_email_delivered_with(to: [{User.full_name(user), user.email}])
+    assert_email_delivered_with(to: [{user.name, user.email}])
   end
 
   describe "Email sending on user update" do
@@ -34,7 +34,7 @@ defmodule Wocky.User.WelcomeEmailTest do
       user = Factory.insert(:user)
 
       fields = %{
-        first_name: Name.first_name()
+        name: Name.name()
       }
 
       User.update(user.id, fields)
@@ -62,7 +62,7 @@ defmodule Wocky.User.WelcomeEmailTest do
       user = Factory.insert(:user, %{email: nil})
 
       fields = %{
-        first_name: Name.first_name()
+        name: Name.name()
       }
 
       User.update(user.id, fields)
