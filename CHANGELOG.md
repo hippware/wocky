@@ -6,6 +6,12 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: wocky_db_watcher (PR #2309), bcrypt_elixir (PR #2310)
+  * excoveralls (PR #2318), ex_machina (PR #2314), redlock (PR #2313)
+  * csv (PR #2317), honeybadger (PR #2315)
+* Set the distribution cookie to K8s namespace name (#2312, PR #2319)
+* Live location sharing improvements (#2304, PR #2320)
+  * Allow user's current location when starting a live location share.
+  * Add catchup to the user location subscription.
 
 
 # 2019.2.26+r288db8d
