@@ -30,10 +30,21 @@ defmodule WockyAPI.Schema.UserTypes do
     end
 
     @desc "The user's first name"
-    field :first_name, :string
+    field :first_name,
+          :string,
+          deprecate: "Please use the single 'name' field" do
+      resolve &User.get_first_name/3
+    end
 
     @desc "The user's last name"
-    field :last_name, :string
+    field :last_name,
+          :string,
+          deprecate: "Please use the single 'name' field" do
+      resolve &User.get_last_name/3
+    end
+
+    @desc "The user's name"
+    field :name, :string
 
     @desc "A freeform tagline for the user"
     field :tagline, :string, do: scope(:public)
@@ -419,8 +430,11 @@ defmodule WockyAPI.Schema.UserTypes do
   input_object :user_params do
     field :handle, :string
     field :image_url, :string
+    # Deprecated in favour of `name`:
     field :first_name, :string
+    # Deprecated in favour of `name`:
     field :last_name, :string
+    field :name, :string
     field :email, :string
     field :tagline, :string
     field :client_data, :string

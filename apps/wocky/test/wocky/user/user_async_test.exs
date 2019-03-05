@@ -10,8 +10,7 @@ defmodule Wocky.User.UserAsyncTest do
     user =
       Factory.insert(:user,
         device: "testing",
-        first_name: "first",
-        last_name: "last",
+        name: "name",
         handle: "handle"
       )
 
@@ -48,13 +47,13 @@ defmodule Wocky.User.UserAsyncTest do
     setup do
       users =
         [
-          {"Alice", "Sanders", "Xena"},
-          {"Alison", "Smith", "Yaniv"},
-          {"Bob", "Jones", "Zena"},
-          {"acéñtîâ", "CAPITAL", "1345"}
+          {"Alice Sanders", "Xena"},
+          {"Alison Smith", "Yaniv"},
+          {"Bob Jones", "Zena"},
+          {"acéñtîâ CAPITAL", "1345"}
         ]
-        |> Enum.map(fn {f, l, h} ->
-          Factory.insert(:user, first_name: f, last_name: l, handle: h)
+        |> Enum.map(fn {n, h} ->
+          Factory.insert(:user, name: n, handle: h)
         end)
 
       {:ok, users: users}

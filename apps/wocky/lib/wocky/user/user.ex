@@ -52,10 +52,8 @@ defmodule Wocky.User do
     field :handle, :string
     # TROS URL of file containing user's avatar
     field :image_url, :string
-    # User's first name
-    field :first_name, :string
-    # User's last name
-    field :last_name, :string
+    # User's name
+    field :name, :string
     # The user's phone number
     field :phone_number, :string
     # (also from auth provider)
@@ -112,8 +110,7 @@ defmodule Wocky.User do
           id: id,
           handle: nil | handle,
           image_url: nil | binary,
-          first_name: nil | binary,
-          last_name: nil | binary,
+          name: nil | binary,
           email: nil | binary,
           tagline: nil | binary,
           provider: nil | provider,
@@ -129,8 +126,7 @@ defmodule Wocky.User do
   @update_fields [
     :handle,
     :image_url,
-    :first_name,
-    :last_name,
+    :name,
     :email,
     :tagline,
     :roles,
@@ -144,7 +140,7 @@ defmodule Wocky.User do
 
   @min_handle_len 3
   @max_handle_len 16
-  @max_name_len 32
+  @max_name_len 65
 
   @no_index_role "__no_index__"
   @system_role "__system__"
@@ -161,13 +157,33 @@ defmodule Wocky.User do
 
   def hippware?(_), do: false
 
-  @doc "Generate a full name for anywhere it needs pretty-printing"
-  @spec full_name(t) :: String.t()
-  def full_name(user), do: String.trim("#{user.first_name} #{user.last_name}")
+  def first_name(%User{name: name}),
+    do: name |> split_name() |> elem(0)
+
+  def last_name(%User{name: name}),
+    do: name |> split_name() |> elem(1)
 
   def no_index_role, do: @no_index_role
   def system_role, do: @system_role
   def forever_ts, do: @forever
+
+  defp split_name(nil), do: {"", ""}
+  defp split_name(""), do: {"", ""}
+
+  defp split_name(name) do
+    last =
+      name
+      |> String.split(" ", trim: true)
+      |> List.last()
+
+    first =
+      name
+      |> String.trim()
+      |> String.replace_suffix(last, "")
+      |> String.trim()
+
+    {first, last}
+  end
 
   # ----------------------------------------------------------------------
   # Database interaction
@@ -298,10 +314,8 @@ defmodule Wocky.User do
     |> validate_change(:email, &validate_email/2)
     |> validate_length(:handle, min: @min_handle_len, max: @max_handle_len)
     |> validate_change(:handle, &validate_handle/2)
-    |> validate_length(:first_name, max: @max_name_len)
-    |> validate_length(:last_name, max: @max_name_len)
-    |> validate_change(:first_name, &validate_name/2)
-    |> validate_change(:last_name, &validate_name/2)
+    |> validate_length(:name, max: @max_name_len)
+    |> validate_change(:name, &validate_name/2)
     |> validate_change(:image_url, &validate_avatar(&1, user, &2))
     |> unique_constraint(:handle, name: :users_lower_handle_index)
     |> prepare_changes(fn changeset ->
@@ -357,7 +371,7 @@ defmodule Wocky.User do
   # and other characters). \p{Z} maintains any whitespace in our search term
   # (which is removed later when we split the tokens).
   defp validation_regex do
-    ~r|(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-'0-9]*(?<![ \-])|u
+    ~r|(?![ \-0-9])[\p{Ll}\p{Lu}\p{Lo} \-\.'0-9]*(?<![ \-])|u
   end
 
   defp search_cleanup_regex do
@@ -661,7 +675,7 @@ defmodule Wocky.User do
     |> where(
       fragment(
         """
-        users_name_fts(first_name, last_name, handle)
+        users_name_fts(name, handle)
         @@ to_tsquery('simple', unaccent(?))
         """,
         ^search_term

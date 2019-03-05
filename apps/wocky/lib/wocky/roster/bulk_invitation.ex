@@ -128,7 +128,7 @@ defmodule Wocky.Roster.BulkInvitation do
   end
 
   defp maybe_name(user) do
-    case String.trim("#{user.first_name} #{user.last_name}") do
+    case String.trim("#{user.name}") do
       "" -> ""
       name -> "(#{name}) "
     end

@@ -20,10 +20,14 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def update_user(_root, args, %{context: %{current_user: user}}) do
-    input = args[:input][:values]
+    input = args[:input][:values] |> fix_name(user)
 
     User.update(user, input)
   end
+
+  def get_first_name(user, _, _), do: {:ok, User.first_name(user)}
+
+  def get_last_name(user, _, _), do: {:ok, User.last_name(user)}
 
   def get_contacts(_, %{relationship: :none}, _) do
     {:error, :unsupported}
@@ -393,4 +397,13 @@ defmodule WockyAPI.Resolvers.User do
 
   # Explicitly built map - user should already be in place
   def get_contact_user(x, _args, _context), do: {:ok, x.user}
+
+  defp fix_name(%{first_name: f, last_name: l} = m, _user),
+    do: Map.put_new(m, :name, f <> " " <> l)
+
+  defp fix_name(%{first_name: f} = m, user),
+    do: Map.put_new(m, :name, f <> " " <> User.last_name(user))
+
+  defp fix_name(%{last_name: l} = m, user),
+    do: Map.put_new(m, :name, User.first_name(user) <> " " <> l)
 end
