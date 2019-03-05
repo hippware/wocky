@@ -161,6 +161,64 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert User.hidden_state(Repo.get(User, user.id)) ==
                {true, Timestamp.from_string!(ts)}
     end
+
+    @query """
+    mutation ($first_name: String, $last_name: String, $name: String) {
+      userUpdate (input: {values:
+          {firstName: $first_name, lastName: $last_name, name: $name}}) {
+        successful
+      }
+    }
+    """
+    test "set a user's first name", %{user: user} do
+      first_name = Name.first_name()
+      result = run_query(@query, user, %{"first_name" => first_name})
+
+      refute has_errors(result)
+
+      assert User
+      |> Repo.get(user.id)
+      |> User.first_name() == first_name
+    end
+
+    test "set a user's last name", %{user: user} do
+      last_name = Name.last_name()
+      result = run_query(@query, user, %{"last_name" => last_name})
+
+      refute has_errors(result)
+
+      assert User
+      |> Repo.get(user.id)
+      |> User.last_name() == last_name
+    end
+
+    test "set a user's first and last names", %{user: user} do
+      first_name = Name.first_name()
+      last_name = Name.last_name()
+      result = run_query(@query, user, %{"first_name" => first_name,
+        "last_name" => last_name})
+
+      refute has_errors(result)
+
+      user = Repo.get(User, user.id)
+      assert User.first_name(user) == first_name
+      assert User.last_name(user) == last_name
+      assert user.name == first_name <> " " <> last_name
+    end
+
+    test "set a user's full name", %{user: user} do
+      # The first and last names should be ignored and
+      # overridden by the full name
+      first_name = Name.first_name()
+      last_name = Name.last_name()
+      full_name = Name.name()
+      result = run_query(@query, user, %{"first_name" => first_name,
+        "last_name" => last_name, "name" => full_name})
+
+      refute has_errors(result)
+
+      assert Repo.get(User, user.id).name == full_name
+    end
   end
 
   describe "other user" do
