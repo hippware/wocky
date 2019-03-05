@@ -177,8 +177,8 @@ defmodule WockyAPI.GraphQL.UserTest do
       refute has_errors(result)
 
       assert User
-      |> Repo.get(user.id)
-      |> User.first_name() == first_name
+             |> Repo.get(user.id)
+             |> User.first_name() == first_name
     end
 
     test "set a user's last name", %{user: user} do
@@ -188,15 +188,19 @@ defmodule WockyAPI.GraphQL.UserTest do
       refute has_errors(result)
 
       assert User
-      |> Repo.get(user.id)
-      |> User.last_name() == last_name
+             |> Repo.get(user.id)
+             |> User.last_name() == last_name
     end
 
     test "set a user's first and last names", %{user: user} do
       first_name = Name.first_name()
       last_name = Name.last_name()
-      result = run_query(@query, user, %{"first_name" => first_name,
-        "last_name" => last_name})
+
+      result =
+        run_query(@query, user, %{
+          "first_name" => first_name,
+          "last_name" => last_name
+        })
 
       refute has_errors(result)
 
@@ -212,8 +216,13 @@ defmodule WockyAPI.GraphQL.UserTest do
       first_name = Name.first_name()
       last_name = Name.last_name()
       full_name = Name.name()
-      result = run_query(@query, user, %{"first_name" => first_name,
-        "last_name" => last_name, "name" => full_name})
+
+      result =
+        run_query(@query, user, %{
+          "first_name" => first_name,
+          "last_name" => last_name,
+          "name" => full_name
+        })
 
       refute has_errors(result)
 
