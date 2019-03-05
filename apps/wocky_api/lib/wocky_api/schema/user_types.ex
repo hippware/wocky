@@ -88,7 +88,7 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "The user's ID for the external auth system (eg Firebase or Digits)"
     field :external_id, :string
 
-    @desc "The user's phone number in E.123 international notation"
+    @desc "The user's phone number in E.164 international notation"
     field :phone_number, :string
 
     @desc "The user's email address"
@@ -96,6 +96,12 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Whether the user has ever created a bot"
     field :bot_created, :boolean
+
+    @desc """
+    Blob for storage of arbitrary client-defined data. Used on the client-side
+    only
+    """
+    field :client_data, :string
 
     @desc "The active bots to which a user is subscribed, in last visited order"
     connection field :active_bots, node_type: :bots do
@@ -417,6 +423,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :last_name, :string
     field :email, :string
     field :tagline, :string
+    field :client_data, :string
   end
 
   input_object :user_update_input do
