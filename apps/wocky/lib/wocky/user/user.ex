@@ -63,6 +63,8 @@ defmodule Wocky.User do
     field :tagline, :string
     # Password hash
     field :password, :string
+    # Client data blob (opaque to server)
+    field :client_data, :string
     field :pass_details, :string
     field :roles, {:array, :string}, default: []
     field :welcome_sent, :boolean
@@ -132,7 +134,8 @@ defmodule Wocky.User do
     :provider,
     :hidden_until,
     :smss_sent,
-    :bot_created
+    :bot_created,
+    :client_data
   ]
 
   @min_handle_len 3

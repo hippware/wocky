@@ -1,7 +1,7 @@
 defmodule WockyAPI.GraphQL.UserTest do
   use WockyAPI.GraphQLCase, async: false
 
-  alias Faker.Name
+  alias Faker.{Lorem, Name}
   alias Wocky.Block
   alias Wocky.Push
   alias Wocky.Push.Token
@@ -102,9 +102,12 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "update user info", %{user: user} do
       new_name = Name.first_name()
+      client_data = Lorem.paragraph()
 
       result =
-        run_query(@query, user, %{"values" => %{"first_name" => new_name}})
+        run_query(@query, user, %{
+          "values" => %{"first_name" => new_name, "client_data" => client_data}
+        })
 
       refute has_errors(result)
 
@@ -120,6 +123,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert User
              |> Repo.get(user.id)
              |> User.first_name() == new_name
+      assert Repo.get(User, user.id).client_data == client_data
     end
 
     @query """
