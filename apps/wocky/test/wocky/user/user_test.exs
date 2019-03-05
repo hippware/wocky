@@ -683,6 +683,23 @@ defmodule Wocky.User.UserTest do
     end
   end
 
+  describe "get_current_location/1" do
+    test "should return the user's current location if known", ctx do
+      location = Factory.build(:location)
+      {:ok, _} = User.set_location(ctx.user, location)
+
+      loc2 = User.get_current_location(ctx.user)
+      assert loc2
+      assert loc2.lat == location.lat
+      assert loc2.lon == location.lon
+      assert loc2.accuracy == location.accuracy
+    end
+
+    test "should return nil if the user's location is unknown", ctx do
+      refute User.get_current_location(ctx.user)
+    end
+  end
+
   describe "get_locations_query/2" do
     setup ctx do
       Factory.insert_list(5, :location, user_id: ctx.id, device: "test")

@@ -716,6 +716,43 @@ defmodule WockyAPI.GraphQL.UserTest do
              } = result.data
     end
 
+    test "start sharing location with current location", %{
+      user: user,
+      user2: user2
+    } do
+      sharer = user.id
+      shared_with = user2.id
+      expiry = sharing_expiry()
+      loc = Factory.build(:location)
+
+      result =
+        run_query(@query, user, %{
+          "input" => %{
+            "sharedWithId" => shared_with,
+            "expiresAt" => expiry,
+            "location" => %{
+              "lat" => loc.lat,
+              "lon" => loc.lon,
+              "accuracy" => loc.accuracy,
+              "device" => loc.device
+            }
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userLocationLiveShare" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "user" => %{"id" => ^sharer},
+                   "sharedWith" => %{"id" => ^shared_with},
+                   "expiresAt" => ^expiry
+                 }
+               }
+             } = result.data
+    end
+
     test "start sharing location with a stranger", %{user: user} do
       shared_with = Factory.insert(:user).id
       expiry = sharing_expiry()

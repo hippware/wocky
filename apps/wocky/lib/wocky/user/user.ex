@@ -566,6 +566,12 @@ defmodule Wocky.User do
   def set_location_for_bot(user, location, bot),
     do: Location.set_location_for_bot(user, location, bot)
 
+  @doc "Gets the current location for the user."
+  @spec get_current_location(User.t()) :: Location.t() | nil
+  def get_current_location(user) do
+    Repo.get(CurrentLocation, user.id)
+  end
+
   @spec start_sharing_location(User.t(), User.t(), DateTime.t()) ::
           {:ok, LocationShare.t()} | {:error, Changeset.t() | atom}
   def start_sharing_location(user, shared_with, expiry) do

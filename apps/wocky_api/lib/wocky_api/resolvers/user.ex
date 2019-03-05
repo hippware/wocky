@@ -181,13 +181,19 @@ defmodule WockyAPI.Resolvers.User do
 
     with %User{} = shared_with <- User.get_user(input.shared_with_id, user),
          {:ok, share} <-
-           User.start_sharing_location(user, shared_with, input.expires_at) do
+           User.start_sharing_location(user, shared_with, input.expires_at),
+         {:ok, _} <- maybe_update_location(input, user) do
       {:ok, Repo.preload(share, [:shared_with, :user])}
     else
       nil -> user_not_found(input.shared_with_id)
       error -> error
     end
   end
+
+  defp maybe_update_location(%{location: l}, user) when not is_nil(l),
+    do: User.set_location(user, struct(Location, l))
+
+  defp maybe_update_location(_args, _user), do: {:ok, :skip}
 
   def cancel_location_share(_root, args, %{context: %{current_user: user}}) do
     input = args[:input]
@@ -259,6 +265,23 @@ defmodule WockyAPI.Resolvers.User do
     topic = friends_subscription_topic(friend_item.contact_id)
 
     Subscription.publish(Endpoint, user, [{:friends, topic}])
+  end
+
+  def location_catchup(user) do
+    user
+    |> User.get_location_sharers()
+    |> Enum.each(&do_location_catchup/1)
+  end
+
+  defp do_location_catchup(share) do
+    location =
+      share.user
+      |> User.get_current_location()
+      |> Repo.preload(:user)
+
+    if location do
+      do_notify_location(share, location)
+    end
   end
 
   def notify_location(location) do

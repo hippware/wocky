@@ -105,25 +105,56 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
     }
     """
 
-    setup %{user: user, socket: socket} do
+    setup %{user: user} do
       expiry = Timestamp.shift(days: 5)
       friend = Factory.insert(:user)
 
       Roster.befriend(friend, user)
       User.start_sharing_location(friend, user, expiry)
 
+      {:ok, friend: friend}
+    end
+
+    test "updating location sends a message", %{socket: socket, friend: friend} do
       ref = push_doc(socket, @query)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      {:ok, friend: friend, subscription_id: subscription_id}
-    end
-
-    test "updating location sends a message", %{
-      friend: friend,
-      subscription_id: subscription_id
-    } do
       location = Factory.build(:location)
       {:ok, loc} = User.set_location(friend, location)
+
+      assert_push "subscription:data", push, 2000
+
+      id = friend.id
+      accuracy = loc.accuracy
+
+      assert %{
+               result: %{
+                 data: %{
+                   "sharedLocations" => %{
+                     "user" => %{
+                       "id" => ^id
+                     },
+                     "location" => %{
+                       "lat" => lat,
+                       "lon" => lon,
+                       "accuracy" => ^accuracy
+                     }
+                   }
+                 }
+               },
+               subscriptionId: ^subscription_id
+             } = push
+
+      assert Float.round(lat, 8) == Float.round(loc.lat, 8)
+      assert Float.round(lon, 8) == Float.round(loc.lon, 8)
+    end
+
+    test "location catchup", %{socket: socket, friend: friend} do
+      location = Factory.build(:location)
+      {:ok, loc} = User.set_location(friend, location)
+
+      ref = push_doc(socket, @query)
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
       assert_push "subscription:data", push, 2000
 
