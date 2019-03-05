@@ -154,9 +154,33 @@ defmodule Wocky.User do
 
   def hippware?(_), do: false
 
+  def first_name(%User{name: name}),
+    do: name |> split_name() |> elem(0)
+
+  def last_name(%User{name: name}),
+    do: name |> split_name() |> elem(1)
+
   def no_index_role, do: @no_index_role
   def system_role, do: @system_role
   def forever_ts, do: @forever
+
+  defp split_name(nil), do: {nil, nil}
+  defp split_name(""), do: {"", ""}
+
+  defp split_name(name) do
+    last =
+      name
+      |> String.split(" ", trim: true)
+      |> List.last()
+
+    first =
+      name
+      |> String.trim()
+      |> String.replace_suffix(last, "")
+      |> String.trim()
+
+    {first, last}
+  end
 
   # ----------------------------------------------------------------------
   # Database interaction

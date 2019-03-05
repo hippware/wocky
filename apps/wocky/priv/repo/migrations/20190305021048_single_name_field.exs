@@ -34,9 +34,6 @@ defmodule Wocky.Repo.Migrations.SingleNameField do
     CREATE INDEX users_name_fts ON users USING gin(users_name_fts(name, handle))
     """
 
-
-
-
     alter table(:users) do
       remove :first_name
       remove :last_name

@@ -90,6 +90,38 @@ defmodule Wocky.User.UserTest do
     end
   end
 
+  describe "first_name/1, last_name/1" do
+    test "should split on the last space in a name" do
+      u = %User{name: "abc def ghi"}
+      assert User.first_name(u) == "abc def"
+      assert User.last_name(u) == "ghi"
+    end
+
+    test "extra spaces should be trimmed" do
+      u = %User{name: "   abc    def    ghi    "}
+      assert User.first_name(u) == "abc    def"
+      assert User.last_name(u) == "ghi"
+    end
+
+    test "single names should not cause problems" do
+      u = %User{name: "えええええええ"}
+      assert User.first_name(u) == ""
+      assert User.last_name(u) == "えええええええ"
+    end
+
+    test "empty names should not cause problems" do
+      u = %User{name: ""}
+      assert User.first_name(u) == ""
+      assert User.last_name(u) == ""
+    end
+
+    test "null names should not cause problems" do
+      u = %User{name: nil}
+      assert User.first_name(u) == nil
+      assert User.last_name(u) == nil
+    end
+  end
+
   describe "changeset/1 validations" do
     test "should pass with valid attributes", ctx do
       attrs = %{handle: "new_handle", email: "foo@bar.com"}
