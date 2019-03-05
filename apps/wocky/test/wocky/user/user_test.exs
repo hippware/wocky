@@ -117,8 +117,8 @@ defmodule Wocky.User.UserTest do
 
     test "null names should not cause problems" do
       u = %User{name: nil}
-      assert User.first_name(u) == nil
-      assert User.last_name(u) == nil
+      assert User.first_name(u) == ""
+      assert User.last_name(u) == ""
     end
   end
 

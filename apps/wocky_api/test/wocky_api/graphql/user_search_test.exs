@@ -20,8 +20,7 @@ defmodule WockyAPI.GraphQL.UserSearchTest do
       u =
         Factory.insert(
           :user,
-          first_name: "Bob",
-          last_name: "aaa",
+          name: "Bob aaa",
           handle: "hhh"
         )
 
@@ -32,7 +31,7 @@ defmodule WockyAPI.GraphQL.UserSearchTest do
     end
 
     test "search limit", %{user: user} do
-      Factory.insert_list(20, :user, first_name: "aaa")
+      Factory.insert_list(20, :user, name: "Bob aaa")
 
       result = run_query(@query, user, %{"term" => "a", "limit" => 10})
 

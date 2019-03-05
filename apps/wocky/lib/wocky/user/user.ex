@@ -164,7 +164,7 @@ defmodule Wocky.User do
   def system_role, do: @system_role
   def forever_ts, do: @forever
 
-  defp split_name(nil), do: {nil, nil}
+  defp split_name(nil), do: {"", ""}
   defp split_name(""), do: {"", ""}
 
   defp split_name(name) do

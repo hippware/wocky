@@ -39,7 +39,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert result.data == %{
                "currentUser" => %{
                  "id" => user.id,
-                 "firstName" => user.first_name,
+                 "firstName" => User.first_name(user),
                  "email" => user.email,
                  "media" => %{
                    "tros_url" => user.image_url
@@ -117,7 +117,9 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Repo.get(User, user.id).first_name == new_name
+      assert User
+             |> Repo.get(user.id)
+             |> User.first_name() == new_name
     end
 
     @query """
