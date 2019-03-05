@@ -50,10 +50,10 @@ defmodule WockyAPI.Mixfile do
       # are merged.
       {:absinthe,
        github: "hippware/absinthe",
-       branch: "subscription-catchup",
+       branch: "working",
        override: true},
       {:absinthe_phoenix,
-       github: "hippware/absinthe_phoenix", branch: "subscription-catchup"},
+       github: "hippware/absinthe_phoenix", branch: "working"},
       {:absinthe_relay,
        github: "absinthe-graphql/absinthe_relay", branch: "master"},
       {:absinthe_metrics, "~> 1.0.0"},
