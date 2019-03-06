@@ -5,7 +5,7 @@ defmodule Wocky.Repo do
 
   alias Confex.Resolver
   alias Ecto.Repo.Supervisor
-  # alias Wocky.Repo.Instrumenter, as: RepoInstrumenter
+  alias Wocky.Repo.Instrumenter, as: RepoInstrumenter
 
   @doc """
   Dynamically loads the repository configuration from the environment variables.
@@ -16,8 +16,7 @@ defmodule Wocky.Repo do
     # internal state.
     Application.ensure_all_started(:prometheus_ex)
 
-    # TODO: Re-enable when prometheus_ecto supports Ecto 3
-    # RepoInstrumenter.setup()
+    RepoInstrumenter.setup()
 
     url = System.get_env("DATABASE_URL")
 
