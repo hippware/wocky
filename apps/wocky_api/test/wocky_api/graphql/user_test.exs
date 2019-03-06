@@ -123,6 +123,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert User
              |> Repo.get(user.id)
              |> User.first_name() == new_name
+
       assert Repo.get(User, user.id).client_data == client_data
     end
 

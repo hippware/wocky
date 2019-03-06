@@ -53,10 +53,12 @@ defmodule WockyAPI.Schema do
   end
 
   def middleware(middleware, field, object) do
-    middleware
-    |> Auth.middleware(field, object)
-    |> Instrumenter.instrument(field, object)
-    |> Enum.into([ApolloTracing.Middleware.Tracing])
+    [
+      ApolloTracing.Middleware.Tracing
+      | middleware
+        |> Auth.middleware(field, object)
+        |> Instrumenter.instrument(field, object)
+    ]
   end
 
   def plugins, do: [Absinthe.Middleware.Dataloader | Absinthe.Plugin.defaults()]
