@@ -62,6 +62,15 @@ defmodule Wocky.Application do
         name: Wocky.Supervisor
       )
 
+    # Set up prometheus_ecto
+    :ok =
+      :telemetry.attach(
+        "prometheus-ecto",
+        [:wocky, :repo, :query],
+        &Wocky.Repo.Instrumenter.handle_event/4,
+        nil
+      )
+
     Callbacks.register()
 
     sup

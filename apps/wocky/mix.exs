@@ -114,8 +114,7 @@ defmodule Wocky.Mixfile do
       {:plug, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:postgrex, ">= 0.0.0"},
-      # TODO: Re-enable when prometheus_ecto supports Ecto 3
-      # {:prometheus_ecto, "~> 1.0"},
+      {:prometheus_ecto, "~> 1.4.1"},
       {:prometheus_ex, "~> 3.0"},
       {:recon, "~> 2.3"},
       {:redix, "~> 0.9.2"},
