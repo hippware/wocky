@@ -53,10 +53,11 @@ defmodule WockyAPI.Schema do
   end
 
   def middleware(middleware, field, object) do
-    [ApolloTracing.Middleware.Tracing |
-      middleware
-      |> Auth.middleware(field, object)
-      |> Instrumenter.instrument(field, object)
+    [
+      ApolloTracing.Middleware.Tracing
+      | middleware
+        |> Auth.middleware(field, object)
+        |> Instrumenter.instrument(field, object)
     ]
   end
 

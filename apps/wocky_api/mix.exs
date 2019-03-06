@@ -49,9 +49,7 @@ defmodule WockyAPI.Mixfile do
       # TODO: Move these back to the offical absinthe repo once all the changes
       # are merged.
       {:absinthe,
-       github: "hippware/absinthe",
-       branch: "working",
-       override: true},
+       github: "hippware/absinthe", branch: "working", override: true},
       {:absinthe_phoenix,
        github: "hippware/absinthe_phoenix", branch: "working"},
       {:absinthe_relay,
