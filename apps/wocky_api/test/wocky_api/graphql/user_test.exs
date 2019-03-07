@@ -127,6 +127,28 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert Repo.get(User, user.id).client_data == client_data
     end
 
+    test "update user info without name", %{user: user} do
+      handle = Factory.handle()
+
+      result =
+        run_query(@query, user, %{
+          "values" => %{"handle" => handle}
+        })
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "userUpdate" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "id" => user.id
+                 }
+               }
+             }
+
+      assert Repo.get(User, user.id).handle == handle
+    end
+
     @query """
     mutation ($enable: Boolean!, $expire: DateTime) {
       userHide (input: {enable: $enable, expire: $expire}) {

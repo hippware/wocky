@@ -406,4 +406,6 @@ defmodule WockyAPI.Resolvers.User do
 
   defp fix_name(%{last_name: l} = m, user),
     do: Map.put_new(m, :name, User.first_name(user) <> " " <> l)
+
+  defp fix_name(m, _user), do: m
 end
