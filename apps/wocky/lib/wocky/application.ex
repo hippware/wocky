@@ -31,6 +31,7 @@ defmodule Wocky.Application do
 
   defp start_full do
     Logger.info("Starting wocky in full mode")
+    Prometheus.Registry.register_collector(:prometheus_process_collector)
 
     redis_config = Confex.get_env(:wocky, :redis)
 
