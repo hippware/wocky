@@ -116,6 +116,7 @@ defmodule Wocky.Mixfile do
       {:postgrex, ">= 0.0.0"},
       {:prometheus_ecto, "~> 1.4.1"},
       {:prometheus_ex, "~> 3.0"},
+      {:prometheus_process_collector, "~> 1.4"},
       {:recon, "~> 2.3"},
       {:redix, "~> 0.9.2"},
       {:rexbug, ">= 1.0.0"},
