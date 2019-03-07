@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Reinstate prometheus_ecto (PR #2328)
+
+
+# 2019.3.6+r663029b
+
 * Update: wocky_db_watcher (PR #2309), bcrypt_elixir (PR #2310)
   * excoveralls (PR #2318), ex_machina (PR #2314), redlock (PR #2313)
   * csv (PR #2317), honeybadger (PR #2315), phoenix_pubsub_redis (PR #2323)
@@ -16,6 +21,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Name fields rework (#1145, PR #2322)
 * Move absinthe[_phonnix] to 'working' branches (PR #2324)
 * Remove Enum.into() (PR #2325)
+* Bump elixir version to 1.8 (PR #2327)
 
 
 # 2019.2.26+r288db8d
