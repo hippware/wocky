@@ -5,7 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.3.7+r0e3e105
+
 * Reinstate prometheus_ecto (PR #2328)
+* Add prometheus_process_collector tracking (PR #2331)
+* Remove unused script file (PR #2330)
+* Fix crash when no name is specified in user update (PR #2333)
 
 
 # 2019.3.6+r663029b
