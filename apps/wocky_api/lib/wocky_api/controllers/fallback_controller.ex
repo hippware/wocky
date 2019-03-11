@@ -10,13 +10,13 @@ defmodule WockyAPI.FallbackController do
     conn
     |> put_status(:not_found)
     |> put_view(WockyAPI.ErrorView)
-    |> render("404.json", [])
+    |> render(:"404")
   end
 
   def call(conn, {:error, :missing_keys}) do
     conn
     |> put_status(:bad_request)
     |> put_view(WockyAPI.ErrorView)
-    |> render("error.json", message: "JSON missing required keys.")
+    |> render(:"400", %{message: "JSON payload missing required keys."})
   end
 end
