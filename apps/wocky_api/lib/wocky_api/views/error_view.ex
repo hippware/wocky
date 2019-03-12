@@ -10,7 +10,23 @@ defmodule WockyAPI.ErrorView do
   # By default, Phoenix returns the status message from
   # the template name. For example, "404.html" becomes
   # "Not Found".
+  def template_not_found(template, %{message: message}) do
+    if String.ends_with?(template, ".json") do
+      %{errors: %{detail: message}}
+    else
+      message
+    end
+  end
+
   def template_not_found(template, _assigns) do
-    Phoenix.Controller.status_message_from_template(template)
+    if String.ends_with?(template, ".json") do
+      %{
+        errors: %{
+          detail: Phoenix.Controller.status_message_from_template(template)
+        }
+      }
+    else
+      Phoenix.Controller.status_message_from_template(template)
+    end
   end
 end
