@@ -1,7 +1,6 @@
 defmodule WockyAPI.Plugs.Authentication do
   @moduledoc "Plugs for performing token authentication"
 
-  import Phoenix.Controller
   import Plug.Conn
 
   alias Wocky.Account
@@ -48,16 +47,8 @@ defmodule WockyAPI.Plugs.Authentication do
     end
   end
 
-  defp fail_authentication(conn, reason \\ :unauthorized) do
-    conn
-    |> put_status(reason)
-    |> put_view(WockyAPI.ErrorView)
-    |> render(code_for(reason))
-    |> halt()
-  end
-
-  defp code_for(:unauthorized), do: :"401"
-  defp code_for(:forbidden), do: :"403"
+  defp fail_authentication(conn, reason \\ :unauthorized),
+    do: conn |> send_resp(reason, "") |> halt()
 
   def ensure_owner(conn, _opts \\ []) do
     path_user = conn.path_params["user_id"]
