@@ -28,9 +28,14 @@ watcher_sha="$(cat DB_WATCHER_VERSION)"
 export REVISION
 export KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 
+CLUSTER_CONF=/tmp/terraform.tfstate.json
+
+aws s3 cp s3://hippware-terraform-state/cluster/terraform.tfstate ${CLUSTER_CONF}
+
 kubernetes-deploy "${namespace}" "${context}" \
   --template-dir="${template_dir}" \
   --bindings=watcher_sha="${watcher_sha}" \
+  --bindings=@${CLUSTER_CONF}
   "$@"
 
 pod=$(kubectl get pods \
