@@ -80,7 +80,7 @@
   "jose": {:hex, :jose, "1.9.0", "4167c5f6d06ffaebffd15cdb8da61a108445ef5e85ab8f5a7ad926fdf3ada154", [:mix, :rebar3], [{:base64url, "~> 0.0.1", [hex: :base64url, repo: "hexpm", optional: false]}], "hexpm"},
   "json_web_token": {:hex, :json_web_token, "0.2.10", "61041d56369422c5e3a770cf7d7bf27224b3c4c12d3a7d79b43a002df766db22", [:mix], [{:poison, "~> 3.1", [hex: :poison, repo: "hexpm", optional: false]}], "hexpm"},
   "kadabra": {:hex, :kadabra, "0.4.4", "29d7f4c231d44a59d99b550fa75489a80a572140b3316809f326bf608bce33d8", [:mix], [{:hpack, "~> 0.2.3", [hex: :hpack_erl, repo: "hexpm", optional: false]}], "hexpm"},
-  "kronky": {:git, "https://github.com/mirego/kronky.git", "80344f7cfe2c14b5a08ce408653cf795405b13c3", [branch: "master"]},
+  "kronky": {:git, "https://github.com/mirego/kronky.git", "e2e0bedbaf68e752a43fcab2cb53b56acf15b049", [branch: "master"]},
   "lager": {:hex, :lager, "3.6.7", "2fbf823944caa0fc10df5ec13f3f047524a249bb32f0d801b7900c9610264286", [:rebar3], [{:goldrush, "0.1.9", [hex: :goldrush, repo: "hexpm", optional: false]}], "hexpm"},
   "lager_logger": {:hex, :lager_logger, "1.0.5", "2b58be52fe1e0fb82656180fc54e45618aa2dc619090b00e6d3fb4707c6a1fe5", [:mix], [{:lager, ">= 2.1.0", [hex: :lager, repo: "hexpm", optional: false]}], "hexpm"},
   "libring": {:hex, :libring, "1.4.0", "41246ba2f3fbc76b3971f6bce83119dfec1eee17e977a48d8a9cfaaf58c2a8d6", [:mix], [], "hexpm"},
