@@ -157,6 +157,11 @@ config :pigeon, :apns,
     mode: :dev
   }
 
+config :pigeon, :fcm,
+  fcm_default: %{
+    key: {:system, :string, "WOCKY_FCM_KEY"}
+  }
+
 config :ex_twilio,
   account_sid: {:system, "TWILIO_ACCOUNT_SID"},
   auth_token: {:system, "TWILIO_AUTH_TOKEN"}
