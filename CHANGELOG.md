@@ -5,8 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.3.13+rf578b8a
+
 * Update: credo (PR #2334), redix (PR #2336)
 * Fix error messages from ReST API (#2335, PR #2337)
+* Use ALB/ingress rather than ELB on `testing` (PR #2339)
 
 
 # 2019.3.7+r0e3e105
