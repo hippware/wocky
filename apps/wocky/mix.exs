@@ -97,9 +97,8 @@ defmodule Wocky.Mixfile do
        manager: :rebar3},
       {:exrun, "~> 0.1.6"},
       {:faker, "~> 0.9"},
-      # TODO: go back to hex version once changes are merged
       {:firebase_admin_ex,
-       github: "hippware/firebase-admin-ex", branch: "add-dynamic-link-support"},
+        github: "scripbox/firebase-admin-ex", branch: "master"},
       {:gen_stage, "~> 0.12"},
       {:geo_postgis, "~> 3.0"},
       {:geocalc, "~> 0.5"},
