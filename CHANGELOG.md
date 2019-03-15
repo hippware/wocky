@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: kronky (PR #2343), phoenix (PR #2344)
+  * firebase-admin-ex (PR #2345), db watcher (PR #2346)
+
+
 # 2019.3.13+rf578b8a
 
 * Update: credo (PR #2334), redix (PR #2336)
