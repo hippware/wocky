@@ -70,7 +70,6 @@ defmodule Wocky.Mixfile do
       {:bamboo, "~> 1.0"},
       {:bcrypt_elixir, "~> 2.0"},
       {:confex, "~> 3.4"},
-      {:csv, "~> 2.0"},
       {:dawdle, "~> 0.4.0"},
       {:dataloader, "~> 1.0.0"},
       {:ecto_homoiconic_enum,
