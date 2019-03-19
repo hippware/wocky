@@ -1,5 +1,8 @@
 use Mix.Config
 
+config :wocky,
+  start_watcher: {:system, :boolean, "WOCKY_START_WATCHER", true}
+
 config :wocky, Wocky.User.GeoFence,
   enter_debounce_seconds: 0,
   exit_debounce_seconds: 0
@@ -15,8 +18,7 @@ config :wocky_db_watcher, :db,
   password: {:system, :string, "WOCKY_DB_PASSWORD", "password"},
   hostname: {:system, :string, "WOCKY_DB_HOST", "localhost"},
   port: {:system, :integer, "WOCKY_DB_PORT", 5432},
-  pool_size: {:system, :integer, "WOCKY_DB_POOL_SIZE", 15},
-  pool: Ecto.Adapters.SQL.Sandbox
+  pool_size: {:system, :integer, "WOCKY_DB_POOL_SIZE", 15}
 
 config :exometer_core,
   report: [reporters: [{:exometer_report_prometheus, [:enable_httpd]}]]

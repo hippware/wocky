@@ -46,6 +46,7 @@ defmodule WockyAPI.Mixfile do
     [
       {:wocky, in_umbrella: true},
       {:bimap, "~> 1.0"},
+
       # TODO: Move these back to the offical absinthe repo once all the changes
       # are merged.
       {:absinthe,

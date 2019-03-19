@@ -272,19 +272,24 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def location_catchup(user) do
-    user
-    |> User.get_location_sharers()
-    |> Enum.each(&do_location_catchup/1)
+    result =
+      user
+      |> User.get_location_sharers()
+      |> Enum.reduce([], &build_location_catchup/2)
+
+    {:ok, result}
   end
 
-  defp do_location_catchup(share) do
+  defp build_location_catchup(share, acc) do
     location =
       share.user
       |> User.get_current_location()
       |> Repo.preload(:user)
 
     if location do
-      do_notify_location(share, location)
+      [make_location_data(location) | acc]
+    else
+      acc
     end
   end
 
@@ -303,10 +308,13 @@ defmodule WockyAPI.Resolvers.User do
 
   defp do_notify_location(share, location) do
     topic = location_subscription_topic(share.shared_with.id)
-    data = %{user: location.user, location: location}
+    data = make_location_data(location)
 
     Subscription.publish(Endpoint, data, [{:shared_locations, topic}])
   end
+
+  defp make_location_data(location),
+    do: %{user: location.user, location: location}
 
   def hide(_root, %{input: input}, %{context: %{current_user: user}}) do
     with {:ok, _} <- do_hide(user, input) do
@@ -379,9 +387,7 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def presence_catchup(user) do
-    user
-    |> Presence.connect()
-    |> Enum.each(&Presence.publish(user.id, &1))
+    {:ok, Presence.connect(user)}
   end
 
   def get_presence_status(other_user, _args, _context) do
