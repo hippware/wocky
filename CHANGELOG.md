@@ -5,11 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.3.19+rc79b90b
+
 * Update: kronky (PR #2343), phoenix (PR #2344)
   * firebase-admin-ex (PR #2345), db watcher (PR #2346)
   * wocky_db_watcher (PR #2348), absinthe_phoenix (PR #2349)
   * plug_cowboy (PR #2352)
   * Remove the CSV dependency (PR #2355)
+* Subscription 'catchup' item is sent too early (#2342)
 
 
 # 2019.3.13+rf578b8a
