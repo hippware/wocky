@@ -11,7 +11,6 @@ defmodule Wocky.Push.Backend.Sandbox do
   use GenServer
 
   alias Pigeon.APNS.Notification
-  alias Wocky.Push
   alias Wocky.Push.Backend.APNS
 
   def push(params) do
@@ -35,16 +34,22 @@ defmodule Wocky.Push.Backend.Sandbox do
 
     record_notification(notif, self())
 
-    if Push.reflect?(), do: send(self(), notif)
+    if reflect?(), do: send(self(), notif)
 
     params.on_response.(notif)
 
     notif
   end
 
+  defdelegate get_response(resp), to: APNS
+
+  defdelegate get_id(notification), to: APNS
+
+  defdelegate get_payload(notification), to: APNS
+
   defdelegate error_msg(resp), to: APNS
 
-  defdelegate handle_response(resp, timeout_pid, params), to: APNS
+  defdelegate handle_error(resp), to: APNS
 
   @doc """
   Records the notification. This is used to record
@@ -135,4 +140,6 @@ defmodule Wocky.Push.Backend.Sandbox do
       {:reply, :ok, Map.put(state, pid, [])}
     end
   end
+
+  defp reflect?, do: Confex.get_env(:wocky, __MODULE__)[:reflect]
 end

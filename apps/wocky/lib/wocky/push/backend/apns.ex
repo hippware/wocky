@@ -1,4 +1,8 @@
 defmodule Wocky.Push.Backend.APNS do
+  @moduledoc """
+  Apple Push Notification Service implementation for wocky push system.
+  """
+
   @behaviour Wocky.Push.Backend
 
   alias Pigeon.APNS
@@ -22,53 +26,22 @@ defmodule Wocky.Push.Backend.APNS do
     event
     |> Event.message()
     |> Push.maybe_truncate_message()
-    |> Notification.new(token, Push.topic())
+    |> Notification.new(token, topic())
     |> Notification.put_badge(1)
     |> Notification.put_custom(%{"uri" => uri})
   end
 
-  def handle_response(
-        %Notification{response: resp} = n,
-        timeout_pid,
-        %Push{user: user, device: device} = params
-      ) do
-    send(timeout_pid, :push_complete)
-    Push.update_metric(resp)
-    Push.db_log(log_msg(user, device, n))
-    maybe_handle_error(n, %{params | resp: resp})
-  end
+  def get_response(%Notification{response: response}), do: response
 
-  defp maybe_handle_error(_n, %Push{resp: :success}), do: :ok
+  def get_id(%Notification{id: id}), do: id
 
-  defp maybe_handle_error(
-         n,
-         %Push{
-           user: user,
-           device: device,
-           retries: retries,
-           resp: resp
-         } = params
-       ) do
-    Logger.error("PN Error: #{Error.msg(resp)}")
+  def get_payload(%Notification{payload: payload}), do: payload
 
-    if resp == :bad_device_token do
-      Push.invalidate_token(user.id, device, n.device_token)
-    else
-      Push.do_notify(%{params | retries: retries + 1})
-    end
-  end
+  def handle_error(:bad_device_token), do: :invalidate_token
+
+  def handle_error(_), do: :retry
 
   def error_msg(resp), do: Error.msg(resp)
 
-  defp log_msg(user, device, n) do
-    %{
-      user_id: user.id,
-      device: device,
-      token: n.device_token,
-      message_id: n.id,
-      payload: Push.maybe_extract_payload(n.payload, user),
-      response: to_string(n.response),
-      details: Error.msg(n.response)
-    }
-  end
+  defp topic, do: Confex.get_env(:wocky, __MODULE__)[:topic]
 end

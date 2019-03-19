@@ -9,8 +9,7 @@ defmodule Wocky.Push do
   alias Pigeon.APNS.Notification, as: APNSNotification
   alias Pigeon.FCM.Notification, as: FCMNotification
   alias Wocky.Push.{Event, Log, Token}
-  # FCM
-  alias Wocky.Push.Backend.{APNS, Sandbox}
+  alias Wocky.Push.Backend.{APNS, FCM, Sandbox}
   alias Wocky.Repo
   alias Wocky.User
 
@@ -34,7 +33,12 @@ defmodule Wocky.Push do
 
   @type message :: binary
   @type notification :: APNSNotification.t() | FCMNotification.t()
-  @type response :: APNSNotification.response() | FCMNotification.status()
+  @type id :: String.t() | nil
+  @type payload :: map()
+  @type response ::
+          APNSNotification.response()
+          | FCMNotification.status()
+          | FCMNotification.regid_error_response()
   @type on_response :: (notification() -> no_return)
 
   @type t :: %__MODULE__{
@@ -133,40 +137,36 @@ defmodule Wocky.Push do
   # ===================================================================
   # Helpers
 
-  def get_conf(key), do: Confex.get_env(:wocky, Wocky.Push)[key]
-
-  defp sandbox?, do: get_conf(:sandbox)
-
-  def reflect?, do: get_conf(:reflect)
-
-  def topic, do: get_conf(:topic)
+  defp get_conf(key), do: Confex.get_env(:wocky, __MODULE__)[key]
 
   def timeout, do: get_conf(:timeout)
+
+  defp sandbox?, do: get_conf(:sandbox)
 
   defp enabled?, do: get_conf(:enabled)
 
   defp log_payload?, do: get_conf(:log_payload)
 
-  def do_notify(%__MODULE__{token: nil, user: user, device: device}) do
+  defp do_notify(%__MODULE__{token: nil, user: user, device: device}) do
     Logger.error(
       "PN Error: Attempted to send notification to user " <>
         "#{user.id}/#{device} but they have no token."
     )
   end
 
-  def do_notify(
-        %__MODULE__{backend: backend, resp: resp, retries: @max_retries} =
-          params
-      ) do
+  defp do_notify(
+         %__MODULE__{backend: backend, resp: resp, retries: @max_retries} =
+           params
+       ) do
     log_failure(params)
     Logger.error("PN Error: #{backend.error_msg(resp)}")
   end
 
-  def do_notify(%__MODULE__{backend: backend} = params) do
+  defp do_notify(%__MODULE__{backend: backend} = params) do
     # Don't start_link here - we want the timeout to fire even if we crash
     {:ok, timeout_pid} = Task.start(fn -> push_timeout(params) end)
 
-    on_response = fn r -> backend.handle_response(r, timeout_pid, params) end
+    on_response = fn r -> handle_response(r, timeout_pid, params) end
 
     params
     |> Map.put(:backend, backend)
@@ -182,7 +182,35 @@ defmodule Wocky.Push do
     end
   end
 
-  def invalidate_token(user_id, device, token) do
+  def handle_response(notification, timeout_pid, params) do
+    send(timeout_pid, :push_complete)
+    resp = params.backend.get_response(notification)
+    update_metric(resp)
+    db_log(log_msg(notification, params))
+    maybe_handle_error(%{params | resp: resp})
+  end
+
+  defp maybe_handle_error(%__MODULE__{resp: :success}), do: :ok
+
+  defp maybe_handle_error(
+         %__MODULE__{
+           backend: backend,
+           user: user,
+           device: device,
+           retries: retries,
+           token: token,
+           resp: resp
+         } = params
+       ) do
+    Logger.error("PN Error: #{backend.error_msg(resp)}")
+
+    case backend.handle_error(resp) do
+      :retry -> do_notify(%{params | retries: retries + 1})
+      :invalidate_token -> invalidate_token(user.id, device, token)
+    end
+  end
+
+  defp invalidate_token(user_id, device, token) do
     Repo.update_all(
       from(
         Token,
@@ -192,16 +220,16 @@ defmodule Wocky.Push do
     )
   end
 
-  def update_metric(resp),
+  defp update_metric(resp),
     do: update_counter("push_notfications.#{to_string(resp)}", 1)
 
-  def db_log(msg) do
+  defp db_log(msg) do
     msg
     |> Log.insert_changeset()
     |> Repo.insert!()
   end
 
-  def maybe_extract_payload(payload, user) do
+  defp maybe_extract_payload(payload, user) do
     if User.hippware?(user) || log_payload?() do
       inspect(payload)
     end
@@ -217,6 +245,25 @@ defmodule Wocky.Push do
         log_timeout(params)
         do_notify(%{params | retries: retries + 1})
     end
+  end
+
+  defp log_msg(n, %__MODULE__{
+         user: user,
+         device: device,
+         token: token,
+         backend: backend
+       }) do
+    resp = backend.get_response(n)
+
+    %{
+      user_id: user.id,
+      device: device,
+      token: token,
+      message_id: backend.get_id(n),
+      payload: maybe_extract_payload(backend.get_payload(n), user),
+      response: to_string(resp),
+      details: backend.error_msg(resp)
+    }
   end
 
   defp log_timeout(%__MODULE__{
