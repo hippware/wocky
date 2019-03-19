@@ -3,12 +3,14 @@ defmodule Wocky.Push.Token do
 
   use Wocky.Repo.Schema
 
+  import Ecto.Query
   import EctoHomoiconicEnum, only: [defenum: 2]
 
-  alias Wocky.User
+  alias Wocky.{Repo, User}
 
   defenum PushServicePlatform, [
-    :apns
+    :apns,
+    :fcm
   ]
 
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -57,5 +59,13 @@ defmodule Wocky.Push.Token do
     |> foreign_key_constraint(:user_id)
     |> put_change(:enabled_at, DateTime.utc_now())
     |> put_change(:valid, true)
+  end
+
+  @spec all_for_user(User.t()) :: [Token]
+  def all_for_user(user) do
+    Token
+    |> where(user_id: ^user.id)
+    |> where(valid: true)
+    |> Repo.all()
   end
 end

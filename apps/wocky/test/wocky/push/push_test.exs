@@ -8,7 +8,7 @@ defmodule Wocky.PushTest do
   alias Pigeon.APNS.Notification
   alias Wocky.Push
   alias Wocky.Push.Log
-  alias Wocky.Push.Sandbox
+  alias Wocky.Push.Backend.Sandbox
   alias Wocky.Push.Token
   alias Wocky.Repo
   alias Wocky.Repo.Factory

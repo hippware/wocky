@@ -42,7 +42,7 @@ defmodule Wocky.Application do
       Supervisor.start_link(
         [
           worker(Wocky.Repo, []),
-          worker(Wocky.Push.Sandbox, []),
+          worker(Wocky.Push.Backend.Sandbox, []),
           worker(Wocky.Watcher.Client, []),
           %{id: Dawdle, start: {Dawdle, :start_link, []}},
           {Redix,

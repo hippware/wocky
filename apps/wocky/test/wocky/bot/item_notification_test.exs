@@ -6,7 +6,7 @@ defmodule Wocky.Bot.ItemNotificationTest do
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Push
-  alias Wocky.Push.Sandbox
+  alias Wocky.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
 
   setup do

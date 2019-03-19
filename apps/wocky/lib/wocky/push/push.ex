@@ -6,15 +6,15 @@ defmodule Wocky.Push do
 
   import Ecto.Query, warn: false
 
-  alias Pigeon.APNS
-  alias Pigeon.APNS.{Error, Notification}
-  alias Wocky.Push.{Event, Log, Sandbox, Token}
+  alias Pigeon.APNS.Notification, as: APNSNotification
+  alias Pigeon.FCM.Notification, as: FCMNotification
+  alias Wocky.Push.{Event, Log, Token}
+  # FCM
+  alias Wocky.Push.Backend.{APNS, Sandbox}
   alias Wocky.Repo
   alias Wocky.User
 
   require Logger
-
-  @type message :: binary
 
   @message_limit 512
 
@@ -24,18 +24,29 @@ defmodule Wocky.Push do
     :token,
     :user,
     :device,
+    :platform,
     :event,
+    :backend,
+    :on_response,
     retries: 0,
     resp: nil
   ]
 
+  @type message :: binary
+  @type notification :: APNSNotification.t() | FCMNotification.t()
+  @type response :: APNSNotification.response() | FCMNotification.status()
+  @type on_response :: (notification() -> no_return)
+
   @type t :: %__MODULE__{
-          token: binary(),
+          token: Token.token(),
           user: User.t(),
           device: User.device(),
+          platform: Token.PushServicePlatform.t(),
           event: Event.t(),
+          backend: module(),
+          on_response: on_response(),
           retries: non_neg_integer(),
-          resp: Notification.response()
+          resp: response()
         }
 
   # ===================================================================
@@ -95,11 +106,22 @@ defmodule Wocky.Push do
   @spec notify_all(Wocky.User.t(), any) :: :ok
   def notify_all(user, event) do
     if enabled?() do
-      for {device, token} <- get_all_tokens(user.id) do
+      for token <- Token.all_for_user(user) do
+        platform = token.platform
+
+        backend =
+          cond do
+            sandbox?() -> Sandbox
+            platform == :apns -> APNS
+            platform == :fcm -> FCM
+          end
+
         do_notify(%__MODULE__{
-          token: token,
+          token: token.token,
           user: user,
-          device: device,
+          device: token.device,
+          platform: platform,
+          backend: backend,
           event: event
         })
       end
@@ -111,54 +133,48 @@ defmodule Wocky.Push do
   # ===================================================================
   # Helpers
 
-  defp get_conf(key), do: Confex.get_env(:wocky, Wocky.Push)[key]
+  def get_conf(key), do: Confex.get_env(:wocky, Wocky.Push)[key]
 
   defp sandbox?, do: get_conf(:sandbox)
 
-  defp reflect?, do: get_conf(:reflect)
+  def reflect?, do: get_conf(:reflect)
 
-  defp topic, do: get_conf(:topic)
+  def topic, do: get_conf(:topic)
 
-  defp timeout, do: get_conf(:timeout)
+  def timeout, do: get_conf(:timeout)
 
   defp enabled?, do: get_conf(:enabled)
 
   defp log_payload?, do: get_conf(:log_payload)
 
-  defp get_all_tokens(user_id) do
-    Repo.all(
-      from t in Token,
-        where: [user_id: ^user_id, valid: true],
-        select: {t.device, t.token}
-    )
-  end
-
-  defp do_notify(%__MODULE__{token: nil, user: user, device: device}) do
+  def do_notify(%__MODULE__{token: nil, user: user, device: device}) do
     Logger.error(
       "PN Error: Attempted to send notification to user " <>
         "#{user.id}/#{device} but they have no token."
     )
   end
 
-  defp do_notify(%__MODULE__{resp: resp, retries: @max_retries} = params) do
+  def do_notify(
+        %__MODULE__{backend: backend, resp: resp, retries: @max_retries} =
+          params
+      ) do
     log_failure(params)
-    Logger.error("PN Error: #{Error.msg(resp)}")
+    Logger.error("PN Error: #{backend.error_msg(resp)}")
   end
 
-  defp do_notify(
-         %__MODULE__{token: token, event: event, retries: retries} = params
-       ) do
+  def do_notify(%__MODULE__{backend: backend} = params) do
     # Don't start_link here - we want the timeout to fire even if we crash
     {:ok, timeout_pid} = Task.start(fn -> push_timeout(params) end)
 
-    on_response = fn r -> handle_response(r, timeout_pid, params) end
+    on_response = fn r -> backend.handle_response(r, timeout_pid, params) end
 
-    event
-    |> make_payload(token)
-    |> maybe_push(on_response, retries, sandbox?())
+    params
+    |> Map.put(:backend, backend)
+    |> Map.put(:on_response, on_response)
+    |> backend.push()
   end
 
-  defp maybe_truncate_message(message) do
+  def maybe_truncate_message(message) do
     if byte_size(message) > @message_limit do
       String.slice(message, 0, @message_limit - 3) <> "..."
     else
@@ -166,78 +182,7 @@ defmodule Wocky.Push do
     end
   end
 
-  defp make_payload(event, token) do
-    uri = Event.uri(event)
-
-    event
-    |> Event.message()
-    |> maybe_truncate_message()
-    |> Notification.new(token, topic())
-    |> Notification.put_badge(1)
-    |> Notification.put_custom(%{"uri" => uri})
-  end
-
-  defp maybe_push(n, on_response, _, false) do
-    APNS.push(n, on_response: on_response, timeout: timeout())
-  end
-
-  defp maybe_push(n, on_response, retries, true) do
-    notif =
-      case n.payload["aps"]["alert"] do
-        "bad token" ->
-          %Notification{n | id: "testing", response: :bad_device_token}
-
-        "raise" ->
-          raise "requested_raise"
-
-        "retry test" when retries < 2 ->
-          %Notification{n | id: "testing", response: :failed}
-
-        _ ->
-          %Notification{n | id: "testing", response: :success}
-      end
-
-    Sandbox.record_notification(notif, self())
-
-    if reflect?(), do: send(self(), notif)
-
-    on_response.(notif)
-
-    notif
-  end
-
-  defp handle_response(
-         %Notification{response: resp} = n,
-         timeout_pid,
-         %__MODULE__{user: user, device: device} = params
-       ) do
-    send(timeout_pid, :push_complete)
-    update_metric(resp)
-    do_db_log(n, user, device)
-    maybe_handle_error(n, %{params | resp: resp})
-  end
-
-  defp maybe_handle_error(_n, %__MODULE__{resp: :success}), do: :ok
-
-  defp maybe_handle_error(
-         n,
-         %__MODULE__{
-           user: user,
-           device: device,
-           retries: retries,
-           resp: resp
-         } = params
-       ) do
-    Logger.error("PN Error: #{Error.msg(resp)}")
-
-    if resp == :bad_device_token do
-      invalidate_token(user.id, device, n.device_token)
-    else
-      do_notify(%{params | retries: retries + 1})
-    end
-  end
-
-  defp invalidate_token(user_id, device, token) do
+  def invalidate_token(user_id, device, token) do
     Repo.update_all(
       from(
         Token,
@@ -247,26 +192,18 @@ defmodule Wocky.Push do
     )
   end
 
-  defp update_metric(resp),
+  def update_metric(resp),
     do: update_counter("push_notfications.#{to_string(resp)}", 1)
 
-  defp do_db_log(%Notification{} = n, user, device) do
-    %{
-      user_id: user.id,
-      device: device,
-      token: n.device_token,
-      message_id: n.id,
-      payload: maybe_extract_payload(n, user),
-      response: to_string(n.response),
-      details: Error.msg(n.response)
-    }
+  def db_log(msg) do
+    msg
     |> Log.insert_changeset()
     |> Repo.insert!()
   end
 
-  defp maybe_extract_payload(n, user) do
+  def maybe_extract_payload(payload, user) do
     if User.hippware?(user) || log_payload?() do
-      inspect(n.payload)
+      inspect(payload)
     end
   end
 
