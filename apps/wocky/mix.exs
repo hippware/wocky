@@ -97,7 +97,7 @@ defmodule Wocky.Mixfile do
       {:exrun, "~> 0.1.6"},
       {:faker, "~> 0.9"},
       {:firebase_admin_ex,
-        github: "scripbox/firebase-admin-ex", branch: "master"},
+       github: "scripbox/firebase-admin-ex", branch: "master"},
       {:gen_stage, "~> 0.12"},
       {:geo_postgis, "~> 3.0"},
       {:geocalc, "~> 0.5"},
