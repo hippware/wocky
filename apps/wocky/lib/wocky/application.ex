@@ -19,13 +19,14 @@ defmodule Wocky.Application do
 
   def start(_type, _args) do
     sup =
+      {:ok, pid} =
       case Confex.get_env(:wocky, :db_only_mode, false) do
         false -> start_full()
         true -> start_db_only()
       end
 
     if Confex.get_env(:wocky, :start_watcher, false) do
-      Supervisor.start_child(sup, {Watcher, Wocky.Repo.config()})
+      Supervisor.start_child(pid, {Watcher, Wocky.Repo.config()})
     end
 
     sup
