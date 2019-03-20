@@ -3,13 +3,13 @@ defmodule Wocky.Callbacks.User do
   Callbacks for DB user changes
   """
 
-  use Wocky.Watcher, type: Wocky.User, events: [:update]
+  use DawdleDB.Handler, type: Wocky.User
 
   alias Wocky.User
   alias Wocky.User.GeoFence
 
   # No change to hidden timeout - nothing to do
-  def handle_update(%Event{action: :update, old: old, new: new}) do
+  def handle_update(new, old) do
     handle_hidden(new, User.hidden?(old), User.hidden?(new))
   end
 

@@ -3,23 +3,19 @@ defmodule Wocky.Callbacks.Bot do
   Callbacks for DB bot changes
   """
 
-  use Wocky.Watcher, type: Wocky.Bot, events: [:insert]
+  use DawdleDB.Handler, type: Wocky.Bot
 
   alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.Waiter
 
-  def handle_insert(%Event{action: :insert, new: new}) do
-    update_owner_subscription(new)
-  end
-
-  defp update_owner_subscription(bot) do
-    %{user: user} = Repo.preload(bot, [:user])
+  def handle_insert(new) do
+    %{user: user} = Repo.preload(new, [:user])
 
     if user != nil do
-      Bot.subscribe(bot, user)
+      Bot.subscribe(new, user)
 
-      bot
+      new
       |> Bot.sub_setup_event()
       |> Waiter.notify()
     end

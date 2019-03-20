@@ -9,9 +9,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
   alias Wocky.GeoUtils
   alias Wocky.Repo.Factory
 
-  setup_all do
-    setup_watcher()
-  end
+  setup_all :require_watcher
 
   describe "watch for visitor count change" do
     setup do

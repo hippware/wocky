@@ -3,17 +3,16 @@ defmodule WockyAPI.Callbacks.BotSubscription do
   Callbacks for DB bot changes
   """
 
-  use Wocky.Watcher, type: Wocky.Bot.Subscription, events: [:update]
+  use DawdleDB.Handler, type: Wocky.Bot.Subscription
 
   alias Wocky.Bot.Subscription
   alias Wocky.Repo
   alias WockyAPI.Resolvers.Bot, as: BotResolver
 
-  def handle_update(%Event{
-        action: :update,
-        old: %Subscription{visitor: a},
-        new: %Subscription{visitor: b} = subscriber
-      })
+  def handle_update(
+        %Subscription{visitor: b} = subscriber,
+        %Subscription{visitor: a}
+      )
       when a != b do
     subscriber = Repo.preload(subscriber, [:bot, :user])
 
@@ -26,5 +25,5 @@ defmodule WockyAPI.Callbacks.BotSubscription do
     end
   end
 
-  def handle_update(_), do: :ok
+  def handle_update(_new, _old), do: :ok
 end

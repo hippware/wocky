@@ -1,10 +1,9 @@
 defmodule Wocky.BlockTest do
-  use Wocky.WatcherHelper
+  use Wocky.WatcherCase
 
   alias Wocky.Block
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
-  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.User.Notification
 

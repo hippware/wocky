@@ -3,13 +3,13 @@ defmodule Wocky.Callbacks.Message do
   Callbacks for DB message changes
   """
 
-  use Wocky.Watcher, type: Wocky.Message, events: [:insert]
+  use DawdleDB.Handler, type: Wocky.Message
 
   alias Wocky.Push
   alias Wocky.Push.Events.NewMessageEvent
   alias Wocky.Repo
 
-  def handle_insert(%Event{action: :insert, new: new}) do
+  def handle_insert(new) do
     new = Repo.preload(new, [:sender, :recipient])
 
     if new.sender != nil && new.recipient != nil,

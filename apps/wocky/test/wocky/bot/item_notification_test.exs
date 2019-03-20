@@ -1,5 +1,7 @@
 defmodule Wocky.Bot.ItemNotificationTest do
-  use Wocky.WatcherHelper
+  use Wocky.WatcherCase
+
+  import Wocky.PushHelper
 
   alias Faker.{Code, Lorem}
   alias Pigeon.APNS.Notification

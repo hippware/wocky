@@ -3,13 +3,13 @@ defmodule Wocky.Callbacks.Block do
   Callbacks for Block opertaions
   """
 
-  use Wocky.Watcher, type: Wocky.Block, events: [:insert]
+  use DawdleDB.Handler, type: Wocky.Block
 
   alias Wocky.{Block, Bot, Repo, User}
   alias Wocky.Bot.{Invitation, Item}
   alias Wocky.User.Notification
 
-  def handle_insert(%Event{action: :insert, new: new}) do
+  def handle_insert(new) do
     %Block{blocker: blocker, blockee: blockee} =
       Repo.preload(new, [:blocker, :blockee])
 
@@ -25,6 +25,7 @@ defmodule Wocky.Callbacks.Block do
       # Delete notifications
       Notification.delete(blocker, blockee)
       Notification.delete(blockee, blocker)
+
       :ok
     end
   end

@@ -1,16 +1,14 @@
 defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
-  import Wocky.Eventually
+  import Eventually
   import WockyAPI.ChannelHelper
 
   alias Wocky.{Bot, Repo, Roster, User}
   alias Wocky.Bot.{Invitation, Subscription}
   alias Wocky.Repo.{Factory, Timestamp}
 
-  setup_all do
-    setup_watcher()
-  end
+  setup_all :require_watcher
 
   @subscription """
   subscription {

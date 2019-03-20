@@ -3,6 +3,8 @@ defmodule Wocky.Callbacks.BotInvitation do
   DB Callback handler for bot invitations
   """
 
+  use DawdleDB.Handler, type: Wocky.Bot.Invitation
+
   alias Wocky.Bot.Invitation
   alias Wocky.Push
   alias Wocky.Push.Events.{BotInvitationAcceptEvent, BotInviteEvent}
@@ -10,9 +12,7 @@ defmodule Wocky.Callbacks.BotInvitation do
   alias Wocky.User.Notification.BotInvitation, as: InvNotification
   alias Wocky.User.Notification.BotInvitationResponse
 
-  use Wocky.Watcher, type: Wocky.Bot.Invitation, events: [:insert, :update]
-
-  def handle_insert(%Event{new: new}) do
+  def handle_insert(new) do
     new = Repo.preload(new, [:user, :invitee, :bot])
 
     if new.user != nil && new.invitee != nil && new.bot != nil do
@@ -25,10 +25,10 @@ defmodule Wocky.Callbacks.BotInvitation do
     end
   end
 
-  def handle_update(%Event{
-        old: %Invitation{accepted: nil},
-        new: %Invitation{accepted: accepted?} = new
-      })
+  def handle_update(
+        %Invitation{accepted: accepted?} = new,
+        %Invitation{accepted: nil}
+      )
       when not is_nil(accepted?) do
     new = Repo.preload(new, [:user, :invitee, :bot])
 
@@ -48,5 +48,5 @@ defmodule Wocky.Callbacks.BotInvitation do
     end
   end
 
-  def handle_update(_), do: :ok
+  def handle_update(_new, _old), do: :ok
 end

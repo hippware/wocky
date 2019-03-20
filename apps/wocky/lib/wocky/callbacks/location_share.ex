@@ -1,12 +1,12 @@
 defmodule Wocky.Callbacks.LocationShare do
   @moduledoc "DB callback handler for location shares"
 
-  use Wocky.Watcher, type: Wocky.User.LocationShare, events: [:insert, :delete]
+  use DawdleDB.Handler, type: Wocky.User.LocationShare
 
   alias Wocky.Repo
   alias Wocky.User.Notification.{LocationShare, LocationShareEnd}
 
-  def handle_insert(%Event{new: new}) do
+  def handle_insert(new) do
     new = Repo.preload(new, [:user, :shared_with])
 
     if new.user != nil && new.shared_with != nil do
@@ -14,7 +14,7 @@ defmodule Wocky.Callbacks.LocationShare do
     end
   end
 
-  def handle_delete(%Event{old: old}) do
+  def handle_delete(old) do
     old = Repo.preload(old, [:user, :shared_with])
 
     if old.user != nil && old.shared_with != nil do

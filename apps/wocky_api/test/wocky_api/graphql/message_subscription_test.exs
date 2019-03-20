@@ -5,9 +5,7 @@ defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
 
   alias Wocky.Repo.Factory
 
-  setup_all do
-    setup_watcher()
-  end
+  setup_all :require_watcher
 
   describe "messages subscription" do
     @subscription """

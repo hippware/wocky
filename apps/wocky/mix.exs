@@ -9,7 +9,7 @@ defmodule Wocky.Mixfile do
       config_path: "../../config/config.exs",
       deps_path: "../../deps",
       lockfile: "../../mix.lock",
-      elixir: "~> 1.4",
+      elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls, test_task: "test"],
@@ -21,7 +21,6 @@ defmodule Wocky.Mixfile do
         "vcr.check": :test,
         "vcr.show": :test
       ],
-      elvis_config: [%{src_dirs: [], rules: []}],
       aliases: aliases(),
       deps: deps()
     ]
@@ -40,11 +39,7 @@ defmodule Wocky.Mixfile do
     [
       # Specify extra applications you'll use from Erlang/Elixir
       extra_applications: [:logger, :runtime_tools, :inets],
-      included_applications: [
-        # This one we use files from but don't actually want the application
-        # running
-        :wocky_db_watcher
-      ],
+      included_applications: [],
       mod: {Wocky.Application, []},
       env: [
         wocky_env: {:system, "WOCKY_ENV", "dev"},
@@ -70,13 +65,14 @@ defmodule Wocky.Mixfile do
       {:bamboo, "~> 1.0"},
       {:bcrypt_elixir, "~> 2.0"},
       {:confex, "~> 3.4"},
-      {:dawdle, "~> 0.4.0"},
+      {:dawdle_db, github: "hippware/dawdle_db", branch: "master"},
       {:dataloader, "~> 1.0.0"},
       {:ecto_homoiconic_enum,
        github: "hippware/ecto_homoiconic_enum", branch: "master"},
       {:ecto_sql, "~> 3.0"},
       {:elixometer, github: "hippware/elixometer", branch: "working"},
       {:email_checker, "~> 0.1"},
+      {:eventually, github: "hippware/eventually", branch: "master"},
       {:ex_aws, "~> 2.0"},
       {:ex_aws_s3, "~> 2.0"},
       {:ex_aws_sqs, "~> 2.0"},
@@ -124,10 +120,6 @@ defmodule Wocky.Mixfile do
       {:swarm, "~> 3.0"},
       {:sweet_xml, "~> 0.6"},
       {:timex, "~> 3.1"},
-      {:wocky_db_watcher,
-       git: "https://github.com/hippware/wocky_db_watcher.git",
-       branch: "master",
-       app: false},
       {:bypass, "~> 1.0", only: :test, runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.6", only: :test},

@@ -3,7 +3,8 @@ defmodule WockyAPI.WatcherHelper do
   Helper functions for tests that require DB watcher functionality
   """
 
-  use ExUnit.CaseTemplate
+  import DawdleDB.TestHelper
+  import ExUnit.Callbacks
 
   @doc """
   This enables the DB watcher for the set of tests in which it's called.
@@ -15,15 +16,14 @@ defmodule WockyAPI.WatcherHelper do
   NOTE: I haven't been able to get SQL VIEW virtual tables to function properly
   in this mode. I have no idea why.
   """
-  def require_watcher(_) do
-    Wocky.Watcher.Client.clear_all_subscriptions()
+  def require_watcher(_ \\ %{}) do
+    Dawdle.Client.clear_all_handlers()
     Wocky.Callbacks.register()
     WockyAPI.Callbacks.register()
-    Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
-    Application.start(:wocky_db_watcher)
+
+    start_watcher(Wocky.Repo)
 
     on_exit(fn ->
-      Application.stop(:wocky_db_watcher)
       Wocky.Repo.delete_all(Wocky.User)
     end)
   end
