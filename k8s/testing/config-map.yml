@@ -19,8 +19,8 @@ data:
   WOCKY_CC_HARDWIRE_VAL: "US"
   WOCKY_DB_HOST: wocky-testing.cx7fev3pluk8.us-west-2.rds.amazonaws.com
   WOCKY_DB_NAME: wocky_testing
-  WOCKY_DB_WATCHER_QUEUE: wocky-db-watcher-testing.fifo
-  WOCKY_DB_WATCHER_REGION: us-west-2
+  DAWDLE_SQS_MESSAGE_QUEUE: wocky-db-watcher-testing.fifo
+  DAWDLE_SQS_DELAY_QUEUE: wocky-dawdle-testing
   WOCKY_ENTER_DEBOUNCE_SECONDS: "0"
   WOCKY_EXIT_DEBOUNCE_SECONDS: "0"
   AWS_ACCESS_KEY_ID: AKIAISCBKX42EUVSVXAQ
@@ -29,4 +29,3 @@ data:
   REDIS_HOST: master.wocky-redis.byxmud.usw2.cache.amazonaws.com
   REDIS_DB: "3"
   REDIS_SSL: "true"
-  DAWDLE_QUEUES: "wocky-dawdle-testing"

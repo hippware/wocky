@@ -11,6 +11,8 @@ config :wocky, Wocky.User.GeoFence,
   async_processing: true,
   visit_timeout_enabled: false
 
+config :dawdle, backend: Dawdle.Backend.SQS
+
 config :pigeon, :apns,
   apns_default: %{
     cert: {:wocky, "certs/${WOCKY_INST}.crt"},
