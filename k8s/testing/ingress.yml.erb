@@ -20,7 +20,11 @@ spec:
     - host: testing.dev.tinyrobot.com
       http:
         paths:
-          - path: /*
+          - path: /graphql/*
+            backend:
+              serviceName: wocky-public
+              servicePort: 80
+          - path: /api/*
             backend:
               serviceName: wocky-public
               servicePort: 80
