@@ -14,7 +14,7 @@ defmodule Wocky.Release.Mixfile do
         flags: [
           :error_handling,
           :race_conditions,
-          # :underspecs,
+          :underspecs,
           # :unmatched_returns
         ],
         ignore_warnings: "dialyzer_ignore.exs",

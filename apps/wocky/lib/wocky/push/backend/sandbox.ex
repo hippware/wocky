@@ -73,7 +73,7 @@ defmodule Wocky.Push.Backend.Sandbox do
     timeout = opts[:timeout] || 100
     count = opts[:count] || 1
 
-    case list_notifications(opts) do
+    case list_notifications(Keyword.take(opts, [:global, :pid])) do
       notifications when length(notifications) < count and timeout > 0 ->
         receive do
         after
