@@ -8,7 +8,7 @@ defmodule Wocky.Bot.InvitationTest do
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
   alias Wocky.Push
-  alias Wocky.Push.Sandbox
+  alias Wocky.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
 
   setup do

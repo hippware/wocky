@@ -619,7 +619,8 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "Apple Push Notification service"
     value :apns
 
-    # Android services TBD
+    @desc "Android Firebase Cloud Messaging service"
+    value :fcm
   end
 
   input_object :push_notifications_enable_input do

@@ -3,7 +3,7 @@ defmodule Wocky.PushHelper do
   Module to set up the db watcher/callback system for test cases that require it
   """
 
-  alias Wocky.Push.Sandbox
+  alias Wocky.Push.Backend.Sandbox
 
   def no_more_push_notifications do
     msgs = Sandbox.wait_notifications(global: true)

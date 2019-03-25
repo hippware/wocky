@@ -69,13 +69,6 @@
           if_called_more_often_than: 2,
           if_nested_deeper_than: 1
         ]},
-        # For some checks, you can also set other parameters
-        #
-        # If you don't want the `setup` and `test` macro calls in ExUnit tests
-        # or the `schema` macro in Ecto schemas to trigger DuplicatedCode, just
-        # set the `excluded_macros` parameter to `[:schema, :setup, :test]`.
-        #
-        {Credo.Check.Design.DuplicatedCode, [excluded_macros: []]},
         # You can also customize the exit_status of each check.
         # If you don't want TODO comments to cause `mix credo` to fail, just
         # set this value to 0 (zero).
@@ -93,22 +86,23 @@
         {Credo.Check.Readability.ModuleAttributeNames, []},
         {Credo.Check.Readability.ModuleDoc, []},
         {Credo.Check.Readability.ModuleNames, []},
-        {Credo.Check.Readability.ParenthesesOnZeroArityDefs, []},
         {Credo.Check.Readability.ParenthesesInCondition, []},
+        {Credo.Check.Readability.ParenthesesOnZeroArityDefs, []},
         {Credo.Check.Readability.PredicateFunctionNames, []},
         {Credo.Check.Readability.PreferImplicitTry, []},
         {Credo.Check.Readability.RedundantBlankLines, [max_blank_lines: 2]},
+        {Credo.Check.Readability.Semicolons, []},
+        {Credo.Check.Readability.SpaceAfterCommas, []},
         {Credo.Check.Readability.StringSigils, []},
         {Credo.Check.Readability.TrailingBlankLine, []},
         {Credo.Check.Readability.TrailingWhiteSpace, []},
+        # TODO: enable by default in Credo 1.1
+        {Credo.Check.Readability.UnnecessaryAliasExpansion, false},
         {Credo.Check.Readability.VariableNames, []},
-        {Credo.Check.Readability.Semicolons, []},
-        {Credo.Check.Readability.SpaceAfterCommas, []},
 
         #
         ## Refactoring Opportunities
         #
-        {Credo.Check.Refactor.DoubleBooleanNegation, []},
         {Credo.Check.Refactor.CondStatements, []},
         {Credo.Check.Refactor.CyclomaticComplexity, []},
         {Credo.Check.Refactor.FunctionArity, []},
@@ -119,7 +113,7 @@
         {Credo.Check.Refactor.NegatedConditionsWithElse, []},
         {Credo.Check.Refactor.Nesting, []},
         {Credo.Check.Refactor.PipeChainStart, [
-          excluded_argument_types: [:atom, :binary, :fn, :keyword],
+          excluded_argument_types: [:atom, :binary, :fn, :keyword, :number],
           excluded_functions: ["from"]
         ]},
         {Credo.Check.Refactor.UnlessWithElse, []},
@@ -134,6 +128,7 @@
         {Credo.Check.Warning.LazyLogging, []},
         {Credo.Check.Warning.OperationOnSameValues, []},
         {Credo.Check.Warning.OperationWithConstantResult, []},
+        {Credo.Check.Warning.RaiseInsideRescue, []},
         {Credo.Check.Warning.UnusedEnumOperation, []},
         {Credo.Check.Warning.UnusedFileOperation, []},
         {Credo.Check.Warning.UnusedKeywordOperation, []},
@@ -142,21 +137,20 @@
         {Credo.Check.Warning.UnusedRegexOperation, []},
         {Credo.Check.Warning.UnusedStringOperation, []},
         {Credo.Check.Warning.UnusedTupleOperation, []},
-        {Credo.Check.Warning.RaiseInsideRescue, []},
 
         #
-        # Controversial and experimental checks (opt-in, just remove `, false`)
+        # Controversial and experimental checks (opt-in, just replace `false` with `[]`)
         #
+        {Credo.Check.Consistency.MultiAliasImportRequireUse, false},
+        {Credo.Check.Design.DuplicatedCode, false},
+        {Credo.Check.Readability.Specs, false},
         {Credo.Check.Refactor.ABCSize, false},
         {Credo.Check.Refactor.AppendSingleItem, false},
+        {Credo.Check.Refactor.DoubleBooleanNegation, false},
+        {Credo.Check.Refactor.ModuleDependencies, false},
         {Credo.Check.Refactor.VariableRebinding, false},
         {Credo.Check.Warning.MapGetUnsafePass, false},
-        {Credo.Check.Consistency.MultiAliasImportRequireUse, false},
-
-        #
-        # Deprecated checks (these will be deleted after a grace period)
-        #
-        {Credo.Check.Readability.Specs, false}
+        {Credo.Check.Warning.UnsafeToAtom, false}
 
         #
         # Custom checks can be created using `mix credo.gen.check`.
