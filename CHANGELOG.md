@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: kronky (PR #2360)
+* Limit URLs passed by ALBs (#2356, PR #2362, PR #2364)
+
+
 # 2019.3.19+rc79b90b
 
 * Update: kronky (PR #2343), phoenix (PR #2344)
