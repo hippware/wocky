@@ -147,7 +147,7 @@
         {Credo.Check.Design.DuplicatedCode, []},
         {Credo.Check.Readability.Specs, false},
         {Credo.Check.Refactor.ABCSize, false},
-        {Credo.Check.Refactor.AppendSingleItem, false},
+        {Credo.Check.Refactor.AppendSingleItem, []},
         {Credo.Check.Refactor.DoubleBooleanNegation, []},
         {Credo.Check.Refactor.ModuleDependencies, false},
         {Credo.Check.Refactor.VariableRebinding, false},
