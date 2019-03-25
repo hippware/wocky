@@ -1,0 +1,34 @@
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: wocky-next
+  namespace: wocky-next
+  annotations:
+    kubernetes.io/ingress.class: alb
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/certificate-arn: 'arn:aws:acm:us-west-2:773488857071:certificate/0342584c-d783-4f1f-bfb1-f437c11b53e9'
+    alb.ingress.kubernetes.io/load-balancer-attributes: 'access_logs.s3.enabled=true,access_logs.s3.bucket=hippware-logs,access_logs.s3.prefix=wocky-next'
+    alb.ingress.kubernetes.io/subnets: <%= modules[0]['outputs']['dmz_subnet_ids_string']['value'] %>
+    alb.ingress.kubernetes.io/security-groups: <%= modules[0]['outputs']['ingress_sg_id']['value'] %>
+    alb.ingress.kubernetes.io/healthcheck-path: '/graphql'
+    alb.ingress.kubernetes.io/success-codes: '200,400'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+  labels:
+    app: wocky
+spec:
+  rules:
+    - host: next.dev.tinyrobot.com
+      http:
+        paths:
+          - path: /graphql
+            backend:
+              serviceName: wocky-public
+              servicePort: 80
+          - path: /graphql/websocket
+            backend:
+              serviceName: wocky-public
+              servicePort: 80
+          - path: /api/*
+            backend:
+              serviceName: wocky-public
+              servicePort: 80
