@@ -8,14 +8,12 @@ defmodule Wocky.Push do
 
   alias Pigeon.APNS.Notification, as: APNSNotification
   alias Pigeon.FCM.Notification, as: FCMNotification
-  alias Wocky.Push.{Event, Log, Token}
+  alias Wocky.Push.{Event, Log, Token, Utils}
   alias Wocky.Push.Backend.{APNS, FCM, Sandbox}
   alias Wocky.Repo
   alias Wocky.User
 
   require Logger
-
-  @message_limit 512
 
   @max_retries 5
 
@@ -109,13 +107,13 @@ defmodule Wocky.Push do
 
   @spec notify_all(Wocky.User.t(), any) :: :ok
   def notify_all(user, event) do
-    if enabled?() do
+    if Utils.enabled?() do
       for token <- Token.all_for_user(user) do
         platform = token.platform
 
         backend =
           cond do
-            sandbox?() -> Sandbox
+            Utils.sandbox?() -> Sandbox
             platform == :apns -> APNS
             platform == :fcm -> FCM
           end
@@ -136,16 +134,6 @@ defmodule Wocky.Push do
 
   # ===================================================================
   # Helpers
-
-  defp get_conf(key), do: Confex.get_env(:wocky, __MODULE__)[key]
-
-  def timeout, do: get_conf(:timeout)
-
-  defp sandbox?, do: get_conf(:sandbox)
-
-  defp enabled?, do: get_conf(:enabled)
-
-  defp log_payload?, do: get_conf(:log_payload)
 
   defp do_notify(%__MODULE__{token: nil, user: user, device: device}) do
     Logger.error(
@@ -172,14 +160,6 @@ defmodule Wocky.Push do
     |> Map.put(:backend, backend)
     |> Map.put(:on_response, on_response)
     |> backend.push()
-  end
-
-  def maybe_truncate_message(message) do
-    if byte_size(message) > @message_limit do
-      String.slice(message, 0, @message_limit - 3) <> "..."
-    else
-      message
-    end
   end
 
   def handle_response(notification, timeout_pid, params) do
@@ -230,13 +210,13 @@ defmodule Wocky.Push do
   end
 
   defp maybe_extract_payload(payload, user) do
-    if User.hippware?(user) || log_payload?() do
+    if User.hippware?(user) || Utils.log_payload?() do
       inspect(payload)
     end
   end
 
   defp push_timeout(%__MODULE__{retries: retries} = params) do
-    timeout = timeout() * 2
+    timeout = Utils.timeout() * 2
 
     receive do
       :push_complete -> :ok

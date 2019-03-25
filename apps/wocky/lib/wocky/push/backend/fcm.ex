@@ -7,13 +7,12 @@ defmodule Wocky.Push.Backend.FCM do
 
   alias Pigeon.FCM
   alias Pigeon.FCM.Notification
-  alias Wocky.Push
-  alias Wocky.Push.Event
+  alias Wocky.Push.{Event, Utils}
 
   def push(params) do
     params.event
     |> build_notification(params.token)
-    |> FCM.push(on_response: params.on_response, timeout: Push.timeout())
+    |> FCM.push(on_response: params.on_response, timeout: Utils.timeout())
 
     :ok
   end
@@ -22,7 +21,7 @@ defmodule Wocky.Push.Backend.FCM do
     event_msg =
       event
       |> Event.message()
-      |> Push.maybe_truncate_message()
+      |> Utils.maybe_truncate_message()
 
     token
     |> Notification.new(

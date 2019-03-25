@@ -7,8 +7,7 @@ defmodule Wocky.Push.Backend.APNS do
 
   alias Pigeon.APNS
   alias Pigeon.APNS.{Error, Notification}
-  alias Wocky.Push
-  alias Wocky.Push.Event
+  alias Wocky.Push.{Event, Utils}
 
   require Logger
 
@@ -25,7 +24,7 @@ defmodule Wocky.Push.Backend.APNS do
 
     event
     |> Event.message()
-    |> Push.maybe_truncate_message()
+    |> Utils.maybe_truncate_message()
     |> Notification.new(token, topic())
     |> Notification.put_badge(1)
     |> Notification.put_custom(%{"uri" => uri})
