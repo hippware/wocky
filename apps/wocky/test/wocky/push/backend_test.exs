@@ -26,15 +26,15 @@ defmodule Wocky.Push.BackendTest do
       body = Event.message(ctx.event)
 
       assert %FCMNotification{
-        payload: %{
-          "data" => %{"url" => ^url},
-          "notification" => %{
-            "body" => ^body,
-            "title" => "tinyrobot"
-          }
-        },
-        restricted_package_name: "app",
-      } = n
+               payload: %{
+                 "data" => %{"url" => ^url},
+                 "notification" => %{
+                   "body" => ^body,
+                   "title" => "tinyrobot"
+                 }
+               },
+               restricted_package_name: "app"
+             } = n
     end
 
     test "APNS should create a notification with the correct parameters", ctx do
@@ -44,16 +44,16 @@ defmodule Wocky.Push.BackendTest do
       token = ctx.token
 
       assert %APNSNotification{
-        device_token: ^token,
-        payload: %{
-          "aps" => %{
-            "alert" => ^body,
-            "badge" => 1
-          },
-          "uri" => ^url
-        },
-        topic: "app"
-      } = n
+               device_token: ^token,
+               payload: %{
+                 "aps" => %{
+                   "alert" => ^body,
+                   "badge" => 1
+                 },
+                 "uri" => ^url
+               },
+               topic: "app"
+             } = n
     end
   end
 end
