@@ -96,17 +96,17 @@ defmodule Wocky.TrafficLogTest do
         |> Timex.diff(ctx.first)
         |> Duration.from_microseconds()
 
-      packets = TrafficLog.get_by_period(ctx.user.id, ctx.first, dur)
-      assert length(packets) == div(@packets, 2)
+      packets! = TrafficLog.get_by_period(ctx.user.id, ctx.first, dur)
+      assert length(packets!) == div(@packets, 2)
 
-      packets =
+      packets! =
         TrafficLog.get_by_period(
           ctx.user.id,
           ctx.last,
           Duration.from_microseconds(0)
         )
 
-      assert length(packets) == 1
+      assert length(packets!) == 1
     end
 
     test "should get no traffic for a non-existant user" do

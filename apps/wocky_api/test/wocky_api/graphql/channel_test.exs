@@ -20,7 +20,7 @@ defmodule WockyAPI.GraphQL.ChannelTest do
     } do
       authenticate(user_id, token, socket)
 
-      query = """
+      hide = """
       mutation ($enable: Boolean!, $expire: DateTime) {
         userHide (input: {enable: $enable, expire: $expire}) {
           result
@@ -28,13 +28,13 @@ defmodule WockyAPI.GraphQL.ChannelTest do
       }
       """
 
-      ref = push_doc(socket, query, variables: %{enable: true})
-      assert_reply ref, :ok, %{data: %{"userHide" => %{"result" => true}}}, 1000
+      ref! = push_doc(socket, hide, variables: %{enable: true})
+      assert_reply ref!, :ok, %{data: %{"userHide" => %{"result" => true}}}, 1000
 
       query = "query { currentUser { hidden { enabled } } }"
 
-      ref = push_doc(socket, query)
-      assert_reply ref, :ok, result, 1000
+      ref! = push_doc(socket, query)
+      assert_reply ref!, :ok, result, 1000
 
       assert result.data == %{
                "currentUser" => %{
@@ -53,10 +53,10 @@ defmodule WockyAPI.GraphQL.ChannelTest do
       user: %{id: user_id}
     } do
       authenticate(user_id, token, socket)
-      query = "mutation { botCreate { successful, result { id } } }"
+      create = "mutation { botCreate { successful, result { id } } }"
 
-      ref = push_doc(socket, query)
-      assert_reply ref, :ok, result, 1000
+      ref! = push_doc(socket, create)
+      assert_reply ref!, :ok, result, 1000
 
       assert %{
                "botCreate" => %{
@@ -67,7 +67,7 @@ defmodule WockyAPI.GraphQL.ChannelTest do
                }
              } = result.data
 
-      query = """
+      update = """
       mutation ($id: UUID!, $values: BotParams!) {
         botUpdate (input: {id: $id, values: $values}) {
           successful
@@ -84,20 +84,20 @@ defmodule WockyAPI.GraphQL.ChannelTest do
         |> add_bot_lat_lon()
         |> Map.take(bot_create_fields())
 
-      ref =
-        push_doc(socket, query,
+      ref! =
+        push_doc(socket, update,
           variables: %{
             "id" => id,
             "values" => values
           }
         )
 
-      assert_reply ref, :ok, _result, 1000
+      assert_reply ref!, :ok, _result, 1000
 
       query = "query ($id: UUID!) { bot (id: $id) { title } }"
 
-      ref = push_doc(socket, query, variables: %{"id" => id})
-      assert_reply ref, :ok, result, 1000
+      ref! = push_doc(socket, query, variables: %{"id" => id})
+      assert_reply ref!, :ok, result, 1000
 
       title = values[:title]
 

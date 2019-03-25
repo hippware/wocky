@@ -150,7 +150,7 @@
         {Credo.Check.Refactor.AppendSingleItem, []},
         {Credo.Check.Refactor.DoubleBooleanNegation, []},
         {Credo.Check.Refactor.ModuleDependencies, false},
-        {Credo.Check.Refactor.VariableRebinding, false},
+        {Credo.Check.Refactor.VariableRebinding, [allow_bang: true]},
         {Credo.Check.Warning.MapGetUnsafePass, []},
         {Credo.Check.Warning.UnsafeToAtom, []}
 
