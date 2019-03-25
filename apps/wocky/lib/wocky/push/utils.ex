@@ -21,5 +21,5 @@ defmodule Wocky.Push.Utils do
 
   def log_payload?, do: get_conf(:log_payload)
 
-  defp get_conf(key), do: Confex.get_env(:wocky, __MODULE__)[key]
+  defp get_conf(key), do: Confex.get_env(:wocky, Wocky.Push)[key]
 end
