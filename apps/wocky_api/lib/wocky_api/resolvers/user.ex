@@ -367,7 +367,7 @@ defmodule WockyAPI.Resolvers.User do
   def name_friend(_root, args, %{context: %{current_user: user}}) do
     with %User{} = other_user <- User.get_user(args[:input][:user_id], user),
          %Item{} <- Roster.get_item(user, other_user) do
-      Roster.set_name(user, other_user, args[:input][:name])
+      {:ok, _} = Roster.set_name(user, other_user, args[:input][:name])
       {:ok, true}
     else
       nil -> user_not_found(args[:input][:user_id])

@@ -16,7 +16,7 @@ defmodule WockyAPI.Application do
     PhoenixInstrumenter.setup()
     PipelineInstrumenter.setup()
     PrometheusExporter.setup()
-    AbsintheInstrumenter.install(WockyAPI.Schema)
+    _ = AbsintheInstrumenter.install(WockyAPI.Schema)
 
     # Define workers and child supervisors to be supervised
     children = [

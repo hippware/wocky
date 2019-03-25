@@ -36,7 +36,7 @@ defmodule Wocky.User.Location.Handler do
 
     reply =
       with {:ok, loc} = result <- prepare_location(user, location) do
-        GeoFence.check_for_bot_events(loc, user)
+        _ = GeoFence.check_for_bot_events(loc, user)
         result
       end
 
@@ -48,7 +48,7 @@ defmodule Wocky.User.Location.Handler do
 
     reply =
       with {:ok, loc} = result <- prepare_location(user, location) do
-        GeoFence.check_for_bot_event(bot, loc, user)
+        _ = GeoFence.check_for_bot_event(bot, loc, user)
         result
       end
 

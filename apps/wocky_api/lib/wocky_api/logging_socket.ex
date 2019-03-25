@@ -75,15 +75,20 @@ defmodule WockyAPI.LoggingSocket do
     context = socket.assigns[:absinthe][:opts][:context]
     user = socket.assigns[:user]
 
-    %{
-      user_id: user && user.id,
-      device: "GraphQL",
-      host: context.host,
-      ip: context.peer,
-      incoming: incoming?,
-      packet: to_string(payload)
-    }
-    |> TrafficLog.put(User.hippware?(user))
+    # Ignore the return value here so that we don't crash the socket if the
+    # log operation fails.
+    _ =
+      %{
+        user_id: user && user.id,
+        device: "GraphQL",
+        host: context.host,
+        ip: context.peer,
+        incoming: incoming?,
+        packet: to_string(payload)
+      }
+      |> TrafficLog.put(User.hippware?(user))
+
+    :ok
   end
 
   def maybe_log_reply({:reply, :ok, {:text, payload}, state} = reply) do

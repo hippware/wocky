@@ -14,7 +14,7 @@ defmodule Wocky.Callbacks.UserInvitation do
     new = Repo.preload(new, [:user, :invitee])
 
     if new.user != nil && new.invitee != nil do
-      InvNotification.notify(new.user, new.invitee)
+      {:ok, _} = InvNotification.notify(new.user, new.invitee)
 
       event = UserInvitationEvent.new(%{from: new.user, to: new.invitee})
 
