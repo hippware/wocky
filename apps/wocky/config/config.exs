@@ -109,11 +109,18 @@ config :wocky, Wocky.User.GeoFence,
 config :wocky, Wocky.Push,
   enabled: {:system, :boolean, "WOCKY_PUSH_ENABLED", false},
   sandbox: {:system, :boolean, "WOCKY_PUSH_SANDBOX", false},
-  reflect: {:system, :boolean, "WOCKY_PUSH_REFLECT", false},
-  topic: {:system, :string, "WOCKY_PUSH_TOPIC", "app"},
   uri_prefix: {:system, :string, "WOCKY_PUSH_URI_PREFIX", "tinyrobot"},
   timeout: {:system, :integer, "WOCKY_PUSH_TIMEOUT", 60_000},
   log_payload: {:system, :boolean, "WOCKY_PUSH_LOG_PAYLOAD", true}
+
+config :wocky, Wocky.Push.Backend.APNS,
+  topic: {:system, :string, "WOCKY_PUSH_APNS_TOPIC", "app"}
+
+config :wocky, Wocky.Push.Backend.FCM,
+  package: {:system, :string, "WOCKY_PUSH_FCM_PACKAGE", "app"}
+
+config :wocky, Wocky.Push.Backend.Sandbox,
+  reflect: {:system, :boolean, "WOCKY_PUSH_REFLECT", false}
 
 config :wocky, Wocky.Repo,
   adapter: Ecto.Adapters.Postgres,
@@ -155,6 +162,11 @@ config :pigeon, :apns,
     cert: {:wocky, "certs/testing.crt"},
     key: {:wocky, "certs/testing.key"},
     mode: :dev
+  }
+
+config :pigeon, :fcm,
+  fcm_default: %{
+    key: {:system, :string, "WOCKY_FCM_KEY"}
   }
 
 config :ex_twilio,

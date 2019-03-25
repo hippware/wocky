@@ -4,7 +4,7 @@ defmodule Wocky.Roster.RosterNotificationTest do
   alias Faker.Code
   alias Pigeon.APNS.Notification
   alias Wocky.{Push, Roster}
-  alias Wocky.Push.Sandbox
+  alias Wocky.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
 
   setup do

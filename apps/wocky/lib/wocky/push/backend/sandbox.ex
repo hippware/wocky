@@ -1,4 +1,4 @@
-defmodule Wocky.Push.Sandbox do
+defmodule Wocky.Push.Backend.Sandbox do
   @moduledoc """
   Sandbox where notifications get saved when the application is running in
   sandbox mode. This is meant to be used in tests, and should not be used in
@@ -11,6 +11,45 @@ defmodule Wocky.Push.Sandbox do
   use GenServer
 
   alias Pigeon.APNS.Notification
+  alias Wocky.Push.Backend.APNS
+
+  def push(params) do
+    n = APNS.build_notification(params.event, params.token)
+    retries = params.retries
+
+    notif =
+      case n.payload["aps"]["alert"] do
+        "bad token" ->
+          %Notification{n | id: "testing", response: :bad_device_token}
+
+        "raise" ->
+          raise "requested_raise"
+
+        "retry test" when retries < 2 ->
+          %Notification{n | id: "testing", response: :failed}
+
+        _ ->
+          %Notification{n | id: "testing", response: :success}
+      end
+
+    record_notification(notif, self())
+
+    if reflect?(), do: send(self(), notif)
+
+    params.on_response.(notif)
+
+    notif
+  end
+
+  defdelegate get_response(resp), to: APNS
+
+  defdelegate get_id(notification), to: APNS
+
+  defdelegate get_payload(notification), to: APNS
+
+  defdelegate error_msg(resp), to: APNS
+
+  defdelegate handle_error(resp), to: APNS
 
   @doc """
   Records the notification. This is used to record
@@ -101,4 +140,6 @@ defmodule Wocky.Push.Sandbox do
       {:reply, :ok, Map.put(state, pid, [])}
     end
   end
+
+  defp reflect?, do: Confex.get_env(:wocky, __MODULE__)[:reflect]
 end
