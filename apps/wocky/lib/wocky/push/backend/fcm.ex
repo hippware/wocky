@@ -17,7 +17,7 @@ defmodule Wocky.Push.Backend.FCM do
     :ok
   end
 
-  defp build_notification(event, token) do
+  def build_notification(event, token) do
     event_msg =
       event
       |> Event.message()
