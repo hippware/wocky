@@ -138,8 +138,6 @@ config :wocky, Wocky.Mailer,
   adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.TestAdapter},
   api_key: {:system, :string, "MANDRILL_API_KEY", ""}
 
-config :dawdle, Dawdle.Backend.SQS, region: "us-west-2"
-
 config :dawdle_db,
   channel: "wocky_db_watcher_notify"
 
