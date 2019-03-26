@@ -5,7 +5,7 @@ defmodule Wocky.Repo.ID do
 
   alias Ecto.UUID
 
-  @type t :: binary
+  @type t :: <<_::288>>
 
   @doc "Generates a UUID in canonical text format for use as an id."
   @spec new :: t

@@ -48,12 +48,12 @@ defmodule Wocky.User.Avatar do
   def maybe_delete_existing(_new_avatar, user) do
     case TROS.parse_url(user.image_url) do
       {:ok, file_id} ->
-        TROS.delete(file_id, user)
+        # TODO Do we really want to ignore this return value?
+        _ = TROS.delete(file_id, user)
+        :ok
 
       {:error, _} ->
         :ok
     end
-
-    :ok
   end
 end

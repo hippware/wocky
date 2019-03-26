@@ -12,9 +12,10 @@ defmodule Wocky.Push.Backend.APNS do
   require Logger
 
   def push(params) do
-    params.event
-    |> build_notification(params.token)
-    |> APNS.push(on_response: params.on_response)
+    _ =
+      params.event
+      |> build_notification(params.token)
+      |> APNS.push(on_response: params.on_response)
 
     :ok
   end

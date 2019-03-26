@@ -30,13 +30,14 @@ defmodule Wocky.User.Notification.BotItem do
   end
 
   def do_notify(user, item) do
-    %__MODULE__{
-      user_id: user.id,
-      other_user_id: item.user.id,
-      bot_id: item.bot.id,
-      bot_item_id: item.id
-    }
-    |> Notification.notify()
+    {:ok, _} =
+      %__MODULE__{
+        user_id: user.id,
+        other_user_id: item.user.id,
+        bot_id: item.bot.id,
+        bot_item_id: item.id
+      }
+      |> Notification.notify()
 
     event = NewBotItemEvent.new(author: item.user, to: user, item: item)
     Push.notify_all(user, event)

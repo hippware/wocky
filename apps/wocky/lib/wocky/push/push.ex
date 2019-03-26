@@ -127,9 +127,11 @@ defmodule Wocky.Push do
           event: event
         })
       end
-    end
 
-    :ok
+      :ok
+    else
+      :ok
+    end
   end
 
   # ===================================================================
@@ -182,7 +184,7 @@ defmodule Wocky.Push do
            resp: resp
          } = params
        ) do
-    Logger.error("PN Error: #{backend.error_msg(resp)}")
+    _ = Logger.error("PN Error: #{backend.error_msg(resp)}")
 
     case backend.handle_error(resp) do
       :retry -> do_notify(%{params | retries: retries + 1})
@@ -252,7 +254,7 @@ defmodule Wocky.Push do
          device: device,
          event: event
        }) do
-    Logger.error("PN Error: timeout expired")
+    _ = Logger.error("PN Error: timeout expired")
 
     %{
       user_id: user.id,

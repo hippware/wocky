@@ -25,9 +25,8 @@ defmodule Wocky.Application do
         true -> start_db_only()
       end
 
-    if Confex.get_env(:wocky, :start_watcher, false) do
-      Supervisor.start_child(pid, {Watcher, Wocky.Repo.config()})
-    end
+    Confex.get_env(:wocky, :start_watcher, false)
+    |> maybe_start_watcher(pid)
 
     sup
   end
@@ -70,6 +69,13 @@ defmodule Wocky.Application do
       strategy: :one_for_one,
       name: Wocky.Supervisor
     )
+  end
+
+  defp maybe_start_watcher(false, _), do: :ok
+
+  defp maybe_start_watcher(true, sup) do
+    {:ok, _} = Supervisor.start_child(sup, {Watcher, Wocky.Repo.config()})
+    :ok
   end
 
   defp redis_config do

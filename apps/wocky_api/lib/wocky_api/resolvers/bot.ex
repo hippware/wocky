@@ -226,7 +226,7 @@ defmodule WockyAPI.Resolvers.Bot do
         not_found_error(bot_id)
 
       bot ->
-        Bot.unsubscribe(bot, requestor)
+        :ok = Bot.unsubscribe(bot, requestor)
         {:ok, true}
     end
   end

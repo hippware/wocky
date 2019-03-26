@@ -10,9 +10,10 @@ defmodule Wocky.Push.Backend.FCM do
   alias Wocky.Push.{Event, Utils}
 
   def push(params) do
-    params.event
-    |> build_notification(params.token)
-    |> FCM.push(on_response: params.on_response, timeout: Utils.timeout())
+    _ =
+      params.event
+      |> build_notification(params.token)
+      |> FCM.push(on_response: params.on_response, timeout: Utils.timeout())
 
     :ok
   end

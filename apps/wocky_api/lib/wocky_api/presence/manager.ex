@@ -38,7 +38,7 @@ defmodule WockyAPI.Presence.Manager do
 
   def init({user, sock_pid}) do
     mon_ref = Process.monitor(sock_pid)
-    PubSub.subscribe(:presence, pubsub_topic(user))
+    _ = PubSub.subscribe(:presence, pubsub_topic(user))
     Store.add_self(user.id)
 
     {:ok, contact_refs} =

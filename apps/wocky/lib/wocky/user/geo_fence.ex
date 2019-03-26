@@ -19,7 +19,7 @@ defmodule Wocky.User.GeoFence do
     last_event = BotEvent.get_last_event_type(user.id, bot.id)
 
     if inside?(last_event) do
-      BotEvent.insert_system(user, bot, :exit, reason)
+      _ = BotEvent.insert_system(user, bot, :exit, reason)
       Bot.depart(bot, user, config.enable_notifications)
     end
 
@@ -88,9 +88,15 @@ defmodule Wocky.User.GeoFence do
   defp should_process?(%Location{accuracy: accuracy}, user, config),
     do: !User.hidden?(user) && accuracy <= config.max_accuracy_threshold
 
-  defp maybe_do_async(fun, %{async_processing: true}), do: Task.start_link(fun)
+  defp maybe_do_async(fun, %{async_processing: true}) do
+    {:ok, _} = Task.start_link(fun)
+    :ok
+  end
 
-  defp maybe_do_async(fun, _), do: fun.()
+  defp maybe_do_async(fun, _) do
+    fun.()
+    :ok
+  end
 
   defp check_for_events(bots, user, loc, config) do
     events = BotEvent.get_last_events(user.id)
@@ -116,7 +122,7 @@ defmodule Wocky.User.GeoFence do
         acc
 
       {:roll_back, old_state} ->
-        BotEvent.insert(user, loc.device, bot, loc, old_state)
+        _ = BotEvent.insert(user, loc.device, bot, loc, old_state)
         acc
 
       new_state ->

@@ -14,7 +14,7 @@ defmodule Wocky.Repo do
     # The application isn't started when we are running migrations, so we have
     # to ensure that PrometheusEx is started and setup the Ecto instrumenter's
     # internal state.
-    Application.ensure_all_started(:prometheus_ex)
+    {:ok, _} = Application.ensure_all_started(:prometheus_ex)
 
     RepoInstrumenter.setup()
 

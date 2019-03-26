@@ -13,7 +13,8 @@ defmodule Wocky.TROS.Store.S3 do
 
   def delete(file_id) do
     for file <- TROS.variants(file_id) do
-      do_delete(file)
+      # TODO Do we really want to ignore this return value?
+      _ = do_delete(file)
     end
 
     :ok

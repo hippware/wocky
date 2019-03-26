@@ -174,6 +174,8 @@ defmodule Wocky.Repo.Cleaner do
       end
 
     Logger.info("#{start} #{count} #{msg}")
+
+    :ok
   end
 
   def clean_bot_image_links(do_clean) do

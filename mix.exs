@@ -8,18 +8,19 @@ defmodule Wocky.Release.Mixfile do
       test_coverage: [tool: ExCoveralls, test_task: "test"],
       preferred_cli_env: [
         coveralls: :test,
-        "coveralls.html": :test
+        "coveralls.html": :test,
+        dialyzer: :test
       ],
       dialyzer: [
-        plt_add_apps: [:mix, :mnesia, :inets],
-        plt_add_deps: :transitive,
-        ignore_warnings: "dialyzer.ignore-warnings",
+        plt_add_apps: [:ex_unit],
         flags: [
-          # :unmatched_returns,
-          # :underspecs,
           :error_handling,
-          :race_conditions
-        ]
+          :race_conditions,
+          :underspecs,
+          :unmatched_returns
+        ],
+        ignore_warnings: "dialyzer_ignore.exs",
+        list_unused_filters: true
       ],
       deps: deps(),
       aliases: aliases()
@@ -30,8 +31,8 @@ defmodule Wocky.Release.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
+      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev, :test], runtime: false},
       {:distillery, "~> 2.0", runtime: false},
-      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.8", only: :test}
     ]
   end

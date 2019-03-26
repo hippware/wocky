@@ -17,5 +17,7 @@ defmodule Wocky.Tasks.LocShareExpire do
     {time, {count, nil}} = :timer.tc(&LocationShare.clean_expired/0)
 
     Logger.info("Deleted #{count} expired shares in #{time}ms")
+
+    :ok
   end
 end

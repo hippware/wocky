@@ -41,8 +41,9 @@ defmodule Wocky.TROS.Store.Test do
   end
 
   defp record_action(function, params) do
-    if :ets.info(__MODULE__, :id) == :undefined,
-      do: :ets.new(__MODULE__, [:public, :named_table, :ordered_set])
+    _ =
+      if :ets.info(__MODULE__, :id) == :undefined,
+        do: :ets.new(__MODULE__, [:public, :named_table, :ordered_set])
 
     :ets.insert(
       __MODULE__,

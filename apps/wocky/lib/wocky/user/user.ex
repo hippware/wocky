@@ -235,7 +235,7 @@ defmodule Wocky.User do
   def sms_allowed_inc?(user) do
     with %User{} = u <- get_user(user.id) do
       if u.smss_sent < Confex.get_env(:wocky, :max_sms_per_user) do
-        __MODULE__.update(user.id, %{smss_sent: u.smss_sent + 1})
+        {:ok, _} = __MODULE__.update(user.id, %{smss_sent: u.smss_sent + 1})
         true
       else
         allowed_unlimited_smss?(user)
@@ -284,8 +284,9 @@ defmodule Wocky.User do
     if user do
       TROS.delete_all(user)
 
-      if user.provider == "firebase",
-        do: FirebaseAuth.delete_user(user.external_id)
+      _ =
+        if user.provider == "firebase",
+          do: FirebaseAuth.delete_user(user.external_id)
 
       Repo.delete!(user)
     end
