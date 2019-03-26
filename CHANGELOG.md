@@ -5,12 +5,15 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.3.26+raa9ae1a
+
 * Update: kronky (PR #2360), credo (PR #2367)
 * Limit URLs passed by ALBs (#2356, PR #2362, PR #2364)
 * Support Android push notifications (#1919)
 * Add ALB to remaining environments (PR #2366)
 * Migrate Wocky to the new Dawdle and DawdleDB (PR #2359, PR #2369)
 * Dialyzer changes (PR #2368)
+* Tweak the Credo config and address issues (PR #2370)
 
 
 # 2019.3.19+rc79b90b
