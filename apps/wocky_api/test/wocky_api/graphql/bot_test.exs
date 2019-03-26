@@ -222,10 +222,10 @@ defmodule WockyAPI.GraphQL.BotTest do
         |> Enum.slice(-4..-1)
         |> Enum.map(& &1.id)
 
-      result =
+      result! =
         run_query(@query, user, %{"last" => 3, "relationship" => "OWNED"})
 
-      refute has_errors(result)
+      refute has_errors(result!)
 
       assert %{
                "currentUser" => %{
@@ -257,16 +257,16 @@ defmodule WockyAPI.GraphQL.BotTest do
                    }
                  }
                }
-             } = result.data
+             } = result!.data
 
-      result =
+      result! =
         run_query(@query, user, %{
           "last" => 2,
           "before" => c9,
           "relationship" => "OWNED"
         })
 
-      refute has_errors(result)
+      refute has_errors(result!)
 
       assert %{
                "currentUser" => %{
@@ -292,7 +292,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                    }
                  }
                }
-             } = result.data
+             } = result!.data
     end
 
     @query """
@@ -692,7 +692,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "create bot with location", %{user: %{id: user_id} = user} do
-      bot =
+      bot_data =
         :bot
         |> Factory.build()
         |> add_bot_lat_lon()
@@ -700,10 +700,10 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       result =
         run_query(@query, user, %{
-          "values" => stringify_keys(bot),
+          "values" => stringify_keys(bot_data),
           "user_location" => %{
-            "lat" => bot.lat,
-            "lon" => bot.lon,
+            "lat" => bot_data.lat,
+            "lon" => bot_data.lon,
             "accuracy" => 1,
             "device" => Lorem.word()
           }
@@ -1294,7 +1294,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       user2: user2,
       bot2: bot2
     } do
-      result =
+      result! =
         run_query(@query, user, %{
           "input" => %{
             "bot_id" => bot2.id,
@@ -1302,9 +1302,9 @@ defmodule WockyAPI.GraphQL.BotTest do
           }
         })
 
-      %{"botItemPublish" => %{"result" => %{"id" => id}}} = result.data
+      %{"botItemPublish" => %{"result" => %{"id" => id}}} = result!.data
 
-      result =
+      result! =
         run_query(@query, user2, %{
           "input" => %{
             "bot_id" => bot2.id,
@@ -1313,7 +1313,7 @@ defmodule WockyAPI.GraphQL.BotTest do
           }
         })
 
-      assert error_msg(result) =~ "Permission denied"
+      assert error_msg(result!) =~ "Permission denied"
     end
 
     @query """

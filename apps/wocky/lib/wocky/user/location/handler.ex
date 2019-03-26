@@ -127,7 +127,7 @@ defmodule Wocky.User.Location.Handler do
     |> Ecto.build_assoc(:current_location)
     |> Location.changeset(Map.from_struct(location))
     |> Repo.insert(
-      on_conflict: {:replace, Location.fields() ++ [:updated_at]},
+      on_conflict: {:replace, [:updated_at | Location.fields()]},
       conflict_target: :user_id
     )
   end

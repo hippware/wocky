@@ -15,15 +15,15 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   end
 
   test "deleted user should not have further access", %{socket: socket} do
-    query = "mutation { userDelete { result } }"
-    ref = push_doc(socket, query)
-    assert_reply ref, :ok, reply, 1000
+    delete = "mutation { userDelete { result } }"
+    ref! = push_doc(socket, delete)
+    assert_reply ref!, :ok, reply, 1000
     refute has_errors(reply)
     assert reply.data == %{"userDelete" => %{"result" => true}}
 
     query = "query { currentUser { id } }"
-    ref = push_doc(socket, query)
-    assert_reply ref, :ok, reply, 1000
+    ref! = push_doc(socket, query)
+    assert_reply ref!, :ok, reply, 1000
     assert has_errors(reply)
     assert error_msg(reply) =~ "This operation requires an authenticated user"
   end

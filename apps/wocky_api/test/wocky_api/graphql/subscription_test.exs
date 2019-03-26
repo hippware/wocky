@@ -114,8 +114,8 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       }
       """
 
-      ref = push_doc(socket, sub)
-      assert_reply ref, :ok, %{subscriptionId: _subscription_id}, 1000
+      ref! = push_doc(socket, sub)
+      assert_reply ref!, :ok, %{subscriptionId: _subscription_id}, 1000
 
       mut = """
       mutation ($input: UserLocationUpdateInput!) {
@@ -137,10 +137,10 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
         }
       }
 
-      ref = push_doc(socket, mut, variables: location_input)
-      assert_reply ref, :ok, _, 1000
-      ref = push_doc(socket, mut, variables: location_input)
-      assert_reply ref, :ok, _, 1000
+      ref! = push_doc(socket, mut, variables: location_input)
+      assert_reply ref!, :ok, _, 1000
+      ref! = push_doc(socket, mut, variables: location_input)
+      assert_reply ref!, :ok, _, 1000
 
       assert_push "subscription:data", _push, 2000
     end

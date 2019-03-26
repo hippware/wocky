@@ -144,10 +144,12 @@ defmodule Wocky.User.UserTest do
       assert errors_on(changeset).handle
     end
 
-    test "should fail if the handle has invalid characters", ctx do
+    test "should fail if the handle has symbols", ctx do
       changeset = set_handle(ctx, "a-bcdef")
       assert errors_on(changeset).handle
+    end
 
+    test "should fail if the handle has non-latin characters", ctx do
       changeset = set_handle(ctx, "abąab")
       assert errors_on(changeset).handle
     end
