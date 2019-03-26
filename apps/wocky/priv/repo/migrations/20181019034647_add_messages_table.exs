@@ -63,7 +63,7 @@ defmodule Wocky.Repo.Migrations.AddMessagesTable do
 
       # See mod_mam_utils:generate_message_id/0 - we're reversing that process
       # to get a timestamp
-      created_at: m.id |> Bitwise.bsr(8) |> Timex.from_unix(:microseconds)
+      created_at: m.id |> Bitwise.bsr(8) |> Timex.from_unix(:microsecond)
     ]
   end
 
