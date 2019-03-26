@@ -17,7 +17,9 @@ defmodule Wocky.User.WelcomeEmail do
       |> from(Confex.get_env(:wocky, :welcome_email_from))
       |> subject(Confex.get_env(:wocky, :welcome_email_subject))
       |> MandrillHelper.put_param("global_merge_vars", make_merge_vars(user))
-      |> MandrillHelper.template(Confex.get_env(:wocky, :welcome_email_template))
+      |> MandrillHelper.template(
+        Confex.get_env(:wocky, :welcome_email_template)
+      )
       |> Mailer.deliver_later()
 
     :ok
