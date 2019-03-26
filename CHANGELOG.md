@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.3.26+r3acc76d
+
+* Update watcher version with config fix (PR #2371)
+
+
 # 2019.3.26+raa9ae1a
 
 * Update: kronky (PR #2360), credo (PR #2367)
