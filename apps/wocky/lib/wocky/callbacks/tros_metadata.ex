@@ -3,13 +3,15 @@ defmodule Wocky.Callbacks.TROSMetadata do
   Callbacks for TROS metadata changes
   """
 
+  use DawdleDB.Handler, type: Wocky.TROS.Metadata
+
   alias Wocky.{TROS, Waiter}
 
-  use Wocky.Watcher, type: Wocky.TROS.Metadata, events: [:update]
-
-  def handle_update(%Event{old: %{ready: false}, new: %{ready: true, id: id}}) do
+  def handle_update(%{ready: true, id: id}, %{ready: false}) do
     id
     |> TROS.file_ready_event()
     |> Waiter.notify()
   end
+
+  def handle_update(_new, _old), do: :ok
 end

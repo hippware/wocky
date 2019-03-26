@@ -20,8 +20,8 @@ data:
   WOCKY_ENABLE_BYPASS: "true"
   WOCKY_DB_HOST: wocky-next.cx7fev3pluk8.us-west-2.rds.amazonaws.com
   WOCKY_DB_NAME: wocky_next
-  WOCKY_DB_WATCHER_QUEUE: wocky-db-watcher-next.fifo
-  WOCKY_DB_WATCHER_REGION: us-west-2
+  DAWDLE_SQS_MESSAGE_QUEUE: wocky-db-watcher-next.fifo
+  DAWDLE_SQS_DELAY_QUEUE: wocky-dawdle-next
   WOCKY_SMS_BACKEND: Wocky.SMS.Twilio
   AWS_ACCESS_KEY_ID: AKIAJYPIJ4FONNTYC3RQ
   TWILIO_ACCOUNT_SID: ACbfbd3863ab87b6d00d37de65e99dacd1
@@ -30,4 +30,3 @@ data:
   BAMBOO_ADAPTER: Bamboo.MandrillAdapter
   REDIS_HOST: wocky-cache.byxmud.ng.0001.usw2.cache.amazonaws.com
   REDIS_DB: "4"
-  DAWDLE_QUEUES: "wocky-dawdle-next"

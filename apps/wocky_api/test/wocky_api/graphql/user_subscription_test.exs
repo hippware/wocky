@@ -7,9 +7,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   alias Wocky.Repo.{Factory, Timestamp}
   alias Wocky.{Roster, User}
 
-  setup_all do
-    setup_watcher()
-  end
+  setup_all :require_watcher
 
   setup %{socket: socket, user: user, token: token} do
     authenticate(user.id, token, socket)

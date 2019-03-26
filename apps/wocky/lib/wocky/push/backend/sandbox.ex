@@ -105,13 +105,13 @@ defmodule Wocky.Push.Backend.Sandbox do
   end
 
   @doc false
-  def start_link do
-    GenServer.start_link(__MODULE__, %{}, name: __MODULE__)
+  def start_link(args \\ []) do
+    GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
   @doc false
-  def init(args) do
-    {:ok, args}
+  def init(_args) do
+    {:ok, %{}}
   end
 
   @doc false

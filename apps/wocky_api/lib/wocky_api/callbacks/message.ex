@@ -3,12 +3,12 @@ defmodule WockyAPI.Callbacks.Message do
   Callbacks for DB message changes
   """
 
+  use DawdleDB.Handler, type: Wocky.Message
+
   alias Wocky.Repo
   alias WockyAPI.Resolvers.Message, as: MessageResolver
 
-  use Wocky.Watcher, type: Wocky.Message, events: [:insert]
-
-  def handle_insert(%Event{new: new}) do
+  def handle_insert(new) do
     new = Repo.preload(new, [:sender])
     if not is_nil(new.sender), do: MessageResolver.notify_message(new)
   end

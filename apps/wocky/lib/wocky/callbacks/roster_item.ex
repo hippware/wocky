@@ -3,12 +3,12 @@ defmodule Wocky.Callbacks.RosterItem do
   Callbacks for roster item changes
   """
 
-  use Wocky.Watcher, type: Wocky.Roster.Item, events: [:delete]
+  use DawdleDB.Handler, type: Wocky.Roster.Item
 
   alias Wocky.Repo
   alias Wocky.User
 
-  def handle_delete(%Event{old: old}) do
+  def handle_delete(old) do
     item = Repo.preload(old, [:user, :contact])
 
     # Cancel location sharing

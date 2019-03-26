@@ -3,12 +3,12 @@ defmodule Wocky.Callbacks.BotItem do
   Callbacks for DB bot item changes
   """
 
-  use Wocky.Watcher, type: Wocky.Bot.Item, events: [:insert]
+  use DawdleDB.Handler, type: Wocky.Bot.Item
 
   alias Wocky.Repo
   alias Wocky.User.Notification.BotItem
 
-  def handle_insert(%Event{new: item}) do
+  def handle_insert(item) do
     item = Repo.preload(item, [:bot])
 
     if item.bot != nil do

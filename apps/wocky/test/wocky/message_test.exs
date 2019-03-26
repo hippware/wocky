@@ -1,11 +1,9 @@
 defmodule Wocky.MessageTest do
-  use Wocky.WatcherHelper
-
-  import Ecto.Query
+  use Wocky.WatcherCase
 
   alias Faker.{Code, Lorem}
   alias Pigeon.APNS.Notification
-  alias Wocky.{Message, Push, Repo, Roster}
+  alias Wocky.{Message, Push, Roster}
   alias Wocky.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
 

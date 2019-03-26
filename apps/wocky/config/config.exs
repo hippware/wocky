@@ -5,6 +5,7 @@ use Mix.Config
 config :wocky,
   ecto_repos: [Wocky.Repo],
   db_only_mode: false,
+  start_watcher: {:system, :boolean, "WOCKY_START_WATCHER", false},
 
   # Deployment notifications
   deploy_notify_channels: ["#dev-deployments"],
@@ -86,7 +87,7 @@ config :wocky, :redis,
   port: {:system, :integer, "REDIS_PORT", 6379},
   ssl: {:system, :boolean, "REDIS_SSL", false},
   password: {:system, :string, "REDIS_PASSWORD", nil},
-  db: {:system, :integer, "REDIS_DB", 0}
+  database: {:system, :integer, "REDIS_DB", 0}
 
 # location processing
 config :wocky, Wocky.User.GeoFence,
@@ -137,8 +138,9 @@ config :wocky, Wocky.Mailer,
   adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.TestAdapter},
   api_key: {:system, :string, "MANDRILL_API_KEY", ""}
 
-config :wocky_db_watcher,
-  backend: WockyDBWatcher.Backend.Direct,
+config :dawdle, Dawdle.Backend.SQS, region: "us-west-2"
+
+config :dawdle_db,
   channel: "wocky_db_watcher_notify"
 
 config :email_checker, validations: [EmailChecker.Check.Format]

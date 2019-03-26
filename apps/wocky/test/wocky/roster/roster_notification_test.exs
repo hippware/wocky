@@ -1,5 +1,5 @@
 defmodule Wocky.Roster.RosterNotificationTest do
-  use Wocky.WatcherHelper
+  use Wocky.WatcherCase
 
   alias Faker.Code
   alias Pigeon.APNS.Notification

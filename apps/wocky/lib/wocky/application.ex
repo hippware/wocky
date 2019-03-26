@@ -9,59 +9,42 @@ defmodule Wocky.Application do
   """
   use Application
 
-  alias Wocky.Callbacks
+  alias DawdleDB.Watcher.Supervisor, as: Watcher
   alias Wocky.Mailer
+  alias Wocky.Push.Backend.Sandbox, as: PushSandbox
   alias Wocky.User.Location.Supervisor, as: LocationSupervisor
 
   require Logger
   require Prometheus.Registry
 
-  import Supervisor.Spec, warn: false
-
   def start(_type, _args) do
-    if Confex.get_env(:wocky, :start_watcher) do
-      Application.ensure_all_started(:wocky_db_watcher)
+    sup =
+      {:ok, pid} =
+      case Confex.get_env(:wocky, :db_only_mode, false) do
+        false -> start_full()
+        true -> start_db_only()
+      end
+
+    if Confex.get_env(:wocky, :start_watcher, false) do
+      Supervisor.start_child(pid, {Watcher, Wocky.Repo.config()})
     end
 
-    case Confex.get_env(:wocky, :db_only_mode) do
-      false -> start_full()
-      true -> start_db_only()
-    end
+    sup
   end
 
   defp start_full do
     Logger.info("Starting wocky in full mode")
     Prometheus.Registry.register_collector(:prometheus_process_collector)
 
-    redis_config = Confex.get_env(:wocky, :redis)
-
     Mailer.init()
 
-    sup =
-      {:ok, _pid} =
-      Supervisor.start_link(
-        [
-          worker(Wocky.Repo, []),
-          worker(Wocky.Push.Backend.Sandbox, []),
-          worker(Wocky.Watcher.Client, []),
-          %{id: Dawdle, start: {Dawdle, :start_link, []}},
-          {Redix,
-           host: redis_config[:host],
-           port: redis_config[:port],
-           ssl: redis_config[:ssl],
-           database: redis_config[:db],
-           password: redis_config[:password],
-           sync_connect: true,
-           name: Redix},
-          %{
-            id: LocationSupervisor,
-            start: {LocationSupervisor, :start_link, []},
-            type: :supervisor
-          }
-        ],
-        strategy: :one_for_one,
-        name: Wocky.Supervisor
-      )
+    children = [
+      {Redix, redis_config()},
+      {LocationSupervisor, []},
+      {PushSandbox, []}
+    ]
+
+    sup = {:ok, _pid} = start_supervisor(children)
 
     # Set up prometheus_ecto
     :ok =
@@ -72,18 +55,28 @@ defmodule Wocky.Application do
         nil
       )
 
-    Callbacks.register()
-
     sup
   end
 
   defp start_db_only do
     Logger.info("Starting wocky in DB only mode")
 
+    start_supervisor([])
+  end
+
+  defp start_supervisor(children) do
     Supervisor.start_link(
-      [worker(Wocky.Repo, [])],
+      [Wocky.Repo | children],
       strategy: :one_for_one,
       name: Wocky.Supervisor
     )
+  end
+
+  defp redis_config do
+    :wocky
+    |> Confex.fetch_env!(:redis)
+    |> Keyword.take([:host, :port, :ssl, :database, :password])
+    |> Keyword.put(:sync_connect, true)
+    |> Keyword.put(:name, Redix)
   end
 end

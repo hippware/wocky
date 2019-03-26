@@ -3,14 +3,14 @@ defmodule Wocky.Callbacks.UserInvitation do
   DB Callback handler for user invitations
   """
 
+  use DawdleDB.Handler, type: Wocky.Roster.Invitation
+
   alias Wocky.Push
   alias Wocky.Push.Events.UserInvitationEvent
   alias Wocky.Repo
   alias Wocky.User.Notification.UserInvitation, as: InvNotification
 
-  use Wocky.Watcher, type: Wocky.Roster.Invitation, events: [:insert]
-
-  def handle_insert(%Event{new: new}) do
+  def handle_insert(new) do
     new = Repo.preload(new, [:user, :invitee])
 
     if new.user != nil && new.invitee != nil do

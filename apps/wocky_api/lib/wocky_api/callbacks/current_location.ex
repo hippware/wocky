@@ -3,22 +3,20 @@ defmodule WockyAPI.Callbacks.CurrentLocation do
   Callbacks for DB user current location changes
   """
 
-  use Wocky.Watcher,
-    type: Wocky.User.CurrentLocation,
-    events: [:insert, :update]
+  use DawdleDB.Handler, type: Wocky.User.CurrentLocation
 
   alias Wocky.User.CurrentLocation
   alias WockyAPI.Resolvers.User, as: UserResolver
 
-  def handle_insert(%Event{new: %CurrentLocation{} = location}) do
+  def handle_insert(%CurrentLocation{} = location) do
     UserResolver.notify_location(location)
   end
 
   def handle_insert(_), do: :ok
 
-  def handle_update(%Event{new: %CurrentLocation{} = location}) do
+  def handle_update(%CurrentLocation{} = location, _) do
     UserResolver.notify_location(location)
   end
 
-  def handle_update(_), do: :ok
+  def handle_update(_, _), do: :ok
 end

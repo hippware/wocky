@@ -3,14 +3,14 @@ defmodule WockyAPI.Callbacks.User do
   Callbacks for DB user changes
   """
 
-  use Wocky.Watcher, type: Wocky.User, events: [:update]
+  use DawdleDB.Handler, type: Wocky.User
 
   alias Wocky.User
   alias WockyAPI.Resolvers.User, as: UserResolver
 
-  def handle_update(%Event{new: %User{} = user}) do
+  def handle_update(%User{} = user, _old) do
     UserResolver.notify_friends(user)
   end
 
-  def handle_update(_), do: :ok
+  def handle_update(_new, _old), do: :ok
 end

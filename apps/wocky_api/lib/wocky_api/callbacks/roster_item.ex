@@ -3,17 +3,15 @@ defmodule WockyAPI.Callbacks.RosterItem do
   Callbacks for roster item changes
   """
 
-  use Wocky.Watcher,
-    type: Wocky.Roster.Item,
-    events: [:insert, :delete]
+  use DawdleDB.Handler, type: Wocky.Roster.Item
 
   alias Wocky.Repo
   alias WockyAPI.Resolvers.User
 
-  def handle_insert(%Event{new: new}),
+  def handle_insert(new),
     do: send_update(new, :friend)
 
-  def handle_delete(%Event{old: old}),
+  def handle_delete(old),
     do: send_update(old, :none)
 
   defp send_update(item, relationship) do

@@ -1,7 +1,7 @@
 defmodule WockyAPI.GraphQL.Presence.PresenceTest do
   use WockyAPI.SubscriptionCase, async: false
 
-  import Wocky.Eventually
+  import Eventually
   import WockyAPI.ChannelHelper
 
   alias Wocky.Repo.Factory

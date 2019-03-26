@@ -1,13 +1,14 @@
 defmodule Wocky.User.LocationShareTest do
-  use Wocky.WatcherHelper
+  use Wocky.WatcherCase
 
-  alias Wocky.{Block, Repo, Roster, User}
+  alias Wocky.{Block, Roster, User}
   alias Wocky.Repo.{Factory, Timestamp}
   alias Wocky.Tasks.LocShareExpire
   alias Wocky.User.Notification
 
   setup do
     [u1, u2] = Factory.insert_list(2, :user)
+
     {:ok, user: u1, other_user: u2}
   end
 

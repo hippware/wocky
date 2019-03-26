@@ -1,5 +1,7 @@
 defmodule Wocky.Bot.InvitationTest do
-  use Wocky.WatcherHelper, async: false
+  use Wocky.WatcherCase
+
+  import Wocky.PushHelper
 
   alias Faker.Code
   alias Pigeon.APNS.Notification
@@ -7,7 +9,6 @@ defmodule Wocky.Bot.InvitationTest do
   alias Wocky.Bot.Invitation
   alias Wocky.Push
   alias Wocky.Push.Backend.Sandbox
-  alias Wocky.Repo
   alias Wocky.Repo.Factory
 
   setup do

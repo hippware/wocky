@@ -3,19 +3,19 @@ defmodule WockyAPI.Callbacks.Notification do
   Callbacks for notification changes
   """
 
-  use Wocky.Watcher, type: Wocky.User.Notification, events: [:insert, :delete]
+  use DawdleDB.Handler, type: Wocky.User.Notification
 
   alias Absinthe.Subscription
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.{Notification, User}
 
-  def handle_insert(%Event{new: notification}) do
+  def handle_insert(notification) do
     notification
     |> Notification.to_graphql()
     |> publish(notification.user_id)
   end
 
-  def handle_delete(%Event{old: notification}) do
+  def handle_delete(notification) do
     %{id: notification.id}
     |> publish(notification.user_id)
   end
