@@ -31,7 +31,7 @@ config :wocky_api, WockyAPI.MetricsEndpoint, http: [port: 8082]
 config :wocky_api, :redlock,
   pool_size: 2,
   drift_factor: 0.01,
-  max_retry: 3,
+  max_retry: 10,
   retry_interval_base: 300,
   retry_interval_max: 3_000,
   reconnection_interval_base: 500,
