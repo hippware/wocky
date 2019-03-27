@@ -99,7 +99,7 @@ defmodule Wocky.User.LocationShareTest do
     end
 
     test "should remove all expired shares", ctx do
-      LocShareExpire.expire_loc_shares()
+      LocShareExpire.run()
 
       assert ctx.user |> User.get_location_sharers() |> Enum.sort() ==
                ctx.shares
