@@ -29,7 +29,11 @@ defmodule WockyAPI.GraphQL.ChannelTest do
       """
 
       ref! = push_doc(socket, hide, variables: %{enable: true})
-      assert_reply ref!, :ok, %{data: %{"userHide" => %{"result" => true}}}, 1000
+
+      assert_reply ref!,
+                   :ok,
+                   %{data: %{"userHide" => %{"result" => true}}},
+                   1000
 
       query = "query { currentUser { hidden { enabled } } }"
 

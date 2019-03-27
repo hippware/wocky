@@ -45,7 +45,6 @@ release :wocky do
     weekly: "rel/commands/weekly.sh",
     dev_startup: "rel/commands/dev_startup.sh",
     notify_complete: "rel/commands/notify_complete.sh",
-    loc_share_expire: "rel/commands/loc_share_expire.sh"
   ]
 end
 
