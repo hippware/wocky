@@ -12,7 +12,7 @@ metadata:
     alb.ingress.kubernetes.io/security-groups: <%= modules[0]['outputs']['ingress_sg_id']['value'] %>
     alb.ingress.kubernetes.io/healthcheck-path: '/graphql'
     alb.ingress.kubernetes.io/success-codes: '200,400'
-    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443},{"HTTP":80}]'
   labels:
     app: wocky
 spec:
