@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: dialyxir (PR #2372)
+* Small fixes and updates (PR #2375)
+* Increase max redlock retries (#2374, PR #2377)
+
+
 # 2019.3.26+r3acc76d
 
 * Update watcher version with config fix (PR #2371)
