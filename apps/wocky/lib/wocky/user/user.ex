@@ -551,14 +551,12 @@ defmodule Wocky.User do
     |> where(device: ^device)
   end
 
-  @spec set_location(t, device, float, float, float, boolean) ::
-          :ok | {:error, any}
-  def set_location(user, device, lat, lon, accuracy, is_fetch \\ false) do
+  @spec set_location(t, device, float, float, float) :: :ok | {:error, any}
+  def set_location(user, device, lat, lon, accuracy) do
     location = %Location{
       lat: lat,
       lon: lon,
       accuracy: accuracy,
-      is_fetch: is_fetch,
       device: device
     }
 

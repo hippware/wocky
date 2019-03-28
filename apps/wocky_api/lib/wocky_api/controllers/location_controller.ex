@@ -7,9 +7,9 @@ defmodule WockyAPI.LocationController do
   action_fallback WockyAPI.FallbackController
 
   def create(conn, params) do
-    with {:ok, l, rsrc, is_fetch} <- extract_values(params) do
+    with {:ok, l, device} <- extract_values(params) do
       user = conn.assigns.current_user
-      loc = make_location(l, rsrc, is_fetch)
+      loc = make_location(l, device)
 
       {:ok, _} = User.set_location(user, loc)
 
@@ -20,8 +20,7 @@ defmodule WockyAPI.LocationController do
   defp extract_values(params) do
     {
       normalize_location(params["location"]),
-      params["device"],
-      params["isFetch"] || false
+      params["device"]
     }
     |> check_required_keys()
   end
@@ -29,9 +28,9 @@ defmodule WockyAPI.LocationController do
   defp normalize_location([location | _]), do: location
   defp normalize_location(location), do: location
 
-  defp check_required_keys({location, device, is_fetch}) do
+  defp check_required_keys({location, device}) do
     if has_required_keys(location, device) do
-      {:ok, location, device, is_fetch}
+      {:ok, location, device}
     else
       {:error, :missing_keys}
     end
@@ -44,7 +43,7 @@ defmodule WockyAPI.LocationController do
 
   defp has_required_keys(_, _), do: false
 
-  defp make_location(%{"coords" => c} = l, device, is_fetch) do
+  defp make_location(%{"coords" => c} = l, device) do
     %Location{
       lat: c["latitude"],
       lon: c["longitude"],
@@ -57,8 +56,7 @@ defmodule WockyAPI.LocationController do
       uuid: l["uuid"],
       odometer: l["odometer"],
       is_moving: l["is_moving"],
-      device: device,
-      is_fetch: is_fetch
+      device: device
     }
     |> maybe_add_activity(l["activity"])
     |> maybe_add_battery(l["battery"])

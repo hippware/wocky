@@ -348,8 +348,10 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "Is the device plugged in?"
     field :battery_charging, :boolean
 
-    @desc "True if the update is the result of a background fetch"
-    field :is_fetch, non_null(:boolean)
+    @desc "DEPRECATED This field is always false"
+    field :is_fetch, :boolean, deprecate: true do
+      resolve fn _, _ -> {:ok, false} end
+    end
 
     @desc "Time of location report"
     field :created_at, non_null(:datetime)
@@ -712,8 +714,8 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "Is the device plugged in?"
     field :battery_charging, :boolean
 
-    @desc "True if the update is the result of a background fetch"
-    field :is_fetch, :boolean
+    @desc "DEPRECATED This field is ignored"
+    field :is_fetch, :boolean, deprecate: true
   end
 
   payload_object(:user_location_update_payload, :boolean)

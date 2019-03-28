@@ -137,8 +137,7 @@ defmodule Wocky.Repo.Factory do
       device: device(),
       lat: Address.latitude(),
       lon: Address.longitude(),
-      accuracy: 10,
-      is_fetch: false
+      accuracy: 10
     }
   end
 

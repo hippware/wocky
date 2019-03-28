@@ -606,8 +606,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                lat: ^lat,
                lon: ^lon,
                device: ^device,
-               accuracy: ^accuracy,
-               is_fetch: true
+               accuracy: ^accuracy
              } = Repo.get_by(Location, user_id: user.id)
     end
 

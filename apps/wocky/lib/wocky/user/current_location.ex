@@ -25,7 +25,6 @@ defmodule Wocky.User.CurrentLocation do
     field :activity_confidence, :integer
     field :battery_level, :float
     field :battery_charging, :boolean
-    field :is_fetch, :boolean, default: false
 
     timestamps()
 
@@ -50,7 +49,6 @@ defmodule Wocky.User.CurrentLocation do
           activity_confidence: integer | nil,
           battery_level: float | nil,
           battery_charging: boolean | nil,
-          is_fetch: boolean | nil,
           created_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
