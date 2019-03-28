@@ -19,17 +19,10 @@ defmodule Wocky.Application do
   require Prometheus.Registry
 
   def start(_type, _args) do
-    sup =
-      {:ok, pid} =
-      case Confex.get_env(:wocky, :db_only_mode, false) do
-        false -> start_full()
-        true -> start_db_only()
-      end
-
-    Confex.get_env(:wocky, :start_watcher, false)
-    |> maybe_start_watcher(pid)
-
-    sup
+    case Confex.get_env(:wocky, :db_only_mode, false) do
+      false -> start_full()
+      true -> start_db_only()
+    end
   end
 
   defp start_full do
@@ -44,7 +37,7 @@ defmodule Wocky.Application do
       {PushSandbox, []}
     ]
 
-    sup = {:ok, _pid} = start_supervisor(children)
+    sup = {:ok, pid} = start_supervisor(children)
 
     # Set up prometheus_ecto
     :ok =
@@ -56,6 +49,11 @@ defmodule Wocky.Application do
       )
 
     {:ok, _} = Recurring.start()
+
+    Dawdle.start_pollers()
+
+    Confex.get_env(:wocky, :start_watcher, false)
+    |> maybe_start_watcher(pid)
 
     sup
   end
