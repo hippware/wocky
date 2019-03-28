@@ -5,9 +5,15 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.3.28+r2f56493
+
 * Update: dialyxir (PR #2372)
 * Small fixes and updates (PR #2375)
 * Increase max redlock retries (#2374, PR #2377)
+* Open port 80 on testing (PR #2382)
+* Move loc share expiry to a swarm-managed process (PR #2379)
+  * Run loc share cleanup from dawdle rather than a cronjob (#2354)
+* Update tzdata (#2378, PR #2384)
 
 
 # 2019.3.26+r3acc76d
