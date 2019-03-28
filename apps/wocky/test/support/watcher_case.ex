@@ -3,6 +3,7 @@ defmodule Wocky.WatcherCase do
 
   use ExUnit.CaseTemplate, async: false
 
+  import Dawdle.TestHelper
   import DawdleDB.TestHelper
 
   using do
@@ -18,7 +19,7 @@ defmodule Wocky.WatcherCase do
   end
 
   setup_all do
-    Dawdle.Client.clear_all_handlers()
+    clear_all_handlers()
 
     # Give any DB notifications still in the system from previous tests
     # a grace period to finish up before we start the watcher

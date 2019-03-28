@@ -3,6 +3,7 @@ defmodule WockyAPI.WatcherHelper do
   Helper functions for tests that require DB watcher functionality
   """
 
+  import Dawdle.TestHelper
   import DawdleDB.TestHelper
   import ExUnit.Callbacks
 
@@ -17,7 +18,7 @@ defmodule WockyAPI.WatcherHelper do
   in this mode. I have no idea why.
   """
   def require_watcher(_ \\ %{}) do
-    Dawdle.Client.clear_all_handlers()
+    clear_all_handlers()
     Wocky.Callbacks.register()
     WockyAPI.Callbacks.register()
 
