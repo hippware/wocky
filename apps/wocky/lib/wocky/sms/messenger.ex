@@ -7,7 +7,7 @@ defmodule Wocky.SMS.Messenger do
 
   @spec send(binary, binary, User.t()) :: :ok | {:error, term()}
   def send(recipient, body, sender) do
-    if User.sms_allowed_inc?(sender) do
+    if User.sms_allowed_inc?(sender, recipient) do
       backend = Confex.get_env(:wocky, :sms_backend)
       backend.send(recipient, body)
     else

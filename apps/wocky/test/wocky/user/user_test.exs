@@ -876,26 +876,37 @@ defmodule Wocky.User.UserTest do
   end
 
   describe "sms_allowed_inc?" do
+    setup do
+      {:ok, phone_number: Factory.phone_number()}
+    end
+
     test "should allow SMS for a new user", ctx do
-      assert User.sms_allowed_inc?(ctx.user)
+      assert User.sms_allowed_inc?(ctx.user, ctx.phone_number)
     end
 
     test "should increment the amount sent", ctx do
       assert User.get_user(ctx.user.id).smss_sent == 0
-      User.sms_allowed_inc?(ctx.user)
+      User.sms_allowed_inc?(ctx.user, ctx.phone_number)
       assert User.get_user(ctx.user.id).smss_sent == 1
     end
 
-    test "should reject a non-existant user" do
+    test "should reject a non-existant user", ctx do
       u = Factory.build(:user)
-      refute User.sms_allowed_inc?(u)
+      refute User.sms_allowed_inc?(u, ctx.phone_number)
     end
 
-    test "should reject when the user has sent the max SMSs" do
+    test "should reject when the user has sent the max SMSs", ctx do
       max = Confex.get_env(:wocky, :max_sms_per_user)
       u = Factory.insert(:user, smss_sent: max)
-      refute User.sms_allowed_inc?(u)
+      refute User.sms_allowed_inc?(u, ctx.phone_number)
       assert User.get_user(u.id).smss_sent == max
+    end
+
+    test "should allow smss beyond the limit for configured numbers" do
+      max = Confex.get_env(:wocky, :max_sms_per_user)
+      u = Factory.insert(:user, smss_sent: max)
+      phone_number = hd(Confex.get_env(:wocky, :unlimited_sms_numbers))
+      assert User.sms_allowed_inc?(u, phone_number)
     end
   end
 

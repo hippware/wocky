@@ -231,24 +231,24 @@ defmodule Wocky.User do
   Check if the user is allowed to send an SMS and increment the count
   of those sent
   """
-  @spec sms_allowed_inc?(t()) :: boolean()
-  def sms_allowed_inc?(user) do
+  @spec sms_allowed_inc?(t(), binary()) :: boolean()
+  def sms_allowed_inc?(user, target_number) do
     with %User{} = u <- get_user(user.id) do
       if u.smss_sent < Confex.get_env(:wocky, :max_sms_per_user) do
         {:ok, _} = __MODULE__.update(user.id, %{smss_sent: u.smss_sent + 1})
         true
       else
-        allowed_unlimited_smss?(user)
+        allowed_unlimited_smss?(target_number)
       end
     else
       _ -> false
     end
   end
 
-  defp allowed_unlimited_smss?(user) do
+  defp allowed_unlimited_smss?(target_number) do
     :wocky
     |> Confex.get_env(:unlimited_sms_numbers)
-    |> Enum.member?(user.phone_number)
+    |> Enum.member?(target_number)
   end
 
   defp maybe_send_welcome(%User{welcome_sent: true}), do: :ok
