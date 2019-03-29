@@ -195,7 +195,7 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   defp maybe_update_location(%{location: l}, user) when not is_nil(l),
-    do: User.set_location(user, struct(Location,  Map.drop(l, [:is_fetch])))
+    do: User.set_location(user, struct(Location, Map.drop(l, [:is_fetch])))
 
   defp maybe_update_location(_args, _user), do: {:ok, :skip}
 

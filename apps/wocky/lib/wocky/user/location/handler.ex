@@ -31,11 +31,11 @@ defmodule Wocky.User.Location.Handler do
     {:ok, user}
   end
 
-  def handle_call({:set_location, location}, _from, user) do
+  def handle_call({:set_location, location, current?}, _from, user) do
     Logger.debug(fn -> "Swarm set location with user #{user.id}" end)
 
     reply =
-      with {:ok, loc} = result <- prepare_location(user, location) do
+      with {:ok, loc} = result <- prepare_location(user, location, current?) do
         _ = GeoFence.check_for_bot_events(loc, user)
         result
       end
@@ -47,7 +47,7 @@ defmodule Wocky.User.Location.Handler do
     Logger.debug(fn -> "Swarm set location for bot with user #{user.id}" end)
 
     reply =
-      with {:ok, loc} = result <- prepare_location(user, location) do
+      with {:ok, loc} = result <- prepare_location(user, location, true) do
         _ = GeoFence.check_for_bot_event(bot, loc, user)
         result
       end
@@ -83,10 +83,10 @@ defmodule Wocky.User.Location.Handler do
 
   defp handler_name(user), do: "location_handler_" <> user.id
 
-  defp prepare_location(user, location) do
+  defp prepare_location(user, location, current?) do
     with nloc <- normalize_location(location),
          {:ok, loc} <- maybe_save_location(user, nloc),
-         {:ok, _} <- save_current_location(user, nloc) do
+         {:ok, _} <- maybe_save_current_location(current?, user, nloc) do
       {:ok, loc}
     end
   end
@@ -122,7 +122,9 @@ defmodule Wocky.User.Location.Handler do
     |> Repo.insert()
   end
 
-  defp save_current_location(user, location) do
+  defp maybe_save_current_location(false, _user, _location), do: {:ok, :skipped}
+
+  defp maybe_save_current_location(true, user, location) do
     user
     |> Ecto.build_assoc(:current_location)
     |> Location.changeset(Map.from_struct(location))
