@@ -47,7 +47,7 @@ config :wocky,
   twilio_number: "+12133401134",
   max_sms_per_user: {:system, :integer, "WOCKY_MAX_SMS_PER_USER", 100},
   # Overseer test user
-  unlimited_sms_numbers: ["+13076962511"],
+  unlimited_sms_numbers: ["+15556667777"],
 
   # Country code
   country_code_lookup_method:
