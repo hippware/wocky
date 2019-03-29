@@ -5,8 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.3.29+r7f25b99
+
 * Don't start Dawdle pollers in "DB only" mode (PR #2385)
   * Fixes: Missing UserInvitationNotification notification (#2380)
+* Use correct number for unlimited SMS (PR #2388)
 
 
 # 2019.3.28+r2f56493
