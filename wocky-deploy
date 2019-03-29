@@ -28,14 +28,18 @@ watcher_sha="$(cat DB_WATCHER_VERSION)"
 export REVISION
 export KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 
-CLUSTER_CONF=/tmp/terraform.tfstate.json
+CLUSTER_CONF=/tmp/cluster.tfstate.json
+SSL_CONF=/tmp/ssl.tfstate.json
+OUTPUT_BINDINGS=/tmp/bindings.json
 
 aws s3 cp s3://hippware-terraform-state/cluster/terraform.tfstate ${CLUSTER_CONF}
+aws s3 cp s3://hippware-terraform-state/ssl/terraform.tfstate ${SSL_CONF}
+jq -s '[.[].modules[0].outputs] | add' ${CLUSTER_CONF} ${SSL_CONF} > ${OUTPUT_BINDINGS}
 
 kubernetes-deploy "${namespace}" "${context}" \
   --template-dir="${template_dir}" \
   --bindings=watcher_sha="${watcher_sha}" \
-  --bindings=@${CLUSTER_CONF}
+  --bindings=@${OUTPUT_BINDINGS} \
   "$@"
 
 pod=$(kubectl get pods \
