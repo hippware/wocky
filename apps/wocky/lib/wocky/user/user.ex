@@ -551,14 +551,12 @@ defmodule Wocky.User do
     |> where(device: ^device)
   end
 
-  @spec set_location(t, device, float, float, float, boolean) ::
-          :ok | {:error, any}
-  def set_location(user, device, lat, lon, accuracy, is_fetch \\ false) do
+  @spec set_location(t, device, float, float, float) :: :ok | {:error, any}
+  def set_location(user, device, lat, lon, accuracy) do
     location = %Location{
       lat: lat,
       lon: lon,
       accuracy: accuracy,
-      is_fetch: is_fetch,
       device: device
     }
 
@@ -571,9 +569,10 @@ defmodule Wocky.User do
   Sets the user's current location to the provided Location struct and runs the
   geofence calculation for all of the user's subscribed bots.
   """
-  @spec set_location(t, Location.t()) :: {:ok, Location.t()} | {:error, any}
-  def set_location(user, location),
-    do: Location.set_location(user, location)
+  @spec set_location(t, Location.t(), boolean()) ::
+          {:ok, Location.t()} | {:error, any}
+  def set_location(user, location, current? \\ true),
+    do: Location.set_location(user, location, current?)
 
   @doc """
   Sets the user's current location to the provided Location struct and runs the

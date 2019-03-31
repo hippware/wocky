@@ -27,7 +27,6 @@ defmodule Wocky.User.Location do
     field :activity_confidence, :integer
     field :battery_level, :float
     field :battery_charging, :boolean
-    field :is_fetch, :boolean, default: false
 
     timestamps()
 
@@ -53,7 +52,6 @@ defmodule Wocky.User.Location do
           activity_confidence: integer | nil,
           battery_level: float | nil,
           battery_charging: boolean | nil,
-          is_fetch: boolean | nil,
           created_at: DateTime.t() | nil,
           updated_at: DateTime.t() | nil
         }
@@ -74,16 +72,15 @@ defmodule Wocky.User.Location do
     :activity,
     :activity_confidence,
     :battery_level,
-    :battery_charging,
-    :is_fetch
+    :battery_charging
   ]
 
-  @spec set_location(User.t(), Location.t()) ::
+  @spec set_location(User.t(), Location.t(), boolean()) ::
           {:ok, Location.t()} | {:error, any()}
-  def set_location(user, location) do
+  def set_location(user, location, current? \\ true) do
     user
     |> Handler.get_handler()
-    |> GenServer.call({:set_location, location})
+    |> GenServer.call({:set_location, location, current?})
   end
 
   @spec set_location_for_bot(User.t(), Location.t(), Bot.t()) ::

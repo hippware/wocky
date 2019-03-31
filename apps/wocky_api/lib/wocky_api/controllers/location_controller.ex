@@ -7,44 +7,42 @@ defmodule WockyAPI.LocationController do
   action_fallback WockyAPI.FallbackController
 
   def create(conn, params) do
-    with {:ok, l, rsrc, is_fetch} <- extract_values(params) do
-      user = conn.assigns.current_user
-      loc = make_location(l, rsrc, is_fetch)
+    user = conn.assigns.current_user
+    device = params["device"]
+    locations = normalize_location(params["location"])
 
-      {:ok, _} = User.set_location(user, loc)
+    if device do
+      _ = process_locations(user, device, locations)
 
       send_resp(conn, :created, "")
-    end
-  end
-
-  defp extract_values(params) do
-    {
-      normalize_location(params["location"]),
-      params["device"],
-      params["isFetch"] || false
-    }
-    |> check_required_keys()
-  end
-
-  defp normalize_location([location | _]), do: location
-  defp normalize_location(location), do: location
-
-  defp check_required_keys({location, device, is_fetch}) do
-    if has_required_keys(location, device) do
-      {:ok, location, device, is_fetch}
     else
       {:error, :missing_keys}
     end
   end
 
-  defp has_required_keys(%{"coords" => coords}, device) do
-    Map.get(coords, "latitude") && Map.get(coords, "longitude") &&
-      Map.get(coords, "accuracy") && device
+  defp normalize_location(locations) when is_list(locations), do: locations
+  defp normalize_location(location), do: [location]
+
+  defp process_locations(user, device, locations) do
+    length = length(locations)
+
+    for {l, idx} <- Enum.with_index(locations, 1) do
+      if has_required_keys(l) do
+        loc = make_location(l, device)
+
+        {:ok, _} = User.set_location(user, loc, idx == length)
+      end
+    end
   end
 
-  defp has_required_keys(_, _), do: false
+  defp has_required_keys(%{"coords" => coords}) do
+    Map.get(coords, "latitude") && Map.get(coords, "longitude") &&
+      Map.get(coords, "accuracy")
+  end
 
-  defp make_location(%{"coords" => c} = l, device, is_fetch) do
+  defp has_required_keys(_), do: false
+
+  defp make_location(%{"coords" => c} = l, device) do
     %Location{
       lat: c["latitude"],
       lon: c["longitude"],
@@ -57,8 +55,7 @@ defmodule WockyAPI.LocationController do
       uuid: l["uuid"],
       odometer: l["odometer"],
       is_moving: l["is_moving"],
-      device: device,
-      is_fetch: is_fetch
+      device: device
     }
     |> maybe_add_activity(l["activity"])
     |> maybe_add_battery(l["battery"])
