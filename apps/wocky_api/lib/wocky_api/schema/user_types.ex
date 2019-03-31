@@ -349,7 +349,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :battery_charging, :boolean
 
     @desc "DEPRECATED This field is always false"
-    field :is_fetch, :boolean, deprecate: true do
+    field :is_fetch, :boolean, deprecate: "This will always be false" do
       resolve fn _, _ -> {:ok, false} end
     end
 
@@ -715,7 +715,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :battery_charging, :boolean
 
     @desc "DEPRECATED This field is ignored"
-    field :is_fetch, :boolean, deprecate: true
+    field :is_fetch, :boolean, deprecate: "This field will be ignored"
   end
 
   payload_object(:user_location_update_payload, :boolean)
