@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.4.2+rb7a8275
+
 * Update: phoenix_pubsub_redis (PR #2389)
 * Use correct number for unlimited SMS (PR #2388)
 * Implement handling of batch location uploads (#2358, PR #2390)
