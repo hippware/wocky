@@ -108,7 +108,9 @@ defmodule Wocky.Mixfile do
       {:plug, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:postgrex, ">= 0.0.0"},
-      {:prometheus_ecto, "~> 1.4.1"},
+      # TODO: go back to hex version once changes are merged upstream
+      {:prometheus_ecto,
+       github: "hippware/prometheus-ecto", branch: "ectosql-310"},
       {:prometheus_ex, "~> 3.0"},
       {:prometheus_process_collector, "~> 1.4"},
       {:recon, "~> 2.3"},
