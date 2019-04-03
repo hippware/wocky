@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: ecto_sql (PR #2393)
+
+
 # 2019.4.2+rb7a8275
 
 * Update: phoenix_pubsub_redis (PR #2389)
