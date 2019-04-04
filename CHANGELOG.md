@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: dialyxir (PR #2394), plug (PR #2395)
+
+
+# 2019.4.2+r2f74353
+
 * Update: ecto_sql (PR #2393)
 
 
