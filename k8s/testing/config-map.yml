@@ -17,8 +17,9 @@ data:
   WOCKY_ENABLE_BYPASS: "true"
   WOCKY_CC_LOOKUP_METHOD: "hardwire"
   WOCKY_CC_HARDWIRE_VAL: "US"
-  WOCKY_DB_HOST: wocky-testing.cx7fev3pluk8.us-west-2.rds.amazonaws.com
+  WOCKY_DB_HOST: db.dev.tinyrobot.com
   WOCKY_DB_NAME: wocky_testing
+  WOCKY_DB_USER: wocky_testing
   DAWDLE_SQS_MESSAGE_QUEUE: wocky-db-watcher-testing.fifo
   DAWDLE_SQS_DELAY_QUEUE: wocky-dawdle-testing
   WOCKY_ENTER_DEBOUNCE_SECONDS: "0"
