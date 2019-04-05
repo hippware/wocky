@@ -4,7 +4,6 @@ defmodule Wocky.User.Notification.BotItem do
   to which the notified user is subscribed
   """
 
-  alias Wocky.Bot
   alias Wocky.Push
   alias Wocky.Push.Events.NewBotItemEvent
   alias Wocky.Repo
@@ -24,7 +23,7 @@ defmodule Wocky.User.Notification.BotItem do
 
     if user != nil do
       bot
-      |> Bot.notification_recipients(user)
+      |> notification_recipients(user)
       |> Enum.each(&do_notify(&1, item))
     end
   end
@@ -41,6 +40,15 @@ defmodule Wocky.User.Notification.BotItem do
 
     event = NewBotItemEvent.new(author: item.user, to: user, item: item)
     Push.notify_all(user, event)
+  end
+
+  defp notification_recipients(bot, sender) do
+    bot = Repo.preload(bot, [:subscribers])
+
+    bot.subscribers
+    |> Enum.sort_by(& &1.id)
+    |> Enum.uniq_by(& &1.id)
+    |> Enum.filter(&(&1.id != sender.id))
   end
 end
 

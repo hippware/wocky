@@ -10,7 +10,7 @@ defmodule Wocky.User.GeoFenceTest do
   alias Wocky.Push.Backend.Sandbox
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.User
+  alias Wocky.Roster
   alias Wocky.User.{BotEvent, GeoFence, Location}
 
   @device "testing"
@@ -24,16 +24,17 @@ defmodule Wocky.User.GeoFenceTest do
     user = Factory.insert(:user)
     Push.enable(user, @device, Code.isbn13())
 
+    Roster.befriend(user, owner)
+
     # This user should never get notified in spite of being a subscriber
-    hidden_user = Factory.insert(:user)
-    User.hide(hidden_user, true)
-    Push.enable(hidden_user, @device, Code.isbn13())
+    stranger = Factory.insert(:user)
+    Push.enable(stranger, @device, Code.isbn13())
 
     bot_list = Factory.insert_list(3, :bot, user: owner)
     bot = hd(bot_list)
 
-    :ok = Bot.subscribe(bot, user)
-    :ok = Bot.subscribe(bot, hidden_user)
+    Bot.subscribe(bot, user)
+    Bot.subscribe(bot, stranger)
 
     {:ok, owner: owner, user: user, bot: bot, bot_list: bot_list}
   end
