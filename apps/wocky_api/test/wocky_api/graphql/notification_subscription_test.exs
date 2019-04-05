@@ -90,10 +90,13 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     end
 
     test "user enters bot", %{
+      user: user,
       user2: user2,
       bot: bot,
       subscription_id: subscription_id
     } do
+      Roster.befriend(user, user2)
+
       Bot.visit(bot, user2, true)
 
       assert_push "subscription:data", push, 2000
@@ -107,10 +110,13 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     end
 
     test "user exits bot", %{
+      user: user,
       user2: user2,
       bot: bot,
       subscription_id: subscription_id
     } do
+      Roster.befriend(user, user2)
+
       Bot.depart(bot, user2, true)
 
       assert_push "subscription:data", push, 2000
