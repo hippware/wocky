@@ -18,8 +18,9 @@ data:
   WOCKY_PUSH_FCM_PACKAGE: "com.hippware.android.tinyrobot.staging"
   WOCKY_PUSH_URI_PREFIX: "tinyrobotStaging"
   WOCKY_ENABLE_BYPASS: "true"
-  WOCKY_DB_HOST: wocky-staging.cx7fev3pluk8.us-west-2.rds.amazonaws.com
+  WOCKY_DB_HOST: db.dev.tinyrobot.com
   WOCKY_DB_NAME: wocky_staging
+  WOCKY_DB_USER: wocky_staging
   DAWDLE_SQS_MESSAGE_QUEUE: wocky-db-watcher-staging.fifo
   DAWDLE_SQS_DELAY_QUEUE: wocky-dawdle-staging
   WOCKY_SMS_BACKEND: Wocky.SMS.Twilio
