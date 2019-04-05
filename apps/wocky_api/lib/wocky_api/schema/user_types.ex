@@ -55,6 +55,19 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "The user's hidden state"
     field :hidden, :hidden, do: resolve(&User.get_hidden/3)
 
+    @desc """
+    Timestamp for the last time the user object's data was changed. Applies
+    only to the following fields:
+    * handle
+    * media
+    * name (first and last)
+    * tagline
+    * roles
+    * hidden
+    """
+    field :updated_at, :datetime
+
+
     @desc "Bots related to the user specified by either relationship or ID"
     connection field :bots, node_type: :bots do
       connection_complexity()
