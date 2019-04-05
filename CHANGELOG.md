@@ -5,7 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.4.4+r080c705
+
 * Update: dialyxir (PR #2394), plug (PR #2395)
+* Migrate `testing` to new DB server (PR #2397)
 
 
 # 2019.4.2+r2f74353
