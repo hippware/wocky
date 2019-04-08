@@ -46,7 +46,6 @@ defmodule Wocky.User.Notification.BotItem do
     bot = Repo.preload(bot, [:subscribers])
 
     bot.subscribers
-    |> Enum.sort_by(& &1.id)
     |> Enum.uniq_by(& &1.id)
     |> Enum.filter(&(&1.id != sender.id))
   end
