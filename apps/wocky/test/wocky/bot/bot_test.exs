@@ -570,17 +570,19 @@ defmodule Wocky.BotTest do
       :ok = Bot.subscribe(bot, friend2)
       :ok = Bot.subscribe(bot, stranger)
 
-      {:ok, friend1: friend1, friend2: friend2}
+      {:ok, friend1: friend1, friend2: friend2, stranger: stranger}
     end
 
     test "should only include friends", %{
       friend1: friend1,
       friend2: friend2,
+      stranger: stranger,
       bot: bot
     } do
       recipients = Bot.notification_recipients(bot, friend1)
       assert Enum.member?(recipients, friend1)
       assert Enum.member?(recipients, friend2)
+      refute Enum.member?(recipients, stranger)
     end
   end
 
