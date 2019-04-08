@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Migrate `next` to new DB server (PR #2398)
+* Migrate `staging` to new DB server (PR #2399)
+* Update: bcrypt_elixir (PR #2401)
+
+
 # 2019.4.4+r080c705
 
 * Update: dialyxir (PR #2394), plug (PR #2395)
