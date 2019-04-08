@@ -5,8 +5,8 @@ defmodule WockyAPI.Resolvers.User do
   alias Absinthe.Subscription
   alias Wocky.{Account, Push, Repo, Roster, User}
   alias Wocky.Roster.Item
-  alias Wocky.User.Location
-  alias WockyAPI.{Endpoint, Presence}
+  alias Wocky.User.{Location, Presence}
+  alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
   @default_search_results 50
@@ -390,8 +390,29 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, Presence.connect(user)}
   end
 
-  def get_presence_status(other_user, _args, _context) do
-    {:ok, Presence.user_status(other_user)}
+  def get_presence_status(other_user, args, context) do
+    {:ok, %{status: status}} = get_presence(other_user, args, context)
+    {:ok, status}
+  end
+
+  def get_presence(%User{presence: nil} = other_user, _args, %{
+        context: %{current_user: user}
+      }) do
+    {:ok, Presence.get(other_user, user)}
+  end
+
+  def get_presence(%User{presence: presence}, _args, _context) do
+    {:ok, presence}
+  end
+
+  def publish_presence(contact, recipient_id) do
+    Subscription.publish(
+      Endpoint,
+      contact,
+      [{:presence, presence_subscription_topic(recipient_id)}]
+    )
+
+    :ok
   end
 
   def get_contact_user(%Item{} = c, _args, _context) do

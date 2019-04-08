@@ -63,6 +63,7 @@ defmodule Wocky.Mixfile do
   defp deps do
     [
       {:bamboo, "~> 1.0"},
+      {:bimap, "~> 1.0"},
       {:bcrypt_elixir, "~> 2.0"},
       {:confex, "~> 3.4"},
       {:dawdle_db, github: "hippware/dawdle_db", branch: "master"},
@@ -104,6 +105,8 @@ defmodule Wocky.Mixfile do
       {:kadabra, "~> 0.3"},
       {:lager_logger, "~> 1.0"},
       {:peerage, "~> 1.0"},
+      {:phoenix_pubsub, "~> 1.0"},
+      {:phoenix_pubsub_redis, "~> 2.1.5"},
       {:pigeon, "~> 1.1"},
       {:plug, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
@@ -115,6 +118,7 @@ defmodule Wocky.Mixfile do
       {:prometheus_process_collector, "~> 1.4"},
       {:recon, "~> 2.3"},
       {:redix, "~> 0.9.2"},
+      {:redlock, "~> 1.0.9"},
       {:rexbug, ">= 1.0.0"},
       # TODO: go back to hex version once changes are merged
       {:slack_ex, github: "hippware/slack_ex", branch: "master"},

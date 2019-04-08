@@ -260,7 +260,12 @@ defmodule WockyAPI.Resolvers.Bot do
         false -> :depart
       end
 
-    notification = %{bot: bot, visitor: subscriber, action: action, updated_at: updated_at}
+    notification = %{
+      bot: bot,
+      visitor: subscriber,
+      action: action,
+      updated_at: updated_at
+    }
 
     targets =
       Enum.map(

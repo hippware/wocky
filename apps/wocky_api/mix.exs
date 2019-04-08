@@ -45,7 +45,6 @@ defmodule WockyAPI.Mixfile do
   defp deps do
     [
       {:wocky, in_umbrella: true},
-      {:bimap, "~> 1.0"},
 
       # TODO: Move these back to the offical absinthe repo once all the changes
       # are merged.
@@ -64,14 +63,11 @@ defmodule WockyAPI.Mixfile do
       {:kronky, github: "mirego/kronky", branch: "master"},
       {:phoenix, "~> 1.4"},
       {:phoenix_ecto, "~> 4.0"},
-      {:phoenix_pubsub, "~> 1.0"},
-      {:phoenix_pubsub_redis, "~> 2.1.5"},
       {:plug_cowboy, "~> 2.0"},
       {:plug, "~> 1.7"},
       {:prometheus_ex, "~> 3.0", override: true},
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
-      {:redlock, "~> 1.0.9"},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.6", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},

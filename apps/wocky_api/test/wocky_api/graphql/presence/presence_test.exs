@@ -1,12 +1,11 @@
 defmodule WockyAPI.GraphQL.Presence.PresenceTest do
   use WockyAPI.SubscriptionCase, async: false
 
-  import Eventually
   import WockyAPI.ChannelHelper
 
   alias Wocky.Repo.Factory
   alias Wocky.Roster
-  alias WockyAPI.Presence
+  alias Wocky.User.Presence
 
   setup_all do
     Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
@@ -23,22 +22,6 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
     Roster.befriend(shared.user, friend)
 
     {:ok, friend: friend, stranger: stranger}
-  end
-
-  describe "basic presence registration/deregistration" do
-    test "presence registration", %{user: user} do
-      assert Presence.user_status(user) == :offline
-      {_, []} = connect(user)
-
-      assert Presence.user_status(user) == :online
-    end
-
-    test "presence deregistration on connection close", %{user: user} do
-      {conn, []} = connect(user)
-      close_conn(conn)
-
-      assert_eventually(Presence.user_status(user) == :offline)
-    end
   end
 
   describe "initial connection state" do

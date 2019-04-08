@@ -3,6 +3,7 @@ defmodule WockyAPI.Application do
 
   use Application
 
+  alias Wocky.User.Presence
   alias WockyAPI.Callbacks
   alias WockyAPI.Endpoint
   alias WockyAPI.Middleware.Instrumenter, as: AbsintheInstrumenter
@@ -11,8 +12,6 @@ defmodule WockyAPI.Application do
   alias WockyAPI.PrometheusExporter
 
   def start(_type, _args) do
-    redis_config = Confex.get_env(:wocky, :redis)
-
     PhoenixInstrumenter.setup()
     PipelineInstrumenter.setup()
     PrometheusExporter.setup()
@@ -20,21 +19,6 @@ defmodule WockyAPI.Application do
 
     # Define workers and child supervisors to be supervised
     children = [
-      %{
-        id: Phoenix.PubSub.Redis,
-        start:
-          {Phoenix.PubSub.Redis, :start_link,
-           [
-             :presence,
-             [
-               host: redis_config[:host],
-               port: redis_config[:port],
-               pool_size: 1,
-               node_name: redis_node()
-             ]
-           ]}
-      },
-      {Redlock, Confex.get_env(:wocky_api, :redlock)},
       # Start the endpoints when the application starts
       WockyAPI.Endpoint,
       {Absinthe.Subscription, WockyAPI.Endpoint},
@@ -45,6 +29,8 @@ defmodule WockyAPI.Application do
 
     Callbacks.register()
 
+    Presence.register_callback(&WockyAPI.Resolvers.User.publish_presence/2)
+
     Supervisor.start_link(children, opts)
   end
 
@@ -53,12 +39,5 @@ defmodule WockyAPI.Application do
   def config_change(changed, _new, removed) do
     Endpoint.config_change(changed, removed)
     :ok
-  end
-
-  defp redis_node do
-    case node() do
-      :nonode@nohost -> 'test_node@host'
-      node -> node
-    end
   end
 end

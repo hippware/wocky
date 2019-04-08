@@ -1,4 +1,4 @@
-defmodule WockyAPI.Presence.Manager do
+defmodule Wocky.User.Presence.Manager do
   @moduledoc """
   Per-user manager process for contact presence reporting.
   """
@@ -18,8 +18,8 @@ defmodule WockyAPI.Presence.Manager do
 
   alias Phoenix.PubSub
   alias Wocky.{Repo, Roster, User}
-  alias WockyAPI.Presence
-  alias WockyAPI.Presence.Store
+  alias Wocky.User.Presence
+  alias Wocky.User.Presence.Store
 
   def acquire(user) do
     Store.transaction(user.id, fn -> get_or_create(user) end)
@@ -31,7 +31,7 @@ defmodule WockyAPI.Presence.Manager do
         GenServer.start_link(__MODULE__, {user, self()})
 
       manager ->
-        register(manager)
+        GenServer.call(manager, {:register, self()})
         {:ok, manager}
     end
   end
@@ -55,14 +55,16 @@ defmodule WockyAPI.Presence.Manager do
     {:ok, %{mon_refs: [mon_ref], user_id: user.id, contact_refs: contact_refs}}
   end
 
-  def register(manager) do
-    GenServer.call(manager, {:register, self()})
-  end
-
   @doc "Get the current set of followees we know to be online"
   @spec online_contacts(pid()) :: [User.id()]
   def online_contacts(manager) do
     GenServer.call(manager, :online_contacts)
+  end
+
+  @doc "Get the online/offline status of a contact"
+  @spec get_presence(pid(), User.t()) :: Presence.t()
+  def get_presence(manager, user) do
+    GenServer.call(manager, {:get_presence, user.id})
   end
 
   def handle_info({:DOWN, ref, :process, _, _}, s) do
@@ -87,7 +89,7 @@ defmodule WockyAPI.Presence.Manager do
         nil ->
           # We had them marked as offline - set up tracking for their presence
           ref = Process.monitor(pid)
-          Presence.publish(s.user_id, contact)
+          Presence.publish(s.user_id, contact, :online)
           BiMap.put(s.contact_refs, contact.id, ref)
 
         _ref ->
@@ -104,6 +106,20 @@ defmodule WockyAPI.Presence.Manager do
 
   def handle_call(:online_contacts, _from, %{contact_refs: contact_refs} = s) do
     {:reply, BiMap.keys(contact_refs), s}
+  end
+
+  def handle_call(
+        {:get_presence, contact_id},
+        _from,
+        %{contact_refs: contact_refs} = s
+      ) do
+    status =
+      case BiMap.get(contact_refs, contact_id) do
+        nil -> :offline
+        _ -> :online
+      end
+
+    {:reply, Presence.make_presence(status), s}
   end
 
   def handle_call({:register, pid}, _from, s) do
@@ -152,7 +168,7 @@ defmodule WockyAPI.Presence.Manager do
         :ok
 
       contact ->
-        Presence.publish(user_id, contact)
+        Presence.publish(user_id, contact, :offline)
     end
   end
 end
