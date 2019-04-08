@@ -1,7 +1,7 @@
 defmodule Wocky.BotTest do
   use Wocky.DataCase, async: true
 
-  alias Wocky.{Bot, GeoUtils, Repo, User}
+  alias Wocky.{Bot, GeoUtils, Repo, Roster, User}
   alias Wocky.Repo.{Factory, ID}
 
   setup do
@@ -555,6 +555,34 @@ defmodule Wocky.BotTest do
              |> where(id: ^ctx.bot.id)
              |> Bot.filter_by_location(a, b)
              |> Repo.one() == nil
+    end
+  end
+
+  describe "notification_recipients/2" do
+    setup %{bot: bot} do
+      friend1 = Factory.insert(:user)
+      friend2 = Factory.insert(:user)
+      Roster.befriend(friend1, friend2)
+
+      stranger = Factory.insert(:user)
+
+      :ok = Bot.subscribe(bot, friend1)
+      :ok = Bot.subscribe(bot, friend2)
+      :ok = Bot.subscribe(bot, stranger)
+
+      {:ok, friend1: friend1, friend2: friend2, stranger: stranger}
+    end
+
+    test "should only include friends", %{
+      friend1: friend1,
+      friend2: friend2,
+      stranger: stranger,
+      bot: bot
+    } do
+      recipients = Bot.notification_recipients(bot, friend1)
+      assert Enum.member?(recipients, friend1)
+      assert Enum.member?(recipients, friend2)
+      refute Enum.member?(recipients, stranger)
     end
   end
 

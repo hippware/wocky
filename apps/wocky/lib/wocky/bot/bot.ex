@@ -16,6 +16,7 @@ defmodule Wocky.Bot do
   alias Wocky.Push.Events.BotPerimeterEvent
   alias Wocky.Repo
   alias Wocky.Repo.ID
+  alias Wocky.Roster
   alias Wocky.User
   alias Wocky.User.GeoFence
   alias Wocky.User.Notification
@@ -275,20 +276,18 @@ defmodule Wocky.Bot do
   end
 
   defp send_visit_notifications(visitor, bot, event) do
-    # Push notifications
-    bot
-    |> Ecto.assoc(:subscribers)
-    |> User.filter_hidden()
-    |> Repo.all()
-    |> Enum.each(&send_visit_push_notification(&1, visitor, bot, event))
-
-    # Notification stream notifications
     bot
     |> notification_recipients(visitor)
-    |> Enum.each(&send_visit_notification(&1, visitor, bot, event))
+    |> Enum.each(&do_send_visit_notification(&1, visitor, bot, event))
+  end
+
+  defp do_send_visit_notification(subscriber, visitor, bot, event) do
+    send_visit_push_notification(subscriber, visitor, bot, event)
+    send_visit_notification(subscriber, visitor, bot, event)
   end
 
   defp send_visit_push_notification(subscriber, visitor, bot, event) do
+    # Push notifications
     event = %BotPerimeterEvent{
       user: visitor,
       bot: bot,
@@ -299,6 +298,7 @@ defmodule Wocky.Bot do
   end
 
   defp send_visit_notification(subscriber, visitor, bot, event) do
+    # Notification stream notifications
     %GeofenceEvent{
       user_id: subscriber.id,
       other_user_id: visitor.id,
@@ -395,17 +395,25 @@ defmodule Wocky.Bot do
     |> order_by([..., s], desc: s.visited_at)
   end
 
+  @doc false
   @spec notification_recipients(Bot.t(), User.t()) :: [User.t()]
   def notification_recipients(bot, sender) do
-    bot =
-      bot
-      |> Repo.preload([:subscribers])
-      |> Repo.preload([:user])
+    # TODO We might be able to reduce the round trips to the database
+    # by combining the friends query and the subscriber query. That would
+    # result in an ugly join, so I am doing the easy thing for now.
+    bot = Repo.preload(bot, [:subscribers])
+    subscribers = MapSet.new(bot.subscribers)
 
-    bot.subscribers
-    |> Enum.sort_by(& &1.id)
-    |> Enum.uniq_by(& &1.id)
-    |> Enum.filter(&(&1.id != sender.id))
+    friends =
+      sender
+      |> Roster.friends_query(sender)
+      |> Repo.all()
+      |> MapSet.new()
+      |> MapSet.put(sender)
+
+    subscribers
+    |> MapSet.intersection(friends)
+    |> MapSet.to_list()
   end
 
   @spec sub_setup_event(Bot.t()) :: Waiter.event()
