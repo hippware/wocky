@@ -58,8 +58,13 @@ config :wocky,
   # Dynamic links
   dynamic_link_backend:
     {:system, :module, "WOCKY_DYN_LINK_BACKEND", Wocky.DynamicLink.Sandbox},
-  app_store_id: "1295678402",
-  ios_bundle_id: "com.hippware.tinyrobot",
+  app_store_id: {:system, :string, "WOCKY_APP_STORE_ID", "1295678402"},
+  ios_bundle_id:
+    {:system, :string, "WOCKY_IOS_BUNDLE_ID", "com.hippware.tinyrobot"},
+  android_package_name:
+    {:system, :string, "WOCKY_ANDROID_PACKAGE_NAME",
+     "com.hippware.android.tinyrobot"},
+  android_fallback_link: "https://tinyrobot.com",
   firebase_domain_url_prefix: "https://tinyrobot.page.link",
   firebase_link_prefix: "https://tinyrobot.com/?inviteCode=",
 
