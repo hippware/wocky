@@ -31,8 +31,25 @@ defmodule Wocky.Application do
 
     Mailer.init()
 
+    redis_config = redis_config()
+
     children = [
-      {Redix, redis_config()},
+      {Redix, redis_config},
+      {Redlock, Confex.get_env(:wocky, :redlock)},
+      %{
+        id: Phoenix.PubSub.Redis,
+        start:
+          {Phoenix.PubSub.Redis, :start_link,
+           [
+             :presence,
+             [
+               host: redis_config[:host],
+               port: redis_config[:port],
+               pool_size: 1,
+               node_name: redis_node()
+             ]
+           ]}
+      },
       {LocationSupervisor, []},
       {PushSandbox, []}
     ]
@@ -85,5 +102,12 @@ defmodule Wocky.Application do
     |> Keyword.take([:host, :port, :ssl, :database, :password])
     |> Keyword.put(:sync_connect, true)
     |> Keyword.put(:name, Redix)
+  end
+
+  defp redis_node do
+    case node() do
+      :nonode@nohost -> 'test_node@host'
+      node -> node
+    end
   end
 end

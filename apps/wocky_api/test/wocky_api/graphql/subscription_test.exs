@@ -33,6 +33,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
           id
         }
         action
+        updated_at
       }
     }
     """
@@ -50,7 +51,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      expected = fn count, action ->
+      expected = fn count, action, updated_at ->
         %{
           result: %{
             data: %{
@@ -64,7 +65,8 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
                 "visitor" => %{
                   "id" => user2.id
                 },
-                "action" => action
+                "action" => action,
+                "updated_at" => DateTime.to_iso8601(updated_at)
               }
             }
           },
@@ -73,12 +75,14 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       end
 
       Bot.visit(bot, user2, false)
+      %Subscription{updated_at: t!} = Subscription.get(user2, bot)
       assert_push "subscription:data", push, 2000
-      assert push == expected.(1, "ARRIVE")
+      assert push == expected.(1, "ARRIVE", t!)
 
       Bot.depart(bot, user2, false)
+      %Subscription{updated_at: t!} = Subscription.get(user2, bot)
       assert_push "subscription:data", push, 2000
-      assert push == expected.(0, "DEPART")
+      assert push == expected.(0, "DEPART", t!)
     end
 
     test "unauthenticated user attempting subscription", %{socket: socket} do

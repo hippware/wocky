@@ -55,6 +55,18 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "The user's hidden state"
     field :hidden, :hidden, do: resolve(&User.get_hidden/3)
 
+    @desc """
+    Timestamp for the last time the user object's data was changed. Applies
+    only to the following fields:
+    * handle
+    * media
+    * name (first and last)
+    * tagline
+    * roles
+    * hidden
+    """
+    field :updated_at, :datetime
+
     @desc "Bots related to the user specified by either relationship or ID"
     connection field :bots, node_type: :bots do
       connection_complexity()
@@ -73,9 +85,14 @@ defmodule WockyAPI.Schema.UserTypes do
     end
 
     @desc "The user's current presence status"
-    field :presence_status, :presence_status do
+    field :presence_status,
+          :presence_status,
+          deprecate: "Please use the single 'presence' field" do
       resolve &User.get_presence_status/3
     end
+
+    @desc "The user's presence data"
+    field :presence, :presence, resolve: &User.get_presence/3
 
     resolve_type fn
       %{id: id}, %{context: %{current_user: %{id: id}}} -> :current_user
@@ -802,6 +819,20 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &User.cancel_all_location_shares/3
       changeset_mutation_middleware()
     end
+  end
+
+  @desc "Presence data for a user"
+  object :presence do
+    @desc "The user's current status"
+    field :status, :presence_status
+
+    @desc """
+    The time at which this status was generated. Because of the distributed
+    nature of the system, it is possible, though unlikely, that presence updates
+    may arrive at the client out of order. This field should be used to identify
+    and discard stale updates.
+    """
+    field :updated_at, :datetime
   end
 
   enum :presence_status do

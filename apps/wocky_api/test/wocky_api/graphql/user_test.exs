@@ -27,6 +27,7 @@ defmodule WockyAPI.GraphQL.UserTest do
         media {
           tros_url
         }
+        updated_at
       }
     }
     """
@@ -43,7 +44,8 @@ defmodule WockyAPI.GraphQL.UserTest do
                  "email" => user.email,
                  "media" => %{
                    "tros_url" => user.image_url
-                 }
+                 },
+                 "updated_at" => DateTime.to_iso8601(user.updated_at)
                }
              }
     end

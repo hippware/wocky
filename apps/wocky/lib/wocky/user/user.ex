@@ -33,6 +33,7 @@ defmodule Wocky.User do
     InviteCode,
     Location,
     LocationShare,
+    Presence,
     WelcomeEmail
   }
 
@@ -71,6 +72,8 @@ defmodule Wocky.User do
     field :hidden_until, :utc_datetime_usec
     field :smss_sent, :integer
     field :bot_created, :boolean
+
+    field :presence, :any, virtual: true
 
     timestamps()
 
@@ -120,7 +123,8 @@ defmodule Wocky.User do
           welcome_sent: boolean,
           smss_sent: integer,
           hidden_until: hidden_state,
-          bot_created: boolean
+          bot_created: boolean,
+          presence: nil | Presence.t()
         }
 
   @update_fields [

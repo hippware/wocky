@@ -20,7 +20,8 @@ defmodule WockyAPI.Callbacks.BotSubscription do
       BotResolver.notify_visitor_subscription(
         subscriber.bot,
         subscriber.user,
-        subscriber.visitor
+        subscriber.visitor,
+        subscriber.updated_at
       )
     end
   end

@@ -447,6 +447,9 @@ defmodule WockyAPI.Schema.BotTypes do
 
     @desc "Whether the user has arrived or departed"
     field :action, :visitor_action
+
+    @desc "The time at which this visitor action occurred"
+    field :updated_at, :datetime
   end
 
   object :bot_subscriptions do

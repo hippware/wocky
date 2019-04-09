@@ -251,7 +251,7 @@ defmodule WockyAPI.Resolvers.Bot do
     "visitor_subscription_" <> user_id
   end
 
-  def notify_visitor_subscription(bot, subscriber, entered) do
+  def notify_visitor_subscription(bot, subscriber, entered, updated_at) do
     to_notify = bot |> Bot.subscribers_query() |> Repo.all()
 
     action =
@@ -260,7 +260,12 @@ defmodule WockyAPI.Resolvers.Bot do
         false -> :depart
       end
 
-    notification = %{bot: bot, visitor: subscriber, action: action}
+    notification = %{
+      bot: bot,
+      visitor: subscriber,
+      action: action,
+      updated_at: updated_at
+    }
 
     targets =
       Enum.map(

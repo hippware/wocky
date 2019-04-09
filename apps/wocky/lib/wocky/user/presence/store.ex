@@ -1,4 +1,4 @@
-defmodule WockyAPI.Presence.Store do
+defmodule Wocky.User.Presence.Store do
   @moduledoc """
   Redis-based store for user_id -> [presence_pid] mappings
   """

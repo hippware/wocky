@@ -94,6 +94,24 @@ config :wocky, :redis,
   password: {:system, :string, "REDIS_PASSWORD", nil},
   database: {:system, :integer, "REDIS_DB", 0}
 
+config :wocky, :redlock,
+  pool_size: 2,
+  drift_factor: 0.01,
+  max_retry: 10,
+  retry_interval_base: 300,
+  retry_interval_max: 3_000,
+  reconnection_interval_base: 500,
+  reconnection_interval_max: 5_000,
+  servers: [
+    [
+      host: {:system, :string, "REDIS_HOST", "localhost"},
+      port: {:system, :integer, "REDIS_PORT", 6379},
+      ssl: {:system, :boolean, "REDIS_SSL", false},
+      auth: {:system, :string, "REDIS_PASSWORD", nil},
+      database: {:system, :integer, "REDIS_DB", 0}
+    ]
+  ]
+
 # location processing
 config :wocky, Wocky.User.GeoFence,
   enable_notifications: true,
