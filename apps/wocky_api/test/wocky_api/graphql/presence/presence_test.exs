@@ -42,6 +42,10 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
     presence {
       id
       presence_status
+      presence {
+        status
+        updated_at
+      }
     }
   }
   """
@@ -55,13 +59,13 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
     end
 
     test "should give no initial notifications when nobody is online" do
-      refute_push "subscription:data", _push, 500
+      refute_push "subscription:data", _push, 2000
     end
 
     test "should notify when a friend comes online", shared do
       connect(shared.friend)
 
-      assert_push "subscription:data", push, 500
+      assert_push "subscription:data", push, 2000
       assert_presence_notification(push.result.data, shared.friend.id, :online)
     end
 
@@ -69,25 +73,25 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
          shared do
       Enum.each(1..5, fn _ -> connect(shared.friend) end)
 
-      assert_push "subscription:data", push, 500
+      assert_push "subscription:data", push, 2000
       assert_presence_notification(push.result.data, shared.friend.id, :online)
-      refute_push "subscription:data", _push, 500
+      refute_push "subscription:data", _push, 2000
     end
 
     test "should not notify when other users come online", shared do
       connect(shared.stranger)
 
-      refute_push "subscription:data", _push, 500
+      refute_push "subscription:data", _push, 2000
     end
 
     test "should notify when a friend goes offline", shared do
       {conn, _} = connect(shared.friend)
 
-      assert_push "subscription:data", push, 500
+      assert_push "subscription:data", push, 2000
 
       close_conn(conn)
 
-      assert_push "subscription:data", push, 500
+      assert_push "subscription:data", push, 2000
 
       assert_presence_notification(
         push.result.data,
@@ -99,11 +103,11 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
     test "should not notify when other users go offline", shared do
       {conn, _} = connect(shared.stranger)
 
-      refute_push "subscription:data", _push, 500
+      refute_push "subscription:data", _push, 2000
 
       close_conn(conn)
 
-      refute_push "subscription:data", _push, 500
+      refute_push "subscription:data", _push, 2000
     end
 
     test """
@@ -119,7 +123,7 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
           end
         )
 
-      assert_push "subscription:data", push, 500
+      assert_push "subscription:data", push, 2000
 
       Enum.each(
         0..3,
@@ -128,10 +132,10 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
         end
       )
 
-      refute_push "subscription:data", _push, 500
+      refute_push "subscription:data", _push, 2000
 
       close_conn(Enum.at(conns, 4))
-      assert_push "subscription:data", push, 500
+      assert_push "subscription:data", push, 2000
 
       assert_presence_notification(push.result.data, shared.friend.id, :offline)
     end
@@ -145,7 +149,7 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
       ref = push_doc(shared.socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      assert_push "subscription:data", push, 500
+      assert_push "subscription:data", push, 2000
       assert_presence_notification(push.result.data, shared.friend.id, :online)
 
       {:ok, ref: ref, conn: conn}
@@ -154,7 +158,7 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
     test "connected contact disconnects", shared do
       close_conn(shared.conn)
 
-      assert_push "subscription:data", push, 500
+      assert_push "subscription:data", push, 2000
 
       assert_presence_notification(push.result.data, shared.friend.id, :offline)
     end
@@ -184,11 +188,16 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
     do: Enum.any?(list, &(&1.id == user.id))
 
   defp assert_presence_notification(data, user_id, type) do
+    expected_status = type |> to_string() |> String.upcase()
     assert %{
              "presence" => %{
-               "id" => user_id,
-               "presence_status" => type |> to_string() |> String.upcase()
+               "id" => ^user_id,
+               "presence_status" => ^expected_status,
+               "presence" => %{
+                 "status" => ^expected_status,
+                 "updated_at" => _
+               }
              }
-           } == data
+           } = data
   end
 end
