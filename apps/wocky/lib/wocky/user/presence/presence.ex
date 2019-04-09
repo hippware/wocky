@@ -20,18 +20,18 @@ defmodule Wocky.User.Presence do
 
   @type callback() :: (User.t(), User.id() -> :ok)
 
-  @spec register_callback(callback()) :: :ok
+  @spec register_callback(callback()) :: [callback()]
   def register_callback(callback) do
-    callbacks =
-      :wocky
-      |> Confex.get_env(:presence_callbacks, [])
-      |> Enum.concat([callback])
+    original_callbacks = Confex.get_env(:wocky, :presence_callbacks, [])
+    callbacks = Enum.concat(original_callbacks, [callback])
 
     Application.put_env(:wocky, :presence_callbacks, callbacks)
+    original_callbacks
   end
 
-  @spec clear_callbacks :: :ok
-  def clear_callbacks, do: Application.put_env(:wocky, :presence_callbacks, [])
+  @spec reset_callbacks([callback()]) :: :ok
+  def reset_callbacks(callbacks), do:
+    Application.put_env(:wocky, :presence_callbacks, callbacks)
 
   @doc """
   Mark a user online and return a list of their currently-online followees
