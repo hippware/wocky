@@ -9,6 +9,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Migrate `staging` to new DB server (PR #2399)
 * Update: bcrypt_elixir (PR #2401)
 * Geofence entry/exit notifications should only go to friends (#2392)
+* Server generated dynamic links to include android values (#2405)
+* Allow enforcement of strict ordering on subscriptions (#2351)
 
 
 # 2019.4.4+r080c705
