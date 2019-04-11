@@ -1,4 +1,4 @@
-defmodule Wocky.Mailer do
+defmodule Wocky.Notifier.Email.Mailer do
   @moduledoc """
   Mailer module to configure Bamboo for Wocky
   """

@@ -6,7 +6,7 @@ defmodule Wocky.Notifier do
   @known_notifiers [
     {Wocky.Notifier.Push.Event, Wocky.Notifier.Push},
     {Wocky.Notifier.InBand.Event, Wocky.Notifier.InBand},
-    {Wocky.Notifier.Mailer.Event, Wocky.Notifier.Mailer}
+    {Wocky.Notifier.Email.Event, Wocky.Notifier.Email}
   ]
 
   alias Wocky.Block

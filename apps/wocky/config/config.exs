@@ -157,7 +157,7 @@ config :wocky, Wocky.Repo,
   pool_size: {:system, :integer, "WOCKY_DB_POOL_SIZE", 15},
   migration_timestamps: [type: :utc_datetime_usec]
 
-config :wocky, Wocky.Mailer,
+config :wocky, Wocky.Notifier.Email.Mailer,
   adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.TestAdapter},
   api_key: {:system, :string, "MANDRILL_API_KEY", ""}
 

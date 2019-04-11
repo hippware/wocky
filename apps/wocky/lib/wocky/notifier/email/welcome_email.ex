@@ -1,4 +1,4 @@
-defmodule Wocky.User.WelcomeEmail do
+defmodule Wocky.Notifier.Email.WelcomeEmail do
   @moduledoc """
   Generates and sends emails for various situations
   """
@@ -6,7 +6,7 @@ defmodule Wocky.User.WelcomeEmail do
   import Bamboo.Email
 
   alias Bamboo.MandrillHelper
-  alias Wocky.Mailer
+  alias Wocky.Notifier.Email.Mailer
   alias Wocky.User
 
   @spec send(User.t()) :: :ok

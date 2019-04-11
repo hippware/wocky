@@ -1,11 +1,11 @@
-defmodule Wocky.User.WelcomeEmailTest do
+defmodule Wocky.Notifier.Email.WelcomeEmailTest do
   use Wocky.DataCase, async: false
   use Bamboo.Test
 
   alias Faker.{Internet, Name}
   alias Wocky.{Repo, User}
   alias Wocky.Repo.Factory
-  alias Wocky.User.WelcomeEmail
+  alias Wocky.Notifier.Email.WelcomeEmail
 
   test "send/1" do
     user = Factory.build(:user)
