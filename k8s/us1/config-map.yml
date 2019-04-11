@@ -20,8 +20,9 @@ data:
   WOCKY_GEOFENCE_SAVE_LOCATIONS: "false"
   WOCKY_ENABLE_BYPASS: "false"
   WOCKY_SMS_BACKEND: Wocky.SMS.Twilio
-  WOCKY_DB_HOST: wocky-us1.cx7fev3pluk8.us-west-2.rds.amazonaws.com
+  WOCKY_DB_HOST: db.prod.tinyrobot.com
   WOCKY_DB_NAME: wocky_us1
+  WOCKY_DB_USER: wocky_us1
   DAWDLE_SQS_MESSAGE_QUEUE: wocky-db-watcher-us1.fifo
   DAWDLE_SQS_DELAY_QUEUE: wocky-dawdle-us1
   WOCKY_LOG_TRAFFIC: "false"
