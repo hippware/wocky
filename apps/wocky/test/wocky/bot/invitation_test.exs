@@ -7,8 +7,8 @@ defmodule Wocky.Bot.InvitationTest do
   alias Pigeon.APNS.Notification
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
-  alias Wocky.Push
-  alias Wocky.Push.Backend.Sandbox
+  alias Wocky.Notifier.Push
+  alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
 
   setup do

@@ -22,7 +22,7 @@ defmodule Wocky.User do
   }
 
   alias Wocky.Bot.{Invitation, Subscription}
-  alias Wocky.Push.Token, as: PushToken
+  alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
 

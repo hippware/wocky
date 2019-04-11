@@ -130,20 +130,20 @@ config :wocky, Wocky.User.GeoFence,
   save_locations: {:system, :boolean, "WOCKY_GEOFENCE_SAVE_LOCATIONS", true}
 
 # Push notifications
-config :wocky, Wocky.Push,
+config :wocky, Wocky.Notifier.Push,
   enabled: {:system, :boolean, "WOCKY_PUSH_ENABLED", false},
   sandbox: {:system, :boolean, "WOCKY_PUSH_SANDBOX", false},
   uri_prefix: {:system, :string, "WOCKY_PUSH_URI_PREFIX", "tinyrobot"},
   timeout: {:system, :integer, "WOCKY_PUSH_TIMEOUT", 60_000},
   log_payload: {:system, :boolean, "WOCKY_PUSH_LOG_PAYLOAD", true}
 
-config :wocky, Wocky.Push.Backend.APNS,
+config :wocky, Wocky.Notifier.Push.Backend.APNS,
   topic: {:system, :string, "WOCKY_PUSH_APNS_TOPIC", "app"}
 
-config :wocky, Wocky.Push.Backend.FCM,
+config :wocky, Wocky.Notifier.Push.Backend.FCM,
   package: {:system, :string, "WOCKY_PUSH_FCM_PACKAGE", "app"}
 
-config :wocky, Wocky.Push.Backend.Sandbox,
+config :wocky, Wocky.Notifier.Push.Backend.Sandbox,
   reflect: {:system, :boolean, "WOCKY_PUSH_REFLECT", false}
 
 config :wocky, Wocky.Repo,

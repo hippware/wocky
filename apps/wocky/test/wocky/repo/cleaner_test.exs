@@ -5,8 +5,8 @@ defmodule Wocky.Repo.CleanerTest do
 
   alias Wocky.Bot
   alias Wocky.Bot.Item
-  alias Wocky.Push.Log, as: PushLog
-  alias Wocky.Push.Token, as: PushToken
+  alias Wocky.Notifier.Push.Log, as: PushLog
+  alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Repo
   alias Wocky.Repo.Cleaner
   alias Wocky.Repo.Factory

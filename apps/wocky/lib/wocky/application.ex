@@ -11,7 +11,7 @@ defmodule Wocky.Application do
 
   alias DawdleDB.Watcher.Supervisor, as: Watcher
   alias Wocky.Mailer
-  alias Wocky.Push.Backend.Sandbox, as: PushSandbox
+  alias Wocky.Notifier.Push.Backend.Sandbox, as: PushSandbox
   alias Wocky.Tasks.Recurring
   alias Wocky.User.Location.Supervisor, as: LocationSupervisor
 
