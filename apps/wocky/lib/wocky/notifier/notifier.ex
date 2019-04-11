@@ -9,15 +9,16 @@ defmodule Wocky.Notifier do
     {Wocky.Notifier.Mailer.Event, Wocky.Notifier.Mailer}
   ]
 
+  alias Wocky.Block
+
   def notify(event) do
-    # TODO Handle blocking (where appropriate)
-    # if !Block.blocked?(notification.user_id, notification.other_user_id) do
     for {type, notifier} <- @known_notifiers do
-      if type.notify?(event) do
+      if type.notify?(event) && deliverable?(event) do
         notifier.notify(event)
       end
     end
-
-    # end
   end
+
+  defp deliverable?(%{to: to, from: from}), do: !Block.blocked?(to.id, from.id)
+  defp deliverable?(_), do: true
 end

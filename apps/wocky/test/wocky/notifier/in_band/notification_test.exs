@@ -1,9 +1,9 @@
 defmodule Wocky.Notifier.InBand.NotificationTest do
   use Wocky.DataCase
 
-  # alias Wocky.Block
+  alias Wocky.Block
   alias Wocky.Bot.Invitation
-  alias Wocky.Notifier.InBand
+  alias Wocky.Notifier
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo.Factory
 
@@ -29,7 +29,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
 
   describe "create notification" do
     test "bot invitation", ctx do
-      InBand.notify(%BotInvitation{
+      Notifier.notify(%BotInvitation{
         to: ctx.user2,
         from: ctx.user,
         bot: ctx.bot,
@@ -43,7 +43,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     test "bot invitation response", ctx do
       invitation = %Invitation{ctx.bot_invitation | accepted: true}
 
-      InBand.notify(%BotInvitationResponse{
+      Notifier.notify(%BotInvitationResponse{
         to: ctx.user,
         from: ctx.user2,
         bot: ctx.bot,
@@ -57,7 +57,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     test "bot item", ctx do
       item = Factory.insert(:item, bot: ctx.bot, user: ctx.user2)
 
-      InBand.notify(%BotItem{
+      Notifier.notify(%BotItem{
         to: ctx.user,
         from: ctx.user2,
         item: item
@@ -68,7 +68,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     end
 
     test "geofence event", ctx do
-      InBand.notify(%GeofenceEvent{
+      Notifier.notify(%GeofenceEvent{
         to: ctx.user,
         from: ctx.user2,
         bot: ctx.bot,
@@ -80,7 +80,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     end
 
     test "location share", ctx do
-      InBand.notify(%LocationShare{
+      Notifier.notify(%LocationShare{
         to: ctx.user,
         from: ctx.user2,
         expires_at: DateTime.utc_now()
@@ -91,7 +91,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     end
 
     test "location share end", ctx do
-      InBand.notify(%LocationShareEnd{
+      Notifier.notify(%LocationShareEnd{
         to: ctx.user,
         from: ctx.user2
       })
@@ -101,7 +101,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     end
 
     test "user invitation", ctx do
-      InBand.notify(%UserInvitation{
+      Notifier.notify(%UserInvitation{
         to: ctx.user,
         from: ctx.user2
       })
@@ -111,80 +111,87 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     end
   end
 
-  # describe "blocked user notification should fail" do
-  #   setup ctx do
-  #     Block.block(ctx.user, ctx.user2)
-  #     :ok
-  #   end
+  describe "blocked user notification should fail" do
+    setup ctx do
+      Block.block(ctx.user, ctx.user2)
+      :ok
+    end
 
-  #   test "bot invitation", ctx do
-  #     assert {:error, :invalid_user} ==
-  #              Notification.notify(%BotInvitation{
-  #                user_id: ctx.user.id,
-  #                other_user_id: ctx.user2.id,
-  #                bot_id: ctx.bot.id,
-  #                bot_invitation_id: ctx.bot_invitation.id
-  #              })
-  #   end
+    test "bot invitation", ctx do
+      Notifier.notify(%BotInvitation{
+        to: ctx.user2,
+        from: ctx.user,
+        bot: ctx.bot,
+        invitation: ctx.bot_invitation
+      })
 
-  #   test "bot invitation response", ctx do
-  #     assert {:error, :invalid_user} ==
-  #              Notification.notify(%BotInvitationResponse{
-  #                user_id: ctx.user.id,
-  #                other_user_id: ctx.user2.id,
-  #                bot_id: ctx.bot.id,
-  #                bot_invitation_id: ctx.bot_invitation.id,
-  #                bot_invitation_accepted: true
-  #              })
-  #   end
+      refute Repo.get_by(Notification, user_id: ctx.user2.id)
+    end
 
-  #   test "bot item", ctx do
-  #     item = Factory.insert(:item, bot: ctx.bot, user: ctx.user2)
+    test "bot invitation response", ctx do
+      invitation = %Invitation{ctx.bot_invitation | accepted: true}
 
-  #     assert {:error, :invalid_user} ==
-  #              Notification.notify(%BotItem{
-  #                user_id: ctx.user.id,
-  #                other_user_id: ctx.user2.id,
-  #                bot_id: ctx.bot.id,
-  #                bot_item_id: item.id
-  #              })
-  #   end
+      Notifier.notify(%BotInvitationResponse{
+        to: ctx.user,
+        from: ctx.user2,
+        bot: ctx.bot,
+        invitation: invitation
+      })
 
-  #   test "geofence event", ctx do
-  #     assert {:error, :invalid_user} ==
-  #              Notification.notify(%GeofenceEvent{
-  #                user_id: ctx.user.id,
-  #                other_user_id: ctx.user2.id,
-  #                bot_id: ctx.bot.id,
-  #                event: :enter
-  #              })
-  #   end
+      refute Repo.get_by(Notification, user_id: ctx.user.id)
+    end
 
-  #   test "location_share", ctx do
-  #     assert {:error, :invalid_user} ==
-  #              Notification.notify(%LocationShare{
-  #                user_id: ctx.user.id,
-  #                other_user_id: ctx.user2.id,
-  #                expires_at: DateTime.utc_now()
-  #              })
-  #   end
+    test "bot item", ctx do
+      item = Factory.insert(:item, bot: ctx.bot, user: ctx.user2)
 
-  #   test "location_share_end", ctx do
-  #     assert {:error, :invalid_user} ==
-  #              Notification.notify(%LocationShareEnd{
-  #                user_id: ctx.user.id,
-  #                other_user_id: ctx.user2.id
-  #              })
-  #   end
+      Notifier.notify(%BotItem{
+        to: ctx.user,
+        from: ctx.user2,
+        item: item
+      })
 
-  #   test "user invitation", ctx do
-  #     assert {:error, :invalid_user} ==
-  #              Notification.notify(%UserInvitation{
-  #                user_id: ctx.user.id,
-  #                other_user_id: ctx.user2.id
-  #              })
-  #   end
-  # end
+      refute Repo.get_by(Notification, user_id: ctx.user.id)
+    end
+
+    test "geofence event", ctx do
+      Notifier.notify(%GeofenceEvent{
+        to: ctx.user,
+        from: ctx.user2,
+        bot: ctx.bot,
+        event: :enter
+      })
+
+      refute Repo.get_by(Notification, user_id: ctx.user.id)
+    end
+
+    test "location_share", ctx do
+      Notifier.notify(%LocationShare{
+        to: ctx.user,
+        from: ctx.user2,
+        expires_at: DateTime.utc_now()
+      })
+
+      refute Repo.get_by(Notification, user_id: ctx.user.id)
+    end
+
+    test "location_share_end", ctx do
+      Notifier.notify(%LocationShareEnd{
+        to: ctx.user,
+        from: ctx.user2
+      })
+
+      refute Repo.get_by(Notification, user_id: ctx.user.id)
+    end
+
+    test "user invitation", ctx do
+      Notifier.notify(%UserInvitation{
+        to: ctx.user,
+        from: ctx.user2
+      })
+
+      refute Repo.get_by(Notification, user_id: ctx.user.id)
+    end
+  end
 
   describe "delete/2" do
     setup %{user: user, user2: user2} do
