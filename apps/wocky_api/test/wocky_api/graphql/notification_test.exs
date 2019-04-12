@@ -1,9 +1,9 @@
 defmodule WockyAPI.GraphQL.NotificationTest do
   use WockyAPI.GraphQLCase, async: true
 
+  alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.User.Notification
 
   setup do
     {:ok, user: Factory.insert(:user)}

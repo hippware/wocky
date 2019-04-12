@@ -1,7 +1,7 @@
 defmodule WockyAPI.Resolvers.Notification do
   @moduledoc "GraphQL resolver for bot objects"
 
-  alias Wocky.User.Notification
+  alias Wocky.Notifier.InBand.Notification
   alias WockyAPI.Resolvers.Utils
 
   @type_map [
