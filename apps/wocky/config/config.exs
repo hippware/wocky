@@ -189,7 +189,9 @@ config :pigeon, :apns,
 
 config :pigeon, :fcm,
   fcm_default: %{
-    key: {:system, :string, "WOCKY_FCM_KEY"}
+    # Pigeon doesn't use confex so we have to pull in variables the old
+    # fashioned way
+    key: System.get_env("WOCKY_FCM_KEY")
   }
 
 config :ex_twilio,
