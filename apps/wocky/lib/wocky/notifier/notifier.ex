@@ -11,12 +11,15 @@ defmodule Wocky.Notifier do
 
   alias Wocky.Block
 
+  @spec notify(struct()) :: :ok
   def notify(event) do
     for {type, notifier} <- @known_notifiers do
       if type.notify?(event) && deliverable?(event) do
         notifier.notify(event)
       end
     end
+
+    :ok
   end
 
   defp deliverable?(%{to: to, from: from}), do: !Block.blocked?(to.id, from.id)

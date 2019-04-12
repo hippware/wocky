@@ -3,9 +3,9 @@ defmodule Wocky.Notifier.Email.WelcomeEmailTest do
   use Bamboo.Test
 
   alias Faker.{Internet, Name}
+  alias Wocky.Notifier.Email.WelcomeEmail
   alias Wocky.{Repo, User}
   alias Wocky.Repo.Factory
-  alias Wocky.Notifier.Email.WelcomeEmail
 
   test "send/1" do
     user = Factory.build(:user)
