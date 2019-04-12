@@ -189,7 +189,7 @@ config :pigeon, :apns,
 
 config :pigeon, :fcm,
   fcm_default: %{
-    key: {:system, :string, "WOCKY_FCM_KEY"}
+    key: {:system, :string, "WOCKY_FCM_KEY", ""}
   }
 
 config :ex_twilio,
