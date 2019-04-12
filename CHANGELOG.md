@@ -5,8 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.4.12+rad30a44
+
 * Migrate `us1` to new db server (PR #2412)
-* Fix FCM config and error handling (PR #2414)
+* Fix FCM config and error handling (PR #2414, PR #2415)
   * UndefinedFunctionError: function nil.status/0 is undefined (#2413)
 
 
