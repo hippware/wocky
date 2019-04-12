@@ -80,7 +80,7 @@ defmodule Wocky.Mixfile do
       {:ex_json_logger, "~> 1.0"},
       {:ex_machina, "~> 2.1"},
       {:ex_phone_number, "~> 0.1"},
-      {:ex_twilio, "~> 0.6"},
+      {:ex_twilio, "~> 0.7"},
       {:exconstructor, "~> 1.0"},
       # TODO: This dependency is only used in one migration. We should remove
       # it after checkpointing the database schema.
@@ -101,13 +101,13 @@ defmodule Wocky.Mixfile do
       {:guardian, "~> 1.0"},
       {:guardian_firebase, "~> 0.2.1"},
       {:honeybadger, "~> 0.6"},
-      {:joken, "~> 1.1"},
       {:kadabra, "~> 0.3"},
       {:lager_logger, "~> 1.0"},
       {:peerage, "~> 1.0"},
       {:phoenix_pubsub, "~> 1.0"},
       {:phoenix_pubsub_redis, "~> 2.1.5"},
-      {:pigeon, "~> 1.1"},
+      # TODO: Back to upstream once Confex changes are merged
+      {:pigeon, github: "hippware/pigeon", branch: "working"},
       {:plug, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:postgrex, ">= 0.0.0"},
