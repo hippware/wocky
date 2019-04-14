@@ -49,8 +49,7 @@ defmodule Wocky.Push.Backend.FCM do
   def handle_error(:missing_registration), do: :invalidate_token
   def handle_error(_), do: :retry
 
-  def error_msg(nil), do: "nil response"
-  def error_msg(resp), do: to_string(resp.status)
+  def error_msg(resp), do: inspect(resp)
 
   defp package, do: Confex.get_env(:wocky, __MODULE__)[:package]
 end
