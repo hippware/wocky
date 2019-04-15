@@ -426,9 +426,11 @@ defmodule WockyAPI.Resolvers.User do
   def get_contact_user(x, _args, _context), do: {:ok, x.user}
 
   defp fix_name(m, user) do
-    new_name = m
-               |> do_fix_name(user)
-               |> String.trim()
+    new_name =
+      m
+      |> do_fix_name(user)
+      |> String.trim()
+
     if new_name do
       Map.put_new(m, :name, new_name)
     else

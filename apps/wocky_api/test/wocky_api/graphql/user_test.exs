@@ -177,7 +177,6 @@ defmodule WockyAPI.GraphQL.UserTest do
              |> User.first_name() == new_name
     end
 
-
     @query """
     mutation ($enable: Boolean!, $expire: DateTime) {
       userHide (input: {enable: $enable, expire: $expire}) {
