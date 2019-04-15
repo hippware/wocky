@@ -28,9 +28,9 @@ defmodule WockyAPI.Resolvers.Message do
       |> preload([:sender, :recipient])
       |> Utils.connection_from_query(
         user,
-        [desc: :created_at],
-        &map_to_graphql(&1, user.id),
-        args
+        args,
+        order_by: [desc: :created_at],
+        postprocess: &map_to_graphql(&1, user.id)
       )
     end
   end
@@ -64,7 +64,7 @@ defmodule WockyAPI.Resolvers.Message do
     user.id
     |> Conversation.by_user_query()
     |> preload([:other_user])
-    |> Utils.connection_from_query(user, [desc: :created_at], args)
+    |> Utils.connection_from_query(user, args, order_by: [desc: :created_at])
   end
 
   defp map_to_graphql(%Message{} = message, requestor_id) do
