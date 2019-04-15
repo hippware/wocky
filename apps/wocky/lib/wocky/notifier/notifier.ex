@@ -4,16 +4,17 @@ defmodule Wocky.Notifier do
   @callback notify(struct()) :: :ok
 
   @known_notifiers [
-    {Wocky.Notifier.Push.Event, Wocky.Notifier.Push},
-    {Wocky.Notifier.InBand.Event, Wocky.Notifier.InBand},
-    {Wocky.Notifier.Email.Event, Wocky.Notifier.Email}
+    Wocky.Notifier.Push,
+    Wocky.Notifier.InBand,
+    Wocky.Notifier.Email
   ]
 
   alias Wocky.Block
 
   @spec notify(struct()) :: :ok
   def notify(event) do
-    for {type, notifier} <- @known_notifiers do
+    for notifier <- @known_notifiers do
+      type = Module.safe_concat(notifier, Event)
       if type.notify?(event) && deliverable?(event) do
         notifier.notify(event)
       end
