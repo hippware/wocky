@@ -172,9 +172,9 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert User
-             |> Repo.get(user.id)
-             |> User.first_name() == new_name
+      u = Repo.get(User, user.id)
+      assert User.last_name(u) == new_name
+      assert User.first_name(u) == ""
     end
 
     @query """
