@@ -11,16 +11,14 @@ defmodule Wocky.Bot do
   alias Geocalc.Point
   alias Wocky.Block
   alias Wocky.Bot.{Invitation, Item, Subscription}
+  alias Wocky.Events.GeofenceEvent
   alias Wocky.GeoUtils
-  alias Wocky.Push
-  alias Wocky.Push.Events.BotPerimeterEvent
+  alias Wocky.Notifier
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.Roster
   alias Wocky.User
   alias Wocky.User.GeoFence
-  alias Wocky.User.Notification
-  alias Wocky.User.Notification.GeofenceEvent
   alias Wocky.Waiter
 
   require Logger
@@ -279,38 +277,20 @@ defmodule Wocky.Bot do
     Subscription.depart_all(user)
   end
 
-  defp send_visit_notifications(visitor, bot, event) do
+  defp send_visit_notifications(visitor, bot, bot_event) do
+    event = %GeofenceEvent{
+      from: visitor,
+      bot: bot,
+      event: bot_event
+    }
+
     bot
     |> notification_recipients(visitor)
-    |> Enum.each(&do_send_visit_notification(&1, visitor, bot, event))
+    |> Enum.each(&do_send_visit_notification(&1, event))
   end
 
-  defp do_send_visit_notification(subscriber, visitor, bot, event) do
-    send_visit_push_notification(subscriber, visitor, bot, event)
-    send_visit_notification(subscriber, visitor, bot, event)
-  end
-
-  defp send_visit_push_notification(subscriber, visitor, bot, event) do
-    # Push notifications
-    event = %BotPerimeterEvent{
-      user: visitor,
-      bot: bot,
-      event: event
-    }
-
-    Push.notify_all(subscriber, event)
-  end
-
-  defp send_visit_notification(subscriber, visitor, bot, event) do
-    # Notification stream notifications
-    %GeofenceEvent{
-      user_id: subscriber.id,
-      other_user_id: visitor.id,
-      bot_id: bot.id,
-      event: event
-    }
-    |> Notification.notify()
-  end
+  defp do_send_visit_notification(subscriber, event),
+    do: Notifier.notify(%GeofenceEvent{event | to: subscriber})
 
   @spec by_relationship_query(User.t(), relationship(), User.t() | nil) ::
           Ecto.Queryable.t()

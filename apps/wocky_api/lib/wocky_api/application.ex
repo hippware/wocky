@@ -29,7 +29,7 @@ defmodule WockyAPI.Application do
 
     Callbacks.register()
 
-    Presence.register_callback(&WockyAPI.Resolvers.User.publish_presence/2)
+    _ = Presence.register_callback(&WockyAPI.Resolvers.User.publish_presence/2)
 
     Supervisor.start_link(children, opts)
   end

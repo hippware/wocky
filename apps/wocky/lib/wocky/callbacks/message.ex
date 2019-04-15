@@ -5,8 +5,8 @@ defmodule Wocky.Callbacks.Message do
 
   use DawdleDB.Handler, type: Wocky.Message
 
-  alias Wocky.Push
-  alias Wocky.Push.Events.NewMessageEvent
+  alias Wocky.Events.NewMessage
+  alias Wocky.Notifier
   alias Wocky.Repo
 
   def handle_insert(new) do
@@ -17,14 +17,13 @@ defmodule Wocky.Callbacks.Message do
   end
 
   defp send_push(msg) do
-    event = %NewMessageEvent{
+    %NewMessage{
       to: msg.recipient,
       from: msg.sender,
       content: msg.content,
       image_url: msg.image_url,
       conversation_id: msg.id
     }
-
-    Push.notify_all(msg.recipient, event)
+    |> Notifier.notify()
   end
 end

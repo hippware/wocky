@@ -18,8 +18,9 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
   alias Wocky.Message
-  alias Wocky.Push.Log, as: PushLog
-  alias Wocky.Push.Token, as: PushToken
+  alias Wocky.Notifier.InBand.Notification
+  alias Wocky.Notifier.Push.Log, as: PushLog
+  alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster.Invitation, as: RosterInvitation
@@ -30,7 +31,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.User
   alias Wocky.User.Location
   alias Wocky.User.LocationShare
-  alias Wocky.User.Notification
 
   def user_factory do
     %User{

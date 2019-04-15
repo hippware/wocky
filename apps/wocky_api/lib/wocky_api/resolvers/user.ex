@@ -3,7 +3,8 @@ defmodule WockyAPI.Resolvers.User do
 
   alias Absinthe.Relay.Connection
   alias Absinthe.Subscription
-  alias Wocky.{Account, Push, Repo, Roster, User}
+  alias Wocky.{Account, Repo, Roster, User}
+  alias Wocky.Notifier.Push
   alias Wocky.Roster.Item
   alias Wocky.User.{Location, Presence}
   alias WockyAPI.Endpoint

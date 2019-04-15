@@ -3,9 +3,10 @@ defmodule Wocky.Roster.RosterNotificationTest do
 
   alias Faker.Code
   alias Pigeon.APNS.Notification
-  alias Wocky.{Push, Roster}
-  alias Wocky.Push.Backend.Sandbox
+  alias Wocky.Notifier.Push
+  alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
+  alias Wocky.Roster
 
   setup do
     [user1, user2] = Factory.insert_list(2, :user, device: "testing")

@@ -3,8 +3,8 @@ defmodule WockyAPI.GraphQL.UserTest do
 
   alias Faker.{Lorem, Name}
   alias Wocky.Block
-  alias Wocky.Push
-  alias Wocky.Push.Token
+  alias Wocky.Notifier.Push
+  alias Wocky.Notifier.Push.Token
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID, Timestamp}
   alias Wocky.Roster
