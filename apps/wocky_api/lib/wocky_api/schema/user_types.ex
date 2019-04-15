@@ -53,7 +53,8 @@ defmodule WockyAPI.Schema.UserTypes do
     field :roles, non_null(list_of(non_null(:string))), do: scope(:public)
 
     @desc "The user's hidden state"
-    field :hidden, :hidden, do: resolve(&User.get_hidden/3)
+    field :hidden, :hidden,
+    deprecate: "hidden is no longer supported on the server"
 
     @desc """
     Timestamp for the last time the user object's data was changed. Applies
@@ -63,7 +64,6 @@ defmodule WockyAPI.Schema.UserTypes do
     * name (first and last)
     * tagline
     * roles
-    * hidden
     """
     field :updated_at, :datetime
 
@@ -436,13 +436,17 @@ defmodule WockyAPI.Schema.UserTypes do
   @desc "The state of the user's hidden mode"
   object :hidden do
     @desc "Whether the user is currently hidden"
-    field :enabled, non_null(:boolean)
+    field :enabled, non_null(:boolean),
+      deprecate: "hidden is no longer supported by the server",
+      resolve: fn _, _ -> {:ok, false} end
 
     @desc """
     When the current or last hidden state expires/expired. Null if no
     expiry is/was scheduled.
     """
-    field :expires, :datetime
+    field :expires, :datetime,
+      deprecate: "hidden is no longer supported by the server",
+      resolve: fn _, _ -> {:ok, DateTime.from_unix!(0)} end
   end
 
   @desc "Parameters for modifying a user"
@@ -567,11 +571,11 @@ defmodule WockyAPI.Schema.UserTypes do
     end
 
     @desc "Hide the current user"
-    field :user_hide, type: :user_hide_payload do
+    field :user_hide,
+      type: :user_hide_payload,
+      deprecate: "hidden mode is no longer supported by the server" do
       arg :input, non_null(:user_hide_input)
       resolve &User.hide/3
-      middleware WockyAPI.Middleware.RefreshCurrentUser
-      changeset_mutation_middleware()
     end
   end
 

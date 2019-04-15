@@ -152,46 +152,6 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
 
     @query """
-    mutation ($enable: Boolean!, $expire: DateTime) {
-      userHide (input: {enable: $enable, expire: $expire}) {
-        result
-      }
-    }
-    """
-
-    test "set user as permanently hidden", %{user: user} do
-      result = run_query(@query, user, %{"enable" => true})
-
-      refute has_errors(result)
-
-      assert result.data == %{"userHide" => %{"result" => true}}
-
-      assert User.hidden_state(Repo.get(User, user.id)) == {true, nil}
-    end
-
-    test "set user as not hidden", %{user: user} do
-      result = run_query(@query, user, %{"enable" => false})
-
-      refute has_errors(result)
-
-      assert result.data == %{"userHide" => %{"result" => true}}
-
-      assert User.hidden_state(Repo.get(User, user.id)) == {false, nil}
-    end
-
-    test "set user as temporarally hidden", %{user: user} do
-      ts = Timestamp.shift(days: 1) |> Timestamp.to_string!()
-      result = run_query(@query, user, %{"enable" => true, "expire" => ts})
-
-      refute has_errors(result)
-
-      assert result.data == %{"userHide" => %{"result" => true}}
-
-      assert User.hidden_state(Repo.get(User, user.id)) ==
-               {true, Timestamp.from_string!(ts)}
-    end
-
-    @query """
     mutation ($first_name: String, $last_name: String, $name: String) {
       userUpdate (input: {values:
           {firstName: $first_name, lastName: $last_name, name: $name}}) {

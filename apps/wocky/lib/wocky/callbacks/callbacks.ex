@@ -12,7 +12,6 @@ defmodule Wocky.Callbacks do
     Message,
     RosterItem,
     TROSMetadata,
-    User,
     UserInvitation
   }
 
@@ -25,7 +24,6 @@ defmodule Wocky.Callbacks do
     Message,
     RosterItem,
     TROSMetadata,
-    User,
     UserInvitation
   ]
 

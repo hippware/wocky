@@ -69,7 +69,6 @@ defmodule Wocky.User do
     field :pass_details, :string
     field :roles, {:array, :string}, default: []
     field :welcome_sent, :boolean
-    field :hidden_until, :utc_datetime_usec
     field :smss_sent, :integer
     field :bot_created, :boolean
 
@@ -104,7 +103,6 @@ defmodule Wocky.User do
   @type phone_number :: binary
   @type handle :: binary
   @type role :: binary
-  @type hidden_state :: nil | DateTime.t()
 
   @type bot_relationship ::
           :owned | :invited | :subscribed | :visitor | :visible
@@ -122,7 +120,6 @@ defmodule Wocky.User do
           roles: [role],
           welcome_sent: boolean,
           smss_sent: integer,
-          hidden_until: hidden_state,
           bot_created: boolean,
           presence: nil | Presence.t()
         }
@@ -136,7 +133,6 @@ defmodule Wocky.User do
     :roles,
     :external_id,
     :provider,
-    :hidden_until,
     :smss_sent,
     :bot_created,
     :client_data
@@ -400,35 +396,6 @@ defmodule Wocky.User do
       {:error, :not_file_owner} ->
         [image_url: "is not owned by the user"]
     end
-  end
-
-  # ----------------------------------------------------------------------
-  # Hiding
-
-  @spec hide(t(), boolean() | DateTime.t()) :: {:ok, t()} | {:error, term}
-  def hide(user, false), do: User.update(user, %{hidden_until: nil})
-  def hide(user, true), do: User.update(user, %{hidden_until: @forever})
-  def hide(user, expiry), do: User.update(user, %{hidden_until: expiry})
-
-  @spec hidden?(t()) :: boolean()
-  def hidden?(user), do: user |> hidden_state() |> elem(0)
-
-  @spec hidden_state(t()) :: {boolean(), DateTime.t()}
-  def hidden_state(user) do
-    case user.hidden_until do
-      nil -> {false, nil}
-      @forever -> {true, nil}
-      until -> {DateTime.compare(DateTime.utc_now(), until) != :gt, until}
-    end
-  end
-
-  @spec filter_hidden(Queryable.t()) :: Queryable.t()
-  def filter_hidden(query) do
-    query
-    |> where(
-      [u, ...],
-      is_nil(u.hidden_until) or u.hidden_until < ^DateTime.utc_now()
-    )
   end
 
   # ----------------------------------------------------------------------

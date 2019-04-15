@@ -148,11 +148,6 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, User.search_by_name(search_term, current_user, limit)}
   end
 
-  def get_hidden(user, _args, _info) do
-    {hidden, until} = User.hidden_state(user)
-    {:ok, %{enabled: hidden, expires: until}}
-  end
-
   def enable_notifications(%{input: i}, %{context: %{current_user: user}}) do
     platform = Map.get(i, :platform)
     dev_mode = Map.get(i, :dev_mode)
@@ -316,21 +311,9 @@ defmodule WockyAPI.Resolvers.User do
   defp make_location_data(location),
     do: %{user: location.user, location: location}
 
-  def hide(_root, %{input: input}, %{context: %{current_user: user}}) do
-    with {:ok, _} <- do_hide(user, input) do
-      {:ok, true}
-    end
-  end
-
-  defp do_hide(user, input) do
-    param =
-      case {input[:enable], input[:expire]} do
-        {false, _} -> false
-        {true, nil} -> true
-        {true, expire} -> expire
-      end
-
-    User.hide(user, param)
+  def hide(_root, _args, _context) do
+    # DEPRECATED
+    {:ok, true}
   end
 
   def delete(_root, _args, %{context: %{current_user: user}}) do
