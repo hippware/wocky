@@ -462,7 +462,7 @@ defmodule WockyAPI.GraphQL.UserTest do
               lat
               lon
               accuracy
-              isFetch
+              id
             }
           }
         }
@@ -485,7 +485,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                          "lon" => loc.lon,
                          "lat" => loc.lat,
                          "accuracy" => loc.accuracy,
-                         "isFetch" => false
+                         "id" => loc.id
                        }
                      }
                    ]
