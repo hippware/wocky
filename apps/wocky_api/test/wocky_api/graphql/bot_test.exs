@@ -2,7 +2,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Lorem
-  alias Wocky.{Block, Bot}
+  alias Wocky.{Block, Bot, Roster}
   alias Wocky.Bot.{Invitation, Item}
   alias Wocky.GeoUtils
   alias Wocky.Repo
@@ -407,6 +407,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   describe "local bots" do
     setup %{user: user, user2: user2} do
       Repo.delete_all(Bot)
+      Roster.befriend(user, user2)
 
       {owned, subscribed, unrelated} =
         Enum.reduce(1..4, {[], [], []}, fn x, {o, s, u} ->
@@ -1378,6 +1379,12 @@ defmodule WockyAPI.GraphQL.BotTest do
   end
 
   describe "sending invitations" do
+    setup ctx do
+      Roster.befriend(ctx.user, ctx.user3)
+
+      :ok
+    end
+
     @query """
     mutation ($input: BotInviteInput!) {
       botInvite (input: $input) {
@@ -1414,6 +1421,17 @@ defmodule WockyAPI.GraphQL.BotTest do
         })
 
       assert error_msg(result) =~ "Invalid bot"
+    end
+
+    test "invite a non-friend user",
+         %{bot: bot, user: user, user2: user2} do
+      result =
+        run_query(@query, user, %{
+          "input" => %{"bot_id" => bot.id, "user_ids" => [user2.id]}
+        })
+
+      r = hd(result.data["botInvite"])
+      assert failure_msg(r) =~ "Permission denied"
     end
 
     test "invite a blocked user", %{bot: bot, user: user, user3: user3} do
@@ -1465,6 +1483,8 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   describe "responding to invitations" do
     setup shared do
+      Roster.befriend(shared.user, shared.user3)
+
       %{id: id} =
         Factory.insert(:bot_invitation,
           user: shared.user,

@@ -10,9 +10,11 @@ defmodule Wocky.Bot.InvitationTest do
   alias Wocky.Push
   alias Wocky.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
+  alias Wocky.Roster
 
   setup do
-    [user, invitee] = Factory.insert_list(2, :user, device: "testing")
+    [user, invitee, stranger] = Factory.insert_list(3, :user, device: "testing")
+    Roster.befriend(user, invitee)
     bot = Factory.insert(:bot, user: user)
 
     Sandbox.clear_notifications(global: true)
@@ -20,7 +22,7 @@ defmodule Wocky.Bot.InvitationTest do
     :ok = Push.enable(invitee, invitee.device, Code.isbn13())
     :ok = Push.enable(user, user.device, Code.isbn13())
 
-    {:ok, user: user, invitee: invitee, bot: bot}
+    {:ok, user: user, invitee: invitee, stranger: stranger, bot: bot}
   end
 
   describe "put/3" do
@@ -52,6 +54,11 @@ defmodule Wocky.Bot.InvitationTest do
                Invitation.put(ctx.invitee, ctx.bot, other_user)
 
       assert no_more_push_notifications()
+    end
+
+    test "refuse invitation to non-friend", ctx do
+      assert {:error, :permission_denied} =
+               Invitation.put(ctx.stranger, ctx.bot, ctx.user)
     end
 
     test "subsequent invitations should overwrite existing ones", ctx do

@@ -135,6 +135,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       subscription_id: subscription_id
     } do
       bot2 = Factory.insert(:bot, user: user2)
+      Roster.befriend(user, user2)
       {:ok, invitation} = Invitation.put(user, bot2, user2)
 
       assert_push "subscription:data", push, 2000

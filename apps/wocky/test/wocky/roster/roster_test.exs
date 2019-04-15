@@ -1,12 +1,13 @@
 defmodule Wocky.RosterTest do
-  use Wocky.DataCase, async: true
+  use Wocky.WatcherCase
 
   alias Faker.Name
-  alias Wocky.Block
-  alias Wocky.Repo
+  alias Wocky.{Block, Bot, Repo, Roster}
+  alias Wocky.Bot.Invitation
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
   alias Wocky.Roster.Item, as: RosterItem
+
+  import Eventually
 
   setup do
     # A user with 5 friends
@@ -79,8 +80,35 @@ defmodule Wocky.RosterTest do
     end
   end
 
+  describe "self_or_friend?/1" do
+    test "should return true when a user is a friend", ctx do
+      assert Roster.self_or_friend?(ctx.user, ctx.contact)
+    end
+
+    test "should return false if the user has blocked the contact", ctx do
+      Block.block(ctx.user, ctx.contact)
+
+      refute Roster.self_or_friend?(ctx.user, ctx.contact)
+    end
+
+    test "should return false if the contact has blocked the user", ctx do
+      Block.block(ctx.contact, ctx.user)
+
+      refute Roster.self_or_friend?(ctx.user, ctx.contact)
+    end
+
+    test "should return false for non-existant friends", ctx do
+      refute Roster.self_or_friend?(ctx.user, Factory.build(:user))
+      refute Roster.self_or_friend?(ctx.user, ctx.rosterless_user)
+    end
+
+    test "should return true for self", ctx do
+      assert Roster.self_or_friend?(ctx.user, ctx.user)
+    end
+  end
+
   describe "friend?/1" do
-    test "should return true when a user is subscribed", ctx do
+    test "should return true when a user is a friend", ctx do
       assert Roster.friend?(ctx.user, ctx.contact)
     end
 
@@ -90,7 +118,7 @@ defmodule Wocky.RosterTest do
       refute Roster.friend?(ctx.user, ctx.contact)
     end
 
-    test "should return true if the contact has blocked the user", ctx do
+    test "should return false if the contact has blocked the user", ctx do
       Block.block(ctx.contact, ctx.user)
 
       refute Roster.friend?(ctx.user, ctx.contact)
@@ -99,6 +127,10 @@ defmodule Wocky.RosterTest do
     test "should return false for non-existant friends", ctx do
       refute Roster.friend?(ctx.user, Factory.build(:user))
       refute Roster.friend?(ctx.user, ctx.rosterless_user)
+    end
+
+    test "should return false for self", ctx do
+      refute Roster.friend?(ctx.user, ctx.user)
     end
   end
 
@@ -267,6 +299,34 @@ defmodule Wocky.RosterTest do
     test "should no no effect on an existing friend", ctx do
       assert Roster.invite(ctx.user, ctx.contact) == :friend
       assert Roster.relationship(ctx.user, ctx.contact) == :friend
+    end
+  end
+
+  describe "unfriend cleanup" do
+    setup ctx do
+      user_bot = Factory.insert(:bot, user: ctx.user)
+      contact_bot = Factory.insert(:bot, user: ctx.contact)
+      {:ok, user_bot: user_bot, contact_bot: contact_bot}
+    end
+
+    test "bots should no longer be subscribed", ctx do
+      Bot.subscribe(ctx.user_bot, ctx.contact)
+      Bot.subscribe(ctx.contact_bot, ctx.user)
+
+      Roster.unfriend(ctx.user, ctx.contact)
+
+      refute_eventually(Bot.subscription(ctx.user_bot, ctx.contact))
+      refute_eventually(Bot.subscription(ctx.contact_bot, ctx.user))
+    end
+
+    test "bot invitations should be removed", ctx do
+      Invitation.put(ctx.contact, ctx.user_bot, ctx.user)
+      Invitation.put(ctx.user, ctx.contact_bot, ctx.contact)
+
+      Roster.unfriend(ctx.user, ctx.contact)
+
+      refute_eventually(Invitation.get(ctx.user_bot, ctx.contact))
+      refute_eventually(Invitation.get(ctx.contact_bot, ctx.user))
     end
   end
 end

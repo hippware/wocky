@@ -507,6 +507,7 @@ defmodule Wocky.User.UserTest do
 
   defp setup_bot_relationships(ctx) do
     other_user = Factory.insert(:user)
+    Roster.befriend(ctx.user, other_user)
 
     owned_bot = Factory.insert(:bot, user: ctx.user)
     pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)
@@ -640,6 +641,7 @@ defmodule Wocky.User.UserTest do
       user2 = Factory.insert(:user)
       bot = Factory.insert(:bot, user: user2)
 
+      Roster.befriend(ctx.user, user2)
       Bot.subscribe(bot, ctx.user)
 
       {:ok, bot: bot, lat: Bot.lat(bot), lon: Bot.lon(bot)}
@@ -676,6 +678,7 @@ defmodule Wocky.User.UserTest do
       user2 = Factory.insert(:user)
       bot = Factory.insert(:bot, user: user2)
 
+      Roster.befriend(ctx.user, user2)
       Bot.subscribe(bot, ctx.user)
 
       location = %Location{
