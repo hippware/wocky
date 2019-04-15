@@ -247,7 +247,11 @@ defmodule Wocky.Bot do
 
   @spec subscribe(t, User.t()) :: :ok | no_return
   def subscribe(bot, user) do
-    Subscription.put(user, bot)
+    with true <- Roster.self_or_friend?(user.id, bot.user_id) do
+      Subscription.put(user, bot)
+    else
+      false -> {:error, :permission_denied}
+    end
   end
 
   @spec unsubscribe(t, User.t()) :: :ok | {:error, any}

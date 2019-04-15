@@ -189,6 +189,7 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
 
   defp assert_presence_notification(data, user_id, type) do
     expected_status = type |> to_string() |> String.upcase()
+
     assert %{
              "presence" => %{
                "id" => ^user_id,

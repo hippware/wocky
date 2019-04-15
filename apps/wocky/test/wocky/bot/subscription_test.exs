@@ -132,6 +132,20 @@ defmodule Wocky.Bot.SubscriptionTest do
     end
   end
 
+  describe "delete_for_owned_bots/2" do
+    test "should delete subscriptions to bots owned by the specified user",
+         ctx do
+      assert :ok == Subscription.delete_for_owned_bots(ctx.owner, ctx.user)
+      refute Subscription.state(ctx.user, ctx.bot)
+    end
+
+    test "should not delete subscriptions to bots owned by another user", ctx do
+      u = Factory.insert(:user)
+      assert :ok == Subscription.delete_for_owned_bots(u, ctx.user)
+      assert Subscription.state(ctx.user, ctx.bot) == :subscribed
+    end
+  end
+
   describe "visit/2" do
     test "should set the subscriber as a visitor", ctx do
       assert Subscription.visit(ctx.user, ctx.bot) == :ok

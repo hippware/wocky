@@ -10,10 +10,13 @@ defmodule Wocky.Bot.ItemNotificationTest do
   alias Wocky.Push
   alias Wocky.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
+  alias Wocky.Roster
 
   setup do
     [user, author, sub] = Factory.insert_list(3, :user, device: "testing")
     bot = Factory.insert(:bot, user: user)
+    Roster.befriend(user, author)
+    Roster.befriend(user, sub)
     Bot.subscribe(bot, author)
     Bot.subscribe(bot, sub)
 
