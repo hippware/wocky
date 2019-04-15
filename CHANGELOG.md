@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.4.14+re16466c
+
+* Update: postgrex (PR #2416), ex_aws_sqs (PR #2417)
+* Handle all FCM response values (PR #2419)
+
+
 # 2019.4.12+rad30a44
 
 * Migrate `us1` to new db server (PR #2412)
