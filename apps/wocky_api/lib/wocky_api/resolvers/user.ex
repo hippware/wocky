@@ -425,14 +425,24 @@ defmodule WockyAPI.Resolvers.User do
   # Explicitly built map - user should already be in place
   def get_contact_user(x, _args, _context), do: {:ok, x.user}
 
-  defp fix_name(%{first_name: f, last_name: l} = m, _user),
-    do: Map.put_new(m, :name, f <> " " <> l)
+  defp fix_name(m, user) do
+    new_name = do_fix_name(m, user)
 
-  defp fix_name(%{first_name: f} = m, user),
-    do: Map.put_new(m, :name, f <> " " <> User.last_name(user))
+    if new_name do
+      Map.put_new(m, :name, String.trim(new_name))
+    else
+      m
+    end
+  end
 
-  defp fix_name(%{last_name: l} = m, user),
-    do: Map.put_new(m, :name, User.first_name(user) <> " " <> l)
+  defp do_fix_name(%{first_name: f, last_name: l}, _user),
+    do: f <> " " <> l
 
-  defp fix_name(m, _user), do: m
+  defp do_fix_name(%{first_name: f}, user),
+    do: f <> " " <> User.last_name(user)
+
+  defp do_fix_name(%{last_name: l}, user),
+    do: User.first_name(user) <> " " <> l
+
+  defp do_fix_name(_m, _user), do: nil
 end

@@ -151,6 +151,32 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert Repo.get(User, user.id).handle == handle
     end
 
+    test "Set single name from empty", %{user: user} do
+      {:ok, user} = User.update(user.id, %{name: nil})
+
+      new_name = Name.first_name()
+
+      result =
+        run_query(@query, user, %{
+          "values" => %{"first_name" => new_name}
+        })
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "userUpdate" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "id" => user.id
+                 }
+               }
+             }
+
+      u = Repo.get(User, user.id)
+      assert User.last_name(u) == new_name
+      assert User.first_name(u) == ""
+    end
+
     @query """
     mutation ($enable: Boolean!, $expire: DateTime) {
       userHide (input: {enable: $enable, expire: $expire}) {
