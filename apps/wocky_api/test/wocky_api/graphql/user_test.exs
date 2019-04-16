@@ -37,7 +37,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get user info", %{user: user} do
-      result = run_query(@query, user) |> IO.inspect
+      result = run_query(@query, user)
 
       refute has_errors(result)
 
