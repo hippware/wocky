@@ -63,12 +63,12 @@ config :guardian_firebase,
     }
   ]
 
-config :wocky, Wocky.Push,
+config :wocky, Wocky.Notifier.Push,
   enabled: true,
   sandbox: true,
   logging: false
 
-config :wocky, Wocky.Push.Backend.Sandbox, reflect: true
+config :wocky, Wocky.Notifier.Push.Backend.Sandbox, reflect: true
 
 # Configure your database
 config :wocky, Wocky.Repo,

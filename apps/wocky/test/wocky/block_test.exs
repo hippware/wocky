@@ -4,8 +4,8 @@ defmodule Wocky.BlockTest do
   alias Wocky.Block
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
+  alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo.Factory
-  alias Wocky.User.Notification
 
   setup do
     [u1, u2, u3] = Factory.insert_list(3, :user)

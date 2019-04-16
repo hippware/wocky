@@ -81,7 +81,7 @@ defmodule Wocky.Bot.Subscription do
     :ok
   end
 
-  @spec put(User.t(), Bot.t()) :: :ok | no_return
+  @spec put(User.t(), Bot.t()) :: :ok
   def put(user, bot) do
     %{user_id: user.id, bot_id: bot.id}
     |> make_changeset()
@@ -103,11 +103,25 @@ defmodule Wocky.Bot.Subscription do
   def delete(%User{id: id}, %Bot{user_id: id}), do: {:error, :denied}
 
   def delete(user, bot) do
-    Subscription
-    |> where(user_id: ^user.id, bot_id: ^bot.id)
-    |> Repo.delete_all()
+    {count, _} =
+      Subscription
+      |> where(user_id: ^user.id, bot_id: ^bot.id)
+      |> Repo.delete_all()
 
-    update_counter("bot.subscription.unsubscribe", 1)
+    update_counter("bot.subscription.unsubscribe", count)
+
+    :ok
+  end
+
+  @spec delete_for_owned_bots(User.t(), User.t()) :: :ok
+  def delete_for_owned_bots(bot_owner, user) do
+    {count, _} =
+      Subscription
+      |> join(:inner, [s], b in assoc(s, :bot))
+      |> where([s, b], b.user_id == ^bot_owner.id and s.user_id == ^user.id)
+      |> Repo.delete_all()
+
+    update_counter("bot.subscription.unsubscribe", count)
 
     :ok
   end

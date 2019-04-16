@@ -56,17 +56,24 @@ defmodule WockyAPI.Resolvers.Utils do
   def connection_from_query(
         query,
         parent,
-        order \\ [desc: :updated_at],
-        post_process \\ nil,
-        args
+        args,
+        opts \\ []
       ) do
     args = Map.take(args, [:first, :last, :after, :before])
-    opts = [count: get_count_if_needed(query, args)]
+    order_by = Keyword.get(opts, :order_by, [desc: :updated_at])
+    postprocess = Keyword.get(opts, :postprocess)
+
+    query = maybe_order_by(query, order_by)
+    cursor_fields = cursor_fields(order_by)
+
+    opts = [
+      count: get_count_if_needed(query, args),
+      cursor_fields: cursor_fields
+    ]
 
     query
-    |> maybe_order_by(order)
-    |> Connection.from_query(&Repo.all/1, args, opts)
-    |> maybe_post_process(post_process)
+    |> Connection.from_query(Repo, args, opts)
+    |> maybe_postprocess(postprocess)
     |> add_data(:parent_query, query)
     |> add_data(:cached_count, opts[:count])
     |> add_edge_parent(parent)
@@ -97,12 +104,15 @@ defmodule WockyAPI.Resolvers.Utils do
 
   defp maybe_order_by(query, nil), do: query
 
-  defp maybe_order_by(query, order) do
+  defp maybe_order_by(query, order_by) do
     query
-    |> order_by(^order)
+    |> order_by(^order_by)
   end
 
-  defp maybe_post_process({:ok, %{edges: edges} = connection}, fun)
+  defp cursor_fields(order_by),
+    do: Enum.map(order_by, fn {direction, field} -> {field, direction} end)
+
+  defp maybe_postprocess({:ok, %{edges: edges} = connection}, fun)
        when not is_nil(fun) do
     {:ok,
      %{
@@ -111,7 +121,7 @@ defmodule WockyAPI.Resolvers.Utils do
      }}
   end
 
-  defp maybe_post_process(connection, _), do: connection
+  defp maybe_postprocess(connection, nil), do: connection
 
   def map_edges({:error, _} = r, _), do: r
 

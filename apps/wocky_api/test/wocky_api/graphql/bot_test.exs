@@ -2,7 +2,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Lorem
-  alias Wocky.{Block, Bot}
+  alias Wocky.{Block, Bot, Roster}
   alias Wocky.Bot.{Invitation, Item}
   alias Wocky.GeoUtils
   alias Wocky.Repo
@@ -194,11 +194,15 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       assert error_msg(result) =~ "requires an authenticated user"
     end
+  end
 
+  describe "paging queries" do
     @query """
-    query ($last: Int!, $before: String, $relationship: UserBotRelationship!) {
+    query ($first: Int, $last: Int,
+           $before: String, $after: String) {
       currentUser {
-        bots (last: $last, before: $before, relationship: $relationship) {
+        bots (first: $first, last: $last, before: $before,
+              after: $after, relationship: OWNED) {
           totalCount
           edges {
             cursor
@@ -215,15 +219,19 @@ defmodule WockyAPI.GraphQL.BotTest do
     }
     """
 
-    test "get last items in a list", %{user: user, bot: bot} do
-      [b7_id, b8_id, b9_id, b10_id] =
-        [bot | Factory.insert_list(10, :bot, user: user)]
-        |> Enum.reverse()
-        |> Enum.slice(-4..-1)
-        |> Enum.map(& &1.id)
+    setup %{user: user, bot: bot} do
+      bots = [bot | Factory.insert_list(10, :bot, user: user)]
+      |> Enum.reverse()
+      |> Enum.map(& &1.id)
+
+      {:ok, bots: bots}
+    end
+
+    test "get last items in a list (no cursor)", %{user: user, bots: bots} do
+      [b8_id, b9_id, b10_id] = bots |> Enum.slice(-3..-1)
 
       result! =
-        run_query(@query, user, %{"last" => 3, "relationship" => "OWNED"})
+        run_query(@query, user, %{"last" => 3})
 
       refute has_errors(result!)
 
@@ -233,13 +241,13 @@ defmodule WockyAPI.GraphQL.BotTest do
                    "totalCount" => 11,
                    "edges" => [
                      %{
-                       "cursor" => c8,
+                       "cursor" => _c8,
                        "node" => %{
                          "id" => ^b8_id
                        }
                      },
                      %{
-                       "cursor" => c9,
+                       "cursor" => _c9,
                        "node" => %{
                          "id" => ^b9_id
                        }
@@ -258,15 +266,54 @@ defmodule WockyAPI.GraphQL.BotTest do
                  }
                }
              } = result!.data
+    end
 
+    test "get first items in a list (no cursor)", %{user: user, bots: bots} do
+      [b0_id, b1_id] = bots |> Enum.take(2)
+
+      result =
+        run_query(@query, user, %{"first" => 2})
+
+      refute has_errors(result)
+
+      assert %{
+               "currentUser" => %{
+                 "bots" => %{
+                   "totalCount" => 11,
+                   "edges" => [
+                     %{
+                       "cursor" => _c0,
+                       "node" => %{
+                         "id" => ^b0_id
+                       }
+                     },
+                     %{
+                       "cursor" => _c1,
+                       "node" => %{
+                         "id" => ^b1_id
+                       }
+                     }
+                   ],
+                   "pageInfo" => %{
+                     "hasNextPage" => true,
+                     "hasPreviousPage" => false
+                   }
+                 }
+               }
+             } = result.data
+    end
+
+    test "last/before", %{user: user, bots: bots} do
       result! =
         run_query(@query, user, %{
           "last" => 2,
-          "before" => c9,
-          "relationship" => "OWNED"
+          "before" => cursor_for(user, 9),
         })
 
       refute has_errors(result!)
+
+      b7_id = id(bots, 7)
+      b8_id = id(bots, 8)
 
       assert %{
                "currentUser" => %{
@@ -280,14 +327,14 @@ defmodule WockyAPI.GraphQL.BotTest do
                        }
                      },
                      %{
-                       "cursor" => ^c8,
+                       "cursor" => _c8,
                        "node" => %{
                          "id" => ^b8_id
                        }
                      }
                    ],
                    "pageInfo" => %{
-                     "hasNextPage" => true,
+                     "hasNextPage" => false,
                      "hasPreviousPage" => true
                    }
                  }
@@ -295,6 +342,286 @@ defmodule WockyAPI.GraphQL.BotTest do
              } = result!.data
     end
 
+    test "first/after", %{user: user, bots: bots} do
+      result =
+        run_query(@query, user, %{
+          "first" => 2,
+          "after" => cursor_for(user, 3),
+        })
+
+      refute has_errors(result)
+
+      b4_id = id(bots, 4)
+      b5_id = id(bots, 5)
+
+      assert %{
+               "currentUser" => %{
+                 "bots" => %{
+                   "totalCount" => 11,
+                   "edges" => [
+                     %{
+                       "cursor" => _c4,
+                       "node" => %{
+                         "id" => ^b4_id
+                       }
+                     },
+                     %{
+                       "cursor" => _c5,
+                       "node" => %{
+                         "id" => ^b5_id
+                       }
+                     }
+                   ],
+                   "pageInfo" => %{
+                     "hasNextPage" => true,
+                     "hasPreviousPage" => false
+                   }
+                 }
+               }
+             } = result.data
+    end
+
+    test "last/after", %{user: user, bots: bots} do
+      result =
+        run_query(@query, user, %{
+          "last" => 2,
+          "after" => cursor_for(user, 4),
+        })
+
+      refute has_errors(result)
+
+      b9_id = id(bots, 9)
+      b10_id = id(bots, 10)
+
+      assert %{
+               "currentUser" => %{
+                 "bots" => %{
+                   "totalCount" => 11,
+                   "edges" => [
+                     %{
+                       "cursor" => _c9,
+                       "node" => %{
+                         "id" => ^b9_id
+                       }
+                     },
+                     %{
+                       "cursor" => _c10,
+                       "node" => %{
+                         "id" => ^b10_id
+                       }
+                     }
+                   ],
+                   "pageInfo" => %{
+                     "hasNextPage" => false,
+                     "hasPreviousPage" => true
+                   }
+                 }
+               }
+             } = result.data
+    end
+
+    test "first/before", %{user: user, bots: bots} do
+      result =
+        run_query(@query, user, %{
+          "first" => 2,
+          "before" => cursor_for(user, 6),
+        })
+
+      refute has_errors(result)
+
+      b0_id = id(bots, 0)
+      b1_id = id(bots, 1)
+
+      assert %{
+               "currentUser" => %{
+                 "bots" => %{
+                   "totalCount" => 11,
+                   "edges" => [
+                     %{
+                       "cursor" => _c0,
+                       "node" => %{
+                         "id" => ^b0_id
+                       }
+                     },
+                     %{
+                       "cursor" => _c1,
+                       "node" => %{
+                         "id" => ^b1_id
+                       }
+                     }
+                   ],
+                   "pageInfo" => %{
+                     "hasNextPage" => true,
+                     "hasPreviousPage" => false
+                   }
+                 }
+               }
+             } = result.data
+    end
+
+    test "last/before limit", %{user: user, bots: bots} do
+      result =
+        run_query(@query, user, %{
+          "last" => 2,
+          "before" => cursor_for(user, 1),
+        })
+
+      refute has_errors(result)
+
+      b0_id = id(bots, 0)
+
+      assert %{
+               "currentUser" => %{
+                 "bots" => %{
+                   "totalCount" => 11,
+                   "edges" => [
+                     %{
+                       "cursor" => _c0,
+                       "node" => %{
+                         "id" => ^b0_id
+                       }
+                     },
+                   ],
+                   "pageInfo" => %{
+                     "hasNextPage" => false,
+                     "hasPreviousPage" => false
+                   }
+                 }
+               }
+             } = result.data
+    end
+
+    test "first/after limit", %{user: user, bots: bots} do
+      result =
+        run_query(@query, user, %{
+          "first" => 3,
+          "after" => cursor_for(user, 8),
+        })
+
+      refute has_errors(result)
+
+      b9_id = id(bots, 9)
+      b10_id = id(bots, 10)
+
+      assert %{
+               "currentUser" => %{
+                 "bots" => %{
+                   "totalCount" => 11,
+                   "edges" => [
+                     %{
+                       "cursor" => _c9,
+                       "node" => %{
+                         "id" => ^b9_id
+                       }
+                     },
+                     %{
+                       "cursor" => _c10,
+                       "node" => %{
+                         "id" => ^b10_id
+                       }
+                     }
+                   ],
+                   "pageInfo" => %{
+                     "hasNextPage" => false,
+                     "hasPreviousPage" => false
+                   }
+                 }
+               }
+             } = result.data
+    end
+
+    test "last/after limit", %{user: user, bots: bots} do
+      result =
+        run_query(@query, user, %{
+          "last" => 3,
+          "after" => cursor_for(user, 8),
+        })
+
+      refute has_errors(result)
+
+      b9_id = id(bots, 9)
+      b10_id = id(bots, 10)
+
+      assert %{
+               "currentUser" => %{
+                 "bots" => %{
+                   "totalCount" => 11,
+                   "edges" => [
+                     %{
+                       "cursor" => _c9,
+                       "node" => %{
+                         "id" => ^b9_id
+                       }
+                     },
+                     %{
+                       "cursor" => _c10,
+                       "node" => %{
+                         "id" => ^b10_id
+                       }
+                     }
+                   ],
+                   "pageInfo" => %{
+                     "hasNextPage" => false,
+                     "hasPreviousPage" => true
+                   }
+                 }
+               }
+             } = result.data
+    end
+
+    test "first/before limit", %{user: user, bots: bots} do
+      result =
+        run_query(@query, user, %{
+          "first" => 3,
+          "before" => cursor_for(user, 2),
+        })
+
+      refute has_errors(result)
+
+      b0_id = id(bots, 0)
+      b1_id = id(bots, 1)
+
+      assert %{
+               "currentUser" => %{
+                 "bots" => %{
+                   "totalCount" => 11,
+                   "edges" => [
+                     %{
+                       "cursor" => _c0,
+                       "node" => %{
+                         "id" => ^b0_id
+                       }
+                     },
+                     %{
+                       "cursor" => _c1,
+                       "node" => %{
+                         "id" => ^b1_id
+                       }
+                     }
+                   ],
+                   "pageInfo" => %{
+                     "hasNextPage" => true,
+                     "hasPreviousPage" => false
+                   }
+                 }
+               }
+             } = result.data
+    end
+
+    defp cursor_for(user, i) do
+      result =
+        run_query(@query, user, %{"first" => 100})
+
+      refute has_errors(result)
+
+      %{"currentUser" => %{"bots" => %{"edges" => edges}}} = result.data
+      Enum.at(edges, i)["cursor"]
+    end
+
+    defp id(bots, i), do: Enum.at(bots, i)
+  end
+
+  describe "bot deletion" do
     @query """
     mutation ($id: UUID!) {
       botDelete (input: {id: $id}) {
@@ -407,6 +734,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   describe "local bots" do
     setup %{user: user, user2: user2} do
       Repo.delete_all(Bot)
+      Roster.befriend(user, user2)
 
       {owned, subscribed, unrelated} =
         Enum.reduce(1..4, {[], [], []}, fn x, {o, s, u} ->
@@ -1378,6 +1706,12 @@ defmodule WockyAPI.GraphQL.BotTest do
   end
 
   describe "sending invitations" do
+    setup ctx do
+      Roster.befriend(ctx.user, ctx.user3)
+
+      :ok
+    end
+
     @query """
     mutation ($input: BotInviteInput!) {
       botInvite (input: $input) {
@@ -1414,6 +1748,17 @@ defmodule WockyAPI.GraphQL.BotTest do
         })
 
       assert error_msg(result) =~ "Invalid bot"
+    end
+
+    test "invite a non-friend user",
+         %{bot: bot, user: user, user2: user2} do
+      result =
+        run_query(@query, user, %{
+          "input" => %{"bot_id" => bot.id, "user_ids" => [user2.id]}
+        })
+
+      r = hd(result.data["botInvite"])
+      assert failure_msg(r) =~ "Permission denied"
     end
 
     test "invite a blocked user", %{bot: bot, user: user, user3: user3} do
@@ -1465,6 +1810,8 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   describe "responding to invitations" do
     setup shared do
+      Roster.befriend(shared.user, shared.user3)
+
       %{id: id} =
         Factory.insert(:bot_invitation,
           user: shared.user,

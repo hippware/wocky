@@ -331,46 +331,11 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "Reported accuracy in meters"
     field :accuracy, non_null(:float)
 
-    @desc "Reported speed in meters"
-    field :speed, :float
-
-    @desc "Reported heading in degrees"
-    field :heading, :float
-
-    @desc "Reported altitude in meters"
-    field :altitude, :float
-
-    @desc "Accuracy of altitude in meters"
-    field :altitude_accuracy, :float
-
     @desc "Timestamp when the report was captured on the device"
     field :captured_at, :datetime
 
     @desc "Unique ID of the location report"
-    field :uuid, :string
-
-    @desc "Whether the device is moving"
-    field :is_moving, :boolean
-
-    @desc "Reported total distance in meters"
-    field :odometer, :float
-
-    @desc "Reported activity when the report was captured"
-    field :activity, :string
-
-    @desc "Percentage confidence in the activity"
-    field :activity_confidence, :integer
-
-    @desc "Battery level 0-100%"
-    field :battery_level, :float
-
-    @desc "Is the device plugged in?"
-    field :battery_charging, :boolean
-
-    @desc "DEPRECATED This field is always false"
-    field :is_fetch, :boolean, deprecate: "This will always be false" do
-      resolve fn _, _ -> {:ok, false} end
-    end
+    field :id, :uuid
 
     @desc "Time of location report"
     field :created_at, non_null(:datetime)

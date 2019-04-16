@@ -30,8 +30,8 @@ defmodule Wocky.User.Presence do
   end
 
   @spec reset_callbacks([callback()]) :: :ok
-  def reset_callbacks(callbacks), do:
-    Application.put_env(:wocky, :presence_callbacks, callbacks)
+  def reset_callbacks(callbacks),
+    do: Application.put_env(:wocky, :presence_callbacks, callbacks)
 
   @doc """
   Mark a user online and return a list of their currently-online followees

@@ -2,7 +2,7 @@ defmodule Wocky.WatcherHelper do
   @moduledoc """
   Module to set up the db watcher/callback system for test cases that require it
   """
-  alias Wocky.Push.Backend.Sandbox
+  alias Wocky.Notifier.Push.Backend.Sandbox
 
   defmacro __using__(_) do
     quote do

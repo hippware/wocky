@@ -7,7 +7,7 @@ defmodule Wocky.Callbacks.Block do
 
   alias Wocky.{Block, Bot, Repo, User}
   alias Wocky.Bot.{Invitation, Item}
-  alias Wocky.User.Notification
+  alias Wocky.Notifier.InBand.Notification
 
   def handle_insert(new) do
     %Block{blocker: blocker, blockee: blockee} =

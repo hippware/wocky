@@ -15,7 +15,8 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
     setup do
       user2 = Factory.insert(:user)
       bot = Factory.insert(:bot)
-      Subscription.put(user2, bot)
+      Roster.befriend(bot.user, user2)
+      Bot.subscribe(bot, user2)
 
       {:ok, user2: user2, bot: bot}
     end
@@ -44,6 +45,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       user: %{id: user_id} = user,
       token: token
     } do
+      Roster.befriend(bot.user, user)
       Bot.subscribe(bot, user)
 
       authenticate(user_id, token, socket)

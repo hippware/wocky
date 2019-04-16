@@ -3,8 +3,9 @@ defmodule Wocky.MessageTest do
 
   alias Faker.{Code, Lorem}
   alias Pigeon.APNS.Notification
-  alias Wocky.{Message, Push, Roster}
-  alias Wocky.Push.Backend.Sandbox
+  alias Wocky.{Message, Roster}
+  alias Wocky.Notifier.Push
+  alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
 
   describe "archive functions" do

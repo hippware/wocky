@@ -98,10 +98,13 @@ defmodule Wocky.BotTest do
       assert bot.id |> Bot.get_bot(stranger) == nil
     end
 
-    test "should return the bot for a subscriber", %{bot: bot} do
+    test "should return the bot for a subscriber", ctx do
       subscriber = Factory.insert(:user)
-      Bot.subscribe(bot, subscriber)
-      assert bot.id |> Bot.get_bot(subscriber) |> Repo.preload(:user) == bot
+      Roster.befriend(subscriber, ctx.user)
+      Bot.subscribe(ctx.bot, subscriber)
+
+      assert ctx.bot.id |> Bot.get_bot(subscriber) |> Repo.preload(:user) ==
+               ctx.bot
     end
 
     test "should not return pending bot by default",
@@ -155,6 +158,8 @@ defmodule Wocky.BotTest do
   describe "by_relationship_query/3" do
     setup ctx do
       [stranger, subscriber, visitor, invitee] = Factory.insert_list(4, :user)
+      Enum.map([subscriber, visitor, invitee], &Roster.befriend(&1, ctx.user))
+
       Bot.subscribe(ctx.bot, ctx.user)
       Bot.subscribe(ctx.bot, subscriber)
       Bot.subscribe(ctx.bot, visitor)
@@ -352,6 +357,7 @@ defmodule Wocky.BotTest do
   describe "active_bots_query/1" do
     setup ctx do
       subscriber = Factory.insert(:user)
+      Roster.befriend(subscriber, ctx.user)
       Bot.subscribe(ctx.bot, subscriber)
 
       {:ok, subscriber: subscriber}
@@ -367,7 +373,7 @@ defmodule Wocky.BotTest do
     end
 
     test "should return bots with most recently visited first", ctx do
-      bot2 = Factory.insert(:bot)
+      bot2 = Factory.insert(:bot, user: ctx.user)
       Bot.subscribe(bot2, ctx.subscriber)
       Bot.visit(ctx.bot, ctx.subscriber, false)
       Bot.visit(bot2, ctx.subscriber, false)
@@ -454,6 +460,7 @@ defmodule Wocky.BotTest do
   describe "subscribers" do
     setup ctx do
       sub = Factory.insert(:user)
+      Roster.befriend(sub, ctx.user)
       Bot.subscribe(ctx.bot, sub)
 
       {:ok, sub: sub}
@@ -485,6 +492,7 @@ defmodule Wocky.BotTest do
 
     test "should get visitors when they are present", ctx do
       visitor = Factory.insert(:user)
+      Roster.befriend(visitor, ctx.user)
       Bot.subscribe(ctx.bot, visitor)
       Bot.visit(ctx.bot, visitor, false)
       assert ctx.bot |> Bot.visitors_query() |> Repo.one() == visitor
@@ -559,16 +567,18 @@ defmodule Wocky.BotTest do
   end
 
   describe "notification_recipients/2" do
-    setup %{bot: bot} do
+    setup %{bot: bot, user: user} do
       friend1 = Factory.insert(:user)
       friend2 = Factory.insert(:user)
       Roster.befriend(friend1, friend2)
+      Roster.befriend(friend1, user)
+      Roster.befriend(friend2, user)
 
       stranger = Factory.insert(:user)
 
       :ok = Bot.subscribe(bot, friend1)
       :ok = Bot.subscribe(bot, friend2)
-      :ok = Bot.subscribe(bot, stranger)
+      {:error, :permission_denied} = Bot.subscribe(bot, stranger)
 
       {:ok, friend1: friend1, friend2: friend2, stranger: stranger}
     end

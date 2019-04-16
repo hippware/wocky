@@ -38,6 +38,12 @@ defmodule Wocky.Roster do
     end
   end
 
+  @doc "Returns true if the two users are friends or the same person"
+  @spec self_or_friend?(User.t() | User.id(), User.t() | User.id()) :: boolean
+  def self_or_friend?(%User{id: id}, %User{id: id}), do: true
+  def self_or_friend?(user_id, user_id), do: true
+  def self_or_friend?(a, b), do: friend?(a, b)
+
   @doc "Returns true if the two users are friends"
   @spec friend?(User.t() | User.id(), User.t() | User.id()) :: boolean
   def friend?(%User{id: user_a_id}, %User{id: user_b_id}),

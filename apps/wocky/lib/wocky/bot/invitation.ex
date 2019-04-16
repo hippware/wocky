@@ -6,7 +6,7 @@ defmodule Wocky.Bot.Invitation do
   import Ecto.Query
 
   alias Ecto.Changeset
-  alias Wocky.{Bot, Repo, User}
+  alias Wocky.{Bot, Repo, Roster, User}
   alias __MODULE__, as: Invitation
 
   @foreign_key_type :binary_id
@@ -24,18 +24,26 @@ defmodule Wocky.Bot.Invitation do
   @type t :: %Invitation{}
 
   @spec put(User.t(), Bot.t(), User.t()) :: {:ok, t()} | {:error, any()}
-  def put(invitee, %Bot{id: bot_id, user_id: user_id}, %User{id: user_id}) do
-    %Invitation{}
-    |> changeset(%{
-      user_id: user_id,
-      bot_id: bot_id,
-      invitee_id: invitee.id
-    })
-    |> Repo.insert(
-      returning: true,
-      on_conflict: [set: [updated_at: DateTime.utc_now(), accepted: false]],
-      conflict_target: [:user_id, :bot_id, :invitee_id]
-    )
+  def put(
+        invitee,
+        %Bot{id: bot_id, user_id: user_id},
+        %User{id: user_id} = user
+      ) do
+    with true <- Roster.friend?(invitee, user) do
+      %Invitation{}
+      |> changeset(%{
+        user_id: user.id,
+        bot_id: bot_id,
+        invitee_id: invitee.id
+      })
+      |> Repo.insert(
+        returning: true,
+        on_conflict: [set: [updated_at: DateTime.utc_now(), accepted: false]],
+        conflict_target: [:user_id, :bot_id, :invitee_id]
+      )
+    else
+      _ -> {:error, :permission_denied}
+    end
   end
 
   def put(_, _, _), do: {:error, :permission_denied}

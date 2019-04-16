@@ -3,7 +3,7 @@ defmodule WockyAPI.Callbacks.Notification do
   Callbacks for notification changes
   """
 
-  use DawdleDB.Handler, type: Wocky.User.Notification
+  use DawdleDB.Handler, type: Wocky.Notifier.InBand.Notification
 
   alias Absinthe.Subscription
   alias WockyAPI.Endpoint
