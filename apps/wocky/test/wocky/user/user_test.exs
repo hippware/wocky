@@ -453,58 +453,6 @@ defmodule Wocky.User.UserTest do
     end
   end
 
-  describe "hiding" do
-    test "should set the user hidden forever", ctx do
-      {:ok, user} = User.hide(ctx.user, true)
-
-      assert user.hidden_until == User.forever_ts()
-      assert User.hidden_state(user) == {true, nil}
-      assert User.hidden?(user)
-
-      id = ctx.id
-      query = User |> where(id: ^id) |> User.filter_hidden()
-      assert Repo.all(query) == []
-    end
-
-    test "should set the user hidden for a limited time", ctx do
-      expire = Timestamp.shift(days: 1)
-      {:ok, user} = User.hide(ctx.user, expire)
-
-      assert user.hidden_until == expire
-      assert User.hidden_state(user) == {true, expire}
-      assert User.hidden?(user)
-
-      id = ctx.id
-      query = User |> where(id: ^id) |> User.filter_hidden()
-      assert Repo.all(query) == []
-    end
-
-    test "should unhide a hidden user", ctx do
-      {:ok, user} = User.hide(ctx.user, false)
-
-      refute user.hidden_until
-      assert User.hidden_state(user) == {false, nil}
-      refute User.hidden?(user)
-
-      id = ctx.id
-      query = User |> where(id: ^id) |> User.filter_hidden()
-      refute Repo.all(query) == []
-    end
-
-    test "should unhide a user whose hiding expired", ctx do
-      expire = Timestamp.shift(days: -1)
-      {:ok, user} = User.hide(ctx.user, expire)
-
-      assert user.hidden_until == expire
-      assert User.hidden_state(user) == {false, expire}
-      refute User.hidden?(user)
-
-      id = ctx.id
-      query = User |> where(id: ^id) |> User.filter_hidden()
-      refute Repo.all(query) == []
-    end
-  end
-
   defp setup_bot_relationships(ctx) do
     other_user = Factory.insert(:user)
     Roster.befriend(ctx.user, other_user)
@@ -664,13 +612,6 @@ defmodule Wocky.User.UserTest do
       assert User.set_location(ctx.user, "testing", ctx.lat, ctx.lon, 10) == :ok
       assert BotEvent.get_last_event_type(ctx.id, ctx.bot.id) == :transition_in
     end
-
-    test "should not initiate geofence processing if the user is hidden", ctx do
-      {:ok, user} = User.hide(ctx.user, true)
-
-      assert User.set_location(user, "testing", ctx.lat, ctx.lon, 10) == :ok
-      refute BotEvent.get_last_event(user.id, ctx.bot.id)
-    end
   end
 
   describe "set_location_for_bot/3" do
@@ -704,13 +645,6 @@ defmodule Wocky.User.UserTest do
                User.set_location_for_bot(ctx.user, ctx.location, ctx.bot)
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visiting
-    end
-
-    test "should not initiate geofence processing if the user is hidden", ctx do
-      {:ok, user} = User.hide(ctx.user, true)
-
-      assert {:ok, _} = User.set_location_for_bot(user, ctx.location, ctx.bot)
-      assert Bot.subscription(ctx.bot, ctx.user) == :subscribed
     end
   end
 

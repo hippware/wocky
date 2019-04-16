@@ -28,6 +28,10 @@ defmodule WockyAPI.GraphQL.UserTest do
           tros_url
         }
         updated_at
+        hidden {
+          enabled
+          expires
+        }
       }
     }
     """
@@ -45,7 +49,11 @@ defmodule WockyAPI.GraphQL.UserTest do
                  "media" => %{
                    "tros_url" => user.image_url
                  },
-                 "updated_at" => DateTime.to_iso8601(user.updated_at)
+                 "updated_at" => DateTime.to_iso8601(user.updated_at),
+                 "hidden" => %{
+                   "enabled" => false,
+                   "expires" => 0 |> DateTime.from_unix!() |> DateTime.to_iso8601()
+                 }
                }
              }
     end
@@ -175,46 +183,6 @@ defmodule WockyAPI.GraphQL.UserTest do
       u = Repo.get(User, user.id)
       assert User.last_name(u) == new_name
       assert User.first_name(u) == ""
-    end
-
-    @query """
-    mutation ($enable: Boolean!, $expire: DateTime) {
-      userHide (input: {enable: $enable, expire: $expire}) {
-        result
-      }
-    }
-    """
-
-    test "set user as permanently hidden", %{user: user} do
-      result = run_query(@query, user, %{"enable" => true})
-
-      refute has_errors(result)
-
-      assert result.data == %{"userHide" => %{"result" => true}}
-
-      assert User.hidden_state(Repo.get(User, user.id)) == {true, nil}
-    end
-
-    test "set user as not hidden", %{user: user} do
-      result = run_query(@query, user, %{"enable" => false})
-
-      refute has_errors(result)
-
-      assert result.data == %{"userHide" => %{"result" => true}}
-
-      assert User.hidden_state(Repo.get(User, user.id)) == {false, nil}
-    end
-
-    test "set user as temporarally hidden", %{user: user} do
-      ts = Timestamp.shift(days: 1) |> Timestamp.to_string!()
-      result = run_query(@query, user, %{"enable" => true, "expire" => ts})
-
-      refute has_errors(result)
-
-      assert result.data == %{"userHide" => %{"result" => true}}
-
-      assert User.hidden_state(Repo.get(User, user.id)) ==
-               {true, Timestamp.from_string!(ts)}
     end
 
     @query """

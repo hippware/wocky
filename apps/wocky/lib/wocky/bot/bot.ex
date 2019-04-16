@@ -272,11 +272,6 @@ defmodule Wocky.Bot do
     :ok
   end
 
-  @spec depart_all_quietly(User.t()) :: :ok
-  def depart_all_quietly(user) do
-    Subscription.depart_all(user)
-  end
-
   defp send_visit_notifications(visitor, bot, bot_event) do
     event = %GeofenceEvent{
       from: visitor,

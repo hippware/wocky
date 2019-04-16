@@ -26,20 +26,6 @@ defmodule Wocky.User.GeoFence do
     :ok
   end
 
-  @spec exit_all_bots(User.t(), String.t()) :: :ok
-  def exit_all_bots(user, reason) do
-    user.id
-    |> BotEvent.get_last_events()
-    |> Enum.each(fn last_event ->
-      if inside?(last_event.event) do
-        last_event = Repo.preload(last_event, :bot)
-        BotEvent.insert_system(user, last_event.bot, :exit, reason)
-      end
-    end)
-
-    Bot.depart_all_quietly(user)
-  end
-
   defp inside?(last_event_type),
     do: Enum.member?([:enter, :transition_in], last_event_type)
 
@@ -48,7 +34,7 @@ defmodule Wocky.User.GeoFence do
   def check_for_bot_event(bot, loc, user) do
     config = get_config(debounce: false)
 
-    if should_process?(loc, user, config) do
+    if should_process?(loc, config) do
       event = BotEvent.get_last_event(user.id, bot.id)
 
       {bot, event}
@@ -64,7 +50,7 @@ defmodule Wocky.User.GeoFence do
   def check_for_bot_events(%Location{} = loc, user) do
     config = get_config()
 
-    if should_process?(loc, user, config) do
+    if should_process?(loc, config) do
       maybe_do_async(
         fn ->
           user
@@ -85,8 +71,8 @@ defmodule Wocky.User.GeoFence do
     |> Enum.into(%{})
   end
 
-  defp should_process?(%Location{accuracy: accuracy}, user, config),
-    do: !User.hidden?(user) && accuracy <= config.max_accuracy_threshold
+  defp should_process?(%Location{accuracy: accuracy}, config),
+    do: accuracy <= config.max_accuracy_threshold
 
   defp maybe_do_async(fun, %{async_processing: true}) do
     {:ok, _} = Task.start_link(fun)
