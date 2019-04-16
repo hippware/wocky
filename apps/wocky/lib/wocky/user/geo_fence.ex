@@ -26,20 +26,6 @@ defmodule Wocky.User.GeoFence do
     :ok
   end
 
-  @spec exit_all_bots(User.t(), String.t()) :: :ok
-  def exit_all_bots(user, reason) do
-    user.id
-    |> BotEvent.get_last_events()
-    |> Enum.each(fn last_event ->
-      if inside?(last_event.event) do
-        last_event = Repo.preload(last_event, :bot)
-        BotEvent.insert_system(user, last_event.bot, :exit, reason)
-      end
-    end)
-
-    Bot.depart_all_quietly(user)
-  end
-
   defp inside?(last_event_type),
     do: Enum.member?([:enter, :transition_in], last_event_type)
 

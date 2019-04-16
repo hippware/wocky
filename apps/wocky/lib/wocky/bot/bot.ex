@@ -270,11 +270,6 @@ defmodule Wocky.Bot do
     :ok
   end
 
-  @spec depart_all_quietly(User.t()) :: :ok
-  def depart_all_quietly(user) do
-    Subscription.depart_all(user)
-  end
-
   defp send_visit_notifications(visitor, bot, event) do
     bot
     |> notification_recipients(visitor)

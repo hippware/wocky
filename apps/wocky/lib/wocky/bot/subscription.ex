@@ -64,15 +64,6 @@ defmodule Wocky.Bot.Subscription do
     visit(user, bot, false)
   end
 
-  @spec depart_all(User.t()) :: :ok
-  def depart_all(user) do
-    now = DateTime.utc_now()
-
-    Subscription
-    |> where(user_id: ^user.id, visitor: true)
-    |> Repo.update_all(set: [visitor: false, departed_at: now, updated_at: now])
-  end
-
   defp visit(user, bot, enter) do
     now = DateTime.utc_now()
 

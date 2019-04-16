@@ -708,20 +708,4 @@ defmodule Wocky.User.GeoFenceTest do
       assert Enum.count(notifications) == 1
     end
   end
-
-  describe "exit_all_bots/2" do
-    test "should exit all bots and send no notifiations", ctx do
-      Bot.visit(ctx.bot, ctx.user, false)
-      BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
-
-      GeoFence.exit_all_bots(ctx.user, "test")
-
-      event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
-      assert event == :exit
-
-      assert Bot.subscription(ctx.bot, ctx.user) == :subscribed
-
-      assert Sandbox.list_notifications() == []
-    end
-  end
 end
