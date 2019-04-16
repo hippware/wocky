@@ -13,6 +13,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * Limit bot subscriptions and invitations to friends (PR #2421)
 * Rework relay connections to use SQL cursors for paging (#1957)
 * Unify in-band notifications and push notifications (#2402)
+* Remove server side invisibility mode (#2365)
 
 
 # 2019.4.14+re16466c
