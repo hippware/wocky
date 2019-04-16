@@ -32,7 +32,7 @@ wocky-migration-test:
     - postgres
   encrypted_env_file: codeship/migration_test.env.encrypted
 postgres:
-  image: hippware/postgis-healthcheck:9.6-alpine
+  image: hippware/postgis-healthcheck:10-alpine
   environment:
     POSTGRES_PASSWORD: "password"
   ports:
