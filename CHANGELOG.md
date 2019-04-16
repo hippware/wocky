@@ -5,6 +5,16 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: absinthe (PR #2425)
+* Fix name setting when one name is set and existing is nil (PR #2420)
+* Shared location data points expose extra fields (#2338)
+  * Remove surplus fields from location object (PR #2424)
+* Issues with bot subscription logic (#2396)
+  * Limit bot subscriptions and invitations to friends (PR #2421)
+* Rework relay connections to use SQL cursors for paging (#1957)
+* Unify in-band notifications and push notifications (#2402)
+
+
 # 2019.4.14+re16466c
 
 * Update: postgrex (PR #2416), ex_aws_sqs (PR #2417)
