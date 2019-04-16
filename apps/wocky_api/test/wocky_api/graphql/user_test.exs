@@ -28,12 +28,16 @@ defmodule WockyAPI.GraphQL.UserTest do
           tros_url
         }
         updated_at
+        hidden {
+          enabled
+          expires
+        }
       }
     }
     """
 
     test "get user info", %{user: user} do
-      result = run_query(@query, user)
+      result = run_query(@query, user) |> IO.inspect
 
       refute has_errors(result)
 
@@ -45,7 +49,11 @@ defmodule WockyAPI.GraphQL.UserTest do
                  "media" => %{
                    "tros_url" => user.image_url
                  },
-                 "updated_at" => DateTime.to_iso8601(user.updated_at)
+                 "updated_at" => DateTime.to_iso8601(user.updated_at),
+                 "hidden" => %{
+                   "enabled" => false,
+                   "expires_at" => 0 |> DateTime.from_unix!() |> DateTime.to_iso8601()
+                 }
                }
              }
     end
