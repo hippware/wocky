@@ -428,6 +428,13 @@ defmodule WockyAPI.Schema.UserTypes do
     field :email, :string
     field :tagline, :string
     field :client_data, :string
+
+    @desc """
+    Setting a user as transient allows that user to be deleted AT WILL by the
+    server.  This should be set on users which are created as one-shot tests so
+    that the server knows they can be safely cleaned up at a later point.
+    """
+    field :transient, :boolean
   end
 
   input_object :user_update_input do

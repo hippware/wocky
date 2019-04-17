@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.CleanerTest do
-  use Wocky.DataCase
+  use Wocky.DataCase, async: false
 
   import Ecto.Query
 
@@ -511,6 +511,32 @@ defmodule Wocky.Repo.CleanerTest do
 
     test "should not remove the recent log entry", ctx do
       assert Repo.get(PushLog, ctx.new.id)
+    end
+  end
+
+  describe "clean transient users" do
+    setup do
+      transient = Factory.insert(:user, transient: true)
+      exp_transient = Factory.insert(:user, transient: true, created_at: Timestamp.shift(days: -2))
+      {:ok, transient: transient, exp_transient: exp_transient}
+    end
+
+    test "should not expire users when not enabled", ctx do
+      assert {:ok, 0} = Cleaner.clean_transient_users()
+      assert Repo.get(User, ctx.user.id)
+      assert Repo.get(User, ctx.transient.id)
+      assert Repo.get(User, ctx.exp_transient.id)
+    end
+
+    test "should expire users within configured period", ctx do
+      Application.put_env(:wocky, :expire_transient_users_after_days, 1)
+
+      assert {:ok, 1} = Cleaner.clean_transient_users()
+      assert Repo.get(User, ctx.user.id)
+      assert Repo.get(User, ctx.transient.id)
+      refute Repo.get(User, ctx.exp_transient.id)
+
+      Application.delete_env(:wocky, :expire_transient_users_after_days)
     end
   end
 end
