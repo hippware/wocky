@@ -1,9 +1,7 @@
 defmodule Wocky.User.GeoFence do
   @moduledoc false
 
-  alias Wocky.Bot
-  alias Wocky.Repo
-  alias Wocky.User
+  alias Wocky.{Bot, User}
   alias Wocky.User.{BotEvent, Location}
 
   require Logger
