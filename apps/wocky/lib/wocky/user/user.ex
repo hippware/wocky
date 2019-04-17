@@ -72,6 +72,7 @@ defmodule Wocky.User do
     field :welcome_sent, :boolean
     field :smss_sent, :integer
     field :bot_created, :boolean
+    field :transient, :boolean
 
     field :presence, :any, virtual: true
 
@@ -122,7 +123,8 @@ defmodule Wocky.User do
           welcome_sent: boolean,
           smss_sent: integer,
           bot_created: boolean,
-          presence: nil | Presence.t()
+          presence: nil | Presence.t(),
+          transient: boolean
         }
 
   @update_fields [
@@ -136,7 +138,8 @@ defmodule Wocky.User do
     :provider,
     :smss_sent,
     :bot_created,
-    :client_data
+    :client_data,
+    :transient
   ]
 
   @min_handle_len 3

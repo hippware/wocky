@@ -85,7 +85,10 @@ config :wocky,
     client_x509_cert_url:
       "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-xrj66%40my-project-1480497595993.iam.gserviceaccount.com"
   },
-  goth_private_key: {:system, :string, "FIREBASE_PRIVATE_KEY", "dummy_key"}
+  goth_private_key: {:system, :string, "FIREBASE_PRIVATE_KEY", "dummy_key"},
+
+  # User cleanup
+  expire_transient_users_after_days: {:system, :integer, "WOCKY_EXPIRE_TRANSIENT_USERS_AFTER_DAYS", nil}
 
 config :wocky, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},

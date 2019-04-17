@@ -46,7 +46,8 @@ defmodule Wocky.Repo.Factory do
       roles: [],
       welcome_sent: false,
       smss_sent: 0,
-      bot_created: false
+      bot_created: false,
+      transient: false
     }
   end
 

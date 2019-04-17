@@ -26,8 +26,9 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, d6} = clean_invalid_push_tokens()
     {:ok, d7} = clean_expired_invite_codes()
     {:ok, d8} = clean_dead_tros_links(true)
+    {:ok, d9} = clean_transient_users()
 
-    {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8}
+    {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8 + d9}
   end
 
   def clean_pending_bots do
@@ -248,5 +249,30 @@ defmodule Wocky.Repo.Cleaner do
     )
 
     {:ok, deleted}
+  end
+
+  def clean_transient_users do
+    case Confex.get_env(:wocky, :expire_transient_users_after_days) do
+      nil ->
+        Logger.info(
+          "Transient user deletion disabled - skipping"
+        )
+
+        {:ok, 0}
+      days ->
+        expire_date = Timestamp.shift(days: -days)
+
+        {deleted, nil} =
+          User
+          |> where([u], u.transient)
+          |> where([u], u.created_at <= ^expire_date)
+          |> Repo.delete_all(timeout: :infinity)
+
+        Logger.info(
+          "Deleted #{deleted} transient users created before #{expire_date}"
+        )
+
+        {:ok, deleted}
+    end
   end
 end
