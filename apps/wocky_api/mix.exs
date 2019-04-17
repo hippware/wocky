@@ -64,8 +64,6 @@ defmodule WockyAPI.Mixfile do
       {:jason, "~> 1.0"},
       {:kronky, github: "mirego/kronky", branch: "master"},
 
-      # TODO: Move back to release when new release is built
-      {:paginator, github: "duffelhq/paginator", branch: "master"},
       {:phoenix, "~> 1.4"},
       {:phoenix_ecto, "~> 4.0"},
       {:plug_cowboy, "~> 2.0"},
