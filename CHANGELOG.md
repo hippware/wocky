@@ -5,7 +5,7 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: absinthe (PR #2425)
+* Update: absinthe (PR #2425), eventually (PR #2426), dawdle_db (PR #2427)
 * Fix name setting when one name is set and existing is nil (PR #2420)
 * Shared location data points expose extra fields (#2338)
   * Remove surplus fields from location object (PR #2424)
@@ -14,6 +14,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Rework relay connections to use SQL cursors for paging (#1957)
 * Unify in-band notifications and push notifications (#2402)
 * Remove server side invisibility mode (#2365)
+* Use PostgreSQL 10 for tests (PR #2431)
 
 
 # 2019.4.14+re16466c
