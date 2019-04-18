@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: ecto_sql (PR #2434), dawdle et al (PR #2436)
+* Add transient flag (PR #2433)
+
+
+# 2019.4.17+r0b83314
+
 * Update: absinthe (PR #2425), eventually (PR #2426), dawdle_db (PR #2427)
 * Fix name setting when one name is set and existing is nil (PR #2420)
 * Shared location data points expose extra fields (#2338)
@@ -12,6 +18,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Issues with bot subscription logic (#2396)
   * Limit bot subscriptions and invitations to friends (PR #2421)
 * Rework relay connections to use SQL cursors for paging (#1957)
+  * Paginator fixes (PR #2432)
 * Unify in-band notifications and push notifications (#2402)
 * Remove server side invisibility mode (#2365)
 * Use PostgreSQL 10 for tests (PR #2431)
