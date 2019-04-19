@@ -19,8 +19,6 @@ ENV REFRESHED_AT=2019-02-15 \
 RUN \
     # Create default user and home directory, set owner to default \
     mkdir -p ${HOME} && \
-    mkdir -p ${HOME}/var/log && \
-    mkdir -p ${HOME}/var/mnesia && \
     adduser -s /bin/sh -u 1001 -G root -h ${HOME} -S -D default && \
     chown -R 1001:0 ${HOME} && \
     # Upgrade Alpine and base packages \
@@ -43,11 +41,8 @@ RUN \
 USER default
 WORKDIR /opt/app
 
-# Expose http, xmpp, s2s, epmd, distributed erlang
-EXPOSE 8080 5222 5269 4369 9100
-
-# Define mount points.
-VOLUME ["/opt/app/var/mnesia", "/opt/app/var/log"]
+# Expose http, epmd, distributed erlang
+EXPOSE 8080 4369 9100
 
 # Deploy the application into the container
 ARG RELEASE_NAME=wocky
