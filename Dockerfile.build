@@ -10,7 +10,7 @@ COPY apps/wocky_api/mix.exs apps/wocky_api/
 RUN mix do deps.get, deps.compile && \
     MIX_ENV=prod mix deps.compile
 
-COPY Makefile .credo.exs .
+COPY Makefile .credo.exs ./
 COPY rel/ ./rel/
 COPY etc/ ./etc/
 COPY config/ ./config/
