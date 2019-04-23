@@ -5,8 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: ecto_sql (PR #2434), dawdle et al (PR #2436)
+* Update: ecto_sql (PR #2434), dawdle et al (PR #2436), credo (PR #2438)
 * Add transient flag (PR #2433)
+* Tweak container build (PR #2437)
 
 
 # 2019.4.17+r0b83314
