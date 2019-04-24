@@ -431,6 +431,7 @@ defmodule WockyAPI.GraphQL.UserTest do
               lon
               accuracy
               id
+              activity
             }
           }
         }
@@ -453,7 +454,8 @@ defmodule WockyAPI.GraphQL.UserTest do
                          "lon" => loc.lon,
                          "lat" => loc.lat,
                          "accuracy" => loc.accuracy,
-                         "id" => loc.id
+                         "id" => loc.id,
+                         "activity" => loc.activity
                        }
                      }
                    ]

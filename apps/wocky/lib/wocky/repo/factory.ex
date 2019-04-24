@@ -138,7 +138,8 @@ defmodule Wocky.Repo.Factory do
       device: device(),
       lat: Address.latitude(),
       lon: Address.longitude(),
-      accuracy: 10
+      accuracy: 10,
+      activity: Lorem.word()
     }
   end
 

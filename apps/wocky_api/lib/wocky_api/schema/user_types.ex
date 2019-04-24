@@ -340,6 +340,9 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "Time of location report"
     field :created_at, non_null(:datetime)
 
+    @desc "The reported activity for this location update"
+    field :activity, :string
+
     @desc "List of events triggered by this location update"
     connection field :events, node_type: :location_events do
       connection_complexity()
