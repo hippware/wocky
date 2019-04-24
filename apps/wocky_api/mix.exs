@@ -59,11 +59,11 @@ defmodule WockyAPI.Mixfile do
       {:apollo_tracing, "~> 0.4.0"},
       {:cors_plug, "~> 2.0"},
       {:ecto_sql, "~> 3.0"},
-      {:health_checkup, "~> 0.1.0"},
       {:honeybadger, "~> 0.6"},
       {:httpoison, "~> 1.4"},
       {:jason, "~> 1.0"},
       {:kronky, github: "mirego/kronky", branch: "master"},
+
       {:phoenix, "~> 1.4"},
       {:phoenix_ecto, "~> 4.0"},
       {:plug_cowboy, "~> 2.0"},
