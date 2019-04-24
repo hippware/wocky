@@ -9,4 +9,4 @@ if echo "${CI_COMMIT_MESSAGE}" | fgrep -qi "[skip deploy]"; then
 fi
 
 curl --user "${CIRCLE_TOKEN}:" --data "build_parameters[CIRCLE_JOB]=build" \
-  https://circleci.com/api/v1.1/project/github/hippware/wocky-client/tree/master
+  https://circleci.com/api/v1.1/project/github/hippware/rn-chat/tree/master
