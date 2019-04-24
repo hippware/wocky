@@ -10,8 +10,8 @@ metadata:
     alb.ingress.kubernetes.io/load-balancer-attributes: 'access_logs.s3.enabled=true,access_logs.s3.bucket=hippware-logs,access_logs.s3.prefix=wocky-next'
     alb.ingress.kubernetes.io/subnets: <%= dmz_subnet_ids_string['value'] %>
     alb.ingress.kubernetes.io/security-groups: <%= ingress_sg_id['value'] %>
-    alb.ingress.kubernetes.io/healthcheck-path: '/graphql'
-    alb.ingress.kubernetes.io/success-codes: '200,400'
+    alb.ingress.kubernetes.io/healthcheck-path: '/healthcheck'
+    alb.ingress.kubernetes.io/success-codes: '200'
     alb.ingress.kubernetes.io/listen-ports: '[{"HTTPS":443}]'
   labels:
     app: wocky

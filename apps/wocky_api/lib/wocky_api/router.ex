@@ -39,6 +39,8 @@ defmodule WockyAPI.Router do
       max_complexity: @max_graphql_complexity
   end
 
+  forward "/healthcheck", HealthCheckup
+
   # Provide a GraphiQL interface in dev mode
   if Mix.env() == :dev do
     forward "/graphiql", Absinthe.Plug.GraphiQL,
