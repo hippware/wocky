@@ -24,7 +24,7 @@ config :wocky,
   # Authentication
   token_expiry_days: {:system, :integer, "WOCKY_TOKEN_EXPIRY_DAYS", 60},
   enable_auth_bypass: {:system, :boolean, "WOCKY_ENABLE_BYPASS", true},
-  auth_bypass_prefixes: ["+1555"],
+  auth_bypass_prefixes: ["+1555", "+1556"],
   client_jwt_signing_key:
     {:system, "WOCKY_CLIENT_JWT_SIGNING_KEY",
      "CgKG3D0OfVBMh3JiJfQGkS0SyTrBaaGfrl1MozWnjesSuhVLnMTHDwyXDC/f2dtu"},
