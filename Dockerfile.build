@@ -17,6 +17,6 @@ COPY config/ ./config/
 COPY apps/ ./apps/
 
 # For the version number
-COPY .git. ./
+COPY .git ./
 
 RUN mix compile
