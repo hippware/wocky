@@ -16,4 +16,7 @@ COPY etc/ ./etc/
 COPY config/ ./config/
 COPY apps/ ./apps/
 
+# For the version number
+COPY .git ./.git/
+
 RUN mix compile
