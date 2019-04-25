@@ -5,9 +5,19 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Add healthcheck endpoint (PR #2444)
+* Trigger a rn-chat build instead of wocky-client. (PR #2445)
+* Add 556 as bypass prefix for load tests (PR #2446)
+* Fix the version number in the build (PR #2447)
+
+
+# 2019.4.24
+
 * Update: ecto_sql (PR #2434), dawdle et al (PR #2436), credo (PR #2438)
 * Add transient flag (PR #2433)
 * Tweak container build (PR #2437)
+* Expose `activity` in (Live Location) data points (#2441)
+* Roll back `testing` to old redis server (PR #2443)
 
 
 # 2019.4.17+r0b83314
