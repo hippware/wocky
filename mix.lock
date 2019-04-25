@@ -74,7 +74,7 @@
   "health_checkup": {:hex, :health_checkup, "0.1.0", "6d9d503d90ea74a245dfdf8981d0d34b5b952eb53ddac906ae45af97a8d50597", [:mix], [{:plug, "~> 1.0", [hex: :plug, repo: "hexpm", optional: false]}], "hexpm"},
   "honeybadger": {:hex, :honeybadger, "0.11.0", "1156b45f646c148d91fce0581561c5ca3f423a415dd2fea2bbf98485ccded5a3", [:mix], [{:hackney, "~> 1.1", [hex: :hackney, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: false]}, {:phoenix, ">= 1.0.0 and < 2.0.0", [hex: :phoenix, repo: "hexpm", optional: true]}, {:plug, ">= 1.0.0 and < 2.0.0", [hex: :plug, repo: "hexpm", optional: true]}], "hexpm"},
   "hpack": {:hex, :hpack_erl, "0.2.3", "17670f83ff984ae6cd74b1c456edde906d27ff013740ee4d9efaa4f1bf999633", [:rebar3], [], "hexpm"},
-  "httpoison": {:hex, :httpoison, "1.5.0", "71ae9f304bdf7f00e9cd1823f275c955bdfc68282bc5eb5c85c3a9ade865d68e", [:mix], [{:hackney, "~> 1.8", [hex: :hackney, repo: "hexpm", optional: false]}], "hexpm"},
+  "httpoison": {:hex, :httpoison, "1.5.1", "0f55b5b673b03c5c327dac7015a67cb571b99b631acc0bc1b0b98dcd6b9f2104", [:mix], [{:hackney, "~> 1.8", [hex: :hackney, repo: "hexpm", optional: false]}], "hexpm"},
   "hut": {:hex, :hut, "1.2.0", "0089df0faa2827c605bbada88153f24fff5ea7a4be32ecf0250a7fdc2719cafb", [:"erlang.mk", :rebar, :rebar3], [], "hexpm"},
   "idna": {:hex, :idna, "6.0.0", "689c46cbcdf3524c44d5f3dde8001f364cd7608a99556d8fbd8239a5798d4c10", [:rebar3], [{:unicode_util_compat, "0.4.1", [hex: :unicode_util_compat, repo: "hexpm", optional: false]}], "hexpm"},
   "inflex": {:hex, :inflex, "1.10.0", "8366a7696e70e1813aca102e61274addf85d99f4a072b2f9c7984054ea1b9d29", [:mix], [], "hexpm"},
