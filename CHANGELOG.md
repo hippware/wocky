@@ -9,6 +9,10 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Trigger a rn-chat build instead of wocky-client. (PR #2445)
 * Add 556 as bypass prefix for load tests (PR #2446)
 * Fix the version number in the build (PR #2447)
+* Update: httpoison (PR #2448)
+* Clean up old user locations and bot events (#2017)
+* Fix crash in RefreshCurrentUser when no user is set (#2449, PR #2452)
+* FunctionClauseError: Wocky.Tasks.Recurring.handle_info/2 (#2451, PR #2453)
 
 
 # 2019.4.24
