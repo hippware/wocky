@@ -3,34 +3,34 @@ defmodule Wocky.Repo.Factory do
 
   use ExMachina.Ecto, repo: Wocky.Repo
 
-  alias Faker.Address
-  alias Faker.Company
-  alias Faker.Internet
-  alias Faker.Lorem
-  alias Faker.Name
+  alias Faker.{
+    Address,
+    Company,
+    Internet,
+    Lorem,
+    Name,
+    String
+  }
+
   alias Faker.Phone.EnUs, as: Phone
-  alias Faker.String
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Bot
   alias Wocky.Bot.Invitation, as: BotInvitation
-  alias Wocky.Bot.Item
-  alias Wocky.Bot.Subscription
+  alias Wocky.Bot.{Item, Subscription}
   alias Wocky.GeoUtils
   alias Wocky.Message
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Notifier.Push.Log, as: PushLog
   alias Wocky.Notifier.Push.Token, as: PushToken
-  alias Wocky.Repo.ID
-  alias Wocky.Repo.Timestamp
+  alias Wocky.Repo.{ID, Timestamp}
   alias Wocky.Roster.Invitation, as: RosterInvitation
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User
-  alias Wocky.User.Location
-  alias Wocky.User.LocationShare
+  alias Wocky.User.{BotEvent, Location, LocationShare}
 
   def user_factory do
     %User{
@@ -140,6 +140,17 @@ defmodule Wocky.Repo.Factory do
       lon: Address.longitude(),
       accuracy: 10,
       activity: Lorem.word()
+    }
+  end
+
+  def bot_event_factory do
+    %BotEvent{
+      bot: build(:bot),
+      user: build(:user),
+      device: device(),
+      event: :enter,
+      occurred_at: DateTime.utc_now(),
+      location: build(:location)
     }
   end
 
