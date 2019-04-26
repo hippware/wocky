@@ -24,10 +24,10 @@ defmodule Wocky.Tasks.Recurring do
     {:noreply, state, @timeout}
   end
 
-  def handle_info({:sawrm, :resolve_conflict, _state}, state),
+  def handle_info({:swarm, :resolve_conflict, _state}, state),
     do: {:noreply, state, @timeout}
 
-  def handle_info({:sawrm, :die}, state), do: {:stop, :shutdown, state}
+  def handle_info({:swarm, :die}, state), do: {:stop, :shutdown, state}
 
   def handle_call({:swarm, :begin_handoff}, _from, state),
     do: {:reply, :restart, state, @timeout}
