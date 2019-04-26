@@ -220,9 +220,10 @@ defmodule WockyAPI.GraphQL.BotTest do
     """
 
     setup %{user: user, bot: bot} do
-      bots = [bot | Factory.insert_list(10, :bot, user: user)]
-      |> Enum.reverse()
-      |> Enum.map(& &1.id)
+      bots =
+        [bot | Factory.insert_list(10, :bot, user: user)]
+        |> Enum.reverse()
+        |> Enum.map(& &1.id)
 
       {:ok, bots: bots}
     end
@@ -230,8 +231,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     test "get last items in a list (no cursor)", %{user: user, bots: bots} do
       [b8_id, b9_id, b10_id] = bots |> Enum.slice(-3..-1)
 
-      result! =
-        run_query(@query, user, %{"last" => 3})
+      result! = run_query(@query, user, %{"last" => 3})
 
       refute has_errors(result!)
 
@@ -271,8 +271,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     test "get first items in a list (no cursor)", %{user: user, bots: bots} do
       [b0_id, b1_id] = bots |> Enum.take(2)
 
-      result =
-        run_query(@query, user, %{"first" => 2})
+      result = run_query(@query, user, %{"first" => 2})
 
       refute has_errors(result)
 
@@ -307,7 +306,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       result! =
         run_query(@query, user, %{
           "last" => 2,
-          "before" => cursor_for(user, 9),
+          "before" => cursor_for(user, 9)
         })
 
       refute has_errors(result!)
@@ -346,7 +345,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       result =
         run_query(@query, user, %{
           "first" => 2,
-          "after" => cursor_for(user, 3),
+          "after" => cursor_for(user, 3)
         })
 
       refute has_errors(result)
@@ -385,7 +384,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       result =
         run_query(@query, user, %{
           "last" => 2,
-          "after" => cursor_for(user, 4),
+          "after" => cursor_for(user, 4)
         })
 
       refute has_errors(result)
@@ -424,7 +423,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       result =
         run_query(@query, user, %{
           "first" => 2,
-          "before" => cursor_for(user, 6),
+          "before" => cursor_for(user, 6)
         })
 
       refute has_errors(result)
@@ -463,7 +462,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       result =
         run_query(@query, user, %{
           "last" => 2,
-          "before" => cursor_for(user, 1),
+          "before" => cursor_for(user, 1)
         })
 
       refute has_errors(result)
@@ -480,7 +479,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                        "node" => %{
                          "id" => ^b0_id
                        }
-                     },
+                     }
                    ],
                    "pageInfo" => %{
                      "hasNextPage" => false,
@@ -495,7 +494,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       result =
         run_query(@query, user, %{
           "first" => 3,
-          "after" => cursor_for(user, 8),
+          "after" => cursor_for(user, 8)
         })
 
       refute has_errors(result)
@@ -534,7 +533,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       result =
         run_query(@query, user, %{
           "last" => 3,
-          "after" => cursor_for(user, 8),
+          "after" => cursor_for(user, 8)
         })
 
       refute has_errors(result)
@@ -573,7 +572,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       result =
         run_query(@query, user, %{
           "first" => 3,
-          "before" => cursor_for(user, 2),
+          "before" => cursor_for(user, 2)
         })
 
       refute has_errors(result)
@@ -609,8 +608,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     defp cursor_for(user, i) do
-      result =
-        run_query(@query, user, %{"first" => 100})
+      result = run_query(@query, user, %{"first" => 100})
 
       refute has_errors(result)
 

@@ -52,7 +52,8 @@ defmodule WockyAPI.GraphQL.UserTest do
                  "updated_at" => DateTime.to_iso8601(user.updated_at),
                  "hidden" => %{
                    "enabled" => false,
-                   "expires" => 0 |> DateTime.from_unix!() |> DateTime.to_iso8601()
+                   "expires" =>
+                     0 |> DateTime.from_unix!() |> DateTime.to_iso8601()
                  }
                }
              }

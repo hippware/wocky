@@ -8,15 +8,12 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.Notifier.Push.Log, as: PushLog
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Repo
-  alias Wocky.Repo.Cleaner
-  alias Wocky.Repo.Factory
-  alias Wocky.Repo.ID
-  alias Wocky.Repo.Timestamp
+  alias Wocky.Repo.{Cleaner, Factory, ID, Timestamp}
   alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
   alias Wocky.User
-  alias Wocky.User.InviteCode
+  alias Wocky.User.{BotEvent, InviteCode, Location}
 
   setup do
     user = Factory.insert(:user)
@@ -517,7 +514,13 @@ defmodule Wocky.Repo.CleanerTest do
   describe "clean transient users" do
     setup do
       transient = Factory.insert(:user, transient: true)
-      exp_transient = Factory.insert(:user, transient: true, created_at: Timestamp.shift(days: -2))
+
+      exp_transient =
+        Factory.insert(:user,
+          transient: true,
+          created_at: Timestamp.shift(days: -2)
+        )
+
       {:ok, transient: transient, exp_transient: exp_transient}
     end
 
@@ -537,6 +540,58 @@ defmodule Wocky.Repo.CleanerTest do
       refute Repo.get(User, ctx.exp_transient.id)
 
       Application.delete_env(:wocky, :expire_transient_users_after_days)
+    end
+  end
+
+  describe "clean stale locations" do
+    setup do
+      stale_ts = Timestamp.shift(months: -7)
+      stale_location = Factory.insert(:location, created_at: stale_ts)
+
+      recent_ts = Timestamp.shift(months: -5)
+      recent_location = Factory.insert(:location, created_at: recent_ts)
+
+      assert {:ok, result} = Cleaner.clean_stale_locations()
+
+      {:ok, stale: stale_location, recent: recent_location, result: result}
+    end
+
+    test "should return the number of locations removed", %{result: result} do
+      assert result == 1
+    end
+
+    test "should remove the stale location", ctx do
+      refute Repo.get(Location, ctx.stale.id)
+    end
+
+    test "should not remove the recent location", ctx do
+      assert Repo.get(Location, ctx.recent.id)
+    end
+  end
+
+  describe "clean stale bot_events" do
+    setup do
+      stale_ts = Timestamp.shift(months: -7)
+      stale_event = Factory.insert(:bot_event, created_at: stale_ts)
+
+      recent_ts = Timestamp.shift(months: -5)
+      recent_event = Factory.insert(:bot_event, created_at: recent_ts)
+
+      assert {:ok, result} = Cleaner.clean_stale_bot_events()
+
+      {:ok, stale: stale_event, recent: recent_event, result: result}
+    end
+
+    test "should return the number of locations removed", %{result: result} do
+      assert result == 1
+    end
+
+    test "should remove the stale location", ctx do
+      refute Repo.get(BotEvent, ctx.stale.id)
+    end
+
+    test "should not remove the recent location", ctx do
+      assert Repo.get(BotEvent, ctx.recent.id)
     end
   end
 end

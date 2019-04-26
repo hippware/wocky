@@ -88,7 +88,8 @@ config :wocky,
   goth_private_key: {:system, :string, "FIREBASE_PRIVATE_KEY", "dummy_key"},
 
   # User cleanup
-  expire_transient_users_after_days: {:system, :integer, "WOCKY_EXPIRE_TRANSIENT_USERS_AFTER_DAYS", nil}
+  expire_transient_users_after_days:
+    {:system, :integer, "WOCKY_EXPIRE_TRANSIENT_USERS_AFTER_DAYS", nil}
 
 config :wocky, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},

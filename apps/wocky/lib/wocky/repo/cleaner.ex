@@ -13,7 +13,7 @@ defmodule Wocky.Repo.Cleaner do
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
   alias Wocky.User
-  alias Wocky.User.InviteCode
+  alias Wocky.User.{BotEvent, InviteCode, Location}
 
   require Logger
 
@@ -27,8 +27,10 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, d7} = clean_expired_invite_codes()
     {:ok, d8} = clean_dead_tros_links(true)
     {:ok, d9} = clean_transient_users()
+    {:ok, d10} = clean_stale_locations()
+    {:ok, d11} = clean_stale_bot_events()
 
-    {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8 + d9}
+    {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8 + d9 + d10 + d11}
   end
 
   def clean_pending_bots do
@@ -254,11 +256,10 @@ defmodule Wocky.Repo.Cleaner do
   def clean_transient_users do
     case Confex.get_env(:wocky, :expire_transient_users_after_days) do
       nil ->
-        Logger.info(
-          "Transient user deletion disabled - skipping"
-        )
+        Logger.info("Transient user deletion disabled - skipping")
 
         {:ok, 0}
+
       days ->
         expire_date = Timestamp.shift(days: -days)
 
@@ -274,5 +275,31 @@ defmodule Wocky.Repo.Cleaner do
 
         {:ok, deleted}
     end
+  end
+
+  def clean_stale_locations do
+    expire_date = Timestamp.shift(months: -6)
+
+    {deleted, nil} =
+      Location
+      |> where([u], u.created_at <= ^expire_date)
+      |> Repo.delete_all(timeout: :infinity)
+
+    Logger.info("Deleted #{deleted} locations created before #{expire_date}")
+
+    {:ok, deleted}
+  end
+
+  def clean_stale_bot_events do
+    expire_date = Timestamp.shift(months: -6)
+
+    {deleted, nil} =
+      BotEvent
+      |> where([u], u.created_at <= ^expire_date)
+      |> Repo.delete_all(timeout: :infinity)
+
+    Logger.info("Deleted #{deleted} bot_events created before #{expire_date}")
+
+    {:ok, deleted}
   end
 end

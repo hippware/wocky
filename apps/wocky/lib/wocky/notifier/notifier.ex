@@ -15,6 +15,7 @@ defmodule Wocky.Notifier do
   def notify(event) do
     for notifier <- @known_notifiers do
       type = Module.safe_concat(notifier, Event)
+
       if type.notify?(event) && deliverable?(event) do
         notifier.notify(event)
       end

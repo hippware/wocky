@@ -60,7 +60,7 @@ defmodule WockyAPI.Resolvers.Utils do
         opts \\ []
       ) do
     args = Map.take(args, [:first, :last, :after, :before])
-    order_by = Keyword.get(opts, :order_by, [desc: :updated_at])
+    order_by = Keyword.get(opts, :order_by, desc: :updated_at)
     postprocess = Keyword.get(opts, :postprocess)
 
     query = maybe_order_by(query, order_by)
