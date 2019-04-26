@@ -2,6 +2,7 @@ defmodule Wocky.Repo do
   use Ecto.Repo,
     otp_app: :wocky,
     adapter: Ecto.Adapters.Postgres
+
   use Paginator
 
   alias Confex.Resolver

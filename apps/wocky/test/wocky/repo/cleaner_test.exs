@@ -514,7 +514,13 @@ defmodule Wocky.Repo.CleanerTest do
   describe "clean transient users" do
     setup do
       transient = Factory.insert(:user, transient: true)
-      exp_transient = Factory.insert(:user, transient: true, created_at: Timestamp.shift(days: -2))
+
+      exp_transient =
+        Factory.insert(:user,
+          transient: true,
+          created_at: Timestamp.shift(days: -2)
+        )
+
       {:ok, transient: transient, exp_transient: exp_transient}
     end
 

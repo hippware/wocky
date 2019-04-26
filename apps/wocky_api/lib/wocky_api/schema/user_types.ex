@@ -54,7 +54,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The user's hidden state"
     field :hidden, :hidden,
-    deprecate: "hidden is no longer supported on the server" do
+      deprecate: "hidden is no longer supported on the server" do
       resolve fn _, _ -> {:ok, %{}} end
     end
 
