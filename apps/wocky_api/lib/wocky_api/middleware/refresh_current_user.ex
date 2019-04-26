@@ -35,4 +35,7 @@ defmodule WockyAPI.Middleware.RefreshCurrentUser do
           end
     }
   end
+
+  # No action if we don't have a current user
+  def call(resolution, _), do: resolution
 end

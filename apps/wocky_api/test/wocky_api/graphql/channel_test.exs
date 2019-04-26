@@ -74,4 +74,19 @@ defmodule WockyAPI.GraphQL.ChannelTest do
              } = result.data
     end
   end
+
+  describe "current user refresh" do
+    test "should not crash if no current user is set", %{socket: socket} do
+      update = """
+      mutation {
+        userUpdate (input: {values: {transient: true}}) {
+          successful
+        }
+      }
+      """
+
+      ref! = push_doc(socket, update)
+      assert_reply ref!, :ok, result, 1000
+    end
+  end
 end
