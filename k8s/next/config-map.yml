@@ -17,6 +17,7 @@ data:
   WOCKY_ANDROID_PACKAGE_NAME: "com.hippware.android.tinyrobot.staging"
   WOCKY_APP_STORE_ID: "1198202376"
   WOCKY_IOS_BUNDLE_ID: "com.hippware.ios.ChatStaging"
+  WOCKY_ENABLE_FACTORY_INSERT: "true"
   WOCKY_PUSH_APNS_TOPIC: "com.hippware.ios.ChatStaging"
   WOCKY_PUSH_FCM_PACKAGE: "com.hippware.android.tinyrobot.staging"
   WOCKY_PUSH_URI_PREFIX: "tinyrobotStaging"
