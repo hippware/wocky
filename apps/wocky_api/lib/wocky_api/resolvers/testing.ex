@@ -33,6 +33,10 @@ defmodule WockyAPI.Resolvers.Testing do
     |> Enum.flat_map(&add_nils/1)
   end
 
+  # If a caller supplies, for example, `user_id`, the default factory
+  # implementation will still build a value for `user` which will clash. This
+  # function adds a `nil` entry for the full object if the id is specified which
+  # overrides the default creation.
   defp add_nils({k, v}) do
     k_str = to_string(k)
 
