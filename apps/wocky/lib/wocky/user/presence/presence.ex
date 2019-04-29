@@ -39,6 +39,7 @@ defmodule Wocky.User.Presence do
   @spec connect(User.t()) :: [User.t()]
   def connect(user) do
     {:ok, manager} = Manager.acquire(user)
+    Manager.register_sock(manager)
 
     manager
     |> Manager.online_contacts()
@@ -48,9 +49,17 @@ defmodule Wocky.User.Presence do
 
   @doc "Get the online status for a given user"
   @spec get(User.t(), User.t()) :: t()
+  def get(%User{id: id}, %User{id: id}),
+    do: raise(ArgumentError, message: "Can't get presence data on self")
+
   def get(user, requestor) do
     {:ok, manager} = Manager.acquire(requestor)
     Manager.get_presence(manager, user)
+  end
+
+  def set_status(user, status) do
+    {:ok, manager} = Manager.acquire(user)
+    Manager.set_status(manager, status)
   end
 
   @doc """

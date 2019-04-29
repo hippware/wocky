@@ -16,6 +16,14 @@ defmodule Wocky.User.Presence.Store do
     :ok
   end
 
+  @spec set_self_online(User.id(), pid()) :: :ok
+  def set_self_online(user_id, online_pid) do
+    {:ok, _} =
+      Redix.command(Redix, ["SET", key(user_id), value(self(), online_pid)])
+
+    :ok
+  end
+
   @doc """
   Remove the presence-tracking pid for a given user
   """
@@ -28,12 +36,12 @@ defmodule Wocky.User.Presence.Store do
   @doc """
   Get the active, presence-tracking pid for a given user
   """
-  @spec get(User.id()) :: pid() | nil
-  def get(user_id) do
-    transaction(user_id, fn -> do_get(user_id) end)
+  @spec get_manager(User.id()) :: pid() | nil
+  def get_manager(user_id) do
+    transaction(user_id, fn -> do_get_manager(user_id) end)
   end
 
-  def do_get(user_id) do
+  def do_get_manager(user_id) do
     case Redix.command(Redix, ["GET", key(user_id)]) do
       {:ok, nil} ->
         nil
@@ -41,7 +49,24 @@ defmodule Wocky.User.Presence.Store do
       {:ok, pid_bin} ->
         pid_bin
         |> :erlang.binary_to_term()
-        |> check_valid_presence(user_id)
+        |> check_valid_manager(user_id)
+    end
+  end
+
+  @spec get_online(User.id()) :: pid() | nil
+  def get_online(user_id) do
+    transaction(user_id, fn -> do_get_online(user_id) end)
+  end
+
+  def do_get_online(user_id) do
+    case Redix.command(Redix, ["GET", key(user_id)]) do
+      {:ok, nil} ->
+        nil
+
+      {:ok, pid_bin} ->
+        pid_bin
+        |> :erlang.binary_to_term()
+        |> check_valid_online()
     end
   end
 
@@ -49,8 +74,13 @@ defmodule Wocky.User.Presence.Store do
 
   defp value(pid), do: :erlang.term_to_binary(pid)
 
-  defp check_valid_presence(pid, user_id) when is_pid(pid) do
-    case :rpc.call(node(pid), Process, :alive?, [pid], 2000) do
+  defp value(pid, online_pid), do: :erlang.term_to_binary({pid, online_pid})
+
+  defp check_valid_manager({pid, _online_pid}, user_id),
+    do: check_valid_manager(pid, user_id)
+
+  defp check_valid_manager(pid, user_id) when is_pid(pid) do
+    case remote_alive?(pid) do
       true ->
         pid
 
@@ -65,10 +95,22 @@ defmodule Wocky.User.Presence.Store do
   # process_id could not be parsed back to a valid pid - maybe a node died or
   # there was a version upgrade or a bug. Whatever, we can't do anything with
   # it besides clean up.
-  defp check_valid_presence(_, user_id) do
+  defp check_valid_manager(_, user_id) do
     remove(user_id)
     nil
   end
+
+  defp check_valid_online({_pid, online_pid}) do
+    case remote_alive?(online_pid) do
+      true ->
+        online_pid
+
+      _ ->
+        nil
+    end
+  end
+
+  defp check_valid_online(_), do: nil
 
   def transaction(user_id, fun) do
     case Process.get(:in_transaction) do
@@ -89,4 +131,7 @@ defmodule Wocky.User.Presence.Store do
         result
     end
   end
+
+  defp remote_alive?(pid),
+    do: :rpc.call(node(pid), Process, :alive?, [pid], 2000)
 end
