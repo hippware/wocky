@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: kronky (PR #2455)
+
+
 # 2019.4.26+rfadca8f
 
 * Add healthcheck endpoint (PR #2444)
