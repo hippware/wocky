@@ -1,5 +1,8 @@
 use Mix.Config
 
+config :wocky_api,
+  allow_factory_insert: true
+
 # For development, we disable any cache and enable
 # debugging and code reloading.
 #

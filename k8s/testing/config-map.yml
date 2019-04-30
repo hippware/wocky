@@ -15,6 +15,7 @@ data:
   WOCKY_TROS_S3_BUCKET: wocky-kube-tros-testing
   WOCKY_PUSH_ENABLED: "false"
   WOCKY_ENABLE_BYPASS: "true"
+  WOCKY_ENABLE_FACTORY_INSERT: "true"
   WOCKY_CC_LOOKUP_METHOD: "hardwire"
   WOCKY_CC_HARDWIRE_VAL: "US"
   WOCKY_DB_HOST: db.dev.tinyrobot.com
