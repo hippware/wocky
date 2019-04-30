@@ -7,6 +7,7 @@ defmodule Wocky.User.Location.Handler do
 
   alias Wocky.{GeoUtils, Location, Repo, User}
   alias Wocky.User.{GeoFence, Location}
+  alias Wocky.User.Location.Supervisor
 
   require Logger
 
@@ -17,8 +18,8 @@ defmodule Wocky.User.Location.Handler do
     {:ok, pid} =
       Swarm.whereis_or_register_name(
         handler_name(user),
-        __MODULE__,
-        :start_link,
+        Supervisor,
+        :start_child,
         [user],
         5000
       )
