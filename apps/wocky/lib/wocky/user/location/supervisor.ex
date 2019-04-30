@@ -15,4 +15,8 @@ defmodule Wocky.User.Location.Supervisor do
 
     supervise(children, strategy: :simple_one_for_one)
   end
+
+  def start_child(user) do
+    {:ok, _pid} = Supervisor.start_child(__MODULE__, [user])
+  end
 end
