@@ -4,19 +4,29 @@ defmodule WockyAPI.Resolvers.Testing do
   alias Wocky.Repo.Factory
 
   def factory_insert(args, _context) do
-    true = Confex.get_env(:wocky_api, :allow_factory_insert, false)
-    type = String.to_existing_atom(args[:input][:type])
-    count = args[:input][:count] || 1
-    params = normalise_params(args[:input])
+    try do
+      true = Confex.get_env(:wocky_api, :allow_factory_insert, false)
+      {:ok, Enum.map(args[:input], &do_factory_insert/1)}
+    rescue
+      e -> {:error, inspect(e) <> " " <> inspect(__STACKTRACE__)}
+    end
+  end
 
-    ids =
-      count
-      |> Factory.insert_list(type, params)
-      |> Enum.map(&to_string(&1.id))
+  defp do_factory_insert(args) do
+    # The atom for the factory type may not exist at runtime, so we can't use
+    # `to_existing_atom` directly. We can, however, check safety by checking
+    # that the factory atom itself exists:
+    _type_check = String.to_existing_atom(args[:type] <> "_factory")
 
-    {:ok, ids}
-  rescue
-    e -> {:error, inspect(e) <> " " <> inspect(__STACKTRACE__)}
+    # ...and if it does we can safely create the type atom:
+    type = String.to_atom(args[:type])
+
+    count = args[:count] || 1
+    params = normalise_params(args)
+
+    count
+    |> Factory.insert_list(type, params)
+    |> Enum.map(&to_string(&1.id))
   end
 
   defp normalise_params(input) do

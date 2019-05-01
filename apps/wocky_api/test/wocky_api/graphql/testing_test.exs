@@ -3,6 +3,7 @@ defmodule WockyAPI.GraphQL.TestingTest do
 
   alias Wocky.{Repo, User}
   alias Wocky.Repo.Factory
+  alias Wocky.User.LocationShare
 
   setup do
     {:ok, user: Factory.insert(:user)}
@@ -26,10 +27,10 @@ defmodule WockyAPI.GraphQL.TestingTest do
 
       result =
         run_query(@query, user, %{
-          "input" => %{
+          "input" => [%{
             "type" => "user",
             "string_params" => [%{"key" => "phone_number", "value" => number}]
-          }
+          }]
         })
 
       refute has_errors(result)
@@ -40,11 +41,11 @@ defmodule WockyAPI.GraphQL.TestingTest do
     test "should insert multiple bots", %{user: user} do
       result =
         run_query(@query, user, %{
-          "input" => %{
+          "input" => [%{
             "type" => "bot",
             "count" => 10,
             "string_params" => [%{"key" => "user_id", "value" => user.id}]
-          }
+          }]
         })
 
       refute has_errors(result)
@@ -52,14 +53,40 @@ defmodule WockyAPI.GraphQL.TestingTest do
       assert length(User.get_owned_bots(user)) == 10
     end
 
+    test "should allow multiple types", %{user: user} do
+      number = Factory.phone_number()
+
+      result =
+        run_query(@query, user, %{
+          "input" => [
+            %{
+              "type" => "user",
+              "string_params" => [%{"key" => "phone_number", "value" => number}]
+            },
+            %{
+              "type" => "user_location_share",
+              "string_params" => [
+                %{"key" => "user_id", "value" => user.id},
+                %{"key" => "shared_with_id", "value" => user.id}
+              ]
+            }
+          ]
+        })
+
+      refute has_errors(result)
+
+      assert Repo.get_by(User, phone_number: number)
+      assert Repo.get_by(LocationShare, user_id: user.id)
+    end
+
     test "should fail to insert with improper params", %{user: user} do
       result =
         run_query(@query, user, %{
-          "input" => %{
+          "input" => [%{
             "type" => "bot",
             "count" => 10,
             "int_params" => [%{"key" => "user_id", "value" => user.id}]
-          }
+          }]
         })
 
       assert has_errors(result)

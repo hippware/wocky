@@ -46,11 +46,11 @@ defmodule WockyAPI.Schema.TestingTypes do
     field :value, non_null(:string)
   end
 
-  payload_object(:factory_insert_payload, list_of(:string))
+  payload_object(:factory_insert_payload, list_of(list_of(:string)))
 
   object :testing_mutations do
     field :factory_insert, type: :factory_insert_payload do
-      arg :input, non_null(:factory_insert_input)
+      arg :input, list_of(non_null(:factory_insert_input))
       resolve &Testing.factory_insert/2
       middleware &build_payload/2
     end
