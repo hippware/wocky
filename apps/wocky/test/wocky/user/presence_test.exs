@@ -18,23 +18,45 @@ defmodule Wocky.User.PresenceTest do
   describe "basic presence registration/deregistration" do
     test "presence registration", ctx do
       assert Presence.get(ctx.user, ctx.requestor).status == :offline
-      {_, _} = connect(ctx.user)
 
-      assert Presence.get(ctx.user, ctx.requestor).status == :online
+      {_, _} = connect(ctx.user)
+      assert Presence.get(ctx.user, ctx.requestor).status == :offline
+
+      Presence.set_status(ctx.user, :online)
+      assert_eventually(Presence.get(ctx.user, ctx.requestor).status == :online)
     end
 
     test "presence deregistration on connection close", ctx do
       {conn, []} = connect(ctx.user)
+      assert Presence.get(ctx.user, ctx.requestor).status == :offline
+
+      Presence.set_status(ctx.user, :online)
+      assert_eventually(Presence.get(ctx.user, ctx.requestor).status == :online)
       close_conn(conn)
 
       assert_eventually(
         Presence.get(ctx.user, ctx.requestor).status == :offline
       )
     end
+
+    test "can't get presence on self", ctx do
+      assert_raise(ArgumentError, fn -> Presence.get(ctx.user, ctx.user) end)
+    end
   end
 
-  describe "test publishing callback" do
-    setup do
+  describe "initial manager response" do
+    test "initial return value to `connect` should list online friends", ctx do
+      uid = ctx.user.id
+
+      assert {_, []} = connect(ctx.user)
+      Presence.set_status(ctx.user, :online)
+
+      assert {_, [%User{id: ^uid}]} = connect(ctx.requestor)
+    end
+  end
+
+  describe "publishing callback" do
+    setup ctx do
       self = self()
 
       original_callbacks =
@@ -42,19 +64,74 @@ defmodule Wocky.User.PresenceTest do
           send(self, {:presence, u, c_id})
         end)
 
+      uid = ctx.user.id
+
+      {_, []} = connect(ctx.user)
+      Presence.set_status(ctx.user, :online)
+
+      {conn_pid, [%User{id: ^uid}]} = connect(ctx.requestor)
+      Presence.set_status(ctx.requestor, :online)
+
       on_exit(fn ->
         Presence.reset_callbacks(original_callbacks)
       end)
+
+      {:ok, conn_pid: conn_pid}
     end
 
-    test "should publish an online state when a user connects", ctx do
+    test "should publish an online state when a user sets themselves online",
+         ctx do
       rid = ctx.requestor.id
       uid = ctx.user.id
 
-      assert {_, []} = connect(ctx.user)
-      assert {_, [%User{id: ^uid}]} = connect(ctx.requestor)
+      assert_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
+                      ^uid}
+    end
+
+    test "should not publish again when user sets their state online again",
+         ctx do
+      rid = ctx.requestor.id
+      uid = ctx.user.id
 
       assert_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
+                      ^uid}
+
+      Presence.set_status(ctx.requestor, :online)
+
+      refute_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
+                      ^uid}
+    end
+
+    test "should publish an offline state when a user sets themselves offline",
+         ctx do
+      rid = ctx.requestor.id
+      uid = ctx.user.id
+
+      assert_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
+                      ^uid}
+
+      Presence.set_status(ctx.requestor, :offline)
+
+      assert_receive {:presence, %User{id: ^rid, presence: %{status: :offline}},
+                      ^uid}
+    end
+
+    test "should not publish again if the user sets themselves offline twice",
+         ctx do
+      rid = ctx.requestor.id
+      uid = ctx.user.id
+
+      assert_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
+                      ^uid}
+
+      Presence.set_status(ctx.requestor, :offline)
+
+      assert_receive {:presence, %User{id: ^rid, presence: %{status: :offline}},
+                      ^uid}
+
+      Presence.set_status(ctx.requestor, :offline)
+
+      refute_receive {:presence, %User{id: ^rid, presence: %{status: :offline}},
                       ^uid}
     end
 
@@ -62,13 +139,10 @@ defmodule Wocky.User.PresenceTest do
       rid = ctx.requestor.id
       uid = ctx.user.id
 
-      assert {_, []} = connect(ctx.user)
-      assert {conn_pid, [%User{id: ^uid}]} = connect(ctx.requestor)
-
       assert_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
                       ^uid}
 
-      close_conn(conn_pid)
+      close_conn(ctx.conn_pid)
 
       assert_receive {:presence, %User{id: ^rid, presence: %{status: :offline}},
                       ^uid}

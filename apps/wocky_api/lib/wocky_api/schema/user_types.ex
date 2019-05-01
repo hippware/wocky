@@ -13,6 +13,7 @@ defmodule WockyAPI.Schema.UserTypes do
     Bot,
     Media,
     Message,
+    Presence,
     User
   }
 
@@ -90,11 +91,11 @@ defmodule WockyAPI.Schema.UserTypes do
     field :presence_status,
           :presence_status,
           deprecate: "Please use the single 'presence' field" do
-      resolve &User.get_presence_status/3
+      resolve &Presence.get_presence_status/3
     end
 
     @desc "The user's presence data"
-    field :presence, :presence, resolve: &User.get_presence/3
+    field :presence, :presence, resolve: &Presence.get_presence/3
 
     resolve_type fn
       %{id: id}, %{context: %{current_user: %{id: id}}} -> :current_user
@@ -802,30 +803,6 @@ defmodule WockyAPI.Schema.UserTypes do
     end
   end
 
-  @desc "Presence data for a user"
-  object :presence do
-    @desc "The user's current status"
-    field :status, :presence_status
-
-    @desc """
-    The time at which this status was generated. Because of the distributed
-    nature of the system, it is possible, though unlikely, that presence updates
-    may arrive at the client out of order. This field should be used to identify
-    and discard stale updates.
-    """
-    field :updated_at, :datetime
-  end
-
-  enum :presence_status do
-    @desc "Online"
-    value :online
-
-    @desc "Offline"
-    value :offline
-
-    # Maybe other items here such as 'DND'
-  end
-
   @desc "Data that is sent when a user's shared location changes"
   object :user_location_update do
     @desc "The user whose location has changed"
@@ -841,21 +818,6 @@ defmodule WockyAPI.Schema.UserTypes do
     """
     field :contacts, non_null(:contact) do
       user_subscription_config(&User.contacts_subscription_topic/1)
-    end
-
-    @desc """
-    Recieve an update when a friend's presence status changes
-    """
-    field :presence, non_null(:user) do
-      config fn
-        _, %{context: %{current_user: user}} ->
-          {:ok,
-           topic: User.presence_subscription_topic(user.id),
-           catchup: fn -> User.presence_catchup(user) end}
-
-        _, _ ->
-          {:error, "This operation requires an authenticated user"}
-      end
     end
 
     @desc """

@@ -18,6 +18,7 @@ defmodule WockyAPI.Schema do
   import_types WockyAPI.Schema.MediaTypes
   import_types WockyAPI.Schema.MessageTypes
   import_types WockyAPI.Schema.NotificationTypes
+  import_types WockyAPI.Schema.PresenceTypes
   import_types WockyAPI.Schema.TestingTypes
   import_types WockyAPI.Schema.UserTypes
   import_types WockyAPI.Types.AInt
@@ -42,6 +43,7 @@ defmodule WockyAPI.Schema do
     import_fields :media_mutations
     import_fields :message_mutations
     import_fields :notification_mutations
+    import_fields :presence_mutations
     import_fields :testing_mutations
     import_fields :user_invite_code_mutations
     import_fields :user_mutations
@@ -51,6 +53,7 @@ defmodule WockyAPI.Schema do
     import_fields :bot_subscriptions
     import_fields :message_subscriptions
     import_fields :notification_subscriptions
+    import_fields :presence_subscriptions
     import_fields :user_subscriptions
   end
 

@@ -1,6 +1,6 @@
-defmodule Wocky.User.Location.Supervisor do
+defmodule Wocky.User.Presence.Supervisor do
   @moduledoc """
-  This is the supervisor for the location update worker processes
+  This is the supervisor for the presence manager processes
   """
   use Supervisor
 
@@ -10,7 +10,7 @@ defmodule Wocky.User.Location.Supervisor do
 
   def init(_) do
     children = [
-      worker(Wocky.User.Location.Handler, [], restart: :temporary)
+      worker(Wocky.User.Presence.Manager, [], restart: :temporary)
     ]
 
     supervise(children, strategy: :simple_one_for_one)
