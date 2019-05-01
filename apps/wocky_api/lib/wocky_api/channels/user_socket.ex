@@ -1,4 +1,4 @@
-defmodule WockyAPI.UserSocket do
+defmodule WockyAPI.Channels.UserSocket do
   use WockyAPI.LoggingSocket
 
   use Absinthe.Phoenix.Socket,

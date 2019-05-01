@@ -1,4 +1,4 @@
-defmodule WockyAPI.ErrorView do
+defmodule WockyAPI.Views.ErrorView do
   use WockyAPI, :view
 
   # If you want to customize a particular status code

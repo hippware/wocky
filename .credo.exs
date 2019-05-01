@@ -152,11 +152,21 @@
         {Credo.Check.Refactor.ModuleDependencies, false},
         {Credo.Check.Refactor.VariableRebinding, [allow_bang: true]},
         {Credo.Check.Warning.MapGetUnsafePass, []},
-        {Credo.Check.Warning.UnsafeToAtom, []}
+        {Credo.Check.Warning.UnsafeToAtom, []},
 
         #
         # Custom checks can be created using `mix credo.gen.check`.
         #
+        {CredoFilenameConsistency.Check.Consistency.FilenameConsistency, [
+          excluded_paths: [
+            "apps/wocky/mix.exs",
+            "apps/wocky/priv",
+            "apps/wocky/test/support",
+            "apps/wocky_api/mix.exs",
+            "apps/wocky_api/test/support",
+          ],
+          acronyms: [{"GraphQL", "graphql"}, {"AInt", "aint"}]
+        ]}
       ]
     }
   ]

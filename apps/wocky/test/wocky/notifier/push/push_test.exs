@@ -1,4 +1,4 @@
-defmodule Wocky.Notifier.PushTest do
+defmodule Wocky.Notifier.Push.PushTest do
   use Wocky.DataCase
 
   import ExUnit.CaptureLog

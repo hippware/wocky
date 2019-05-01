@@ -1,10 +1,10 @@
-defmodule WockyAPI.LocationController do
+defmodule WockyAPI.Controllers.LocationController do
   use WockyAPI, :controller
 
   alias Wocky.User
   alias Wocky.User.Location
 
-  action_fallback WockyAPI.FallbackController
+  action_fallback WockyAPI.Controllers.FallbackController
 
   def create(conn, params) do
     user = conn.assigns.current_user

@@ -17,7 +17,7 @@ defmodule WockyAPI.Router do
     plug :ensure_owner
   end
 
-  scope "/api/v1", WockyAPI do
+  scope "/api/v1", WockyAPI.Controllers do
     pipe_through :rest_api
 
     resources "/users/:user_id/locations", LocationController, only: [:create]
@@ -45,7 +45,7 @@ defmodule WockyAPI.Router do
   if Mix.env() == :dev do
     forward "/graphiql", Absinthe.Plug.GraphiQL,
       schema: WockyAPI.Schema,
-      socket: WockyAPI.UserSocket,
+      socket: WockyAPI.Channels.UserSocket,
       interface: :playground
   end
 end

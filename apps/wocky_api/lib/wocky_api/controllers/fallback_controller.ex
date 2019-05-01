@@ -1,4 +1,4 @@
-defmodule WockyAPI.FallbackController do
+defmodule WockyAPI.Controllers.FallbackController do
   @moduledoc """
   Translates controller action results into valid `Plug.Conn` responses.
 
@@ -6,17 +6,19 @@ defmodule WockyAPI.FallbackController do
   """
   use WockyAPI, :controller
 
+  alias WockyAPI.Views.ErrorView
+
   def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)
-    |> put_view(WockyAPI.ErrorView)
+    |> put_view(ErrorView)
     |> render(:"404")
   end
 
   def call(conn, {:error, :missing_keys}) do
     conn
     |> put_status(:bad_request)
-    |> put_view(WockyAPI.ErrorView)
+    |> put_view(ErrorView)
     |> render(:"400", %{message: "JSON payload missing required keys."})
   end
 end
