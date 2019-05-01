@@ -7,6 +7,7 @@ defmodule Wocky.Bot.InvitationTest do
   alias Pigeon.APNS.Notification
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
+  alias Wocky.Notifier.InBand.Notification, as: IBNotification
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
@@ -44,7 +45,7 @@ defmodule Wocky.Bot.InvitationTest do
       assert message ==
                "@#{ctx.user.handle} invited you to follow #{ctx.bot.title}"
 
-      clear_expected_notifications(1)
+      assert clear_expected_notifications(1)
     end
 
     test "refuse invitation to non-owned bot", ctx do
@@ -70,6 +71,9 @@ defmodule Wocky.Bot.InvitationTest do
 
       assert DateTime.compare(invitation.updated_at, invitation2.updated_at) ==
                :lt
+
+      assert_eventually(in_band_notifications(ctx.invitee) == 1)
+      assert in_band_notifications(ctx.user) == 0
 
       assert clear_expected_notifications(1)
     end
@@ -242,4 +246,7 @@ defmodule Wocky.Bot.InvitationTest do
 
     {:ok, invitation: invitation}
   end
+
+  defp in_band_notifications(user),
+    do: user |> IBNotification.user_query(nil, nil) |> Repo.all() |> length()
 end
