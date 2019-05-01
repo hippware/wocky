@@ -4,12 +4,10 @@ defmodule WockyAPI.Resolvers.Testing do
   alias Wocky.Repo.Factory
 
   def factory_insert(args, _context) do
-    try do
-      true = Confex.get_env(:wocky_api, :allow_factory_insert, false)
-      {:ok, Enum.map(args[:input], &do_factory_insert/1)}
-    rescue
-      e -> {:error, inspect(e) <> " " <> inspect(__STACKTRACE__)}
-    end
+    true = Confex.get_env(:wocky_api, :allow_factory_insert, false)
+    {:ok, Enum.map(args[:input], &do_factory_insert/1)}
+  rescue
+    e -> {:error, inspect(e) <> " " <> inspect(__STACKTRACE__)}
   end
 
   defp do_factory_insert(args) do
@@ -19,6 +17,7 @@ defmodule WockyAPI.Resolvers.Testing do
     _type_check = String.to_existing_atom(args[:type] <> "_factory")
 
     # ...and if it does we can safely create the type atom:
+    # credo:disable-for-next-line Credo.Check.Warning.UnsafeToAtom
     type = String.to_atom(args[:type])
 
     count = args[:count] || 1

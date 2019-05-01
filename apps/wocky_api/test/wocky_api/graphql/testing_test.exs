@@ -27,10 +27,12 @@ defmodule WockyAPI.GraphQL.TestingTest do
 
       result =
         run_query(@query, user, %{
-          "input" => [%{
-            "type" => "user",
-            "string_params" => [%{"key" => "phone_number", "value" => number}]
-          }]
+          "input" => [
+            %{
+              "type" => "user",
+              "string_params" => [%{"key" => "phone_number", "value" => number}]
+            }
+          ]
         })
 
       refute has_errors(result)
@@ -41,11 +43,13 @@ defmodule WockyAPI.GraphQL.TestingTest do
     test "should insert multiple bots", %{user: user} do
       result =
         run_query(@query, user, %{
-          "input" => [%{
-            "type" => "bot",
-            "count" => 10,
-            "string_params" => [%{"key" => "user_id", "value" => user.id}]
-          }]
+          "input" => [
+            %{
+              "type" => "bot",
+              "count" => 10,
+              "string_params" => [%{"key" => "user_id", "value" => user.id}]
+            }
+          ]
         })
 
       refute has_errors(result)
@@ -82,11 +86,13 @@ defmodule WockyAPI.GraphQL.TestingTest do
     test "should fail to insert with improper params", %{user: user} do
       result =
         run_query(@query, user, %{
-          "input" => [%{
-            "type" => "bot",
-            "count" => 10,
-            "int_params" => [%{"key" => "user_id", "value" => user.id}]
-          }]
+          "input" => [
+            %{
+              "type" => "bot",
+              "count" => 10,
+              "int_params" => [%{"key" => "user_id", "value" => user.id}]
+            }
+          ]
         })
 
       assert has_errors(result)
