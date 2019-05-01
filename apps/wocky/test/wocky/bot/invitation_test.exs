@@ -72,7 +72,7 @@ defmodule Wocky.Bot.InvitationTest do
       assert DateTime.compare(invitation.updated_at, invitation2.updated_at) ==
                :lt
 
-      assert_eventually in_band_notifications(ctx.invitee) == 1
+      assert_eventually(in_band_notifications(ctx.invitee) == 1)
       assert in_band_notifications(ctx.user) == 0
 
       assert clear_expected_notifications(1)
@@ -247,6 +247,6 @@ defmodule Wocky.Bot.InvitationTest do
     {:ok, invitation: invitation}
   end
 
-  defp in_band_notifications(user), do:
-    user |> IBNotification.user_query(nil, nil) |> Repo.all() |> length()
+  defp in_band_notifications(user),
+    do: user |> IBNotification.user_query(nil, nil) |> Repo.all() |> length()
 end
