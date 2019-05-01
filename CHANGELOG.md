@@ -6,6 +6,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: kronky (PR #2455)
+* Make location handlers run under supervisor (PR #2456)
+* Add factoryInsert graphQL operation (PR #2454)
 
 
 # 2019.4.26+rfadca8f
