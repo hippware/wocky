@@ -25,7 +25,7 @@ defmodule WockyAPI.Resolvers.Testing do
 
     count
     |> Factory.insert_list(type, params)
-    |> Enum.map(&to_string(&1.id))
+    |> Enum.map(&to_string(Map.get(&1, :id)))
   end
 
   defp normalise_params(input) do
