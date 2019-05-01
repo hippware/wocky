@@ -7,7 +7,7 @@ defmodule Wocky.Bot.Invitation do
 
   alias Ecto.Changeset
   alias Wocky.{Bot, Repo, Roster, User}
-  alias __MODULE__, as: Invitation
+  alias __MODULE__
 
   @foreign_key_type :binary_id
   schema "bot_invitations" do
@@ -38,7 +38,7 @@ defmodule Wocky.Bot.Invitation do
       })
       |> Repo.insert(
         returning: true,
-        on_conflict: [set: [updated_at: DateTime.utc_now(), accepted: false]],
+        on_conflict: [set: [updated_at: DateTime.utc_now()]],
         conflict_target: [:user_id, :bot_id, :invitee_id]
       )
     else
