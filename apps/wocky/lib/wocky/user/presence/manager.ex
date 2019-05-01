@@ -133,11 +133,6 @@ defmodule Wocky.User.Presence.Manager do
     {:reply, Presence.make_presence(status), s}
   end
 
-  def handle_call({:register, pid}, _from, s) do
-    ref = Process.monitor(pid)
-    {:reply, :ok, %{s | mon_refs: [ref | s.mon_refs]}}
-  end
-
   def handle_call(
         {:set_status, :online},
         _from,

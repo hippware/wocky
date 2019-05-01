@@ -35,8 +35,7 @@ defmodule Wocky.User.PresenceTest do
       close_conn(conn)
 
       assert_eventually(
-        Presence.get(ctx.user, ctx.requestor).status == :offline,
-        5000
+        Presence.get(ctx.user, ctx.requestor).status == :offline
       )
     end
 
@@ -89,6 +88,20 @@ defmodule Wocky.User.PresenceTest do
                       ^uid}
     end
 
+    test "should not publish again when user sets their state online again",
+         ctx do
+      rid = ctx.requestor.id
+      uid = ctx.user.id
+
+      assert_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
+                      ^uid}
+
+      Presence.set_status(ctx.requestor, :online)
+
+      refute_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
+                      ^uid}
+    end
+
     test "should publish an offline state when a user sets themselves offline",
          ctx do
       rid = ctx.requestor.id
@@ -100,6 +113,25 @@ defmodule Wocky.User.PresenceTest do
       Presence.set_status(ctx.requestor, :offline)
 
       assert_receive {:presence, %User{id: ^rid, presence: %{status: :offline}},
+                      ^uid}
+    end
+
+    test "should not publish again if the user sets themselves offline twice",
+         ctx do
+      rid = ctx.requestor.id
+      uid = ctx.user.id
+
+      assert_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
+                      ^uid}
+
+      Presence.set_status(ctx.requestor, :offline)
+
+      assert_receive {:presence, %User{id: ^rid, presence: %{status: :offline}},
+                      ^uid}
+
+      Presence.set_status(ctx.requestor, :offline)
+
+      refute_receive {:presence, %User{id: ^rid, presence: %{status: :offline}},
                       ^uid}
     end
 
