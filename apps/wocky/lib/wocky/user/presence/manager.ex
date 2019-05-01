@@ -3,6 +3,8 @@ defmodule Wocky.User.Presence.Manager do
   Per-user manager process for contact presence reporting.
   """
 
+  @max_register_retries 5
+
   defmodule State do
     @moduledoc false
 
@@ -51,9 +53,24 @@ defmodule Wocky.User.Presence.Manager do
     {:ok, %State{user: user, contact_refs: contact_refs}}
   end
 
-  @spec register_sock(pid()) :: :ok
-  def register_sock(manager) do
-    GenServer.call(manager, {:register_sock, self()})
+  @spec register_sock(User.t()) :: pid()
+  def register_sock(user), do: do_register_sock(user, 0)
+
+  # Work around a race condition here: if the manager is acquired, then dies
+  # before handling the :register_sock, we'll get an :exit thrown. In this case
+  # retrying should create us a new, non-dead manager which should work fine.
+  defp do_register_sock(_user, @max_register_retries),
+    do: exit(:presence_manger_not_acquired)
+
+  defp do_register_sock(user, retries) do
+    {:ok, manager} = acquire(user)
+
+    try do
+      GenServer.call(manager, {:register_sock, self()})
+      manager
+    catch
+      :exit, _ -> do_register_sock(user, retries + 1)
+    end
   end
 
   @spec set_status(pid(), Presence.status()) :: :ok

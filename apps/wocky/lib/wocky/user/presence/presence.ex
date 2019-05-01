@@ -38,10 +38,8 @@ defmodule Wocky.User.Presence do
   """
   @spec connect(User.t()) :: [User.t()]
   def connect(user) do
-    {:ok, manager} = Manager.acquire(user)
-    Manager.register_sock(manager)
-
-    manager
+    user
+    |> Manager.register_sock()
     |> Manager.online_contacts()
     |> Enum.map(&User.get_user/1)
     |> Enum.map(&add_presence(&1, :online))
