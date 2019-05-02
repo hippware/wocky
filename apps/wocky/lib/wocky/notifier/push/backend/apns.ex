@@ -39,6 +39,8 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
 
   def handle_error(:bad_device_token), do: :invalidate_token
 
+  def handle_error(:unregistered), do: :invalidate_token
+
   def handle_error(_), do: :retry
 
   def error_msg(resp), do: Error.msg(resp)
