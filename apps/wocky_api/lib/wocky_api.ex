@@ -35,7 +35,7 @@ defmodule WockyAPI do
       import Phoenix.Controller, only: [get_flash: 2, view_module: 1]
 
       import WockyAPI.Router.Helpers
-      import WockyAPI.ErrorHelpers
+      import WockyAPI.Views.ErrorHelpers
     end
   end
 

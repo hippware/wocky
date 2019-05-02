@@ -1,4 +1,4 @@
-defmodule Wocky.RosterTest do
+defmodule Wocky.Roster.RosterTest do
   use Wocky.WatcherCase
 
   alias Faker.Name

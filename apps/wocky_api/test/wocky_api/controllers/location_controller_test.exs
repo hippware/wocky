@@ -1,4 +1,4 @@
-defmodule WockyAPI.LocationControllerTest do
+defmodule WockyAPI.Controllers.LocationControllerTest do
   use WockyAPI.ConnCase
 
   alias Faker.Address

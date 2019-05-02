@@ -1,4 +1,4 @@
-defmodule Wocky.TROSTest do
+defmodule Wocky.TROS.TROSTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Repo

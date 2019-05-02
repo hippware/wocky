@@ -1,4 +1,4 @@
-defmodule Wocky.BotTest do
+defmodule Wocky.Bot.BotTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.{Bot, GeoUtils, Repo, Roster, User}

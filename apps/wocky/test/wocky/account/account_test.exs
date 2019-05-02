@@ -1,4 +1,4 @@
-defmodule Wocky.AccountTest do
+defmodule Wocky.Account.AccountTest do
   use Wocky.DataCase
 
   alias Wocky.Account
