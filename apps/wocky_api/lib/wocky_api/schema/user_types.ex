@@ -323,6 +323,9 @@ defmodule WockyAPI.Schema.UserTypes do
 
   @desc "A user location update entry"
   object :location do
+    @desc "Unique ID of the location report"
+    field :id, :uuid
+
     @desc "Latitude in degrees"
     field :lat, non_null(:float)
 
@@ -332,17 +335,17 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "Reported accuracy in meters"
     field :accuracy, non_null(:float)
 
+    @desc "The reported activity for this location update"
+    field :activity, :string
+
+    @desc "The confidence value for the reported activity"
+    field :activity_confidence, :integer
+
     @desc "Timestamp when the report was captured on the device"
     field :captured_at, :datetime
 
-    @desc "Unique ID of the location report"
-    field :id, :uuid
-
     @desc "Time of location report"
     field :created_at, non_null(:datetime)
-
-    @desc "The reported activity for this location update"
-    field :activity, :string
 
     @desc "List of events triggered by this location update"
     connection field :events, node_type: :location_events do
