@@ -10,7 +10,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       speed: -1,
       longitude: -85.7935821931526,
       latitude: 35.17448497921099,
-      accuracy: 3000,
+      accuracy: 30,
       heading: -1,
       altitude: 271.4361267089844,
       altitude_accuracy: 10
