@@ -428,11 +428,12 @@ defmodule WockyAPI.GraphQL.UserTest do
           totalCount
           edges {
             node {
+              id
               lat
               lon
               accuracy
-              id
               activity
+              activityConfidence
             }
           }
         }
@@ -452,11 +453,12 @@ defmodule WockyAPI.GraphQL.UserTest do
                    "edges" => [
                      %{
                        "node" => %{
+                         "id" => loc.id,
                          "lon" => loc.lon,
                          "lat" => loc.lat,
                          "accuracy" => loc.accuracy,
-                         "id" => loc.id,
-                         "activity" => loc.activity
+                         "activity" => loc.activity,
+                         "activityConfidence" => loc.activity_confidence
                        }
                      }
                    ]
