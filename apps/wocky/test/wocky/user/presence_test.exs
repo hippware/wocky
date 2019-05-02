@@ -39,8 +39,8 @@ defmodule Wocky.User.PresenceTest do
       )
     end
 
-    test "can't get presence on self", ctx do
-      assert_raise(ArgumentError, fn -> Presence.get(ctx.user, ctx.user) end)
+    test "can get presence on self", ctx do
+      assert Presence.get(ctx.user, ctx.user).status == :offline
     end
   end
 
