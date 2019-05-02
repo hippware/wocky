@@ -126,12 +126,16 @@ defmodule Wocky.User.Location.Handler do
   defp maybe_save_current_location(false, _user, _location), do: {:ok, :skipped}
 
   defp maybe_save_current_location(true, user, location) do
-    user
-    |> Ecto.build_assoc(:current_location)
-    |> Location.changeset(Map.from_struct(location))
-    |> Repo.insert(
-      on_conflict: {:replace, [:updated_at | Location.fields()]},
-      conflict_target: :user_id
-    )
+    if GeoFence.should_process?(location, GeoFence.get_config()) do
+      user
+      |> Ecto.build_assoc(:current_location)
+      |> Location.changeset(Map.from_struct(location))
+      |> Repo.insert(
+        on_conflict: {:replace, [:updated_at | Location.fields()]},
+        conflict_target: :user_id
+      )
+    else
+      {:ok, :skipped}
+    end
   end
 end
