@@ -5,6 +5,18 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: phoenix (PR #2462)
+* Multi factory insert (PR #2461)
+* Multi bot invite (PR #2459)
+  * Fixes: Instant BotInvitationResponse with accepted=false (#2457)
+* Support available/unavailable online presence (#2440, PR #2458)
+* Remove self-presence restriction (PR #2465)
+  * Fixes: ArgumentError: Can't get presence data on self (#2463)
+* Add Credo file/module name consistency check (PR #2464)
+
+
+# 2019.4.30+re26e052
+
 * Update: kronky (PR #2455)
 * Make location handlers run under supervisor (PR #2456)
 * Add factoryInsert graphQL operation (PR #2454)
