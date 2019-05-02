@@ -63,13 +63,17 @@ defmodule Wocky.User.GeoFence do
     loc
   end
 
-  defp get_config(opts \\ []) do
+  @doc false
+  @spec get_config(Keyword.t()) :: map()
+  def get_config(opts \\ []) do
     Confex.fetch_env!(:wocky, __MODULE__)
     |> Keyword.merge(opts)
     |> Enum.into(%{})
   end
 
-  defp should_process?(%Location{accuracy: accuracy}, config),
+  @doc false
+  @spec should_process?(Location.t(), map()) :: boolean()
+  def should_process?(%Location{accuracy: accuracy}, config),
     do: accuracy <= config.max_accuracy_threshold
 
   defp maybe_do_async(fun, %{async_processing: true}) do
