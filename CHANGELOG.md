@@ -5,7 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: phoenix (PR #2462)
+* Update: phoenix (PR #2462), excoveralls (PR #2468)
+  * bcrypt_elixir (PR #2469)
 * Multi factory insert (PR #2461)
 * Multi bot invite (PR #2459)
   * Fixes: Instant BotInvitationResponse with accepted=false (#2457)
@@ -13,6 +14,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Remove self-presence restriction (PR #2465)
   * Fixes: ArgumentError: Can't get presence data on self (#2463)
 * Add Credo file/module name consistency check (PR #2464)
+* Expose `activity_confidence` field in Live Location points (#2467)
+* Filter out Live Location points with high accuracy uncertainty (#2466)
+* Invalidate tokens when APNs returns 'unregistered' (#1960, PR #2472)
 
 
 # 2019.4.30+re26e052
