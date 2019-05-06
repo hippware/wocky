@@ -54,6 +54,7 @@ defmodule WockyAPI.Mixfile do
        github: "hippware/absinthe_phoenix", branch: "working"},
       {:absinthe_relay, github: "hippware/absinthe_relay", branch: "working"},
       {:absinthe_metrics, "~> 1.0.0"},
+      {:absinthe_plug, "~> 1.5.0-alpha.0", override: true},
       {:apollo_tracing, "~> 0.4.0"},
       {:cors_plug, "~> 2.0"},
       {:ecto_sql, "~> 3.0"},
