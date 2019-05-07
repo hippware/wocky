@@ -6,7 +6,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: phoenix (PR #2462), excoveralls (PR #2468)
-  * bcrypt_elixir (PR #2469)
+  * bcrypt_elixir (PR #2469), credo_filename_consistency (PR #2476)
+  * ex_aws (PR #2477), absinthe_phoenix (PR #2473)
 * Multi factory insert (PR #2461)
 * Multi bot invite (PR #2459)
   * Fixes: Instant BotInvitationResponse with accepted=false (#2457)
@@ -17,6 +18,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Expose `activity_confidence` field in Live Location points (#2467)
 * Filter out Live Location points with high accuracy uncertainty (#2466)
 * Invalidate tokens when APNs returns 'unregistered' (#1960, PR #2472)
+* Load testing changes (PR #2479)
 
 
 # 2019.4.30+re26e052
