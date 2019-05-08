@@ -55,7 +55,7 @@
   "exml": {:git, "https://github.com/esl/exml.git", "80a4ecf584fb1908b8671a1e53193106fa30d4f3", [tag: "3.0.3"]},
   "exometer_core": {:git, "https://github.com/hippware/exometer_core.git", "263adb7a42acc04109e30cbf2134e9cddded7328", [branch: "working"]},
   "exometer_prometheus": {:git, "https://github.com/GalaxyGorilla/exometer_prometheus.git", "5c37df514fa04f8fed4359ff5e5561fe5a0fb97d", [branch: "master"]},
-  "exrun": {:hex, :exrun, "0.1.7", "1beae0caf68dfd07dea15602edf2c9af6ffd89b25a26edf43a57b325c94ee8b0", [:mix], [], "hexpm"},
+  "exrun": {:hex, :exrun, "0.1.8", "61b0caae54783d9494c0125e197eee00ba30afab991cd97408fe012efe06ae4e", [:mix], [], "hexpm"},
   "faker": {:hex, :faker, "0.12.0", "796cbac868c86c2df6f273ea4cdf2e271860863820e479e04a374b7ee6c376b6", [:mix], [], "hexpm"},
   "fastglobal": {:hex, :fastglobal, "1.0.0", "f3133a0cda8e9408aac7281ec579c4b4a8386ce0e99ca55f746b9f58192f455b", [:mix], [], "hexpm"},
   "firebase_admin_ex": {:git, "https://github.com/scripbox/firebase-admin-ex.git", "35b601e43363efd81579dd425179865fa6004148", [branch: "master"]},
