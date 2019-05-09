@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: postgrex (PR #2480), exrun (PR #2481)
+
+
+# 2019.5.7+r060bbe2
+
 * Update: phoenix (PR #2462), excoveralls (PR #2468)
   * bcrypt_elixir (PR #2469), credo_filename_consistency (PR #2476)
   * ex_aws (PR #2477), absinthe_phoenix (PR #2473)
