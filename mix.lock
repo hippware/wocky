@@ -63,7 +63,7 @@
   "fs": {:hex, :fs, "0.9.2", "ed17036c26c3f70ac49781ed9220a50c36775c6ca2cf8182d123b6566e49ec59", [:rebar], [], "hexpm"},
   "gen_stage": {:hex, :gen_stage, "0.14.1", "9d46723fda072d4f4bb31a102560013f7960f5d80ea44dcb96fd6304ed61e7a4", [:mix], [], "hexpm"},
   "gen_state_machine": {:hex, :gen_state_machine, "2.0.5", "9ac15ec6e66acac994cc442dcc2c6f9796cf380ec4b08267223014be1c728a95", [:mix], [], "hexpm"},
-  "geo": {:hex, :geo, "3.1.0", "727e005262430d037e870ff364e65d80ca5ca21d5ac8eddd57a1ada72c3f83b0", [:mix], [], "hexpm"},
+  "geo": {:git, "https://github.com/bryanjos/geo.git", "6757cda4f58aed9a56f1e0b06bae9dec70d4cee7", [branch: "master"]},
   "geo_postgis": {:hex, :geo_postgis, "3.1.0", "d06c8fa5fd140a52a5c9dab4ad6623a696dd7d99dd791bb361d3f94942442ff9", [:mix], [{:geo, "~> 3.1", [hex: :geo, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: true]}, {:poison, "~> 2.2 or ~> 3.0 or ~> 4.0", [hex: :poison, repo: "hexpm", optional: true]}, {:postgrex, "~> 0.14", [hex: :postgrex, repo: "hexpm", optional: false]}], "hexpm"},
   "geocalc": {:hex, :geocalc, "0.7.2", "71ced3516f50bdf8e0a3fce6d3169972a9127070d2117d7080bf17e3ae3450d8", [:mix], [], "hexpm"},
   "gettext": {:hex, :gettext, "0.16.1", "e2130b25eebcbe02bb343b119a07ae2c7e28bd4b146c4a154da2ffb2b3507af2", [:mix], [], "hexpm"},
