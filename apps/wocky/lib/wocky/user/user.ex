@@ -425,6 +425,7 @@ defmodule Wocky.User do
       on: b.id == s.bot_id and s.user_id == ^user.id
     )
     |> where([b, s], not is_nil(s.user_id))
+    |> select([:id, :title, :location])
     |> Repo.all()
   end
 
