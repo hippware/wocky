@@ -28,39 +28,64 @@ defmodule Wocky.User.GeoFence do
     do: Enum.member?([:enter, :transition_in], last_event_type)
 
   @doc false
-  @spec check_for_bot_event(Bot.t(), Location.t(), User.t()) :: Location.t()
   def check_for_bot_event(bot, loc, user) do
-    config = get_config(debounce: false)
+    events = BotEvent.get_last_events(user.id)
 
-    if should_process?(loc, config) do
-      event = BotEvent.get_last_event(user.id, bot.id)
-
-      {bot, event}
-      |> check_for_event(user, loc, config, [])
-      |> Enum.each(&process_bot_event(&1, config))
-    end
-
-    loc
+    check_for_bot_event(bot, loc, user, events)
   end
 
   @doc false
-  @spec check_for_bot_events(Location.t(), User.t()) :: Location.t()
+  @spec check_for_bot_event(Bot.t(), Location.t(), User.t(), map())
+        :: Location.t()
+  def check_for_bot_event(bot, loc, user, events) do
+    config = get_config(debounce: false)
+
+    if should_process?(loc, config) do
+      new_events =
+        bot
+        |> check_for_event(user, loc, events, config, [])
+        |> process_bot_events(user, config)
+
+      {:ok, loc, merge_new_events(events, new_events)}
+    end
+
+    {:ok, loc, nil}
+  end
+
+  @doc false
   def check_for_bot_events(%Location{} = loc, user) do
+    subs = User.get_subscriptions(user)
+    events = BotEvent.get_last_events(user.id)
+
+    check_for_bot_events(loc, user, subs, events)
+  end
+
+  @doc false
+  @spec check_for_bot_events(Location.t(), User.t(), [Bot.t()], map())
+        :: Location.t()
+  def check_for_bot_events(%Location{} = loc, user, subs, events) do
     config = get_config()
 
     if should_process?(loc, config) do
-      maybe_do_async(
-        fn ->
-          user
-          |> User.get_subscriptions()
-          |> check_for_events(user, loc, config)
-          |> Enum.each(&process_bot_event(&1, config))
-        end,
-        config
-      )
+      new_events =
+        subs
+        |> check_for_events(user, loc, events, config)
+        |> process_bot_events(user, config)
+
+      {:ok, loc, merge_new_events(events, new_events)}
     end
 
-    loc
+    {:ok, loc, nil}
+  end
+
+  defp merge_new_events(events, new_events) do
+    Enum.reduce(
+      new_events,
+      events,
+      fn {_, bot, event}, acc ->
+        Map.put(acc, bot.id, event)
+      end
+    )
   end
 
   @doc false
@@ -76,46 +101,40 @@ defmodule Wocky.User.GeoFence do
   def should_process?(%Location{accuracy: accuracy}, config),
     do: accuracy <= config.max_accuracy_threshold
 
-  defp maybe_do_async(fun, %{async_processing: true}) do
-    {:ok, _} = Task.start_link(fun)
-    :ok
+  # defp maybe_do_async(fun, %{async_processing: true}) do
+  #   {:ok, _} = Task.start_link(fun)
+  #   :ok
+  # end
+
+  # defp maybe_do_async(fun, _) do
+  #   fun.()
+  #   :ok
+  # end
+
+  defp check_for_events(bots, user, loc, events, config) do
+    Enum.reduce(bots, [], &check_for_event(&1, user, loc, events, config, &2))
   end
 
-  defp maybe_do_async(fun, _) do
-    fun.()
-    :ok
-  end
+  defp check_for_event(bot, user, loc, events, config, acc) do
+    event = Map.get(events, bot.id)
 
-  defp check_for_events(bots, user, loc, config) do
-    events = BotEvent.get_last_events(user.id)
-
-    bot_events =
-      Enum.map(bots, fn bot ->
-        event = Enum.find(events, fn e -> bot.id == e.bot_id end)
-        {bot, event}
-      end)
-
-    Enum.reduce(bot_events, [], &check_for_event(&1, user, loc, config, &2))
-  end
-
-  defp check_for_event({bot, _} = be, user, loc, config, acc) do
     bot
     |> Bot.contains?(Map.from_struct(loc))
-    |> handle_intersection(user, be, loc, config, acc)
+    |> handle_intersection(user, bot, event, loc, config, acc)
   end
 
-  defp handle_intersection(inside?, user, {bot, event}, loc, config, acc) do
+  defp handle_intersection(inside?, user, bot, event, loc, config, acc) do
     case user_state_change(inside?, event, bot, loc, config) do
       :no_change ->
         acc
 
       {:roll_back, old_state} ->
-        _ = BotEvent.insert(user, loc.device, bot, loc, old_state)
-        acc
+        new_event = BotEvent.insert(user, loc.device, bot, loc, old_state)
+        [{:old, bot, new_event} | acc]
 
       new_state ->
         new_event = BotEvent.insert(user, loc.device, bot, loc, new_state)
-        [{user, bot, new_event} | acc]
+        [{:new, bot, new_event} | acc]
     end
   end
 
@@ -226,9 +245,17 @@ defmodule Wocky.User.GeoFence do
     Timex.diff(Timex.now(), ts, :seconds) >= debounce_secs
   end
 
-  defp process_bot_event({user, bot, be}, config) do
+  defp process_bot_events(events, user, config) do
+    Enum.each(events, &process_bot_event(&1, user, config))
+
+    events
+  end
+
+  defp process_bot_event({:new, bot, be}, user, config) do
     maybe_visit_bot(be.event, user, bot, notify?(be, config))
   end
+
+  defp process_bot_event(_event, _user, _config), do: :ok
 
   defp notify?(be, %{enable_notifications: enabled?} = config) do
     enabled? && default_notify(be.event) && !stale?(be, config)

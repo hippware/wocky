@@ -78,9 +78,9 @@ defmodule Wocky.User.GeoFenceTest do
     end
 
     test "bots with a negative radius", ctx do
-      ctx.bot |> cast(%{radius: -1}, [:radius]) |> Repo.update!()
+      bot = ctx.bot |> cast(%{radius: -1}, [:radius]) |> Repo.update!()
 
-      GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
+      GeoFence.check_for_bot_event(bot, ctx.inside_loc, ctx.user)
 
       assert BotEvent.get_last_event(ctx.user.id, ctx.bot.id) == nil
       assert Sandbox.list_notifications() == []

@@ -65,13 +65,15 @@ defmodule Wocky.User.BotEvent do
     :occurred_at
   ]
 
-  @spec get_last_events(User.id()) :: [t]
+  @spec get_last_events(User.id()) :: map()
   def get_last_events(user_id) do
     BotEvent
     |> distinct(:bot_id)
     |> where(user_id: ^user_id)
     |> order_by(desc: :created_at)
     |> Repo.all()
+    |> Enum.map(fn e -> {e.bot_id, e} end)
+    |> Enum.into(%{})
   end
 
   @spec get_last_event(User.id(), Bot.id()) :: t | nil

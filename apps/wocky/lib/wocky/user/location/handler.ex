@@ -6,10 +6,16 @@ defmodule Wocky.User.Location.Handler do
   use GenServer
 
   alias Wocky.{GeoUtils, Location, Repo, User}
-  alias Wocky.User.{GeoFence, Location}
+  alias Wocky.User.{BotEvent, GeoFence, Location}
   alias Wocky.User.Location.Supervisor
 
   require Logger
+
+  defmodule State do
+    @moduledoc false
+
+    defstruct [:user, :subscriptions, :events]
+  end
 
   @spec start_link(User.t()) :: {:ok, pid()}
   def start_link(user), do: GenServer.start_link(__MODULE__, user)
@@ -29,31 +35,40 @@ defmodule Wocky.User.Location.Handler do
 
   def init(user) do
     Logger.debug(fn -> "Swarm initializing worker with user #{user.id}" end)
-    {:ok, user}
+    subscriptions = User.get_subscriptions(user)
+    events = BotEvent.get_last_events(user.id)
+
+    {:ok, %State{user: user, subscriptions: subscriptions, events: events}}
   end
 
-  def handle_call({:set_location, location, current?}, _from, user) do
+  def handle_call({:set_location, location, current?}, _from, %{user: user} = state) do
     Logger.debug(fn -> "Swarm set location with user #{user.id}" end)
 
     reply =
       with {:ok, loc} = result <- prepare_location(user, location, current?) do
-        _ = GeoFence.check_for_bot_events(loc, user)
+        _ =
+          GeoFence.check_for_bot_events(
+            loc,
+            user,
+            state.subscriptions,
+            state.events
+          )
         result
       end
 
-    {:reply, reply, user}
+    {:reply, reply, state}
   end
 
-  def handle_call({:set_location_for_bot, location, bot}, _from, user) do
+  def handle_call({:set_location_for_bot, location, bot}, _from, %{user: user} = state) do
     Logger.debug(fn -> "Swarm set location for bot with user #{user.id}" end)
 
     reply =
       with {:ok, loc} = result <- prepare_location(user, location, true) do
-        _ = GeoFence.check_for_bot_event(bot, loc, user)
+        _ = GeoFence.check_for_bot_event(bot, loc, user, state.events)
         result
       end
 
-    {:reply, reply, user}
+    {:reply, reply, state}
   end
 
   # called when a handoff has been initiated due to changes
