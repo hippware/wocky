@@ -63,6 +63,7 @@ defmodule Wocky.Mixfile do
   defp deps do
     [
       {:bamboo, "~> 1.0"},
+      {:benchee, "~> 1.0", only: :dev},
       {:bimap, "~> 1.0"},
       {:bcrypt_elixir, "~> 2.0"},
       {:confex, "~> 3.4"},
@@ -91,6 +92,7 @@ defmodule Wocky.Mixfile do
        github: "GalaxyGorilla/exometer_prometheus",
        branch: "master",
        manager: :rebar3},
+      {:exprof, "~> 0.2", only: :dev},
       {:exrun, "~> 0.1.6"},
       {:faker, "~> 0.9"},
       {:firebase_admin_ex,
