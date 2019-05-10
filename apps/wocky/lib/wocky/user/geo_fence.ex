@@ -1,7 +1,7 @@
 defmodule Wocky.User.GeoFence do
   @moduledoc false
 
-  alias Wocky.{Bot, User}
+  alias Wocky.{Bot, Repo, User}
   alias Wocky.User.{BotEvent, Location}
 
   require Logger
@@ -129,11 +129,11 @@ defmodule Wocky.User.GeoFence do
         acc
 
       {:roll_back, old_state} ->
-        new_event = BotEvent.insert(user, loc.device, bot, loc, old_state)
+        new_event = BotEvent.new(user, loc.device, bot, loc, old_state)
         [{:old, bot, new_event} | acc]
 
       new_state ->
-        new_event = BotEvent.insert(user, loc.device, bot, loc, new_state)
+        new_event = BotEvent.new(user, loc.device, bot, loc, new_state)
         [{:new, bot, new_event} | acc]
     end
   end
@@ -246,6 +246,9 @@ defmodule Wocky.User.GeoFence do
   end
 
   defp process_bot_events(events, user, config) do
+    bes = Enum.map(events, fn {_, _, be} -> be end)
+    Repo.insert_all(BotEvent, bes)
+
     Enum.each(events, &process_bot_event(&1, user, config))
 
     events
@@ -261,7 +264,7 @@ defmodule Wocky.User.GeoFence do
     enabled? && default_notify(be.event) && !stale?(be, config)
   end
 
-  defp stale?(%BotEvent{occurred_at: ts}, config) do
+  defp stale?(%{occurred_at: ts}, config) do
     Timex.diff(Timex.now(), ts, :seconds) >= config.stale_update_seconds
   end
 
