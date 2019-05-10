@@ -54,6 +54,11 @@ defmodule WockyAPI.Schema.BulkUserTypes do
     """
     value :already_friends
 
+    @desc """
+    The requestor and target are the same person - no action was taken
+    """
+    value :self
+
     @desc "The supplied number could not be parsed into normalised form"
     value :could_not_parse_number
 

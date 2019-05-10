@@ -198,7 +198,8 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
           "phone_numbers" => [
             friend.phone_number,
             inviter.phone_number,
-            invitee.phone_number
+            invitee.phone_number,
+            ctx.user.phone_number
           ]
         })
 
@@ -232,6 +233,14 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
             "id" => invitee.id
           },
           "relationship" => "INVITED"
+        },
+        %{
+          "phone_number" => ctx.user.phone_number,
+          "e164_phone_number" => ctx.user.phone_number,
+          "user" => %{
+            "id" => ctx.user.id
+          },
+          "relationship" => "SELF"
         }
       ]
 
@@ -449,6 +458,28 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
                nil,
                "\"The string supplied did not seem to be a phone number\"",
                "COULD_NOT_PARSE_NUMBER"
+             )
+    end
+
+    test "should return error for user's own number", ctx do
+      result =
+        run_query(@query, ctx.user, %{
+          "input" => %{"phone_numbers" => [ctx.user.phone_number]}
+        })
+
+      refute has_errors(result)
+
+      results = assert_results(result)
+
+      assert length(results) == 1
+
+      assert has_result(
+               results,
+               ctx.user.phone_number,
+               ctx.user.phone_number,
+               ctx.user,
+               nil,
+               "SELF"
              )
     end
   end
