@@ -90,6 +90,9 @@ defmodule Wocky.Roster do
 
       :friend ->
         :friend
+
+      :self ->
+        :self
     end
   end
 

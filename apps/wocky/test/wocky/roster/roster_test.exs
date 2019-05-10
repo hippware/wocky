@@ -300,6 +300,11 @@ defmodule Wocky.Roster.RosterTest do
       assert Roster.invite(ctx.user, ctx.contact) == :friend
       assert Roster.relationship(ctx.user, ctx.contact) == :friend
     end
+
+    test "should have no effect on self", ctx do
+      assert Roster.invite(ctx.user, ctx.user) == :self
+      assert Roster.relationship(ctx.user, ctx.user) == :self
+    end
   end
 
   describe "unfriend cleanup" do

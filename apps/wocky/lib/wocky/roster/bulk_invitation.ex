@@ -86,6 +86,7 @@ defmodule Wocky.Roster.BulkInvitation do
       case Roster.invite(requestor, user) do
         :invited -> :internal_invitation_sent
         :friend -> :already_friends
+        :self -> :self
       end
 
     {Map.put(r, :result, result),
