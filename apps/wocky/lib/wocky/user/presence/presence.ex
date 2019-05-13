@@ -3,6 +3,7 @@ defmodule Wocky.User.Presence do
   This module provides the interface for user presence management in Wocky
   """
 
+  alias Wocky.CallbackManager
   alias Wocky.User
   alias Wocky.User.Presence.Manager
 
@@ -20,18 +21,9 @@ defmodule Wocky.User.Presence do
 
   @type callback() :: (User.t(), User.id() -> :ok)
 
-  @spec register_callback(callback()) :: [callback()]
-  def register_callback(callback) do
-    original_callbacks = Confex.get_env(:wocky, :presence_callbacks, [])
-    callbacks = Enum.concat(original_callbacks, [callback])
-
-    Application.put_env(:wocky, :presence_callbacks, callbacks)
-    original_callbacks
-  end
-
-  @spec reset_callbacks([callback()]) :: :ok
-  def reset_callbacks(callbacks),
-    do: Application.put_env(:wocky, :presence_callbacks, callbacks)
+  @spec register_callback(callback()) :: :ok
+  def register_callback(callback),
+    do: CallbackManager.add(__MODULE__, callback)
 
   @doc """
   Mark a user online and return a list of their currently-online followees
@@ -65,8 +57,8 @@ defmodule Wocky.User.Presence do
   def publish(recipient_id, contact, status) do
     full_contact = add_presence(contact, status)
 
-    :wocky
-    |> Confex.get_env(:presence_callbacks, [])
+    __MODULE__
+    |> CallbackManager.get()
     |> Enum.each(& &1.(full_contact, recipient_id))
   end
 
