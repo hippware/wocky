@@ -1,55 +1,37 @@
 defmodule Wocky.User.CurrentLocation do
   @moduledoc false
 
-  use Wocky.Repo.Schema
+  alias Wocky.{CallbackManager, User}
+  alias Wocky.User.Location
 
-  alias Wocky.User
+  @type callback() :: (User.t(), Location.t() -> :ok)
 
-  @foreign_key_type :binary_id
-  @primary_key false
-  schema "user_current_location" do
-    field :user_id, :binary_id, null: false, primary_key: true
-    field :device, :string, null: false
-    field :lat, :float, null: false
-    field :lon, :float, null: false
-    field :accuracy, :float
-    field :speed, :float
-    field :heading, :float
-    field :altitude, :float
-    field :altitude_accuracy, :float
-    field :captured_at, :utc_datetime_usec
-    field :uuid, :string
-    field :is_moving, :boolean
-    field :odometer, :float
-    field :activity, :string
-    field :activity_confidence, :integer
-    field :battery_level, :float
-    field :battery_charging, :boolean
+  @spec register_callback(callback()) :: :ok
+  def register_callback(cb), do: CallbackManager.add(__MODULE__, cb)
 
-    timestamps()
+  @spec set(User.t(), Location.t()) :: :ok
+  def set(user, loc) do
+    {:ok, _} = Redix.command(Redix, ["SET", key(user.id), value(loc)])
 
-    belongs_to :user, User, define_field: false
+    __MODULE__
+    |> CallbackManager.get()
+    |> Enum.each(& &1.(user, loc))
+
+    :ok
   end
 
-  @type t :: %__MODULE__{
-          user_id: User.id() | nil,
-          device: User.device(),
-          lat: float,
-          lon: float,
-          accuracy: float,
-          speed: float | nil,
-          heading: float | nil,
-          altitude: float | nil,
-          altitude_accuracy: float | nil,
-          captured_at: DateTime.t() | nil,
-          uuid: String.t() | nil,
-          is_moving: boolean | nil,
-          odometer: float | nil,
-          activity: String.t() | nil,
-          activity_confidence: integer | nil,
-          battery_level: float | nil,
-          battery_charging: boolean | nil,
-          created_at: DateTime.t() | nil,
-          updated_at: DateTime.t() | nil
-        }
+  @spec get(User.t()) :: Location.t() | nil
+  def get(user) do
+    case Redix.command(Redix, ["GET", key(user.id)]) do
+      {:ok, nil} ->
+        nil
+
+      {:ok, bin} ->
+        :erlang.binary_to_term(bin)
+    end
+  end
+
+  defp key(user_id), do: "current_loc:" <> user_id
+
+  defp value(%Location{} = loc), do: :erlang.term_to_binary(loc)
 end

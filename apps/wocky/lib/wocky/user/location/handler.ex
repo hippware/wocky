@@ -7,6 +7,7 @@ defmodule Wocky.User.Location.Handler do
 
   alias Wocky.{GeoUtils, Location, Repo, User}
   alias Wocky.User.{BotEvent, GeoFence, Location}
+  alias Wocky.User.CurrentLocation
   alias Wocky.User.Location.Supervisor
 
   require Logger
@@ -44,31 +45,34 @@ defmodule Wocky.User.Location.Handler do
   def handle_call({:set_location, location, current?}, _from, %{user: user} = state) do
     Logger.debug(fn -> "Swarm set location with user #{user.id}" end)
 
-    reply =
-      with {:ok, loc} = result <- prepare_location(user, location, current?) do
-        _ =
-          GeoFence.check_for_bot_events(
-            loc,
-            user,
-            state.subscriptions,
-            state.events
-          )
-        result
-      end
+    with {:ok, loc} = result <- prepare_location(user, location, current?) do
+      {:ok, _, events} =
+        GeoFence.check_for_bot_events(
+          loc,
+          user,
+          state.subscriptions,
+          state.events
+        )
 
-    {:reply, reply, state}
+      {:reply, result, Map.put(state, :events, events)}
+    else
+      error ->
+        {:reply, error, state}
+    end
   end
 
   def handle_call({:set_location_for_bot, location, bot}, _from, %{user: user} = state) do
     Logger.debug(fn -> "Swarm set location for bot with user #{user.id}" end)
 
-    reply =
-      with {:ok, loc} = result <- prepare_location(user, location, true) do
-        _ = GeoFence.check_for_bot_event(bot, loc, user, state.events)
-        result
-      end
+    with {:ok, loc} = result <- prepare_location(user, location, true) do
+      {:ok, _, events} =
+        GeoFence.check_for_bot_event(bot, loc, user, state.events)
 
-    {:reply, reply, state}
+      {:reply, result, Map.put(state, :events, events)}
+    else
+      error ->
+        {:reply, error, state}
+    end
   end
 
   # called when a handoff has been initiated due to changes
@@ -102,7 +106,7 @@ defmodule Wocky.User.Location.Handler do
   defp prepare_location(user, location, current?) do
     with nloc <- normalize_location(location),
          {:ok, loc} <- maybe_save_location(user, nloc),
-         {:ok, _} <- maybe_save_current_location(current?, user, nloc) do
+         :ok <- maybe_save_current_location(current?, user, nloc) do
       {:ok, loc}
     end
   end
@@ -138,19 +142,13 @@ defmodule Wocky.User.Location.Handler do
     |> Repo.insert()
   end
 
-  defp maybe_save_current_location(false, _user, _location), do: {:ok, :skipped}
+  defp maybe_save_current_location(false, _user, _location), do: :ok
 
   defp maybe_save_current_location(true, user, location) do
     if GeoFence.should_process?(location, GeoFence.get_config()) do
-      user
-      |> Ecto.build_assoc(:current_location)
-      |> Location.changeset(Map.from_struct(location))
-      |> Repo.insert(
-        on_conflict: {:replace, [:updated_at | Location.fields()]},
-        conflict_target: :user_id
-      )
+      CurrentLocation.set(user, location)
     else
-      {:ok, :skipped}
+      :ok
     end
   end
 end

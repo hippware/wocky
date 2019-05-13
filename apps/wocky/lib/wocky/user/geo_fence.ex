@@ -40,16 +40,16 @@ defmodule Wocky.User.GeoFence do
   def check_for_bot_event(bot, loc, user, events) do
     config = get_config(debounce: false)
 
-    if should_process?(loc, config) do
-      new_events =
+    new_events =
+      if should_process?(loc, config) do
         bot
         |> check_for_event(user, loc, events, config, [])
         |> process_bot_events(user, config)
+      else
+        []
+      end
 
-      {:ok, loc, merge_new_events(events, new_events)}
-    end
-
-    {:ok, loc, nil}
+    {:ok, loc, merge_new_events(events, new_events)}
   end
 
   @doc false
@@ -66,16 +66,16 @@ defmodule Wocky.User.GeoFence do
   def check_for_bot_events(%Location{} = loc, user, subs, events) do
     config = get_config()
 
-    if should_process?(loc, config) do
-      new_events =
+    new_events =
+      if should_process?(loc, config) do
         subs
         |> check_for_events(user, loc, events, config)
         |> process_bot_events(user, config)
+      else
+        []
+      end
 
-      {:ok, loc, merge_new_events(events, new_events)}
-    end
-
-    {:ok, loc, nil}
+    {:ok, loc, merge_new_events(events, new_events)}
   end
 
   defp merge_new_events(events, new_events) do

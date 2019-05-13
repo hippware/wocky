@@ -274,40 +274,30 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   defp build_location_catchup(share, acc) do
-    location =
-      share.user
-      |> User.get_current_location()
-      |> Repo.preload(:user)
+    location = User.get_current_location(share.user)
 
     if location do
-      [make_location_data(location) | acc]
+      [make_location_data(share.user, location) | acc]
     else
       acc
     end
   end
 
-  def notify_location(location) do
-    location = Repo.preload(location, :user)
-
-    # Sometimes in the client tests a user is deleted immediately after or
-    # during a location update. Therefore, the user is not guaranteed to exist
-    # by the time the database callback fires.
-    if location.user do
-      location.user
-      |> User.get_location_shares()
-      |> Enum.each(&do_notify_location(&1, location))
-    end
+  def notify_location(user, location) do
+    user
+    |> User.get_location_shares()
+    |> Enum.each(&do_notify_location(&1, user, location))
   end
 
-  defp do_notify_location(share, location) do
+  defp do_notify_location(share, user, location) do
     topic = location_subscription_topic(share.shared_with.id)
-    data = make_location_data(location)
+    data = make_location_data(user, location)
 
     Subscription.publish(Endpoint, data, [{:shared_locations, topic}])
   end
 
-  defp make_location_data(location),
-    do: %{user: location.user, location: location}
+  defp make_location_data(user, location),
+    do: %{user: user, location: location}
 
   def hide(_root, _args, _context) do
     # DEPRECATED

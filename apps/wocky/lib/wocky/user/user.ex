@@ -78,8 +78,6 @@ defmodule Wocky.User do
 
     timestamps()
 
-    has_one :current_location, CurrentLocation
-
     has_many :bots, Bot
     has_many :bot_events, BotEvent
     has_many :conversations, Conversation
@@ -554,7 +552,7 @@ defmodule Wocky.User do
   @doc "Gets the current location for the user."
   @spec get_current_location(User.t()) :: Location.t() | nil
   def get_current_location(user) do
-    Repo.get(CurrentLocation, user.id)
+    CurrentLocation.get(user)
   end
 
   @spec start_sharing_location(User.t(), User.t(), DateTime.t()) ::
