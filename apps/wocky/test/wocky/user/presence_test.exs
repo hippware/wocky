@@ -61,6 +61,7 @@ defmodule Wocky.User.PresenceTest do
       self = self()
 
       original_callbacks = CallbackManager.get(Presence)
+
       Presence.register_callback(fn u, c_id ->
         send(self, {:presence, u, c_id})
       end)

@@ -98,7 +98,8 @@ defmodule Wocky.User.BotEvent do
     |> limit(1)
   end
 
-  @spec new(User.t(), User.device(), Bot.t(), Location.t() | nil, event) :: map()
+  @spec new(User.t(), User.device(), Bot.t(), Location.t() | nil, event) ::
+          map()
   def new(user, device, bot, loc \\ nil, event) do
     %{
       user_id: user.id,

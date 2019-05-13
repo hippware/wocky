@@ -35,8 +35,8 @@ defmodule Wocky.User.GeoFence do
   end
 
   @doc false
-  @spec check_for_bot_event(Bot.t(), Location.t(), User.t(), map())
-        :: Location.t()
+  @spec check_for_bot_event(Bot.t(), Location.t(), User.t(), map()) ::
+          Location.t()
   def check_for_bot_event(bot, loc, user, events) do
     config = get_config(debounce: false)
 
@@ -61,8 +61,8 @@ defmodule Wocky.User.GeoFence do
   end
 
   @doc false
-  @spec check_for_bot_events(Location.t(), User.t(), [Bot.t()], map())
-        :: Location.t()
+  @spec check_for_bot_events(Location.t(), User.t(), [Bot.t()], map()) ::
+          Location.t()
   def check_for_bot_events(%Location{} = loc, user, subs, events) do
     config = get_config()
 

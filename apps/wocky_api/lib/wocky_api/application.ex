@@ -29,9 +29,7 @@ defmodule WockyAPI.Application do
 
     Callbacks.register()
 
-    Presence.register_callback(
-      &WockyAPI.Resolvers.Presence.publish_presence/2
-    )
+    Presence.register_callback(&WockyAPI.Resolvers.Presence.publish_presence/2)
 
     CurrentLocation.register_callback(
       &WockyAPI.Resolvers.User.notify_location/2
