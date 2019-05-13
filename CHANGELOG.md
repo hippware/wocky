@@ -5,7 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: postgrex (PR #2480), exrun (PR #2481)
+* Update: postgrex (PR #2480), exrun (PR #2481), phoenix (PR #2482)
+* Fix crash when sending bulk invitation to own phone number (PR #2486)
+  * [Wocky/next] CaseClauseError: no case clause matching: :self (#2483)
 
 
 # 2019.5.7+r060bbe2
