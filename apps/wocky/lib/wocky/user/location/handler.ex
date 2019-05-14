@@ -5,7 +5,7 @@ defmodule Wocky.User.Location.Handler do
 
   use GenServer
 
-  alias Wocky.{GeoUtils, Location, Repo, User}
+  alias Wocky.{Bot, GeoUtils, Location, Repo, User}
   alias Wocky.User.{BotEvent, GeoFence, Location}
   alias Wocky.User.CurrentLocation
   alias Wocky.User.Location.Supervisor
@@ -21,6 +21,23 @@ defmodule Wocky.User.Location.Handler do
   @spec start_link(User.t()) :: {:ok, pid()}
   def start_link(user), do: GenServer.start_link(__MODULE__, user)
 
+  @spec set_location(User.t(), Location.t(), boolean()) ::
+          {:ok, Location.t()} | {:error, any()}
+  def set_location(user, location, current? \\ true) do
+    user
+    |> get_handler()
+    |> GenServer.call({:set_location, location, current?})
+  end
+
+  @spec set_location_for_bot(User.t(), Location.t(), Bot.t()) ::
+          {:ok, Location.t()} | {:error, any()}
+  def set_location_for_bot(user, location, bot) do
+    user
+    |> get_handler()
+    |> GenServer.call({:set_location_for_bot, location, bot})
+  end
+
+  @spec get_handler(User.t()) :: pid()
   def get_handler(user) do
     {:ok, pid} =
       Swarm.whereis_or_register_name(
@@ -85,9 +102,9 @@ defmodule Wocky.User.Location.Handler do
   #   - `{:resume, state}`, to hand off some state to the new process
   #   - `:ignore`, to leave the process running on its current node
   #
-  def handle_call({:swarm, :begin_handoff}, _from, user) do
-    Logger.debug(fn -> "Swarm handing off state with user #{user.id}" end)
-    {:reply, :restart, user}
+  def handle_call({:swarm, :begin_handoff}, _from, state) do
+    Logger.debug(fn -> "Swarm handing off state with user #{state.user.id}" end)
+    {:reply, :restart, state}
   end
 
   # called when a network split is healed and the local process
