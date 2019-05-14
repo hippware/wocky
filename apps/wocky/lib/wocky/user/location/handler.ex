@@ -51,6 +51,7 @@ defmodule Wocky.User.Location.Handler do
     pid
   end
 
+  @impl true
   def init(user) do
     Logger.debug(fn -> "Swarm initializing worker with user #{user.id}" end)
     subscriptions = User.get_subscriptions(user)
@@ -59,6 +60,7 @@ defmodule Wocky.User.Location.Handler do
     {:ok, %State{user: user, subscriptions: subscriptions, events: events}}
   end
 
+  @impl true
   def handle_call(
         {:set_location, location, current?},
         _from,
@@ -77,6 +79,7 @@ defmodule Wocky.User.Location.Handler do
     end
   end
 
+  @impl true
   def handle_call(
         {:set_location_for_bot, location, bot},
         _from,
@@ -102,6 +105,7 @@ defmodule Wocky.User.Location.Handler do
   #   - `{:resume, state}`, to hand off some state to the new process
   #   - `:ignore`, to leave the process running on its current node
   #
+  @impl true
   def handle_call({:swarm, :begin_handoff}, _from, state) do
     Logger.debug(fn -> "Swarm handing off state with user #{state.user.id}" end)
     {:reply, :restart, state}
@@ -112,6 +116,7 @@ defmodule Wocky.User.Location.Handler do
   # side of the split is handing off its state to us. You can choose
   # to ignore the handoff state, or apply your own conflict resolution
   # strategy
+  @impl true
   def handle_cast({:swarm, :resolve_conflict, _state}, state) do
     {:noreply, state}
   end
@@ -119,6 +124,7 @@ defmodule Wocky.User.Location.Handler do
   # this message is sent when this process should die
   # because it is being moved, use this as an opportunity
   # to clean up
+  @impl true
   def handle_info({:swarm, :die}, state), do: {:stop, :shutdown, state}
 
   defp handler_name(user), do: "location_handler_" <> user.id

@@ -6,6 +6,8 @@ defmodule Wocky.User.GeoFence do
 
   require Logger
 
+  @type events :: map()
+
   @spec save_locations? :: boolean
   def save_locations? do
     get_config().save_locations
@@ -27,6 +29,8 @@ defmodule Wocky.User.GeoFence do
   defp inside?(last_event_type),
     do: Enum.member?([:enter, :transition_in], last_event_type)
 
+  # This shim exists mostly to avoid having to redo all of the tests.
+  # Use check_for_bot_event/4 instead.
   @doc false
   def check_for_bot_event(bot, loc, user) do
     events = BotEvent.get_last_events(user.id)
@@ -35,8 +39,8 @@ defmodule Wocky.User.GeoFence do
   end
 
   @doc false
-  @spec check_for_bot_event(Bot.t(), Location.t(), User.t(), map()) ::
-          Location.t()
+  @spec check_for_bot_event(Bot.t(), Location.t(), User.t(), events()) ::
+          {:ok, Location.t(), events()}
   def check_for_bot_event(bot, loc, user, events) do
     config = get_config(debounce: false)
 
@@ -52,6 +56,8 @@ defmodule Wocky.User.GeoFence do
     {:ok, loc, merge_new_events(events, new_events)}
   end
 
+  # This shim exists mostly to avoid having to redo all of the tests.
+  # Use check_for_bot_events/4 instead.
   @doc false
   def check_for_bot_events(%Location{} = loc, user) do
     subs = User.get_subscriptions(user)
@@ -61,8 +67,8 @@ defmodule Wocky.User.GeoFence do
   end
 
   @doc false
-  @spec check_for_bot_events(Location.t(), User.t(), [Bot.t()], map()) ::
-          Location.t()
+  @spec check_for_bot_events(Location.t(), User.t(), [Bot.t()], events()) ::
+          {:ok, Location.t(), events()}
   def check_for_bot_events(%Location{} = loc, user, subs, events) do
     config = get_config()
 
@@ -247,7 +253,7 @@ defmodule Wocky.User.GeoFence do
 
   defp process_bot_events(events, user, config) do
     bes = Enum.map(events, fn {_, _, be} -> be end)
-    Repo.insert_all(BotEvent, bes)
+    _ = Repo.insert_all(BotEvent, bes)
 
     Enum.each(events, &process_bot_event(&1, user, config))
 
