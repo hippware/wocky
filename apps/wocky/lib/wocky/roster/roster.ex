@@ -74,7 +74,7 @@ defmodule Wocky.Roster do
   @doc """
   Invites `contact` to become a friend of `user`
   """
-  @spec invite(User.t(), User.t()) :: :friend | :invited
+  @spec invite(User.t(), User.t()) :: :friend | :invited | :self
   def invite(user, target) do
     case relationship(user, target) do
       :none ->
