@@ -161,7 +161,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
 
     test "Set single name from empty", %{user: user} do
-      {:ok, user} = User.update(user.id, %{name: nil})
+      {:ok, user} = User.update(user.id, %{name: ""})
 
       new_name = Name.first_name()
 

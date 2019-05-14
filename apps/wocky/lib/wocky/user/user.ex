@@ -55,7 +55,7 @@ defmodule Wocky.User do
     # TROS URL of file containing user's avatar
     field :image_url, :string
     # User's name
-    field :name, :string
+    field :name, :string, default: ""
     # The user's phone number
     field :phone_number, :string
     # (also from auth provider)
@@ -113,7 +113,7 @@ defmodule Wocky.User do
           id: id,
           handle: nil | handle,
           image_url: nil | binary,
-          name: nil | binary,
+          name: binary,
           email: nil | binary,
           tagline: nil | binary,
           provider: nil | provider,

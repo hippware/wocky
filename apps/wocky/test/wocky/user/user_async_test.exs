@@ -50,7 +50,9 @@ defmodule Wocky.User.UserAsyncTest do
           {"Alice Sanders", "Xena"},
           {"Alison Smith", "Yaniv"},
           {"Bob Jones", "Zena"},
-          {"acéñtîâ CAPITAL", "1345"}
+          {"acéñtîâ CAPITAL", "1345"},
+          {"", "NoName"},
+          {"", "Nameless"}
         ]
         |> Enum.map(fn {n, h} ->
           Factory.insert(:user, name: n, handle: h)
@@ -98,6 +100,11 @@ defmodule Wocky.User.UserAsyncTest do
       assert User.search_by_name("al''i", ctx.user, 50) |> length() == 2
       assert User.search_by_name("al''i", ctx.user, 50) |> length() == 2
       assert User.search_by_name("''-al''i", ctx.user, 50) |> length() == 2
+    end
+
+    test "should find users with only handles", ctx do
+      assert User.search_by_name("Name", ctx.user, 50) |> length() == 1
+      assert User.search_by_name("NoName", ctx.user, 50) |> length() == 1
     end
 
     test "should not return a blocking user", ctx do
