@@ -37,6 +37,21 @@ defmodule Wocky.User.Location.Handler do
     |> GenServer.call({:set_location_for_bot, location, bot})
   end
 
+  @spec add_subscription(User.t(), Bot.t()) :: :ok
+  def add_subscription(user, bot) do
+    user
+    |> get_handler_if_exists()
+    |> maybe_call({:add_subscription, bot})
+  end
+
+  @spec remove_subscription(User.t(), Bot.t()) :: :ok
+  def remove_subscription(user, bot) do
+    user
+    |> get_handler_if_exists()
+    |> maybe_call({:remove_subscription, bot})
+  end
+
+  # Always returns a handler, creating a new one if one does not already exist.
   @spec get_handler(User.t()) :: pid()
   def get_handler(user) do
     {:ok, pid} =
@@ -50,6 +65,18 @@ defmodule Wocky.User.Location.Handler do
 
     pid
   end
+
+  # Gets a handler if one exists, otherwise returns nil
+  @spec get_handler_if_exists(User.t()) :: pid() | nil
+  def get_handler_if_exists(user) do
+    case Swarm.whereis_name(handler_name(user)) do
+      :undefined -> nil
+      pid -> pid
+    end
+  end
+
+  defp maybe_call(nil, _), do: :ok
+  defp maybe_call(pid, args), do: GenServer.call(pid, args)
 
   @impl true
   def init(user) do
@@ -79,7 +106,6 @@ defmodule Wocky.User.Location.Handler do
     end
   end
 
-  @impl true
   def handle_call(
         {:set_location_for_bot, location, bot},
         _from,
@@ -98,6 +124,15 @@ defmodule Wocky.User.Location.Handler do
     end
   end
 
+  def handle_call({:add_subscription, bot}, _from, state) do
+    {:reply, :ok, %{state | subscriptions: [bot | state.subscriptions]}}
+  end
+
+  def handle_call({:remove_subscription, bot}, _from, state) do
+    subs = Enum.reject(state.subscriptions, fn b -> b.id == bot.id end)
+    {:reply, :ok, %{state | subscriptions: subs}}
+  end
+
   # called when a handoff has been initiated due to changes
   # in cluster topology, valid response values are:
   #
@@ -105,7 +140,6 @@ defmodule Wocky.User.Location.Handler do
   #   - `{:resume, state}`, to hand off some state to the new process
   #   - `:ignore`, to leave the process running on its current node
   #
-  @impl true
   def handle_call({:swarm, :begin_handoff}, _from, state) do
     Logger.debug(fn -> "Swarm handing off state with user #{state.user.id}" end)
     {:reply, :restart, state}
