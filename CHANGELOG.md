@@ -7,8 +7,12 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Update: postgrex (PR #2480), exrun (PR #2481), phoenix (PR #2482)
   * ex_aws_s3 (PR #2488), excoveralls (PR #2489), ecto_sql (PR #2490)
+  * phoenix (PR #2494)
 * Fix crash when sending bulk invitation to own phone number (PR #2486)
   * [Wocky/next] CaseClauseError: no case clause matching: :self (#2483)
+* Dialyzer fix (PR #2492)
+* User search to include user accounts with empty names (#2487)
+* Optimize the geofence processing algorithm (#2484, PR #2495)
 
 
 # 2019.5.7+r060bbe2
