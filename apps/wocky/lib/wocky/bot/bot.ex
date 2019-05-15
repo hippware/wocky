@@ -415,8 +415,19 @@ defmodule Wocky.Bot do
   @doc "Returns the bot's distance from the specified location in meters."
   @spec distance_from(Bot.t(), Point.t()) :: float
   def distance_from(bot, loc) do
-    Geocalc.distance_between(%{lat: lat(bot), lon: lon(bot)}, loc)
+    bot_loc = %{lat: lat(bot), lon: lon(bot)}
+
+    validate_point(bot_loc)
+    validate_point(loc)
+
+    Geocalc.distance_between(bot_loc, loc)
   end
+
+  defp validate_point(%{lat: lat, lon: lon})
+         when not is_nil(lat) and not is_nil(lon), do: :ok
+
+  defp validate_point(point),
+    do: raise ArgumentError, "Invalid point: #{inspect point}"
 
   @doc "Returns true if the location is within the bot's radius."
   @spec contains?(Bot.t(), Point.t()) :: boolean
