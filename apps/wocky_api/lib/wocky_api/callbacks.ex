@@ -5,7 +5,6 @@ defmodule WockyAPI.Callbacks do
 
   alias WockyAPI.Callbacks.{
     BotSubscription,
-    CurrentLocation,
     Message,
     Notification,
     RosterItem,
@@ -14,7 +13,6 @@ defmodule WockyAPI.Callbacks do
 
   @modules [
     BotSubscription,
-    CurrentLocation,
     Message,
     Notification,
     RosterItem,

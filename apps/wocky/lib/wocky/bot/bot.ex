@@ -19,6 +19,7 @@ defmodule Wocky.Bot do
   alias Wocky.Roster
   alias Wocky.User
   alias Wocky.User.GeoFence
+  alias Wocky.User.Location.Handler, as: LocationHandler
   alias Wocky.Waiter
 
   require Logger
@@ -246,6 +247,7 @@ defmodule Wocky.Bot do
   @spec subscribe(t, User.t()) :: :ok | no_return
   def subscribe(bot, user) do
     with true <- Roster.self_or_friend?(user.id, bot.user_id) do
+      LocationHandler.add_subscription(user, bot)
       Subscription.put(user, bot)
     else
       false -> {:error, :permission_denied}
@@ -255,6 +257,7 @@ defmodule Wocky.Bot do
   @spec unsubscribe(t, User.t()) :: :ok | {:error, any}
   def unsubscribe(bot, user) do
     GeoFence.exit_bot(user, bot, "unsubscribe")
+    LocationHandler.remove_subscription(user, bot)
     Subscription.delete(user, bot)
   end
 

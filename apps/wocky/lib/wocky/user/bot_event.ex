@@ -65,13 +65,15 @@ defmodule Wocky.User.BotEvent do
     :occurred_at
   ]
 
-  @spec get_last_events(User.id()) :: [t]
+  @spec get_last_events(User.id()) :: map()
   def get_last_events(user_id) do
     BotEvent
     |> distinct(:bot_id)
     |> where(user_id: ^user_id)
     |> order_by(desc: :created_at)
     |> Repo.all()
+    |> Enum.map(fn e -> {e.bot_id, e} end)
+    |> Enum.into(%{})
   end
 
   @spec get_last_event(User.id(), Bot.id()) :: t | nil
@@ -96,6 +98,20 @@ defmodule Wocky.User.BotEvent do
     |> limit(1)
   end
 
+  @spec new(User.t(), User.device(), Bot.t(), Location.t() | nil, event) ::
+          map()
+  def new(user, device, bot, loc \\ nil, event) do
+    %{
+      user_id: user.id,
+      device: device,
+      bot_id: bot.id,
+      location_id: loc && loc.id,
+      event: event,
+      created_at: DateTime.utc_now(),
+      occurred_at: (loc && loc.captured_at) || DateTime.utc_now()
+    }
+  end
+
   @doc """
   Insert a system-generated event; i.e., one that is not tied to the user
   changing location.
@@ -106,14 +122,8 @@ defmodule Wocky.User.BotEvent do
 
   @spec insert(User.t(), User.device(), Bot.t(), Location.t() | nil, event) :: t
   def insert(user, device, bot, loc \\ nil, event) do
-    %{
-      user_id: user.id,
-      device: device,
-      bot_id: bot.id,
-      location_id: loc && loc.id,
-      event: event,
-      occurred_at: (loc && loc.captured_at) || DateTime.utc_now()
-    }
+    user
+    |> new(device, bot, loc, event)
     |> changeset()
     |> Repo.insert!()
   end

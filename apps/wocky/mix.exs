@@ -63,6 +63,7 @@ defmodule Wocky.Mixfile do
   defp deps do
     [
       {:bamboo, "~> 1.0"},
+      {:benchee, "~> 1.0", only: :dev},
       {:bimap, "~> 1.0"},
       {:bcrypt_elixir, "~> 2.0"},
       {:confex, "~> 3.4"},
@@ -91,11 +92,14 @@ defmodule Wocky.Mixfile do
        github: "GalaxyGorilla/exometer_prometheus",
        branch: "master",
        manager: :rebar3},
+      {:exprof, "~> 0.2", only: :dev},
       {:exrun, "~> 0.1.6"},
       {:faker, "~> 0.9"},
       {:firebase_admin_ex,
        github: "scripbox/firebase-admin-ex", branch: "master"},
       {:gen_stage, "~> 0.12"},
+      # TODO: Move back to release when new release is built
+      {:geo, github: "bryanjos/geo", branch: "master", override: true},
       {:geo_postgis, "~> 3.0"},
       {:geocalc, "~> 0.5"},
       {:guardian, "~> 1.0"},

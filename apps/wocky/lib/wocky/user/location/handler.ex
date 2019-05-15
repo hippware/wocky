@@ -5,15 +5,54 @@ defmodule Wocky.User.Location.Handler do
 
   use GenServer
 
-  alias Wocky.{GeoUtils, Location, Repo, User}
-  alias Wocky.User.{GeoFence, Location}
+  alias Wocky.{Bot, GeoUtils, Location, Repo, User}
+  alias Wocky.User.{BotEvent, GeoFence, Location}
+  alias Wocky.User.CurrentLocation
   alias Wocky.User.Location.Supervisor
 
   require Logger
 
+  defmodule State do
+    @moduledoc false
+
+    defstruct [:user, :subscriptions, :events]
+  end
+
   @spec start_link(User.t()) :: {:ok, pid()}
   def start_link(user), do: GenServer.start_link(__MODULE__, user)
 
+  @spec set_location(User.t(), Location.t(), boolean()) ::
+          {:ok, Location.t()} | {:error, any()}
+  def set_location(user, location, current? \\ true) do
+    user
+    |> get_handler()
+    |> GenServer.call({:set_location, location, current?})
+  end
+
+  @spec set_location_for_bot(User.t(), Location.t(), Bot.t()) ::
+          {:ok, Location.t()} | {:error, any()}
+  def set_location_for_bot(user, location, bot) do
+    user
+    |> get_handler()
+    |> GenServer.call({:set_location_for_bot, location, bot})
+  end
+
+  @spec add_subscription(User.t(), Bot.t()) :: :ok
+  def add_subscription(user, bot) do
+    user
+    |> get_handler_if_exists()
+    |> maybe_call({:add_subscription, bot})
+  end
+
+  @spec remove_subscription(User.t(), Bot.t()) :: :ok
+  def remove_subscription(user, bot) do
+    user
+    |> get_handler_if_exists()
+    |> maybe_call({:remove_subscription, bot})
+  end
+
+  # Always returns a handler, creating a new one if one does not already exist.
+  @spec get_handler(User.t()) :: pid()
   def get_handler(user) do
     {:ok, pid} =
       Swarm.whereis_or_register_name(
@@ -27,33 +66,71 @@ defmodule Wocky.User.Location.Handler do
     pid
   end
 
+  # Gets a handler if one exists, otherwise returns nil
+  @spec get_handler_if_exists(User.t()) :: pid() | nil
+  def get_handler_if_exists(user) do
+    case Swarm.whereis_name(handler_name(user)) do
+      :undefined -> nil
+      pid -> pid
+    end
+  end
+
+  defp maybe_call(nil, _), do: :ok
+  defp maybe_call(pid, args), do: GenServer.call(pid, args)
+
+  @impl true
   def init(user) do
     Logger.debug(fn -> "Swarm initializing worker with user #{user.id}" end)
-    {:ok, user}
+    subscriptions = User.get_subscriptions(user)
+    events = BotEvent.get_last_events(user.id)
+
+    {:ok, %State{user: user, subscriptions: subscriptions, events: events}}
   end
 
-  def handle_call({:set_location, location, current?}, _from, user) do
+  @impl true
+  def handle_call(
+        {:set_location, location, current?},
+        _from,
+        %{user: user, subscriptions: subscriptions, events: events} = state
+      ) do
     Logger.debug(fn -> "Swarm set location with user #{user.id}" end)
 
-    reply =
-      with {:ok, loc} = result <- prepare_location(user, location, current?) do
-        _ = GeoFence.check_for_bot_events(loc, user)
-        result
-      end
+    with {:ok, loc} = result <- prepare_location(user, location, current?) do
+      {:ok, _, new_events} =
+        GeoFence.check_for_bot_events(loc, user, subscriptions, events)
 
-    {:reply, reply, user}
+      {:reply, result, Map.put(state, :events, new_events)}
+    else
+      error ->
+        {:reply, error, state}
+    end
   end
 
-  def handle_call({:set_location_for_bot, location, bot}, _from, user) do
+  def handle_call(
+        {:set_location_for_bot, location, bot},
+        _from,
+        %{user: user, events: events} = state
+      ) do
     Logger.debug(fn -> "Swarm set location for bot with user #{user.id}" end)
 
-    reply =
-      with {:ok, loc} = result <- prepare_location(user, location, true) do
-        _ = GeoFence.check_for_bot_event(bot, loc, user)
-        result
-      end
+    with {:ok, loc} = result <- prepare_location(user, location, true) do
+      {:ok, _, new_events} =
+        GeoFence.check_for_bot_event(bot, loc, user, events)
 
-    {:reply, reply, user}
+      {:reply, result, Map.put(state, :events, new_events)}
+    else
+      error ->
+        {:reply, error, state}
+    end
+  end
+
+  def handle_call({:add_subscription, bot}, _from, state) do
+    {:reply, :ok, %{state | subscriptions: [bot | state.subscriptions]}}
+  end
+
+  def handle_call({:remove_subscription, bot}, _from, state) do
+    subs = Enum.reject(state.subscriptions, fn b -> b.id == bot.id end)
+    {:reply, :ok, %{state | subscriptions: subs}}
   end
 
   # called when a handoff has been initiated due to changes
@@ -63,9 +140,9 @@ defmodule Wocky.User.Location.Handler do
   #   - `{:resume, state}`, to hand off some state to the new process
   #   - `:ignore`, to leave the process running on its current node
   #
-  def handle_call({:swarm, :begin_handoff}, _from, user) do
-    Logger.debug(fn -> "Swarm handing off state with user #{user.id}" end)
-    {:reply, :restart, user}
+  def handle_call({:swarm, :begin_handoff}, _from, state) do
+    Logger.debug(fn -> "Swarm handing off state with user #{state.user.id}" end)
+    {:reply, :restart, state}
   end
 
   # called when a network split is healed and the local process
@@ -73,6 +150,7 @@ defmodule Wocky.User.Location.Handler do
   # side of the split is handing off its state to us. You can choose
   # to ignore the handoff state, or apply your own conflict resolution
   # strategy
+  @impl true
   def handle_cast({:swarm, :resolve_conflict, _state}, state) do
     {:noreply, state}
   end
@@ -80,6 +158,7 @@ defmodule Wocky.User.Location.Handler do
   # this message is sent when this process should die
   # because it is being moved, use this as an opportunity
   # to clean up
+  @impl true
   def handle_info({:swarm, :die}, state), do: {:stop, :shutdown, state}
 
   defp handler_name(user), do: "location_handler_" <> user.id
@@ -87,7 +166,7 @@ defmodule Wocky.User.Location.Handler do
   defp prepare_location(user, location, current?) do
     with nloc <- normalize_location(location),
          {:ok, loc} <- maybe_save_location(user, nloc),
-         {:ok, _} <- maybe_save_current_location(current?, user, nloc) do
+         :ok <- maybe_save_current_location(current?, user, nloc) do
       {:ok, loc}
     end
   end
@@ -123,19 +202,13 @@ defmodule Wocky.User.Location.Handler do
     |> Repo.insert()
   end
 
-  defp maybe_save_current_location(false, _user, _location), do: {:ok, :skipped}
+  defp maybe_save_current_location(false, _user, _location), do: :ok
 
   defp maybe_save_current_location(true, user, location) do
     if GeoFence.should_process?(location, GeoFence.get_config()) do
-      user
-      |> Ecto.build_assoc(:current_location)
-      |> Location.changeset(Map.from_struct(location))
-      |> Repo.insert(
-        on_conflict: {:replace, [:updated_at | Location.fields()]},
-        conflict_target: :user_id
-      )
+      CurrentLocation.set(user, location)
     else
-      {:ok, :skipped}
+      :ok
     end
   end
 end

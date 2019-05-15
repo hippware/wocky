@@ -3,6 +3,7 @@ defmodule Wocky.User.PresenceTest do
 
   import Eventually
 
+  alias Wocky.CallbackManager
   alias Wocky.Repo.Factory
   alias Wocky.Roster
   alias Wocky.User
@@ -59,10 +60,11 @@ defmodule Wocky.User.PresenceTest do
     setup ctx do
       self = self()
 
-      original_callbacks =
-        Presence.register_callback(fn u, c_id ->
-          send(self, {:presence, u, c_id})
-        end)
+      original_callbacks = CallbackManager.get(Presence)
+
+      Presence.register_callback(fn u, c_id ->
+        send(self, {:presence, u, c_id})
+      end)
 
       uid = ctx.user.id
 
@@ -73,7 +75,7 @@ defmodule Wocky.User.PresenceTest do
       Presence.set_status(ctx.requestor, :online)
 
       on_exit(fn ->
-        Presence.reset_callbacks(original_callbacks)
+        CallbackManager.set(Presence, original_callbacks)
       end)
 
       {:ok, conn_pid: conn_pid}

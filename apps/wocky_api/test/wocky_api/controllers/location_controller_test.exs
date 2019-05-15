@@ -4,6 +4,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
   alias Faker.Address
   alias Wocky.Repo
   alias Wocky.Repo.Factory
+  alias Wocky.User.CurrentLocation
 
   @location %{
     coords: %{
@@ -65,7 +66,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       locs = user |> Ecto.assoc(:locations) |> Repo.all()
       assert length(locs) == 1
 
-      cur_loc = user |> Ecto.assoc(:current_location) |> Repo.one()
+      cur_loc = CurrentLocation.get(user)
       assert cur_loc
       assert cur_loc.lat == @location.coords.latitude
       assert cur_loc.lon == @location.coords.longitude
@@ -103,7 +104,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       locs = user |> Ecto.assoc(:locations) |> Repo.all()
       assert length(locs) == 3
 
-      cur_loc = user |> Ecto.assoc(:current_location) |> Repo.one()
+      cur_loc = CurrentLocation.get(user)
       assert cur_loc
       assert cur_loc.lat == current.coords.latitude
       assert cur_loc.lon == current.coords.longitude
@@ -123,7 +124,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
       assert [] == user |> Ecto.assoc(:locations) |> Repo.all()
-      refute user |> Ecto.assoc(:current_location) |> Repo.one()
+      refute CurrentLocation.get(user)
     end
 
     test "silently fails when longitude is missing", %{conn: conn, user: user} do
@@ -140,7 +141,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
       assert [] == user |> Ecto.assoc(:locations) |> Repo.all()
-      refute user |> Ecto.assoc(:current_location) |> Repo.one()
+      refute CurrentLocation.get(user)
     end
 
     test "silently fails when accuracy is missing", %{conn: conn, user: user} do
@@ -157,7 +158,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
       assert [] == user |> Ecto.assoc(:locations) |> Repo.all()
-      refute user |> Ecto.assoc(:current_location) |> Repo.one()
+      refute CurrentLocation.get(user)
     end
 
     test "returns 400 when device is missing", %{conn: conn, user: user} do

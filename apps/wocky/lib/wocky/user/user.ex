@@ -27,6 +27,7 @@ defmodule Wocky.User do
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
+  alias Wocky.User.Location.Handler, as: LocationHandler
 
   alias Wocky.User.{
     Avatar,
@@ -77,8 +78,6 @@ defmodule Wocky.User do
     field :presence, :any, virtual: true
 
     timestamps()
-
-    has_one :current_location, CurrentLocation
 
     has_many :bots, Bot
     has_many :bot_events, BotEvent
@@ -425,6 +424,7 @@ defmodule Wocky.User do
       on: b.id == s.bot_id and s.user_id == ^user.id
     )
     |> where([b, s], not is_nil(s.user_id))
+    |> select([:id, :title, :location])
     |> Repo.all()
   end
 
@@ -539,7 +539,7 @@ defmodule Wocky.User do
   @spec set_location(t, Location.t(), boolean()) ::
           {:ok, Location.t()} | {:error, any}
   def set_location(user, location, current? \\ true),
-    do: Location.set_location(user, location, current?)
+    do: LocationHandler.set_location(user, location, current?)
 
   @doc """
   Sets the user's current location to the provided Location struct and runs the
@@ -548,12 +548,12 @@ defmodule Wocky.User do
   @spec set_location_for_bot(t, Location.t(), Bot.t()) ::
           {:ok, Location.t()} | {:error, any}
   def set_location_for_bot(user, location, bot),
-    do: Location.set_location_for_bot(user, location, bot)
+    do: LocationHandler.set_location_for_bot(user, location, bot)
 
   @doc "Gets the current location for the user."
   @spec get_current_location(User.t()) :: Location.t() | nil
   def get_current_location(user) do
-    Repo.get(CurrentLocation, user.id)
+    CurrentLocation.get(user)
   end
 
   @spec start_sharing_location(User.t(), User.t(), DateTime.t()) ::
