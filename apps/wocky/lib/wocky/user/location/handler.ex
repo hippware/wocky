@@ -38,6 +38,8 @@ defmodule Wocky.User.Location.Handler do
   end
 
   @spec add_subscription(User.t(), Bot.t()) :: :ok
+  def add_subscription(_user, %Bot{location: nil}), do: :ok
+
   def add_subscription(user, bot) do
     user
     |> get_handler_if_exists()
@@ -125,11 +127,12 @@ defmodule Wocky.User.Location.Handler do
   end
 
   def handle_call({:add_subscription, bot}, _from, state) do
-    {:reply, :ok, %{state | subscriptions: [bot | state.subscriptions]}}
+    subs = do_remove_subscription(bot, state.subscriptions)
+    {:reply, :ok, %{state | subscriptions: [bot | subs]}}
   end
 
   def handle_call({:remove_subscription, bot}, _from, state) do
-    subs = Enum.reject(state.subscriptions, fn b -> b.id == bot.id end)
+    subs = do_remove_subscription(bot, state.subscriptions)
     {:reply, :ok, %{state | subscriptions: subs}}
   end
 
@@ -162,6 +165,10 @@ defmodule Wocky.User.Location.Handler do
   def handle_info({:swarm, :die}, state), do: {:stop, :shutdown, state}
 
   defp handler_name(user), do: "location_handler_" <> user.id
+
+  defp do_remove_subscription(bot, subscriptions) do
+    Enum.reject(subscriptions, fn b -> b.id == bot.id end)
+  end
 
   defp prepare_location(user, location, current?) do
     with nloc <- normalize_location(location),
