@@ -404,13 +404,11 @@ defmodule Wocky.Bot do
   # ----------------------------------------------------------------------
   # Location
 
-  @spec lat(Bot.t()) :: float | nil
+  @spec lat(Bot.t()) :: float
   def lat(%Bot{location: %Geo.Point{coordinates: {_, lat}}}), do: lat
-  def lat(_), do: nil
 
-  @spec lon(Bot.t()) :: float | nil
+  @spec lon(Bot.t()) :: float
   def lon(%Bot{location: %Geo.Point{coordinates: {lon, _}}}), do: lon
-  def lon(_), do: nil
 
   @doc "Returns the bot's distance from the specified location in meters."
   @spec distance_from(Bot.t(), Point.t()) :: float
