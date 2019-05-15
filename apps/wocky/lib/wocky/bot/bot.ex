@@ -423,17 +423,7 @@ defmodule Wocky.Bot do
 
   @doc "Returns true if the location is within the bot's radius."
   @spec contains?(Bot.t(), Point.t()) :: boolean
-  def contains?(bot, loc) do
-    bot_loc = location(bot)
-
-    Logger.error("""
-      Checking point within bot.
-      Bot location: #{inspect bot_loc}
-      point: #{inspect loc}
-      """)
-
-    Geocalc.within?(bot.radius, bot_loc, loc)
-  end
+  def contains?(bot, loc), do: Geocalc.within?(bot.radius, location(bot), loc)
 
   def filter_by_location(query, point_a, point_b) do
     query

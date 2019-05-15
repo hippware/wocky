@@ -7,6 +7,7 @@ defmodule Wocky.Callbacks.Bot do
 
   alias Wocky.Bot
   alias Wocky.Repo
+  alias Wocky.User.Location.Handler, as: LocationHandler
   alias Wocky.Waiter
 
   def handle_insert(new) do
@@ -20,4 +21,14 @@ defmodule Wocky.Callbacks.Bot do
       |> Waiter.notify()
     end
   end
+
+  def handle_update(%Bot{location: new} = bot, %Bot{location: old})
+        when new != old do
+    bot_with_subs = Repo.preload(bot, [:subscribers])
+    for user <- bot_with_subs.subscribers do
+      LocationHandler.add_subscription(user, bot)
+    end
+  end
+
+  def handle_update(_new, _old), do: :ok
 end
