@@ -12,10 +12,12 @@ defmodule Wocky.User.Location.Handler do
 
   require Logger
 
+  @expire_time 60 * 60 * 1000
+
   defmodule State do
     @moduledoc false
 
-    defstruct [:user, :subscriptions, :events]
+    defstruct [:user, :subscriptions, :events, :timer]
   end
 
   @spec start_link(User.t()) :: {:ok, pid()}
@@ -85,8 +87,23 @@ defmodule Wocky.User.Location.Handler do
     Logger.debug(fn -> "Swarm initializing worker with user #{user.id}" end)
     subscriptions = User.get_subscriptions(user)
     events = BotEvent.get_last_events(user.id)
+    timer = set_timer()
 
-    {:ok, %State{user: user, subscriptions: subscriptions, events: events}}
+    {:ok,
+      %State{
+        user: user,
+        subscriptions: subscriptions,
+        events: events,
+        timer: timer
+      }
+    }
+  end
+
+  defp set_timer(old_timer \\ nil) do
+    if old_timer, do: Process.cancel_timer(old_timer)
+
+    self = self()
+    Process.send_after(self, :timeout, @expire_time)
   end
 
   @impl true
@@ -97,14 +114,16 @@ defmodule Wocky.User.Location.Handler do
       ) do
     Logger.debug(fn -> "Swarm set location with user #{user.id}" end)
 
+    timer = set_timer(state.timer)
+
     with {:ok, loc} = result <- prepare_location(user, location, current?) do
       {:ok, _, new_events} =
         GeoFence.check_for_bot_events(loc, user, subscriptions, events)
 
-      {:reply, result, Map.put(state, :events, new_events)}
+      {:reply, result, %{state | events: new_events, timer: timer}}
     else
       error ->
-        {:reply, error, state}
+        {:reply, error, %{state | timer: timer}}
     end
   end
 
@@ -115,14 +134,16 @@ defmodule Wocky.User.Location.Handler do
       ) do
     Logger.debug(fn -> "Swarm set location for bot with user #{user.id}" end)
 
+    timer = set_timer(state.timer)
+
     with {:ok, loc} = result <- prepare_location(user, location, true) do
       {:ok, _, new_events} =
         GeoFence.check_for_bot_event(bot, loc, user, events)
 
-      {:reply, result, Map.put(state, :events, new_events)}
+      {:reply, result, %{state | events: new_events, timer: timer}}
     else
       error ->
-        {:reply, error, state}
+        {:reply, error, %{state | timer: timer}}
     end
   end
 
@@ -163,6 +184,11 @@ defmodule Wocky.User.Location.Handler do
   # to clean up
   @impl true
   def handle_info({:swarm, :die}, state), do: {:stop, :shutdown, state}
+
+  def handle_info(:timeout, %{user: user} = state) do
+    Logger.debug(fn -> "Swarm worker for user #{user.id} idle timeout" end)
+    {:stop, :shutdown, state}
+  end
 
   defp handler_name(user), do: "location_handler_" <> user.id
 
