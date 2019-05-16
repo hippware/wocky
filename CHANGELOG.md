@@ -5,6 +5,15 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix missing error view (PR #2509)
+  * Function WockyAPI.ErrorView.render/2 is undefined (#2508)
+* Update distillery (PR #2504), then revert it (PR #2514)
+* Update: geo (PR #2505)
+* Various geofence fixes (PRs #2510, #2511, #2512, #2513, #2517)
+
+
+# 2019.5.15+rc8e0699
+
 * Update: postgrex (PR #2480), exrun (PR #2481), phoenix (PR #2482)
   * ex_aws_s3 (PR #2488), excoveralls (PR #2489), ecto_sql (PR #2490)
   * phoenix (PR #2494)
