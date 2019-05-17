@@ -12,12 +12,12 @@ defmodule Wocky.User.Location.Handler do
 
   require Logger
 
-  @expire_time 60 * 60 * 1000
+  @timeout :timer.hours(1)
 
   defmodule State do
     @moduledoc false
 
-    defstruct [:user, :subscriptions, :events, :timer]
+    defstruct [:user, :subscriptions, :events]
   end
 
   @spec start_link(User.t()) :: {:ok, pid()}
@@ -87,23 +87,11 @@ defmodule Wocky.User.Location.Handler do
     Logger.debug(fn -> "Swarm initializing worker with user #{user.id}" end)
     subscriptions = User.get_subscriptions(user)
     events = BotEvent.get_last_events(user.id)
-    timer = set_timer()
 
     {:ok,
-      %State{
-        user: user,
-        subscriptions: subscriptions,
-        events: events,
-        timer: timer
-      }
+      %State{user: user, subscriptions: subscriptions, events: events},
+      @timeout
     }
-  end
-
-  defp set_timer(old_timer \\ nil) do
-    if old_timer, do: Process.cancel_timer(old_timer)
-
-    self = self()
-    Process.send_after(self, :timeout, @expire_time)
   end
 
   @impl true
@@ -114,16 +102,14 @@ defmodule Wocky.User.Location.Handler do
       ) do
     Logger.debug(fn -> "Swarm set location with user #{user.id}" end)
 
-    timer = set_timer(state.timer)
-
     with {:ok, loc} = result <- prepare_location(user, location, current?) do
       {:ok, _, new_events} =
         GeoFence.check_for_bot_events(loc, user, subscriptions, events)
 
-      {:reply, result, %{state | events: new_events, timer: timer}}
+      {:reply, result, %{state | events: new_events}, @timeout}
     else
       error ->
-        {:reply, error, %{state | timer: timer}}
+        {:reply, error, state, @timeout}
     end
   end
 
@@ -134,16 +120,14 @@ defmodule Wocky.User.Location.Handler do
       ) do
     Logger.debug(fn -> "Swarm set location for bot with user #{user.id}" end)
 
-    timer = set_timer(state.timer)
-
     with {:ok, loc} = result <- prepare_location(user, location, true) do
       {:ok, _, new_events} =
         GeoFence.check_for_bot_event(bot, loc, user, events)
 
-      {:reply, result, %{state | events: new_events, timer: timer}}
+      {:reply, result, %{state | events: new_events}, @timeout}
     else
       error ->
-        {:reply, error, %{state | timer: timer}}
+        {:reply, error, state, @timeout}
     end
   end
 
