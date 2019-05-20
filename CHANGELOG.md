@@ -8,8 +8,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Fix missing error view (PR #2509)
   * Function WockyAPI.ErrorView.render/2 is undefined (#2508)
 * Update distillery (PR #2504), then revert it (PR #2514)
-* Update: geo (PR #2505)
+* Update: geo (PR #2505), recon (PR #2522)
 * Various geofence fixes (PRs #2510, #2511, #2512, #2513, #2517)
+* Geofence tweaks (PR #2521)
 
 
 # 2019.5.15+rc8e0699
