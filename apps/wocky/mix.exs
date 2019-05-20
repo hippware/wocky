@@ -38,8 +38,8 @@ defmodule Wocky.Mixfile do
   def application do
     [
       # Specify extra applications you'll use from Erlang/Elixir
-      extra_applications: [:logger, :runtime_tools, :inets, :observer],
-      included_applications: [],
+      extra_applications: [:logger, :runtime_tools, :inets],
+      included_applications: [:observer],
       mod: {Wocky.Application, []},
       env: [
         wocky_env: {:system, "WOCKY_ENV", "dev"},
