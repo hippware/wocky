@@ -24,7 +24,7 @@ defmodule Wocky.Account.AccountTest do
     test "existing user with bypass number", %{user: user, id: id} do
       token = make_client_token(user)
 
-      assert {:ok, %User{id: ^id}} = Account.authenticate(token)
+      assert {:ok, %{user: %User{id: ^id}, device: "testing"}} = Account.authenticate(token)
     end
 
     test "existing user without bypass number" do
@@ -39,7 +39,7 @@ defmodule Wocky.Account.AccountTest do
       token = make_client_token(new_user)
 
       id = new_user.external_id
-      assert {:ok, %User{external_id: ^id}} = Account.authenticate(token)
+      assert {:ok, %{user: %User{external_id: ^id}, device: "testing"}} = Account.authenticate(token)
     end
   end
 
@@ -48,7 +48,7 @@ defmodule Wocky.Account.AccountTest do
       {:ok, fb, _} = Firebase.encode_and_sign(user)
       token = make_client_token(fb)
 
-      assert {:ok, %User{id: ^id}} = Account.authenticate(token)
+      assert {:ok, %{user: %User{id: ^id}, device: "testing"}} = Account.authenticate(token)
     end
 
     test "non-existant user" do
@@ -57,7 +57,7 @@ defmodule Wocky.Account.AccountTest do
       token = make_client_token(fb)
 
       id = new_user.external_id
-      assert {:ok, %User{external_id: ^id}} = Account.authenticate(token)
+      assert {:ok, %{user: %User{external_id: ^id}, device: "testing"}} = Account.authenticate(token)
     end
 
     test "bogus token" do
@@ -88,7 +88,7 @@ defmodule Wocky.Account.AccountTest do
     test "existing user with server_jwt token", %{user: user, id: id} do
       {:ok, token} = Account.get_location_jwt(user)
 
-      assert {:ok, %User{id: ^id}} = Account.authenticate_for_location(token)
+      assert {:ok, %{user: %User{id: ^id}, device: nil}} = Account.authenticate_for_location(token)
     end
 
     test "non-existant user" do
@@ -102,13 +102,13 @@ defmodule Wocky.Account.AccountTest do
       {:ok, fb, _} = Firebase.encode_and_sign(user)
       token = make_client_token(fb)
 
-      assert {:ok, %User{id: ^id}} = Account.authenticate_for_location(token)
+      assert {:ok, %{user: %User{id: ^id}, device: "testing"}} = Account.authenticate_for_location(token)
     end
 
     test "client_jwt bypass token", %{user: user, id: id} do
       token = make_client_token(user)
 
-      assert {:ok, %User{id: ^id}} = Account.authenticate_for_location(token)
+      assert {:ok, %{user: %User{id: ^id}, device: "testing"}} = Account.authenticate_for_location(token)
     end
 
     test "unrecognized token" do

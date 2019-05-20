@@ -5,8 +5,8 @@ defmodule WockyAPI.Resolvers.Auth do
 
   def authenticate(_root, %{token: token}, _info) do
     case Account.authenticate(token) do
-      {:ok, user} ->
-        {:ok, %{user: user}}
+      {:ok, auth_data} ->
+        {:ok, auth_data}
 
       {:error, _} ->
         {:error, "invalid user token"}

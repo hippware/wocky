@@ -17,6 +17,8 @@ defmodule Wocky.Account do
 
   @type token :: binary()
 
+  @type auth_data :: %{user: User.t() | nil, device: User.device() | nil}
+
   # ====================================================================
   # JWT generation
 
@@ -46,7 +48,7 @@ defmodule Wocky.Account do
   # ====================================================================
   # Authentication
 
-  @spec authenticate(binary) :: {:ok, User.t()} | {:error, any}
+  @spec authenticate(binary) :: {:ok, auth_data()} | {:error, any}
   def authenticate(token) do
     case ClientJWT.decode_and_verify(token) do
       {:ok, %{"typ" => "firebase", "sub" => new_token} = claims} ->
@@ -87,11 +89,11 @@ defmodule Wocky.Account do
     end
   end
 
-  defp authenticate_with(:server_jwt, token, _opts) do
+  defp authenticate_with(:server_jwt, token, opts) do
     case ServerJWT.resource_from_token(token) do
       {:ok, user, _claims} ->
         update_counter("auth.server_jwt.success", 1)
-        {:ok, user}
+        {:ok, %{user: user, device: opts["dvc"]}}
 
       {:error, reason} ->
         update_counter("auth.server_jwt.fail", 1)
@@ -102,7 +104,7 @@ defmodule Wocky.Account do
   defp find_or_create(method, id, phone, opts) do
     with {:ok, {user, _}} = Register.find_or_create(method, id, phone) do
       maybe_record_client_version(user, opts)
-      {:ok, user}
+      {:ok, %{user: user, device: opts["dvc"]}}
     end
   end
 
