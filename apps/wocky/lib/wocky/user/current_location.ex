@@ -6,12 +6,15 @@ defmodule Wocky.User.CurrentLocation do
 
   @type callback() :: (User.t(), Location.t() -> :ok)
 
+  @expire_secs 60 * 60
+
   @spec register_callback(callback()) :: :ok
   def register_callback(cb), do: CallbackManager.add(__MODULE__, cb)
 
   @spec set(User.t(), Location.t()) :: :ok
   def set(user, loc) do
-    {:ok, _} = Redix.command(Redix, ["SET", key(user.id), value(loc)])
+    {:ok, _} =
+      Redix.command(Redix, ["SET", key(user.id), value(loc), "EX", @expire_secs])
 
     __MODULE__
     |> CallbackManager.get()

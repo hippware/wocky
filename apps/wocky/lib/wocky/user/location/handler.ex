@@ -12,6 +12,8 @@ defmodule Wocky.User.Location.Handler do
 
   require Logger
 
+  @timeout :timer.hours(1)
+
   defmodule State do
     @moduledoc false
 
@@ -86,7 +88,10 @@ defmodule Wocky.User.Location.Handler do
     subscriptions = User.get_subscriptions(user)
     events = BotEvent.get_last_events(user.id)
 
-    {:ok, %State{user: user, subscriptions: subscriptions, events: events}}
+    {:ok,
+      %State{user: user, subscriptions: subscriptions, events: events},
+      @timeout
+    }
   end
 
   @impl true
@@ -101,10 +106,10 @@ defmodule Wocky.User.Location.Handler do
       {:ok, _, new_events} =
         GeoFence.check_for_bot_events(loc, user, subscriptions, events)
 
-      {:reply, result, Map.put(state, :events, new_events)}
+      {:reply, result, %{state | events: new_events}, @timeout}
     else
       error ->
-        {:reply, error, state}
+        {:reply, error, state, @timeout}
     end
   end
 
@@ -119,10 +124,10 @@ defmodule Wocky.User.Location.Handler do
       {:ok, _, new_events} =
         GeoFence.check_for_bot_event(bot, loc, user, events)
 
-      {:reply, result, Map.put(state, :events, new_events)}
+      {:reply, result, %{state | events: new_events}, @timeout}
     else
       error ->
-        {:reply, error, state}
+        {:reply, error, state, @timeout}
     end
   end
 
@@ -163,6 +168,11 @@ defmodule Wocky.User.Location.Handler do
   # to clean up
   @impl true
   def handle_info({:swarm, :die}, state), do: {:stop, :shutdown, state}
+
+  def handle_info(:timeout, %{user: user} = state) do
+    Logger.debug(fn -> "Swarm worker for user #{user.id} idle timeout" end)
+    {:stop, :shutdown, state}
+  end
 
   defp handler_name(user), do: "location_handler_" <> user.id
 
