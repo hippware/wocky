@@ -88,8 +88,10 @@ defmodule Wocky.User.Location.Handler do
     subscriptions = User.get_subscriptions(user)
     events = BotEvent.get_last_events(user.id)
 
-    {:ok, %State{user: user, subscriptions: subscriptions, events: events},
-     @timeout}
+    {:ok,
+      %State{user: user, subscriptions: subscriptions, events: events},
+      @timeout
+    }
   end
 
   @impl true
