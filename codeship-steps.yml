@@ -26,7 +26,6 @@
       service: dockerlint
       command: dockerlint -f Dockerfile.release
     - name: release
-      tag: ^master|next$
       service: wocky-build
       command: make release
 - name: deploy
