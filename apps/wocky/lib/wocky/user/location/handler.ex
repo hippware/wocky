@@ -88,10 +88,8 @@ defmodule Wocky.User.Location.Handler do
     subscriptions = User.get_subscriptions(user)
     events = BotEvent.get_last_events(user.id)
 
-    {:ok,
-      %State{user: user, subscriptions: subscriptions, events: events},
-      @timeout
-    }
+    {:ok, %State{user: user, subscriptions: subscriptions, events: events},
+     @timeout}
   end
 
   @impl true
@@ -190,13 +188,23 @@ defmodule Wocky.User.Location.Handler do
 
   defp normalize_location(location) do
     {nlat, nlon} = GeoUtils.normalize_lat_lon(location.lat, location.lon)
-    captured_at = normalize_captured_at(location)
-    %Location{location | lat: nlat, lon: nlon, captured_at: captured_at}
+
+    %Location{
+      location
+      | lat: nlat,
+        lon: nlon,
+        captured_at: normalize_captured_at(location),
+        created_at: DateTime.utc_now()
+    }
   end
 
   defp normalize_captured_at(%Location{captured_at: time})
-       when not is_nil(time),
-       do: time
+       when is_binary(time) do
+    {:ok, dt, 0} = DateTime.from_iso8601(time)
+    dt
+  end
+
+  defp normalize_captured_at(%Location{captured_at: %DateTime{} = dt}), do: dt
 
   defp normalize_captured_at(_), do: DateTime.utc_now()
 

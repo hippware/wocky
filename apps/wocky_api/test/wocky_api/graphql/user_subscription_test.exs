@@ -98,6 +98,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
           lat
           lon
           accuracy
+          capturedAt
         }
       }
     }
@@ -117,7 +118,8 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
       ref = push_doc(socket, @query)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      location = Factory.build(:location)
+      captured_at = DateTime.utc_now() |> DateTime.to_iso8601()
+      location = Factory.build(:location, captured_at: captured_at)
       {:ok, loc} = User.set_location(friend, location)
 
       assert_push "subscription:data", push, 2000
@@ -135,7 +137,8 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
                      "location" => %{
                        "lat" => lat,
                        "lon" => lon,
-                       "accuracy" => ^accuracy
+                       "accuracy" => ^accuracy,
+                       "capturedAt" => ^captured_at
                      }
                    }
                  }
@@ -148,7 +151,8 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
     end
 
     test "location catchup", %{socket: socket, friend: friend} do
-      location = Factory.build(:location)
+      captured_at = DateTime.utc_now() |> DateTime.to_iso8601()
+      location = Factory.build(:location, captured_at: captured_at)
       {:ok, loc} = User.set_location(friend, location)
 
       ref = push_doc(socket, @query)
@@ -169,7 +173,8 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
                      "location" => %{
                        "lat" => lat,
                        "lon" => lon,
-                       "accuracy" => ^accuracy
+                       "accuracy" => ^accuracy,
+                       "capturedAt" => ^captured_at
                      }
                    }
                  }
