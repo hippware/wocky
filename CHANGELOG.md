@@ -5,14 +5,17 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.5.21+re1a0715
+
 * Fix missing error view (PR #2509)
   * Function WockyAPI.ErrorView.render/2 is undefined (#2508)
 * Update: geo (PR #2505), recon (PR #2522), distillery (PR #2527)
-  * ecto_sql (PR #2528)
+  * ecto_sql (PR #2528), prometheus-ecto (PR #2532)
 * Various geofence fixes (PRs #2510, #2511, #2512, #2513, #2517)
 * Geofence tweaks (PR #2521)
 * Add migration to clean up invitations to non-owned bots (PR #2526)
   * Fixes: Server is returning `bot:null` (#2525)
+* Add observer_cli lib (PR #2531)
 
 
 # 2019.5.15+rc8e0699
