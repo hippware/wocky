@@ -7,10 +7,12 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Fix missing error view (PR #2509)
   * Function WockyAPI.ErrorView.render/2 is undefined (#2508)
-* Update distillery (PR #2504), then revert it (PR #2514)
-* Update: geo (PR #2505), recon (PR #2522)
+* Update: geo (PR #2505), recon (PR #2522), distillery (PR #2527)
+  * ecto_sql (PR #2528)
 * Various geofence fixes (PRs #2510, #2511, #2512, #2513, #2517)
 * Geofence tweaks (PR #2521)
+* Add migration to clean up invitations to non-owned bots (PR #2526)
+  * Fixes: Server is returning `bot:null` (#2525)
 
 
 # 2019.5.15+rc8e0699
