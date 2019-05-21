@@ -107,6 +107,7 @@ defmodule Wocky.Mixfile do
       {:honeybadger, "~> 0.6"},
       {:kadabra, "~> 0.3"},
       {:lager_logger, "~> 1.0"},
+      {:observer_cli, "~> 1.5"},
       # TODO: Move back to release when new release is built
       {:paginator, github: "duffelhq/paginator", branch: "master"},
       {:peerage, "~> 1.0"},
