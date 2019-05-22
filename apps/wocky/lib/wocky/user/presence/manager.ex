@@ -88,6 +88,10 @@ defmodule Wocky.User.Presence.Manager do
   @spec get_presence(pid(), User.t()) :: Presence.t()
   def get_presence(manager, user) do
     GenServer.call(manager, {:get_presence, user.id})
+  catch
+    # Catch the situation where the target user went offline (terminating their
+    # presence process) just as we requested their status
+    :exit, _ -> Presence.make_presence(:offline)
   end
 
   def handle_info({:DOWN, ref, :process, _, _}, s) do
