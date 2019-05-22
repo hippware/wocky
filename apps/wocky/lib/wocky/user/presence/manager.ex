@@ -88,6 +88,10 @@ defmodule Wocky.User.Presence.Manager do
   @spec get_presence(pid(), User.t()) :: Presence.t()
   def get_presence(manager, user) do
     GenServer.call(manager, {:get_presence, user.id})
+  catch
+    # Catch the situation where the requesting user went offline
+    # (terminating their presence process) just as they requested a status
+    :exit, _ -> Presence.make_presence(:offline)
   end
 
   def handle_info({:DOWN, ref, :process, _, _}, s) do
@@ -121,6 +125,13 @@ defmodule Wocky.User.Presence.Manager do
       end
 
     {:noreply, %{s | contact_refs: new_refs}}
+  end
+
+  # Used for testing exit-related race - blocks the process while keeping it
+  # alive, then exits
+  def handle_info({:exit_after, time}, s) do
+    Process.sleep(time)
+    {:stop, :normal, s}
   end
 
   def handle_info(_, s) do
