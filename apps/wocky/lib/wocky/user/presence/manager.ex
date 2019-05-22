@@ -127,6 +127,13 @@ defmodule Wocky.User.Presence.Manager do
     {:noreply, %{s | contact_refs: new_refs}}
   end
 
+  # Used for testing exit-related race - blocks the process while keeping it
+  # alive, then exits
+  def handle_info({:exit_after, time}, s) do
+    Process.sleep(time)
+    {:stop, :normal, s}
+  end
+
   def handle_info(_, s) do
     {:noreply, s}
   end

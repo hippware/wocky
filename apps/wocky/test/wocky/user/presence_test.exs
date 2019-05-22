@@ -8,6 +8,7 @@ defmodule Wocky.User.PresenceTest do
   alias Wocky.Roster
   alias Wocky.User
   alias Wocky.User.Presence
+  alias Wocky.User.Presence.Manager
 
   setup do
     [user, requestor] = Factory.insert_list(2, :user)
@@ -148,6 +149,16 @@ defmodule Wocky.User.PresenceTest do
 
       assert_receive {:presence, %User{id: ^rid, presence: %{status: :offline}},
                       ^uid}
+    end
+  end
+
+  describe "race condition tests" do
+    test "get_presence race", ctx do
+      {:ok, manager} = Manager.acquire(ctx.user)
+      send(manager, {:exit_after, 1000})
+
+      assert %Presence{status: :offline} =
+               Manager.get_presence(manager, ctx.user)
     end
   end
 
