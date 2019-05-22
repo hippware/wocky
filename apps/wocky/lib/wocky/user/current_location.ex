@@ -14,7 +14,13 @@ defmodule Wocky.User.CurrentLocation do
   @spec set(User.t(), Location.t()) :: :ok
   def set(user, loc) do
     {:ok, _} =
-      Redix.command(Redix, ["SET", key(user.id), value(loc), "EX", @expire_secs])
+      Redix.command(Redix, [
+        "SET",
+        key(user.id),
+        value(loc),
+        "EX",
+        to_string(@expire_secs)
+      ])
 
     __MODULE__
     |> CallbackManager.get()
