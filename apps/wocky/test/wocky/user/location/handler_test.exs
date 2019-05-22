@@ -51,7 +51,7 @@ defmodule Wocky.User.Location.HandlerTest do
     test "should remove the bot subscription", %{user: user, bot: bot, pid: pid} do
       Bot.delete(bot)
 
-      refute_eventually Subscription.get(user, bot)
+      refute_eventually(Subscription.get(user, bot))
 
       Process.sleep(100)
 
