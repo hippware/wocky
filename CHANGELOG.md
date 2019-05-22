@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Drop testing replicas back to 2 (PR #2533)
+* Fix capturedAt and createdAt in current location (PR #2536)
+  * Fixes: FunctionClauseError: no function clause matching ... (#2534)
+* Move weekly auto deploy back to staging (#2535)
+
+
 # 2019.5.21+re1a0715
 
 * Fix missing error view (PR #2509)
