@@ -59,8 +59,14 @@ defmodule WockyAPI.LoggingSocket do
         Socket.__info__(message, state)
       end
 
-      def handle_info({:set_user, user}, {channels, socket}),
-        do: {:ok, {channels, assign(socket, :user, user)}}
+      def handle_info({:set_user_info, user, device}, {channels, socket}) do
+        new_socket =
+          socket
+          |> assign(:user, user)
+          |> assign(:device, device)
+
+        {:ok, {channels, new_socket}}
+      end
 
       def handle_info(message, state), do: Socket.__info__(message, state)
 
@@ -69,18 +75,20 @@ defmodule WockyAPI.LoggingSocket do
     end
   end
 
-  def set_user(transport_pid, user), do: send(transport_pid, {:set_user, user})
+  def set_user_info(transport_pid, user, device),
+    do: send(transport_pid, {:set_user_info, user, device})
 
   def log(payload, {_channels, socket}, incoming?) do
     context = socket.assigns[:absinthe][:opts][:context]
     user = socket.assigns[:user]
+    device = socket.assigns[:device]
 
     # Ignore the return value here so that we don't crash the socket if the
     # log operation fails.
     _ =
       %{
         user_id: user && user.id,
-        device: "GraphQL",
+        device: device,
         host: context.host,
         ip: context.peer,
         incoming: incoming?,

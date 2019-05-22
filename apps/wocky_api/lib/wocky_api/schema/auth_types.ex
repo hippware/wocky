@@ -26,9 +26,11 @@ defmodule WockyAPI.Schema.AuthTypes do
       resolve &Auth.authenticate/3
 
       middleware fn res, _ ->
-        with %{value: %{user: user}} <- res do
+        with %{value: %{user: user, device: device}} <- res do
           transport_pid = res.context[:transport_pid]
-          if transport_pid, do: LoggingSocket.set_user(transport_pid, user)
+
+          if transport_pid,
+            do: LoggingSocket.set_user_info(transport_pid, user, device)
 
           %{res | context: Map.put(res.context, :current_user, user)}
         end

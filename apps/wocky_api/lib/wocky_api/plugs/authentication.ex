@@ -31,8 +31,10 @@ defmodule WockyAPI.Plugs.Authentication do
 
   defp do_authenticate(conn, token, auth) do
     case auth.(token) do
-      {:ok, user} ->
-        assign(conn, :current_user, user)
+      {:ok, %{user: user, device: device}} ->
+        conn
+        |> assign(:current_user, user)
+        |> assign(:device, device)
 
       {:error, _} ->
         fail_authentication(conn)
