@@ -64,6 +64,7 @@ defmodule WockyAPI.LoggingSocket do
           socket
           |> assign(:user, user)
           |> assign(:device, device)
+
         {:ok, {channels, new_socket}}
       end
 
@@ -75,7 +76,7 @@ defmodule WockyAPI.LoggingSocket do
   end
 
   def set_user_info(transport_pid, user, device),
-  do: send(transport_pid, {:set_user, user, device})
+    do: send(transport_pid, {:set_user_info, user, device})
 
   def log(payload, {_channels, socket}, incoming?) do
     context = socket.assigns[:absinthe][:opts][:context]
