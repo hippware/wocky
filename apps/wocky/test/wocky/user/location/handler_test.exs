@@ -1,7 +1,9 @@
 defmodule Wocky.User.Location.HandlerTest do
-  use Wocky.DataCase
+  use Wocky.WatcherCase
 
   alias Wocky.Bot
+  alias Wocky.Bot.Subscription
+  alias Wocky.GeoUtils
   alias Wocky.Repo.Factory
   alias Wocky.Roster
   alias Wocky.User.Location.Handler
@@ -16,19 +18,41 @@ defmodule Wocky.User.Location.HandlerTest do
 
     pid = Handler.get_handler(user)
 
+    Bot.subscribe(bot, user)
+
     {:ok, pid: pid, user: user, bot: bot}
   end
 
-  test "should add a new bot subscription", %{user: user, bot: bot, pid: pid} do
-    Bot.subscribe(bot, user)
+  describe "bot subscription hooks" do
+    test "should add a new bot subscription", %{bot: bot, pid: pid} do
+      assert %{subscriptions: [^bot]} = :sys.get_state(pid)
+    end
 
-    assert %{subscriptions: [bot]} = :sys.get_state(pid)
+    test "should remove a bot subscription", %{user: user, bot: bot, pid: pid} do
+      Bot.unsubscribe(bot, user)
+
+      assert %{subscriptions: []} = :sys.get_state(pid)
+    end
   end
 
-  test "should remove a bot subscription", %{user: user, bot: bot, pid: pid} do
-    Bot.subscribe(bot, user)
-    Bot.unsubscribe(bot, user)
+  describe "bot update callback" do
+    test "should update the bot subscription", %{bot: bot, pid: pid} do
+      Bot.update(bot, %{location: GeoUtils.point(1.0, 2.0)})
 
-    assert %{subscriptions: []} = :sys.get_state(pid)
+      assert_eventually (
+        %{subscriptions: [bot]} = :sys.get_state(pid)
+        Bot.lat(bot) == 1.0 and Bot.lon(bot) == 2.0
+      )
+    end
+  end
+
+  describe "subscription delete callback" do
+    test "should remove the bot subscription", %{user: user, bot: bot, pid: pid} do
+      Bot.delete(bot)
+
+      refute_eventually(Subscription.get(user, bot))
+
+      assert_eventually [] == :sys.get_state(pid).subscriptions
+    end
   end
 end
