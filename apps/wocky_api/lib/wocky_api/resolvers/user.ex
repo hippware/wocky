@@ -285,12 +285,12 @@ defmodule WockyAPI.Resolvers.User do
 
   def notify_location(user, location) do
     user
-    |> User.get_location_shares()
+    |> User.get_location_share_targets()
     |> Enum.each(&do_notify_location(&1, user, location))
   end
 
-  defp do_notify_location(share, user, location) do
-    topic = location_subscription_topic(share.shared_with.id)
+  defp do_notify_location(share_target_id, user, location) do
+    topic = location_subscription_topic(share_target_id)
     data = make_location_data(user, location)
 
     Subscription.publish(Endpoint, data, [{:shared_locations, topic}])

@@ -6,6 +6,7 @@ defmodule Wocky.Callbacks.LocationShare do
   alias Wocky.Events.{LocationShare, LocationShareEnd}
   alias Wocky.Notifier
   alias Wocky.Repo
+  alias Wocky.User.LocationShare.Cache
 
   def handle_insert(new) do
     new = Repo.preload(new, [:user, :shared_with])
@@ -18,6 +19,12 @@ defmodule Wocky.Callbacks.LocationShare do
       }
       |> Notifier.notify()
     end
+
+    Cache.refresh(new.user_id)
+  end
+
+  def handle_update(_old, new) do
+    Cache.refresh(new.user_id)
   end
 
   def handle_delete(old) do
@@ -30,5 +37,7 @@ defmodule Wocky.Callbacks.LocationShare do
       }
       |> Notifier.notify()
     end
+
+    Cache.refresh(old.user_id)
   end
 end
