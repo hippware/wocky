@@ -1,8 +1,6 @@
 defmodule Wocky.User.Location.HandlerTest do
   use Wocky.WatcherCase
 
-  import Eventually
-
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
