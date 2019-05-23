@@ -1,6 +1,8 @@
 defmodule Wocky.User.Location.HandlerTest do
   use Wocky.WatcherCase
 
+  import Eventually
+
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
@@ -39,11 +41,10 @@ defmodule Wocky.User.Location.HandlerTest do
     test "should update the bot subscription", %{bot: bot, pid: pid} do
       Bot.update(bot, %{location: GeoUtils.point(1.0, 2.0)})
 
-      Process.sleep(100)
-
-      assert %{subscriptions: [bot]} = :sys.get_state(pid)
-      assert Bot.lat(bot) == 1.0
-      assert Bot.lon(bot) == 2.0
+      assert_eventually (
+        %{subscriptions: [bot]} = :sys.get_state(pid)
+        Bot.lat(bot) == 1.0 and Bot.lon(bot) == 2.0
+      )
     end
   end
 
@@ -53,9 +54,7 @@ defmodule Wocky.User.Location.HandlerTest do
 
       refute_eventually(Subscription.get(user, bot))
 
-      Process.sleep(100)
-
-      assert %{subscriptions: []} = :sys.get_state(pid)
+      assert_eventually [] == :sys.get_state(pid).subscriptions
     end
   end
 end
