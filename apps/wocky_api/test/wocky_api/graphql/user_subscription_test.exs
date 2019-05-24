@@ -113,7 +113,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
       Roster.befriend(friend, user)
       User.start_sharing_location(friend, user, expiry)
 
-      # Wait for the cache to cacth up
+      # Wait for the cache to catch up
       assert_eventually(length(Cache.get(friend.id)) == 1)
 
       {:ok, friend: friend}
