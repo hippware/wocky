@@ -7,7 +7,7 @@ defmodule Wocky.User do
 
   import Ecto.Query
 
-  alias Ecto.{Changeset, Queryable}
+  alias Ecto.Queryable
   alias FirebaseAdminEx.Auth, as: FirebaseAuth
   alias Wocky.Account.ClientVersion
 
@@ -556,73 +556,22 @@ defmodule Wocky.User do
     CurrentLocation.get(user)
   end
 
-  @spec start_sharing_location(User.t(), User.t(), DateTime.t()) ::
-          {:ok, LocationShare.t()} | {:error, Changeset.t() | atom}
-  def start_sharing_location(user, shared_with, expiry) do
-    %LocationShare{}
-    |> LocationShare.changeset(%{
-      user_id: user.id,
-      shared_with_id: shared_with.id,
-      expires_at: expiry
-    })
-    |> Repo.insert(
-      on_conflict: [set: [expires_at: expiry, updated_at: DateTime.utc_now()]],
-      conflict_target: [:user_id, :shared_with_id]
-    )
-  end
+  defdelegate start_sharing_location(user, shared_with, expiry),
+    to: LocationShare
 
-  @spec stop_sharing_location(User.t(), User.t()) :: :ok
-  def stop_sharing_location(%User{id: user_id}, %User{id: shared_with_id}) do
-    LocationShare
-    |> where(user_id: ^user_id, shared_with_id: ^shared_with_id)
-    |> Repo.delete_all()
+  defdelegate stop_sharing_location(user, target), to: LocationShare
 
-    :ok
-  end
+  defdelegate stop_sharing_location(user), to: LocationShare
 
-  @spec stop_sharing_location(User.t()) :: :ok
-  def stop_sharing_location(%User{id: user_id}) do
-    LocationShare
-    |> where(user_id: ^user_id)
-    |> Repo.delete_all()
+  defdelegate get_location_share_targets(user), to: LocationShare
 
-    :ok
-  end
+  defdelegate get_location_shares(user), to: LocationShare
 
-  @spec get_location_shares(User.t()) :: [LocationShare.t()]
-  def get_location_shares(user) do
-    user
-    |> get_location_shares_query()
-    |> Repo.all()
-  end
+  defdelegate get_location_shares_query(user), to: LocationShare
 
-  @spec get_location_shares_query(User.t()) :: Queryable.t()
-  def get_location_shares_query(%User{id: user_id}) do
-    location_shares_query()
-    |> where([ls], ls.user_id == ^user_id)
-  end
+  defdelegate get_location_sharers(user), to: LocationShare
 
-  @spec get_location_sharers(User.t()) :: [LocationShare.t()]
-  def get_location_sharers(user) do
-    user
-    |> get_location_sharers_query()
-    |> Repo.all()
-  end
-
-  @spec get_location_sharers_query(User.t()) :: Queryable.t()
-  def get_location_sharers_query(%User{id: user_id}) do
-    location_shares_query()
-    |> where([ls], ls.shared_with_id == ^user_id)
-  end
-
-  defp location_shares_query do
-    now = DateTime.utc_now()
-
-    LocationShare
-    |> preload([:user, :shared_with])
-    |> where([ls], ls.expires_at > ^now)
-    |> order_by([ls], desc: ls.created_at)
-  end
+  defdelegate get_location_sharers_query(user), to: LocationShare
 
   # ----------------------------------------------------------------------
   # Searching

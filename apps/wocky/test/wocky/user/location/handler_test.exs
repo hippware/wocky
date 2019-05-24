@@ -39,9 +39,11 @@ defmodule Wocky.User.Location.HandlerTest do
     test "should update the bot subscription", %{bot: bot, pid: pid} do
       Bot.update(bot, %{location: GeoUtils.point(1.0, 2.0)})
 
-      assert_eventually (
-        %{subscriptions: [bot]} = :sys.get_state(pid)
-        Bot.lat(bot) == 1.0 and Bot.lon(bot) == 2.0
+      assert_eventually(
+        (
+          %{subscriptions: [bot]} = :sys.get_state(pid)
+          Bot.lat(bot) == 1.0 and Bot.lon(bot) == 2.0
+        )
       )
     end
   end
@@ -52,7 +54,7 @@ defmodule Wocky.User.Location.HandlerTest do
 
       refute_eventually(Subscription.get(user, bot))
 
-      assert_eventually [] == :sys.get_state(pid).subscriptions
+      assert_eventually([] == :sys.get_state(pid).subscriptions)
     end
   end
 end

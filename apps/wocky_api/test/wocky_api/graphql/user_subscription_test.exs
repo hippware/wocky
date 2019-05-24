@@ -1,11 +1,13 @@
 defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
+  import Eventually
   import WockyAPI.ChannelHelper
   import WockyAPI.GraphQLHelper
 
   alias Wocky.Repo.{Factory, Timestamp}
   alias Wocky.{Roster, User}
+  alias Wocky.User.LocationShare.Cache
 
   setup_all :require_watcher
 
@@ -110,6 +112,9 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
 
       Roster.befriend(friend, user)
       User.start_sharing_location(friend, user, expiry)
+
+      # Wait for the cache to catch up
+      assert_eventually(length(Cache.get(friend.id)) == 1)
 
       {:ok, friend: friend}
     end
