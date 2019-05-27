@@ -7,6 +7,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Remove subscription from cache on bot delete (PR #2543)
   * Fixes crash (#2541)
+* Update: stringprep (PR #2545)
+* Loc share cache (PR #2546)
 
 
 # 2019.5.22+r65a1de1
