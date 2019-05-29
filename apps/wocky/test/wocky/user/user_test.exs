@@ -416,21 +416,6 @@ defmodule Wocky.User.UserTest do
     end
   end
 
-  describe "remove_auth_details/1" do
-    test "valid user", ctx do
-      assert User.remove_auth_details(ctx.user.id) == :ok
-
-      user = Repo.get(User, ctx.user.id)
-      refute user.phone_number
-      refute user.provider
-      refute user.external_id
-    end
-
-    test "invalid user" do
-      assert User.remove_auth_details(ID.new()) == :ok
-    end
-  end
-
   describe "delete/1" do
     test "should remove the user from the database", ctx do
       assert User.delete(ctx.id) == :ok

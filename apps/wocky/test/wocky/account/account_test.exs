@@ -5,9 +5,7 @@ defmodule Wocky.Account.AccountTest do
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Firebase
   alias Wocky.Account.JWT.Server, as: ServerJWT
-  alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.Repo.ID
   alias Wocky.User
 
   setup do
@@ -134,23 +132,6 @@ defmodule Wocky.Account.AccountTest do
 
     test "bad token" do
       assert {:error, _} = Account.authenticate_for_location("bogus")
-    end
-  end
-
-  describe "account disabling" do
-    test "when the user does not exist" do
-      assert Account.disable_user(ID.new()) == :ok
-    end
-
-    test "when the user exists" do
-      user = Factory.insert(:user, device: "testing")
-
-      Account.disable_user(user.id)
-
-      disabled_user = Repo.get(User, user.id)
-      assert disabled_user.phone_number == nil
-      assert disabled_user.provider == nil
-      assert disabled_user.external_id == nil
     end
   end
 end

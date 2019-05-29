@@ -6,6 +6,7 @@ defmodule Wocky.Account do
 
   use Elixometer
 
+  alias FirebaseAdminEx.Auth, as: FirebaseAuth
   alias Wocky.Account.ClientVersion
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Firebase
@@ -133,14 +134,14 @@ defmodule Wocky.Account do
   end
 
   # ====================================================================
-  # Account disabling
+  # Account cleanup
 
-  @doc """
-  Disable a user prior to their eventual deletion so that they cannot
-  re-login before the deletion is finalised
-  """
-  @spec disable_user(User.id()) :: :ok
-  def disable_user(user_id) do
-    User.remove_auth_details(user_id)
+  @spec cleanup(User.t()) :: :ok
+  def cleanup(user) do
+    _ =
+      if user.provider == "firebase",
+        do: FirebaseAuth.delete_user(user.external_id)
+
+    :ok
   end
 end

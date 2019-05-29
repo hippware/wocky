@@ -5,8 +5,7 @@ defmodule Wocky.Account.Register do
   import Ecto.Changeset
 
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
-  alias Wocky.Repo.ID
+  alias Wocky.Repo.{Factory, ID}
   alias Wocky.User
 
   require Logger
