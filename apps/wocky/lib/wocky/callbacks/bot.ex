@@ -14,7 +14,7 @@ defmodule Wocky.Callbacks.Bot do
     %{user: user} = Repo.preload(new, [:user])
 
     if user != nil do
-      Bot.subscribe(new, user)
+      :ok = Bot.subscribe(new, user)
 
       new
       |> Bot.sub_setup_event()

@@ -29,14 +29,17 @@ defmodule Wocky.Account do
     end
   end
 
-  @spec authenticate_for_location(binary) :: {:ok, User.t()} | {:error, any}
+  @spec authenticate_for_location(binary) :: {:ok, User.id()} | {:error, any}
   def authenticate_for_location(token) do
     case JOSE.JWT.peek_payload(token).fields do
       %{"typ" => "location"} ->
-        authenticate_with(:server_jwt, token, %{})
+        authenticate_with_server_jwt(token)
 
       %{"typ" => type} when type == "firebase" or type == "bypass" ->
-        authenticate(token)
+        case authenticate(token) do
+          {:ok, %{user: %User{id: id}}} -> {:ok, id}
+          error -> error
+        end
 
       _else ->
         {:error, :bad_token}
@@ -89,11 +92,13 @@ defmodule Wocky.Account do
     end
   end
 
-  defp authenticate_with(:server_jwt, token, opts) do
+  # Unlike the authenticate_with methods above, this only returns a user_id.
+  # This is to avoid a DB lookup for each location upload.
+  defp authenticate_with_server_jwt(token) do
     case ServerJWT.resource_from_token(token) do
-      {:ok, user, _claims} ->
+      {:ok, user_id, _claims} ->
         update_counter("auth.server_jwt.success", 1)
-        {:ok, %{user: user, device: opts["dvc"]}}
+        {:ok, user_id}
 
       {:error, reason} ->
         update_counter("auth.server_jwt.fail", 1)

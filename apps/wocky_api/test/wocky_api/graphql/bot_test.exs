@@ -1163,8 +1163,15 @@ defmodule WockyAPI.GraphQL.BotTest do
     }
     """
 
-    test "subscribe", %{user: user, bot2: bot2} do
-      result = run_query(@query, user, %{"id" => bot2.id})
+    setup ctx do
+      Roster.befriend(ctx.user, ctx.user2)
+      unsubbed_bot = Factory.insert(:bot, user: ctx.user2)
+      Factory.insert(:bot_invitation, user: ctx.user2, invitee: ctx.user, bot: unsubbed_bot)
+      {:ok, unsubbed_bot: unsubbed_bot}
+    end
+
+    test "subscribe", %{user: user, unsubbed_bot: bot} do
+      result = run_query(@query, user, %{"id" => bot.id})
 
       refute has_errors(result)
 
@@ -1172,7 +1179,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                "botSubscribe" => %{"result" => true, "messages" => []}
              }
 
-      assert Bot.subscription(bot2, user) == :subscribed
+      assert Bot.subscription(bot, user) == :subscribed
     end
 
     test "subscribe to a non-existent bot", %{user: user} do
@@ -1183,14 +1190,14 @@ defmodule WockyAPI.GraphQL.BotTest do
       assert result.data == %{"botSubscribe" => nil}
     end
 
-    test "subscribe with location inside bot", %{user: user, bot2: bot2} do
+    test "subscribe with location inside bot", %{user: user, unsubbed_bot: bot} do
       result =
         run_query(@query, user, %{
-          "id" => bot2.id,
+          "id" => bot.id,
           "guest" => true,
           "user_location" => %{
-            "lat" => Bot.lat(bot2),
-            "lon" => Bot.lon(bot2),
+            "lat" => Bot.lat(bot),
+            "lon" => Bot.lon(bot),
             "accuracy" => 1,
             "device" => Lorem.word()
           }
@@ -1202,17 +1209,17 @@ defmodule WockyAPI.GraphQL.BotTest do
                "botSubscribe" => %{"result" => true, "messages" => []}
              }
 
-      assert Bot.subscription(bot2, user) == :visiting
+      assert Bot.subscription(bot, user) == :visiting
     end
 
-    test "subscribe with location outside bot", %{user: user, bot2: bot2} do
+    test "subscribe with location outside bot", %{user: user, unsubbed_bot: bot} do
       result =
         run_query(@query, user, %{
-          "id" => bot2.id,
+          "id" => bot.id,
           "guest" => true,
           "user_location" => %{
-            "lat" => Bot.lat(bot2) + 5.0,
-            "lon" => Bot.lon(bot2) + 5.0,
+            "lat" => Bot.lat(bot) + 5.0,
+            "lon" => Bot.lon(bot) + 5.0,
             "accuracy" => 1,
             "device" => Lorem.word()
           }
@@ -1224,17 +1231,17 @@ defmodule WockyAPI.GraphQL.BotTest do
                "botSubscribe" => %{"result" => true, "messages" => []}
              }
 
-      assert Bot.subscription(bot2, user) == :subscribed
+      assert Bot.subscription(bot, user) == :subscribed
     end
 
-    test "subscribe with invalid location", %{user: user, bot2: bot2} do
+    test "subscribe with invalid location", %{user: user, unsubbed_bot: bot} do
       result =
         run_query(@query, user, %{
-          "id" => bot2.id,
+          "id" => bot.id,
           "guest" => true,
           "user_location" => %{
-            "lat" => Bot.lat(bot2),
-            "lon" => Bot.lon(bot2),
+            "lat" => Bot.lat(bot),
+            "lon" => Bot.lon(bot),
             "accuracy" => -1,
             "device" => Lorem.word()
           }

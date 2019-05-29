@@ -20,21 +20,28 @@ defmodule Wocky.User.Location.Handler do
     defstruct [:user, :subscriptions, :events]
   end
 
-  @spec start_link(User.t()) :: {:ok, pid()}
-  def start_link(user), do: GenServer.start_link(__MODULE__, user)
+  @spec start_link(User.t() | User.id()) :: {:ok, pid()}
 
-  @spec set_location(User.t(), Location.t(), boolean()) ::
+  def start_link(%User{} = user), do: GenServer.start_link(__MODULE__, user)
+
+  def start_link(user_id) do
+    user_id
+    |> User.get_user()
+    |> start_link()
+  end
+
+  @spec set_location(User.id(), Location.t(), boolean()) ::
           {:ok, Location.t()} | {:error, any()}
-  def set_location(user, location, current? \\ true) do
-    user
+  def set_location(user_id, location, current? \\ true) do
+    user_id
     |> get_handler()
     |> GenServer.call({:set_location, location, current?})
   end
 
-  @spec set_location_for_bot(User.t(), Location.t(), Bot.t()) ::
+  @spec set_location_for_bot(User.id(), Location.t(), Bot.t()) ::
           {:ok, Location.t()} | {:error, any()}
-  def set_location_for_bot(user, location, bot) do
-    user
+  def set_location_for_bot(user_id, location, bot) do
+    user_id
     |> get_handler()
     |> GenServer.call({:set_location_for_bot, location, bot})
   end
@@ -43,27 +50,27 @@ defmodule Wocky.User.Location.Handler do
   def add_subscription(_user, %Bot{location: nil}), do: :ok
 
   def add_subscription(user, bot) do
-    user
+    user.id
     |> get_handler_if_exists()
     |> maybe_call({:add_subscription, bot})
   end
 
   @spec remove_subscription(User.t(), Bot.t()) :: :ok
   def remove_subscription(user, bot) do
-    user
+    user.id
     |> get_handler_if_exists()
     |> maybe_call({:remove_subscription, bot})
   end
 
   # Always returns a handler, creating a new one if one does not already exist.
-  @spec get_handler(User.t()) :: pid()
-  def get_handler(user) do
+  @spec get_handler(User.id()) :: pid()
+  def get_handler(user_id) do
     {:ok, pid} =
       Swarm.whereis_or_register_name(
-        handler_name(user),
+        handler_name(user_id),
         Supervisor,
         :start_child,
-        [user],
+        [user_id],
         5000
       )
 
@@ -71,9 +78,9 @@ defmodule Wocky.User.Location.Handler do
   end
 
   # Gets a handler if one exists, otherwise returns nil
-  @spec get_handler_if_exists(User.t()) :: pid() | nil
-  def get_handler_if_exists(user) do
-    case Swarm.whereis_name(handler_name(user)) do
+  @spec get_handler_if_exists(User.id()) :: pid() | nil
+  def get_handler_if_exists(user_id) do
+    case Swarm.whereis_name(handler_name(user_id)) do
       :undefined -> nil
       pid -> pid
     end
@@ -172,7 +179,7 @@ defmodule Wocky.User.Location.Handler do
     {:stop, :shutdown, state}
   end
 
-  defp handler_name(user), do: "location_handler_" <> user.id
+  defp handler_name(user_id), do: "location_handler_" <> user_id
 
   defp do_remove_subscription(bot, subscriptions) do
     Enum.reject(subscriptions, fn b -> b.id == bot.id end)
