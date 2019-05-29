@@ -21,7 +21,14 @@ config :wocky_api, :generators,
 
 # Configures the endpoint
 config :wocky_api, WockyAPI.Endpoint,
-  http: [port: 4000],
+  http: [
+    port: 4000,
+    # This must be more than the ALB idle timeout:
+    timeout: 90_000,
+    # This must be infinity to prevent cowboy closing the connection after
+    # a fixed number of requests:
+    protocol_options: [max_keepalive: :infinity]
+  ],
   url: [host: "localhost", port: 4000],
   secret_key_base:
     "teo9ScPXCxIsZm9KWkEsAub4XqnAhp7FvQLGCVe9f3Bmvn9iyzt5Jkz/ZtxPUY8F",

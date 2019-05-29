@@ -6,7 +6,8 @@ defmodule Wocky.User.CurrentLocation do
 
   @type callback() :: (User.t(), Location.t() -> :ok)
 
-  @expire_secs 60 * 60 * 24 * 2 # 2 days
+  # 2 days
+  @expire_secs 60 * 60 * 24 * 2
 
   @spec register_callback(callback()) :: :ok
   def register_callback(cb), do: CallbackManager.add(__MODULE__, cb)
