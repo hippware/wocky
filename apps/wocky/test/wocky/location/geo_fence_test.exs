@@ -1,4 +1,4 @@
-defmodule Wocky.User.GeoFenceTest do
+defmodule Wocky.Location.GeoFenceTest do
   use Wocky.DataCase
 
   import Ecto.Query
@@ -6,12 +6,12 @@ defmodule Wocky.User.GeoFenceTest do
   alias Faker.Code
   alias Timex.Duration
   alias Wocky.Bot
+  alias Wocky.Location.{BotEvent, GeoFence, UserLocation}
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Roster
-  alias Wocky.User.{BotEvent, GeoFence, Location}
 
   @device "testing"
 
@@ -49,7 +49,7 @@ defmodule Wocky.User.GeoFenceTest do
 
   describe "check_for_bot_events/2 with bad data" do
     setup %{user: user, bot: bot} do
-      loc = %Location{
+      loc = %UserLocation{
         user: user,
         lat: Bot.lat(bot),
         lon: Bot.lon(bot),
@@ -64,9 +64,9 @@ defmodule Wocky.User.GeoFenceTest do
     end
 
     test "location with insufficient accuracy", ctx do
-      config = Confex.get_env(:wocky, Wocky.User.GeoFence)
+      config = Confex.get_env(:wocky, Wocky.Location.GeoFence)
 
-      loc = %Location{
+      loc = %UserLocation{
         ctx.inside_loc
         | accuracy: config[:max_accuracy_threshold] + 10
       }
@@ -89,7 +89,7 @@ defmodule Wocky.User.GeoFenceTest do
 
   describe "check_for_bot_events/2 with a user inside a bot perimeter" do
     setup %{user: user, bot: bot} do
-      loc = %Location{
+      loc = %UserLocation{
         user: user,
         lat: Bot.lat(bot),
         lon: Bot.lon(bot),
@@ -129,7 +129,7 @@ defmodule Wocky.User.GeoFenceTest do
     test "who was outside the bot perimeter and is moving slowly", ctx do
       BotEvent.insert(ctx.user, @device, ctx.bot, :exit)
 
-      loc = %Location{ctx.inside_loc | speed: 1}
+      loc = %UserLocation{ctx.inside_loc | speed: 1}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
@@ -144,7 +144,7 @@ defmodule Wocky.User.GeoFenceTest do
     test "who was outside the bot perimeter and is not moving", ctx do
       BotEvent.insert(ctx.user, @device, ctx.bot, :exit)
 
-      loc = %Location{ctx.inside_loc | is_moving: false}
+      loc = %UserLocation{ctx.inside_loc | is_moving: false}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
@@ -160,7 +160,7 @@ defmodule Wocky.User.GeoFenceTest do
       BotEvent.insert(ctx.user, @device, ctx.bot, :exit)
 
       ts = Timex.subtract(Timex.now(), Duration.from_minutes(6))
-      loc = %Location{ctx.inside_loc | is_moving: false, captured_at: ts}
+      loc = %UserLocation{ctx.inside_loc | is_moving: false, captured_at: ts}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
@@ -269,7 +269,7 @@ defmodule Wocky.User.GeoFenceTest do
   check_for_bot_event/3 with a user inside a bot perimeter - no debounce
   """ do
     setup %{user: user, bot: bot} do
-      loc = %Location{
+      loc = %UserLocation{
         user: user,
         lat: Bot.lat(bot),
         lon: Bot.lon(bot),
@@ -398,7 +398,7 @@ defmodule Wocky.User.GeoFenceTest do
 
   describe "check_for_bot_events/2 with a user outside a bot perimeter" do
     setup %{user: user, bot: bot} do
-      loc = %Location{
+      loc = %UserLocation{
         user: user,
         lat: Bot.lat(bot) + 0.0015,
         lon: Bot.lon(bot),
@@ -440,7 +440,7 @@ defmodule Wocky.User.GeoFenceTest do
       Bot.visit(ctx.bot, ctx.user, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
 
-      loc = %Location{ctx.outside_loc | speed: 1}
+      loc = %UserLocation{ctx.outside_loc | speed: 1}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
@@ -456,7 +456,7 @@ defmodule Wocky.User.GeoFenceTest do
       Bot.visit(ctx.bot, ctx.user, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
 
-      loc = %Location{ctx.outside_loc | is_moving: false}
+      loc = %UserLocation{ctx.outside_loc | is_moving: false}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
@@ -472,7 +472,7 @@ defmodule Wocky.User.GeoFenceTest do
       Bot.visit(ctx.bot, ctx.user, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
 
-      loc = %Location{ctx.outside_loc | lat: Bot.lat(ctx.bot) + 0.0025}
+      loc = %UserLocation{ctx.outside_loc | lat: Bot.lat(ctx.bot) + 0.0025}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)

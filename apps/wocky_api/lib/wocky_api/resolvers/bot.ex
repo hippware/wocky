@@ -2,11 +2,9 @@ defmodule WockyAPI.Resolvers.Bot do
   @moduledoc "GraphQL resolver for bot objects"
 
   alias Absinthe.Subscription
-  alias Wocky.{Bot, Repo, User, Waiter}
+  alias Wocky.{Bot, GeoUtils, Location, Repo, Repo.ID, User, Waiter}
   alias Wocky.Bot.{Cluster, ClusterSearch, Invitation, Item}
-  alias Wocky.GeoUtils
-  alias Wocky.Repo.ID
-  alias Wocky.User.Location
+  alias Wocky.Location.UserLocation
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
@@ -160,9 +158,9 @@ defmodule WockyAPI.Resolvers.Bot do
       Enum.member?(User.get_bot_relationships(user, bot), :subscribed)
     end)
 
-    location = struct(Location, l)
+    location = struct(UserLocation, l)
 
-    User.set_location_for_bot(user, location, bot)
+    Location.set_user_location_for_bot(user, location, bot)
   end
 
   defp maybe_update_location(_, _, _), do: {:ok, :skip}

@@ -1,10 +1,10 @@
-defmodule Wocky.User.Location do
+defmodule Wocky.Location.UserLocation do
   @moduledoc false
 
   use Wocky.Repo.Schema
 
+  alias Wocky.Location.BotEvent
   alias Wocky.User
-  alias Wocky.User.BotEvent
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
@@ -30,7 +30,7 @@ defmodule Wocky.User.Location do
     timestamps()
 
     belongs_to :user, User, define_field: false
-    has_many :events, BotEvent
+    has_many :events, BotEvent, foreign_key: :location_id
   end
 
   @type t :: %__MODULE__{

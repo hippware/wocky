@@ -5,15 +5,13 @@ defmodule Wocky.Callbacks.BotSubscription do
 
   use DawdleDB.Handler, type: Wocky.Bot.Subscription
 
-  alias Wocky.Bot
-  alias Wocky.Repo
-  alias Wocky.User.Location.Handler, as: LocationHandler
+  alias Wocky.{Bot, Location, Repo}
 
   def handle_delete(subscription) do
     subscription = Repo.preload(subscription, [:user])
 
     if subscription.user != nil do
-      LocationHandler.remove_subscription(
+      Location.remove_subscription(
         subscription.user,
         %Bot{id: subscription.bot_id}
       )

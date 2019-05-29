@@ -19,6 +19,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.Invitation, as: BotInvitation
   alias Wocky.Bot.{Item, Subscription}
   alias Wocky.GeoUtils
+  alias Wocky.Location.{BotEvent, Share, UserLocation}
   alias Wocky.Message
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Notifier.Push.Log, as: PushLog
@@ -30,7 +31,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.TROS
   alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.User
-  alias Wocky.User.{BotEvent, Location, LocationShare}
 
   def user_factory do
     %User{
@@ -116,7 +116,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def user_location_share_factory do
-    %LocationShare{
+    %Share{
       user: build(:user),
       shared_with: build(:user),
       expires_at: Timestamp.shift(days: 1)
@@ -134,7 +134,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def location_factory do
-    %Location{
+    %UserLocation{
       device: device(),
       lat: Address.latitude(),
       lon: Address.longitude(),

@@ -6,8 +6,8 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   import WockyAPI.GraphQLHelper
 
   alias Wocky.Repo.{Factory, Timestamp}
-  alias Wocky.{Roster, User}
-  alias Wocky.User.LocationShare.Cache
+  alias Wocky.{Location, Roster, User}
+  alias Wocky.Location.Share.Cache
 
   setup_all :require_watcher
 
@@ -111,7 +111,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
       friend = Factory.insert(:user)
 
       Roster.befriend(friend, user)
-      User.start_sharing_location(friend, user, expiry)
+      Location.start_sharing_location(friend, user, expiry)
 
       # Wait for the cache to catch up
       assert_eventually(length(Cache.get(friend.id)) == 1)
@@ -125,7 +125,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
 
       captured_at = DateTime.utc_now() |> DateTime.to_iso8601()
       location = Factory.build(:location, captured_at: captured_at)
-      {:ok, loc} = User.set_location(friend, location)
+      {:ok, loc} = Location.set_user_location(friend, location)
 
       assert_push "subscription:data", push, 2000
 
@@ -158,7 +158,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
     test "location catchup", %{socket: socket, friend: friend} do
       captured_at = DateTime.utc_now() |> DateTime.to_iso8601()
       location = Factory.build(:location, captured_at: captured_at)
-      {:ok, loc} = User.set_location(friend, location)
+      {:ok, loc} = Location.set_user_location(friend, location)
 
       ref = push_doc(socket, @query)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000

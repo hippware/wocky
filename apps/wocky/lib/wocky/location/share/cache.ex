@@ -1,13 +1,13 @@
-defmodule Wocky.User.LocationShare.Cache do
+defmodule Wocky.Location.Share.Cache do
   @moduledoc """
   A write-through cache for user location shares
   """
 
   import Ecto.Query
 
+  alias Wocky.Location.Share
   alias Wocky.Repo
   alias Wocky.User
-  alias Wocky.User.LocationShare
 
   @spec get(User.id()) :: [User.id()]
   def get(user_id) do
@@ -32,7 +32,7 @@ defmodule Wocky.User.LocationShare.Cache do
   @spec refresh(User.id()) :: [User.id()]
   def refresh(user_id) do
     values =
-      LocationShare
+      Share
       |> where([ls], ls.user_id == ^user_id)
       |> where([ls], ls.expires_at > ^DateTime.utc_now())
       |> select([ls], {ls.shared_with_id, ls.expires_at})

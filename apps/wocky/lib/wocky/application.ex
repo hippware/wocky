@@ -11,10 +11,10 @@ defmodule Wocky.Application do
 
   alias DawdleDB.Watcher.Supervisor, as: Watcher
   alias Wocky.CallbackManager
+  alias Wocky.Location.Supervisor, as: LocationSupervisor
   alias Wocky.Notifier.Email.Mailer
   alias Wocky.Notifier.Push.Backend.Sandbox, as: PushSandbox
   alias Wocky.Tasks.Recurring
-  alias Wocky.User.Location.Supervisor, as: LocationSupervisor
   alias Wocky.User.Presence.Supervisor, as: PresenceSupervisor
 
   require Logger

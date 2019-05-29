@@ -1,14 +1,19 @@
-defmodule Wocky.User.Location.Handler do
+defmodule Wocky.Location.Handler do
   @moduledoc """
   This is the per-user location update handler process
   """
 
   use GenServer
 
-  alias Wocky.{Bot, GeoUtils, Location, Repo, User}
-  alias Wocky.User.{BotEvent, GeoFence, Location}
-  alias Wocky.User.CurrentLocation
-  alias Wocky.User.Location.Supervisor
+  alias Wocky.{Bot, GeoUtils, Repo, User}
+
+  alias Wocky.Location.{
+    BotEvent,
+    GeoFence,
+    Supervisor,
+    UserLocation,
+    UserLocation.Current
+  }
 
   require Logger
 
@@ -30,16 +35,16 @@ defmodule Wocky.User.Location.Handler do
     |> start_link()
   end
 
-  @spec set_location(User.t() | User.id(), Location.t(), boolean()) ::
-          {:ok, Location.t()} | {:error, any()}
+  @spec set_location(User.t() | User.id(), UserLocation.t(), boolean()) ::
+          {:ok, UserLocation.t()} | {:error, any()}
   def set_location(user_or_id, location, current? \\ true) do
     user_or_id
     |> get_handler()
     |> GenServer.call({:set_location, location, current?})
   end
 
-  @spec set_location_for_bot(User.t(), Location.t(), Bot.t()) ::
-          {:ok, Location.t()} | {:error, any()}
+  @spec set_location_for_bot(User.t(), UserLocation.t(), Bot.t()) ::
+          {:ok, UserLocation.t()} | {:error, any()}
   def set_location_for_bot(user, location, bot) do
     user
     |> get_handler()
@@ -201,7 +206,7 @@ defmodule Wocky.User.Location.Handler do
   defp normalize_location(location) do
     {nlat, nlon} = GeoUtils.normalize_lat_lon(location.lat, location.lon)
 
-    %Location{
+    %UserLocation{
       location
       | lat: nlat,
         lon: nlon,
@@ -210,13 +215,14 @@ defmodule Wocky.User.Location.Handler do
     }
   end
 
-  defp normalize_captured_at(%Location{captured_at: time})
+  defp normalize_captured_at(%UserLocation{captured_at: time})
        when is_binary(time) do
     {:ok, dt, 0} = DateTime.from_iso8601(time)
     dt
   end
 
-  defp normalize_captured_at(%Location{captured_at: %DateTime{} = dt}), do: dt
+  defp normalize_captured_at(%UserLocation{captured_at: %DateTime{} = dt}),
+    do: dt
 
   defp normalize_captured_at(_), do: DateTime.utc_now()
 
@@ -233,9 +239,8 @@ defmodule Wocky.User.Location.Handler do
   end
 
   def save_location(user, location) do
-    user
-    |> Ecto.build_assoc(:locations)
-    |> Location.changeset(Map.from_struct(location))
+    %UserLocation{user_id: user.id}
+    |> UserLocation.changeset(Map.from_struct(location))
     |> Repo.insert()
   end
 
@@ -243,7 +248,7 @@ defmodule Wocky.User.Location.Handler do
 
   defp maybe_save_current_location(true, user, location) do
     if GeoFence.should_process?(location, GeoFence.get_config()) do
-      CurrentLocation.set(user, location)
+      Current.set(user, location)
     else
       :ok
     end

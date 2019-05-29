@@ -5,6 +5,7 @@ defmodule Wocky.Repo.CleanerTest do
 
   alias Wocky.Bot
   alias Wocky.Bot.Item
+  alias Wocky.Location.{BotEvent, UserLocation}
   alias Wocky.Notifier.Push.Log, as: PushLog
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Repo
@@ -13,7 +14,7 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
   alias Wocky.User
-  alias Wocky.User.{BotEvent, InviteCode, Location}
+  alias Wocky.User.InviteCode
 
   setup do
     user = Factory.insert(:user)
@@ -561,11 +562,11 @@ defmodule Wocky.Repo.CleanerTest do
     end
 
     test "should remove the stale location", ctx do
-      refute Repo.get(Location, ctx.stale.id)
+      refute Repo.get(UserLocation, ctx.stale.id)
     end
 
     test "should not remove the recent location", ctx do
-      assert Repo.get(Location, ctx.recent.id)
+      assert Repo.get(UserLocation, ctx.recent.id)
     end
   end
 

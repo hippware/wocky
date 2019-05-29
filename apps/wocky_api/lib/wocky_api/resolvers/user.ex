@@ -4,9 +4,10 @@ defmodule WockyAPI.Resolvers.User do
   alias Absinthe.Relay.Connection
   alias Absinthe.Subscription
   alias Wocky.{Account, Repo, Roster, User}
+  alias Wocky.Location
+  alias Wocky.Location.UserLocation
   alias Wocky.Notifier.Push
   alias Wocky.Roster.Item
-  alias Wocky.User.Location
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
@@ -108,21 +109,21 @@ defmodule WockyAPI.Resolvers.User do
 
   def get_locations(user, args, %{context: %{current_user: user}}) do
     user
-    |> User.get_locations_query(args[:device])
+    |> Location.get_user_locations_query(args[:device])
     |> Utils.connection_from_query(user, args, order_by: [desc: :captured_at])
   end
 
   def get_location_events(user, args, %{context: %{current_user: user}}) do
     user
-    |> User.get_location_events_query(args[:device])
+    |> Location.get_user_location_events_query(args[:device])
     |> Utils.connection_from_query(user, args, order_by: [desc: :occurred_at])
   end
 
-  def get_location_events(%Location{} = loc, args, %{
+  def get_location_events(%UserLocation{} = loc, args, %{
         context: %{current_user: user}
       }) do
     user
-    |> User.get_location_events_query(loc)
+    |> Location.get_user_location_events_query(loc)
     |> Utils.connection_from_query(user, args, order_by: [desc: :occurred_at])
   end
 
@@ -163,9 +164,9 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def update_location(_root, %{input: i}, %{context: %{current_user: user}}) do
-    location = struct(Location, Map.drop(i, [:is_fetch]))
+    location = struct(UserLocation, Map.drop(i, [:is_fetch]))
 
-    with {:ok, _} <- User.set_location(user, location) do
+    with {:ok, _} <- Location.set_user_location(user, location) do
       {:ok, true}
     end
   end
@@ -181,7 +182,7 @@ defmodule WockyAPI.Resolvers.User do
 
     with %User{} = shared_with <- User.get_user(input.shared_with_id, user),
          {:ok, share} <-
-           User.start_sharing_location(user, shared_with, input.expires_at),
+           Location.start_sharing_location(user, shared_with, input.expires_at),
          {:ok, _} <- maybe_update_location(input, user) do
       {:ok, Repo.preload(share, [:shared_with, :user])}
     else
@@ -191,7 +192,11 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   defp maybe_update_location(%{location: l}, user) when not is_nil(l),
-    do: User.set_location(user, struct(Location, Map.drop(l, [:is_fetch])))
+    do:
+      Location.set_user_location(
+        user,
+        struct(UserLocation, Map.drop(l, [:is_fetch]))
+      )
 
   defp maybe_update_location(_args, _user), do: {:ok, :skip}
 
@@ -199,27 +204,27 @@ defmodule WockyAPI.Resolvers.User do
     input = args[:input]
 
     with %User{} = shared_with <- User.get_user(input.shared_with_id, user) do
-      :ok = User.stop_sharing_location(user, shared_with)
+      :ok = Location.stop_sharing_location(user, shared_with)
     end
 
     {:ok, true}
   end
 
   def cancel_all_location_shares(_root, _args, %{context: %{current_user: user}}) do
-    :ok = User.stop_sharing_location(user)
+    :ok = Location.stop_sharing_location(user)
 
     {:ok, true}
   end
 
   def get_location_shares(_root, args, %{context: %{current_user: user}}) do
     user
-    |> User.get_location_shares_query()
+    |> Location.get_location_shares_query()
     |> Utils.connection_from_query(user, args)
   end
 
   def get_location_sharers(_root, args, %{context: %{current_user: user}}) do
     user
-    |> User.get_location_sharers_query()
+    |> Location.get_location_sharers_query()
     |> Utils.connection_from_query(user, args)
   end
 
@@ -267,14 +272,14 @@ defmodule WockyAPI.Resolvers.User do
   def location_catchup(user) do
     result =
       user
-      |> User.get_location_sharers()
+      |> Location.get_location_sharers()
       |> Enum.reduce([], &build_location_catchup/2)
 
     {:ok, result}
   end
 
   defp build_location_catchup(share, acc) do
-    location = User.get_current_location(share.user)
+    location = Location.get_current_user_location(share.user)
 
     if location do
       [make_location_data(share.user, location) | acc]
@@ -285,7 +290,7 @@ defmodule WockyAPI.Resolvers.User do
 
   def notify_location(user, location) do
     user
-    |> User.get_location_share_targets()
+    |> Location.get_location_share_targets()
     |> Enum.each(&do_notify_location(&1, user, location))
   end
 

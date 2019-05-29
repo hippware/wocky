@@ -1,9 +1,9 @@
 defmodule WockyAPI.GraphQL.TestingTest do
   use WockyAPI.GraphQLCase, async: false
 
+  alias Wocky.Location.Share
   alias Wocky.{Repo, User}
   alias Wocky.Repo.Factory
-  alias Wocky.User.LocationShare
 
   setup do
     {:ok, user: Factory.insert(:user)}
@@ -80,7 +80,7 @@ defmodule WockyAPI.GraphQL.TestingTest do
       refute has_errors(result)
 
       assert Repo.get_by(User, phone_number: number)
-      assert Repo.get_by(LocationShare, user_id: user.id)
+      assert Repo.get_by(Share, user_id: user.id)
     end
 
     test "should fail to insert with improper params", %{user: user} do

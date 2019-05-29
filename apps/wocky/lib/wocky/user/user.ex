@@ -26,17 +26,7 @@ defmodule Wocky.User do
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
-  alias Wocky.User.Location.Handler, as: LocationHandler
-
-  alias Wocky.User.{
-    Avatar,
-    BotEvent,
-    CurrentLocation,
-    InviteCode,
-    Location,
-    LocationShare,
-    Presence
-  }
+  alias Wocky.User.{Avatar, InviteCode, Presence}
 
   @forever "2200-01-01T00:00:00.000000Z" |> DateTime.from_iso8601() |> elem(1)
 
@@ -79,9 +69,7 @@ defmodule Wocky.User do
     timestamps()
 
     has_many :bots, Bot
-    has_many :bot_events, BotEvent
     has_many :conversations, Conversation
-    has_many :locations, Location
     has_many :push_tokens, PushToken
     has_many :roster_contacts, RosterItem, foreign_key: :contact_id
     has_many :roster_items, RosterItem
@@ -480,83 +468,6 @@ defmodule Wocky.User do
       true
     end
   end
-
-  # ----------------------------------------------------------------------
-  # Location
-
-  @spec get_locations_query(t, device) :: Queryable.t()
-  def get_locations_query(user, device) do
-    user
-    |> Ecto.assoc(:locations)
-    |> where(device: ^device)
-  end
-
-  @spec get_location_events_query(t, device | Location.t()) :: Queryable.t()
-  def get_location_events_query(_user, %Location{} = loc) do
-    Ecto.assoc(loc, :events)
-  end
-
-  def get_location_events_query(user, device) when is_binary(device) do
-    user
-    |> Ecto.assoc(:bot_events)
-    |> where(device: ^device)
-  end
-
-  @spec set_location(t(), device(), float(), float(), float()) ::
-          :ok | {:error, any}
-  def set_location(user, device, lat, lon, accuracy) do
-    location = %Location{
-      lat: lat,
-      lon: lon,
-      accuracy: accuracy,
-      device: device
-    }
-
-    with {:ok, _} <- set_location(user, location) do
-      :ok
-    end
-  end
-
-  @doc """
-  Sets the user's current location to the provided Location struct and runs the
-  geofence calculation for all of the user's subscribed bots.
-  """
-  @spec set_location(t() | id(), Location.t(), boolean()) ::
-          {:ok, Location.t()} | {:error, any}
-  def set_location(user_or_id, location, current? \\ true),
-    do: LocationHandler.set_location(user_or_id, location, current?)
-
-  @doc """
-  Sets the user's current location to the provided Location struct and runs the
-  geofence calculation for the specified bot only and with debouncing disabled.
-  """
-  @spec set_location_for_bot(t(), Location.t(), Bot.t()) ::
-          {:ok, Location.t()} | {:error, any}
-  def set_location_for_bot(user, location, bot),
-    do: LocationHandler.set_location_for_bot(user, location, bot)
-
-  @doc "Gets the current location for the user."
-  @spec get_current_location(User.t()) :: Location.t() | nil
-  def get_current_location(user) do
-    CurrentLocation.get(user)
-  end
-
-  defdelegate start_sharing_location(user, shared_with, expiry),
-    to: LocationShare
-
-  defdelegate stop_sharing_location(user, target), to: LocationShare
-
-  defdelegate stop_sharing_location(user), to: LocationShare
-
-  defdelegate get_location_share_targets(user), to: LocationShare
-
-  defdelegate get_location_shares(user), to: LocationShare
-
-  defdelegate get_location_shares_query(user), to: LocationShare
-
-  defdelegate get_location_sharers(user), to: LocationShare
-
-  defdelegate get_location_sharers_query(user), to: LocationShare
 
   # ----------------------------------------------------------------------
   # Searching

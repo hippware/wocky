@@ -3,13 +3,13 @@ defmodule Wocky.Tasks.LocShareExpire do
 
   require Logger
 
-  alias Wocky.User.{CurrentLocation, LocationShare}
+  alias Wocky.Location
 
   def run do
-    {ls_time, {ls_count, user_ids}} = :timer.tc(&LocationShare.clean_expired/0)
+    {ls_time, {ls_count, user_ids}} = :timer.tc(&Location.clean_expired_shares/0)
 
     {cl_time, cl_count} =
-      :timer.tc(fn -> CurrentLocation.delete_when_not_shared(user_ids) end)
+      :timer.tc(fn -> Location.clean_current_locations(user_ids) end)
 
     Logger.info(
       "Deleted #{ls_count} expired shares in #{ls_time}μs and #{cl_count} stale locations in #{

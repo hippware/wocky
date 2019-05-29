@@ -5,10 +5,7 @@ defmodule Wocky.Callbacks.Bot do
 
   use DawdleDB.Handler, type: Wocky.Bot
 
-  alias Wocky.Bot
-  alias Wocky.Repo
-  alias Wocky.User.Location.Handler, as: LocationHandler
-  alias Wocky.Waiter
+  alias Wocky.{Bot, Location, Repo, Waiter}
 
   def handle_insert(new) do
     %{user: user} = Repo.preload(new, [:user])
@@ -27,7 +24,7 @@ defmodule Wocky.Callbacks.Bot do
     bot_with_subs = Repo.preload(bot, [:subscribers])
 
     for user <- bot_with_subs.subscribers do
-      LocationHandler.add_subscription(user, bot)
+      Location.add_subscription(user, bot)
     end
   end
 

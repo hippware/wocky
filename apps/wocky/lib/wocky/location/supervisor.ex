@@ -1,4 +1,4 @@
-defmodule Wocky.User.Location.Supervisor do
+defmodule Wocky.Location.Supervisor do
   @moduledoc """
   This is the supervisor for the location update worker processes
   """
@@ -10,7 +10,7 @@ defmodule Wocky.User.Location.Supervisor do
 
   def init(_) do
     children = [
-      worker(Wocky.User.Location.Handler, [], restart: :temporary)
+      worker(Wocky.Location.Handler, [], restart: :temporary)
     ]
 
     supervise(children, strategy: :simple_one_for_one)

@@ -1,12 +1,12 @@
-defmodule Wocky.User.Location.HandlerTest do
+defmodule Wocky.Location.HandlerTest do
   use Wocky.WatcherCase
 
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
+  alias Wocky.Location.Handler
   alias Wocky.Repo.Factory
   alias Wocky.Roster
-  alias Wocky.User.Location.Handler
 
   setup do
     owner = Factory.insert(:user)

@@ -1,8 +1,8 @@
 defmodule WockyAPI.Controllers.LocationController do
   use WockyAPI, :controller
 
-  alias Wocky.User
-  alias Wocky.User.Location
+  alias Wocky.Location
+  alias Wocky.Location.UserLocation
 
   action_fallback WockyAPI.Controllers.FallbackController
 
@@ -30,7 +30,7 @@ defmodule WockyAPI.Controllers.LocationController do
       if has_required_keys(l) do
         loc = make_location(l, device)
 
-        {:ok, _} = User.set_location(user_id, loc, idx == length)
+        {:ok, _} = Location.set_user_location(user_id, loc, idx == length)
       end
     end
   end
@@ -43,7 +43,7 @@ defmodule WockyAPI.Controllers.LocationController do
   defp has_required_keys(_), do: false
 
   defp make_location(%{"coords" => c} = l, device) do
-    %Location{
+    %UserLocation{
       lat: c["latitude"],
       lon: c["longitude"],
       accuracy: c["accuracy"],
@@ -62,13 +62,17 @@ defmodule WockyAPI.Controllers.LocationController do
   end
 
   defp maybe_add_activity(l, %{} = a) do
-    %Location{l | activity: a["type"], activity_confidence: a["confidence"]}
+    %UserLocation{l | activity: a["type"], activity_confidence: a["confidence"]}
   end
 
   defp maybe_add_activity(l, _), do: l
 
   defp maybe_add_battery(l, %{} = b) do
-    %Location{l | battery_level: b["level"], battery_charging: b["is_charging"]}
+    %UserLocation{
+      l
+      | battery_level: b["level"],
+        battery_charging: b["is_charging"]
+    }
   end
 
   defp maybe_add_battery(l, _), do: l

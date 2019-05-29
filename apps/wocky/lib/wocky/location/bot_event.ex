@@ -1,4 +1,4 @@
-defmodule Wocky.User.BotEvent do
+defmodule Wocky.Location.BotEvent do
   @moduledoc """
   Represents a user event.
   """
@@ -9,9 +9,9 @@ defmodule Wocky.User.BotEvent do
   import EctoHomoiconicEnum, only: [defenum: 2]
 
   alias Wocky.Bot
+  alias Wocky.Location.UserLocation
   alias Wocky.Repo
   alias Wocky.User
-  alias Wocky.User.Location
 
   defenum EventType, [
     :enter,
@@ -34,7 +34,7 @@ defmodule Wocky.User.BotEvent do
 
     belongs_to :user, User
     belongs_to :bot, Bot
-    belongs_to :location, Location
+    belongs_to :location, UserLocation, foreign_key: :location_id
   end
 
   @type event ::
@@ -46,7 +46,7 @@ defmodule Wocky.User.BotEvent do
           | :reactivate
           | :deactivate
 
-  @type t :: %BotEvent{
+  @type t :: %__MODULE__{
           id: binary,
           user_id: User.id(),
           device: User.device(),
@@ -98,7 +98,7 @@ defmodule Wocky.User.BotEvent do
     |> limit(1)
   end
 
-  @spec new(User.t(), User.device(), Bot.t(), Location.t() | nil, event) ::
+  @spec new(User.t(), User.device(), Bot.t(), UserLocation.t() | nil, event) ::
           map()
   def new(user, device, bot, loc \\ nil, event) do
     %{
@@ -120,7 +120,8 @@ defmodule Wocky.User.BotEvent do
   def insert_system(user, bot, event, reason),
     do: insert(user, "System/#{reason}", bot, nil, event)
 
-  @spec insert(User.t(), User.device(), Bot.t(), Location.t() | nil, event) :: t
+  @spec insert(User.t(), User.device(), Bot.t(), UserLocation.t() | nil, event) ::
+          t
   def insert(user, device, bot, loc \\ nil, event) do
     user
     |> new(device, bot, loc, event)

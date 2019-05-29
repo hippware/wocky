@@ -1,20 +1,22 @@
-defmodule Wocky.User.CurrentLocation do
+defmodule Wocky.Location.UserLocation.Current do
   @moduledoc false
 
   import Ecto.Query
 
-  alias Wocky.{CallbackManager, Repo, User}
-  alias Wocky.User.{Location, LocationShare}
+  alias Wocky.{CallbackManager, User}
+  alias Wocky.Location.Share
+  alias Wocky.Location.UserLocation
+  alias Wocky.Repo
 
-  @type callback() :: (User.t(), Location.t() -> :ok)
+  @type callback() :: (User.t(), UserLocation.t() -> :ok)
 
-  # 2 days
+  # Expire current location after 2 days
   @expire_secs 60 * 60 * 24 * 2
 
   @spec register_callback(callback()) :: :ok
   def register_callback(cb), do: CallbackManager.add(__MODULE__, cb)
 
-  @spec set(User.t(), Location.t()) :: :ok
+  @spec set(User.t(), UserLocation.t()) :: :ok
   def set(user, loc) do
     {:ok, _} =
       Redix.command(Redix, [
@@ -32,7 +34,7 @@ defmodule Wocky.User.CurrentLocation do
     :ok
   end
 
-  @spec get(User.t()) :: Location.t() | nil
+  @spec get(User.t()) :: UserLocation.t() | nil
   def get(user) do
     case Redix.command(Redix, ["GET", key(user.id)]) do
       {:ok, nil} ->
@@ -54,7 +56,7 @@ defmodule Wocky.User.CurrentLocation do
   @spec delete_when_not_shared([User.id()]) :: non_neg_integer()
   def delete_when_not_shared(user_ids) do
     have_shares =
-      LocationShare
+      Share
       |> select([ls], ls.user_id)
       |> where([ls], ls.user_id in ^user_ids)
       |> distinct(true)
@@ -67,5 +69,5 @@ defmodule Wocky.User.CurrentLocation do
 
   defp key(user_id), do: "current_loc:" <> user_id
 
-  defp value(%Location{} = loc), do: :erlang.term_to_binary(loc)
+  defp value(%UserLocation{} = loc), do: :erlang.term_to_binary(loc)
 end

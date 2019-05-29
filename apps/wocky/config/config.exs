@@ -117,7 +117,7 @@ config :wocky, :redlock,
   ]
 
 # location processing
-config :wocky, Wocky.User.GeoFence,
+config :wocky, Wocky.Location.GeoFence,
   enable_notifications: true,
   async_processing: false,
   debounce: true,

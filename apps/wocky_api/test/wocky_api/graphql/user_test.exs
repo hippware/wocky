@@ -3,13 +3,14 @@ defmodule WockyAPI.GraphQL.UserTest do
 
   alias Faker.{Lorem, Name}
   alias Wocky.Block
+  alias Wocky.Location
+  alias Wocky.Location.{BotEvent, UserLocation}
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Token
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID, Timestamp}
   alias Wocky.Roster
   alias Wocky.User
-  alias Wocky.User.{BotEvent, Location}
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)
@@ -603,12 +604,12 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert %Location{
+      assert %UserLocation{
                lat: ^lat,
                lon: ^lon,
                device: ^device,
                accuracy: ^accuracy
-             } = Repo.get_by(Location, user_id: user.id)
+             } = Repo.get_by(UserLocation, user_id: user.id)
     end
 
     test "invalid location", %{user: user} do
@@ -629,7 +630,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Repo.get_by(Location, user_id: user.id) == nil
+      assert Repo.get_by(UserLocation, user_id: user.id) == nil
     end
 
     @query """
@@ -693,7 +694,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       shared_with = user2.id
       expiry = sharing_expiry()
 
-      {:ok, share} = User.start_sharing_location(user, user2, expiry)
+      {:ok, share} = Location.start_sharing_location(user, user2, expiry)
       id = share.id
 
       result = run_query(@query, user, %{})
@@ -742,7 +743,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       shared_with = user2.id
       expiry = sharing_expiry()
 
-      {:ok, share} = User.start_sharing_location(user, user2, expiry)
+      {:ok, share} = Location.start_sharing_location(user, user2, expiry)
       id = share.id
 
       result = run_query(@query, user2, %{})
@@ -889,7 +890,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     test "stop sharing location", %{user: user, user2: user2} do
       expiry = sharing_expiry()
 
-      {:ok, _} = User.start_sharing_location(user, user2, expiry)
+      {:ok, _} = Location.start_sharing_location(user, user2, expiry)
 
       result =
         run_query(@query, user, %{
@@ -920,7 +921,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     test "stop all location sharing", %{user: user, user2: user2} do
       expiry = sharing_expiry()
 
-      {:ok, _} = User.start_sharing_location(user, user2, expiry)
+      {:ok, _} = Location.start_sharing_location(user, user2, expiry)
 
       result = run_query(@query, user, %{})
 

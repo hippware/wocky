@@ -1,7 +1,7 @@
-defmodule Wocky.User.LocationShareTest do
+defmodule Wocky.Location.ShareTest do
   use Wocky.WatcherCase
 
-  alias Wocky.{Block, Roster, User}
+  alias Wocky.{Block, Location, Roster}
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo.{Factory, Timestamp}
   alias Wocky.Tasks.LocShareExpire
@@ -17,7 +17,7 @@ defmodule Wocky.User.LocationShareTest do
       Roster.befriend(ctx.user, ctx.other_user)
 
       {:ok, _} =
-        User.start_sharing_location(
+        Location.start_sharing_location(
           ctx.other_user,
           ctx.user,
           Timestamp.shift(days: 1)
@@ -34,7 +34,7 @@ defmodule Wocky.User.LocationShareTest do
 
       Notification.delete(id, ctx.user)
 
-      User.stop_sharing_location(ctx.other_user, ctx.user)
+      Location.stop_sharing_location(ctx.other_user, ctx.user)
 
       assert_eventually(Repo.get_by(Notification, user_id: ctx.user.id) != nil)
 
@@ -57,18 +57,18 @@ defmodule Wocky.User.LocationShareTest do
 
     test "should be canceled on block", ctx do
       expiry = sharing_expiry()
-      User.start_sharing_location(ctx.user, ctx.other_user, expiry)
+      Location.start_sharing_location(ctx.user, ctx.other_user, expiry)
 
       assert Block.block(ctx.user, ctx.other_user)
-      assert_eventually(User.get_location_shares(ctx.user) == [])
+      assert_eventually(Location.get_location_shares(ctx.user) == [])
     end
 
     test "should be canceled on unfriend", ctx do
       expiry = sharing_expiry()
-      User.start_sharing_location(ctx.user, ctx.other_user, expiry)
+      Location.start_sharing_location(ctx.user, ctx.other_user, expiry)
 
       assert Roster.unfriend(ctx.user, ctx.other_user)
-      assert_eventually(User.get_location_shares(ctx.user) == [])
+      assert_eventually(Location.get_location_shares(ctx.user) == [])
     end
   end
 
@@ -101,7 +101,7 @@ defmodule Wocky.User.LocationShareTest do
     test "should remove all expired shares", ctx do
       LocShareExpire.run()
 
-      assert ctx.user |> User.get_location_sharers() |> Enum.sort() ==
+      assert ctx.user |> Location.get_location_sharers() |> Enum.sort() ==
                ctx.shares
     end
   end

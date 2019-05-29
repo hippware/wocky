@@ -1,8 +1,8 @@
-defmodule Wocky.User.GeoFence do
+defmodule Wocky.Location.GeoFence do
   @moduledoc false
 
   alias Wocky.{Bot, Repo, User}
-  alias Wocky.User.{BotEvent, Location}
+  alias Wocky.Location.{BotEvent, UserLocation}
 
   require Logger
 
@@ -39,8 +39,8 @@ defmodule Wocky.User.GeoFence do
   end
 
   @doc false
-  @spec check_for_bot_event(Bot.t(), Location.t(), User.t(), events()) ::
-          {:ok, Location.t(), events()}
+  @spec check_for_bot_event(Bot.t(), UserLocation.t(), User.t(), events()) ::
+          {:ok, UserLocation.t(), events()}
   def check_for_bot_event(bot, loc, user, events) do
     config = get_config(debounce: false)
 
@@ -59,7 +59,7 @@ defmodule Wocky.User.GeoFence do
   # This shim exists mostly to avoid having to redo all of the tests.
   # Use check_for_bot_events/4 instead.
   @doc false
-  def check_for_bot_events(%Location{} = loc, user) do
+  def check_for_bot_events(%UserLocation{} = loc, user) do
     subs = User.get_subscriptions(user)
     events = BotEvent.get_last_events(user.id)
 
@@ -67,9 +67,9 @@ defmodule Wocky.User.GeoFence do
   end
 
   @doc false
-  @spec check_for_bot_events(Location.t(), User.t(), [Bot.t()], events()) ::
-          {:ok, Location.t(), events()}
-  def check_for_bot_events(%Location{} = loc, user, subs, events) do
+  @spec check_for_bot_events(UserLocation.t(), User.t(), [Bot.t()], events()) ::
+          {:ok, UserLocation.t(), events()}
+  def check_for_bot_events(%UserLocation{} = loc, user, subs, events) do
     config = get_config()
 
     new_events =
@@ -103,8 +103,8 @@ defmodule Wocky.User.GeoFence do
   end
 
   @doc false
-  @spec should_process?(Location.t(), map()) :: boolean()
-  def should_process?(%Location{accuracy: accuracy}, config),
+  @spec should_process?(UserLocation.t(), map()) :: boolean()
+  def should_process?(%UserLocation{accuracy: accuracy}, config),
     do: accuracy <= config.max_accuracy_threshold
 
   # defp maybe_do_async(fun, %{async_processing: true}) do
