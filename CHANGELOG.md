@@ -9,6 +9,10 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * Fixes crash (#2541)
 * Update: stringprep (PR #2545)
 * Loc share cache (PR #2546)
+* Aggregate REST request metrics (PR #2548)
+* Extend the current location TTL to 2 days (PR #2551)
+  * Related: Some catchup location data points are not sent (#2547)
+* ALB cowboy tweaks (PR #2553)
 
 
 # 2019.5.22+r65a1de1
