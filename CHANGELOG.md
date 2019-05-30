@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: ecto_sql (PR #2556)
+
+
+# 2019.5.29+ra59468d
+
 * Remove subscription from cache on bot delete (PR #2543)
   * Fixes crash (#2541)
 * Update: stringprep (PR #2545)
