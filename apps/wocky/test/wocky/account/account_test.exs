@@ -94,10 +94,6 @@ defmodule Wocky.Account.AccountTest do
     test "existing user with server_jwt token", %{user: user, id: id} do
       {:ok, token} = Account.get_location_jwt(user)
 
-      # To avoid a DB lookup, we can still authenticate a non-existant user.
-      # They must have existed at the time of the token's creation, so the worst
-      # that can really happen is a deleted user pointlessly uploads locations
-      # until the token finally expires.
       assert {:ok, ^id} = Account.authenticate_for_location(token)
     end
 
@@ -105,6 +101,10 @@ defmodule Wocky.Account.AccountTest do
       %User{id: id} = user = Factory.build(:user)
       {:ok, token, _} = ServerJWT.encode_and_sign(user)
 
+      # To avoid a DB lookup, we can still authenticate a non-existant user.
+      # They must have existed at the time of the token's creation, so the worst
+      # that can really happen is a deleted user pointlessly uploads locations
+      # until the token finally expires.
       assert {:ok, ^id} = Account.authenticate_for_location(token)
     end
 

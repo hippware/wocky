@@ -162,7 +162,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
     location = struct(Location, l)
 
-    User.set_location_for_bot(user.id, location, bot)
+    User.set_location_for_bot(user, location, bot)
   end
 
   defp maybe_update_location(_, _, _), do: {:ok, :skip}

@@ -1166,7 +1166,13 @@ defmodule WockyAPI.GraphQL.BotTest do
     setup ctx do
       Roster.befriend(ctx.user, ctx.user2)
       unsubbed_bot = Factory.insert(:bot, user: ctx.user2)
-      Factory.insert(:bot_invitation, user: ctx.user2, invitee: ctx.user, bot: unsubbed_bot)
+
+      Factory.insert(:bot_invitation,
+        user: ctx.user2,
+        invitee: ctx.user,
+        bot: unsubbed_bot
+      )
+
       {:ok, unsubbed_bot: unsubbed_bot}
     end
 
