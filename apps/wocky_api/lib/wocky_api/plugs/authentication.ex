@@ -34,7 +34,12 @@ defmodule WockyAPI.Plugs.Authentication do
       {:ok, %{user: user, device: device}} ->
         conn
         |> assign(:current_user, user)
+        |> assign(:current_user_id, user.id)
         |> assign(:device, device)
+
+      {:ok, user_id} when is_binary(user_id) ->
+        conn
+        |> assign(:current_user_id, user_id)
 
       {:error, _} ->
         fail_authentication(conn)
@@ -42,7 +47,7 @@ defmodule WockyAPI.Plugs.Authentication do
   end
 
   def ensure_authenticated(conn, _opts \\ []) do
-    if Map.get(conn.assigns, :current_user) do
+    if Map.get(conn.assigns, :current_user_id) do
       conn
     else
       fail_authentication(conn)
@@ -54,9 +59,9 @@ defmodule WockyAPI.Plugs.Authentication do
 
   def ensure_owner(conn, _opts \\ []) do
     path_user = conn.path_params["user_id"]
-    user = Map.get(conn.assigns, :current_user)
+    user_id = Map.get(conn.assigns, :current_user_id)
 
-    if is_nil(path_user) || (!is_nil(user) && user.id == path_user) do
+    if is_nil(path_user) || user_id == path_user do
       conn
     else
       fail_authentication(conn, :forbidden)

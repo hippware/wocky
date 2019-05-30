@@ -162,7 +162,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
     location = struct(Location, l)
 
-    User.set_location_for_bot(user, location, bot)
+    User.set_location_for_bot(user.id, location, bot)
   end
 
   defp maybe_update_location(_, _, _), do: {:ok, :skip}
@@ -210,10 +210,12 @@ defmodule WockyAPI.Resolvers.Bot do
         not_found_error(input[:id])
 
       bot ->
-        Bot.subscribe(bot, requestor)
-
-        with {:ok, _} <- maybe_update_location(input, requestor, bot) do
+        with :ok <- Bot.subscribe(bot, requestor),
+             {:ok, _} <- maybe_update_location(input, requestor, bot) do
           {:ok, true}
+        else
+          {:error, :permission_denied} -> {:error, "Permission denied"}
+          error -> error
         end
     end
   end

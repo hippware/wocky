@@ -94,30 +94,31 @@ defmodule Wocky.Account.AccountTest do
     test "existing user with server_jwt token", %{user: user, id: id} do
       {:ok, token} = Account.get_location_jwt(user)
 
-      assert {:ok, %{user: %User{id: ^id}, device: nil}} =
-               Account.authenticate_for_location(token)
+      # To avoid a DB lookup, we can still authenticate a non-existant user.
+      # They must have existed at the time of the token's creation, so the worst
+      # that can really happen is a deleted user pointlessly uploads locations
+      # until the token finally expires.
+      assert {:ok, ^id} = Account.authenticate_for_location(token)
     end
 
     test "non-existant user" do
-      user = Factory.build(:user)
+      %User{id: id} = user = Factory.build(:user)
       {:ok, token, _} = ServerJWT.encode_and_sign(user)
 
-      assert {:error, _} = Account.authenticate_for_location(token)
+      assert {:ok, ^id} = Account.authenticate_for_location(token)
     end
 
     test "client_jwt firebase token", %{user: user, id: id} do
       {:ok, fb, _} = Firebase.encode_and_sign(user)
       token = make_client_token(fb)
 
-      assert {:ok, %{user: %User{id: ^id}, device: "testing"}} =
-               Account.authenticate_for_location(token)
+      assert {:ok, ^id} = Account.authenticate_for_location(token)
     end
 
     test "client_jwt bypass token", %{user: user, id: id} do
       token = make_client_token(user)
 
-      assert {:ok, %{user: %User{id: ^id}, device: "testing"}} =
-               Account.authenticate_for_location(token)
+      assert {:ok, ^id} = Account.authenticate_for_location(token)
     end
 
     test "unrecognized token" do

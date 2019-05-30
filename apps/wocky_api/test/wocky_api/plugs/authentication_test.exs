@@ -5,7 +5,6 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
 
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.User
 
   def put_jwt_header(conn, jwt, prefix \\ "Bearer ") do
     put_req_header(conn, "authentication", prefix <> jwt)
@@ -26,7 +25,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
         |> put_jwt_header(jwt)
         |> check_location_auth
 
-      assert conn.assigns.current_user
+      assert conn.assigns.current_user_id
     end
 
     test "valid server JWT header", context do
@@ -37,7 +36,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
         |> put_jwt_header(jwt)
         |> check_location_auth
 
-      assert conn.assigns.current_user
+      assert conn.assigns.current_user_id
     end
 
     test "invalid JWT header format", context do
@@ -78,7 +77,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
         |> put_jwt_header(jwt)
         |> check_auth
 
-      assert conn.assigns.current_user
+      assert conn.assigns.current_user_id
     end
 
     test "invalid JWT header format", context do
@@ -105,10 +104,10 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
   end
 
   describe ":ensure_authenticated plug" do
-    test "when current_user is assigned", context do
+    test "when current_user_id is assigned", context do
       conn =
         context.conn
-        |> assign(:current_user, :foo)
+        |> assign(:current_user_id, :foo)
         |> ensure_authenticated
 
       refute conn.halted
@@ -156,7 +155,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
     test "no user ID in URL, current user", context do
       conn =
         context.conn
-        |> assign(:current_user, %User{})
+        |> assign(:current_user_id, ID.new())
         |> ensure_owner
 
       refute conn.halted
@@ -177,7 +176,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
       conn =
         "/#{user.id}"
         |> setup_conn()
-        |> assign(:current_user, user)
+        |> assign(:current_user_id, user.id)
         |> ensure_owner
 
       refute conn.halted

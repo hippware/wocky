@@ -10,7 +10,6 @@ defmodule Wocky.Account.JWT.Server do
     secret_key: {Wocky.Account.JWT.SigningKey, :fetch, [:server]},
     token_verify_module: Wocky.Account.JWT.Verify
 
-  alias Wocky.Repo
   alias Wocky.User
 
   def default_token_type, do: "location"
@@ -24,10 +23,7 @@ defmodule Wocky.Account.JWT.Server do
   end
 
   def resource_from_claims(%{"sub" => user_id} = _claims) do
-    case Repo.get(User, user_id) do
-      nil -> {:error, :not_found}
-      user -> {:ok, user}
-    end
+    {:ok, user_id}
   end
 
   def resource_from_claims(_claims) do

@@ -7,12 +7,12 @@ defmodule WockyAPI.Controllers.LocationController do
   action_fallback WockyAPI.Controllers.FallbackController
 
   def create(conn, params) do
-    user = conn.assigns.current_user
+    user_id = conn.assigns.current_user_id
     device = params["device"]
     locations = normalize_location(params["location"])
 
     if device do
-      _ = process_locations(user, device, locations)
+      _ = process_locations(user_id, device, locations)
 
       send_resp(conn, :created, "")
     else
@@ -23,14 +23,14 @@ defmodule WockyAPI.Controllers.LocationController do
   defp normalize_location(locations) when is_list(locations), do: locations
   defp normalize_location(location), do: [location]
 
-  defp process_locations(user, device, locations) do
+  defp process_locations(user_id, device, locations) do
     length = length(locations)
 
     for {l, idx} <- Enum.with_index(locations, 1) do
       if has_required_keys(l) do
         loc = make_location(l, device)
 
-        {:ok, _} = User.set_location(user, loc, idx == length)
+        {:ok, _} = User.set_location(user_id, loc, idx == length)
       end
     end
   end

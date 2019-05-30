@@ -244,7 +244,7 @@ defmodule Wocky.Bot do
     Subscription.state(user, bot)
   end
 
-  @spec subscribe(t, User.t()) :: :ok | no_return
+  @spec subscribe(t, User.t()) :: :ok | {:error, :permission_denied}
   def subscribe(bot, user) do
     with true <- Roster.self_or_friend?(user.id, bot.user_id) do
       LocationHandler.add_subscription(user, bot)

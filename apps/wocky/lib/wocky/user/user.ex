@@ -518,8 +518,8 @@ defmodule Wocky.User do
     |> where(device: ^device)
   end
 
-  @spec set_location(t, device, float, float, float) :: :ok | {:error, any}
-  def set_location(user, device, lat, lon, accuracy) do
+  @spec set_location(id, device, float, float, float) :: :ok | {:error, any}
+  def set_location(user_id, device, lat, lon, accuracy) do
     location = %Location{
       lat: lat,
       lon: lon,
@@ -527,7 +527,7 @@ defmodule Wocky.User do
       device: device
     }
 
-    with {:ok, _} <- set_location(user, location) do
+    with {:ok, _} <- set_location(user_id, location) do
       :ok
     end
   end
@@ -536,19 +536,19 @@ defmodule Wocky.User do
   Sets the user's current location to the provided Location struct and runs the
   geofence calculation for all of the user's subscribed bots.
   """
-  @spec set_location(t, Location.t(), boolean()) ::
+  @spec set_location(id(), Location.t(), boolean()) ::
           {:ok, Location.t()} | {:error, any}
-  def set_location(user, location, current? \\ true),
-    do: LocationHandler.set_location(user, location, current?)
+  def set_location(user_id, location, current? \\ true),
+    do: LocationHandler.set_location(user_id, location, current?)
 
   @doc """
   Sets the user's current location to the provided Location struct and runs the
   geofence calculation for the specified bot only and with debouncing disabled.
   """
-  @spec set_location_for_bot(t, Location.t(), Bot.t()) ::
+  @spec set_location_for_bot(id(), Location.t(), Bot.t()) ::
           {:ok, Location.t()} | {:error, any}
-  def set_location_for_bot(user, location, bot),
-    do: LocationHandler.set_location_for_bot(user, location, bot)
+  def set_location_for_bot(user_id, location, bot),
+    do: LocationHandler.set_location_for_bot(user_id, location, bot)
 
   @doc "Gets the current location for the user."
   @spec get_current_location(User.t()) :: Location.t() | nil

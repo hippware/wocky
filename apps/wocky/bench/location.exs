@@ -20,21 +20,21 @@ mk_loc = fn b -> Factory.build(:location, lat: Bot.lat(b), lon: Bot.lon(b)) end
 
 Benchee.run(
   %{
-    no_bots: fn l -> User.set_location(no_bots, l) end,
-    bots_10_min: fn l -> User.set_location(bots_10, l) end,
+    no_bots: fn l -> User.set_location(no_bots.id, l) end,
+    bots_10_min: fn l -> User.set_location(bots_10.id, l) end,
     bots_10_max: fn _ ->
       b = Util.cycle(c10)
-      User.set_location(bots_10, mk_loc.(b))
+      User.set_location(bots_10.id, mk_loc.(b))
     end,
-    bots_100_min: fn l -> User.set_location(bots_100, l) end,
+    bots_100_min: fn l -> User.set_location(bots_100.id, l) end,
     bots_100_max: fn _ ->
       b = Util.cycle(c100)
-      User.set_location(bots_100, mk_loc.(b))
+      User.set_location(bots_100.id, mk_loc.(b))
     end,
-    bots_1000_min: fn l -> User.set_location(bots_1000, l) end,
+    bots_1000_min: fn l -> User.set_location(bots_1000.id, l) end,
     bots_1000_max: fn _ ->
       b = Util.cycle(c1000)
-      User.set_location(bots_1000, mk_loc.(b))
+      User.set_location(bots_1000.id, mk_loc.(b))
     end
   },
   before_each: fn _ -> Factory.build(:location) end
