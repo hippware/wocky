@@ -4,7 +4,7 @@ defmodule WockyAPI.Resolvers.Message do
   import Ecto.Query
 
   alias Absinthe.Subscription
-  alias Wocky.{Conversation, Message, User}
+  alias Wocky.{Messaging, Messaging.Message, User}
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.User, as: UserResolver
   alias WockyAPI.Resolvers.Utils
@@ -36,11 +36,11 @@ defmodule WockyAPI.Resolvers.Message do
   end
 
   defp get_messages_query(nil, requestor),
-    do: {:ok, Message.get_query(requestor)}
+    do: {:ok, Messaging.get_messages_query(requestor)}
 
   defp get_messages_query(other_user_id, requestor) do
     with %User{} = other_user <- User.get_user(other_user_id, requestor) do
-      {:ok, Message.get_query(requestor, other_user)}
+      {:ok, Messaging.get_messages_query(requestor, other_user)}
     else
       nil -> UserResolver.user_not_found(other_user_id)
     end
@@ -51,7 +51,12 @@ defmodule WockyAPI.Resolvers.Message do
 
     with %User{} = recipient <- User.get_user(recipient_id, user),
          {:ok, _} <-
-           Message.send(recipient, user, args[:content], args[:image_url]) do
+           Messaging.send_message(
+             recipient,
+             user,
+             args[:content],
+             args[:image_url]
+           ) do
       {:ok, true}
     else
       nil -> UserResolver.user_not_found(recipient_id)
@@ -62,7 +67,7 @@ defmodule WockyAPI.Resolvers.Message do
 
   def get_conversations(user, args, _info) do
     user.id
-    |> Conversation.by_user_query()
+    |> Messaging.get_conversations_query()
     |> preload([:other_user])
     |> Utils.connection_from_query(user, args, order_by: [desc: :created_at])
   end

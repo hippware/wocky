@@ -20,7 +20,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Bot.{Item, Subscription}
   alias Wocky.GeoUtils
   alias Wocky.Location.{BotEvent, Share, UserLocation}
-  alias Wocky.Message
+  alias Wocky.Messaging.Message
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Notifier.Push.Log, as: PushLog
   alias Wocky.Notifier.Push.Token, as: PushToken
