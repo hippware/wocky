@@ -4,9 +4,9 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
   import Eventually
   import WockyAPI.ChannelHelper
 
+  alias Wocky.Presence
   alias Wocky.Repo.Factory
   alias Wocky.Roster
-  alias Wocky.User.Presence
 
   setup_all do
     Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)

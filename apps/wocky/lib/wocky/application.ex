@@ -14,8 +14,8 @@ defmodule Wocky.Application do
   alias Wocky.Location.Supervisor, as: LocationSupervisor
   alias Wocky.Notifier.Email.Mailer
   alias Wocky.Notifier.Push.Backend.Sandbox, as: PushSandbox
+  alias Wocky.Presence.Supervisor, as: PresenceSupervisor
   alias Wocky.Tasks.Recurring
-  alias Wocky.User.Presence.Supervisor, as: PresenceSupervisor
 
   require Logger
   require Prometheus.Registry

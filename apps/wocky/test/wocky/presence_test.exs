@@ -1,14 +1,14 @@
-defmodule Wocky.User.PresenceTest do
+defmodule Wocky.PresenceTest do
   use Wocky.DataCase, async: false
 
   import Eventually
 
   alias Wocky.CallbackManager
+  alias Wocky.Presence
+  alias Wocky.Presence.Manager
   alias Wocky.Repo.Factory
   alias Wocky.Roster
   alias Wocky.User
-  alias Wocky.User.Presence
-  alias Wocky.User.Presence.Manager
 
   setup do
     [user, requestor] = Factory.insert_list(2, :user)

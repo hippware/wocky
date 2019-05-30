@@ -1,11 +1,11 @@
-defmodule Wocky.User.Presence do
+defmodule Wocky.Presence do
   @moduledoc """
   This module provides the interface for user presence management in Wocky
   """
 
   alias Wocky.CallbackManager
+  alias Wocky.Presence.Manager
   alias Wocky.User
-  alias Wocky.User.Presence.Manager
 
   defstruct [
     :status,

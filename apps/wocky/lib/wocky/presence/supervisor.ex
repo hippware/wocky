@@ -1,4 +1,4 @@
-defmodule Wocky.User.Presence.Supervisor do
+defmodule Wocky.Presence.Supervisor do
   @moduledoc """
   This is the supervisor for the presence manager processes
   """
@@ -10,7 +10,7 @@ defmodule Wocky.User.Presence.Supervisor do
 
   def init(_) do
     children = [
-      worker(Wocky.User.Presence.Manager, [], restart: :temporary)
+      worker(Wocky.Presence.Manager, [], restart: :temporary)
     ]
 
     supervise(children, strategy: :simple_one_for_one)

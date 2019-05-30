@@ -1,4 +1,4 @@
-defmodule Wocky.User.Presence.OnlineProc do
+defmodule Wocky.Presence.OnlineProc do
   @moduledoc """
   Trivial process that exists when a user is online and doesn't when they're
   not. Allows other users to monitor this process to see when a user goes

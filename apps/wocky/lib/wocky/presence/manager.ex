@@ -1,4 +1,4 @@
-defmodule Wocky.User.Presence.Manager do
+defmodule Wocky.Presence.Manager do
   @moduledoc """
   Per-user manager process for contact presence reporting.
   """
@@ -18,9 +18,9 @@ defmodule Wocky.User.Presence.Manager do
   use GenServer
 
   alias Phoenix.PubSub
+  alias Wocky.Presence
+  alias Wocky.Presence.{OnlineProc, Store, Supervisor}
   alias Wocky.{Repo, Roster, User}
-  alias Wocky.User.Presence
-  alias Wocky.User.Presence.{OnlineProc, Store, Supervisor}
 
   def acquire(user) do
     Store.transaction(user.id, fn -> get_or_create(user) end)

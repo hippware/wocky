@@ -24,9 +24,10 @@ defmodule Wocky.User do
   alias Wocky.Bot.{Invitation, Subscription}
   alias Wocky.Events.NewUser
   alias Wocky.Notifier.Push.Token, as: PushToken
+  alias Wocky.Presence
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
-  alias Wocky.User.{Avatar, InviteCode, Presence}
+  alias Wocky.User.{Avatar, InviteCode}
 
   @forever "2200-01-01T00:00:00.000000Z" |> DateTime.from_iso8601() |> elem(1)
 
