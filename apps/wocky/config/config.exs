@@ -125,7 +125,7 @@ config :wocky, Wocky.User.GeoFence,
     {:system, :integer, "WOCKY_ENTER_DEBOUNCE_SECONDS", 30},
   exit_debounce_seconds: {:system, :integer, "WOCKY_EXIT_DEBOUNCE_SECONDS", 30},
   max_accuracy_threshold:
-    {:system, :integer, "WOCKY_GEOFENCE_MAX_ACCURACY_THRESHOLD", 90},
+    {:system, :integer, "WOCKY_GEOFENCE_MAX_ACCURACY_THRESHOLD", 50},
   max_slow_speed: {:system, :integer, "WOCKY_GEOFENCE_MAX_SLOW_SPEED", 2},
   max_exit_distance:
     {:system, :integer, "WOCKY_GEOFENCE_MAX_EXIT_DISTANCE", 200},
