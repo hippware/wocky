@@ -92,4 +92,22 @@ defmodule Wocky.User.LocationShare.CacheTest do
       assert [] = Cache.get(ctx.u1.id)
     end
   end
+
+  describe "refresh" do
+    test "cache reload on get if not primed", ctx do
+      assert {:ok, _} =
+               LocationShare.start_sharing_location(
+                 ctx.u1,
+                 ctx.u2,
+                 Timestamp.shift(days: 1)
+               )
+
+      assert_eventually([ctx.u2.id] == Cache.get(ctx.u1.id))
+
+      {:ok, _} = Redix.command(Redix, ["DEL", Cache.key(ctx.u1.id)])
+
+      # Calling 'get' should force the cache to refresh
+      assert [ctx.u2.id] == Cache.get(ctx.u1.id)
+    end
+  end
 end
