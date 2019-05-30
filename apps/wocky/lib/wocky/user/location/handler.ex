@@ -30,18 +30,18 @@ defmodule Wocky.User.Location.Handler do
     |> start_link()
   end
 
-  @spec set_location(User.id(), Location.t(), boolean()) ::
+  @spec set_location(User.t() | User.id(), Location.t(), boolean()) ::
           {:ok, Location.t()} | {:error, any()}
-  def set_location(user_id, location, current? \\ true) do
-    user_id
+  def set_location(user_or_id, location, current? \\ true) do
+    user_or_id
     |> get_handler()
     |> GenServer.call({:set_location, location, current?})
   end
 
-  @spec set_location_for_bot(User.id(), Location.t(), Bot.t()) ::
+  @spec set_location_for_bot(User.t(), Location.t(), Bot.t()) ::
           {:ok, Location.t()} | {:error, any()}
-  def set_location_for_bot(user_id, location, bot) do
-    user_id
+  def set_location_for_bot(user, location, bot) do
+    user
     |> get_handler()
     |> GenServer.call({:set_location_for_bot, location, bot})
   end
@@ -50,27 +50,32 @@ defmodule Wocky.User.Location.Handler do
   def add_subscription(_user, %Bot{location: nil}), do: :ok
 
   def add_subscription(user, bot) do
-    user.id
+    user
     |> get_handler_if_exists()
     |> maybe_call({:add_subscription, bot})
   end
 
   @spec remove_subscription(User.t(), Bot.t()) :: :ok
   def remove_subscription(user, bot) do
-    user.id
+    user
     |> get_handler_if_exists()
     |> maybe_call({:remove_subscription, bot})
   end
 
   # Always returns a handler, creating a new one if one does not already exist.
-  @spec get_handler(User.id()) :: pid()
-  def get_handler(user_id) do
+  @spec get_handler(User.t() | User.id()) :: pid()
+  def get_handler(%User{id: user_id} = user), do: do_get_handler(user_id, user)
+
+  def get_handler(user_id) when is_binary(user_id),
+    do: do_get_handler(user_id, user_id)
+
+  defp do_get_handler(user_id, arg) do
     {:ok, pid} =
       Swarm.whereis_or_register_name(
         handler_name(user_id),
         Supervisor,
         :start_child,
-        [user_id],
+        [arg],
         5000
       )
 
@@ -78,9 +83,9 @@ defmodule Wocky.User.Location.Handler do
   end
 
   # Gets a handler if one exists, otherwise returns nil
-  @spec get_handler_if_exists(User.id()) :: pid() | nil
-  def get_handler_if_exists(user_id) do
-    case Swarm.whereis_name(handler_name(user_id)) do
+  @spec get_handler_if_exists(User.t()) :: pid() | nil
+  def get_handler_if_exists(user) do
+    case Swarm.whereis_name(handler_name(user.id)) do
       :undefined -> nil
       pid -> pid
     end

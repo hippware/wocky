@@ -604,14 +604,12 @@ defmodule Wocky.User.UserTest do
         captured_at: DateTime.utc_now()
       }
 
-      assert {:ok, %Location{id: id}} = User.set_location(ctx.user.id, location)
+      assert {:ok, %Location{id: id}} = User.set_location(ctx.user, location)
       assert Repo.get(Location, id)
     end
 
     test "should initiate geofence processing", ctx do
-      assert User.set_location(ctx.user.id, "testing", ctx.lat, ctx.lon, 10) ==
-               :ok
-
+      assert User.set_location(ctx.user, "testing", ctx.lat, ctx.lon, 10) == :ok
       assert BotEvent.get_last_event_type(ctx.id, ctx.bot.id) == :transition_in
     end
   end
@@ -637,14 +635,14 @@ defmodule Wocky.User.UserTest do
 
     test "should save the location to the database", ctx do
       assert {:ok, %Location{id: id}} =
-               User.set_location_for_bot(ctx.user.id, ctx.location, ctx.bot)
+               User.set_location_for_bot(ctx.user, ctx.location, ctx.bot)
 
       assert Repo.get(Location, id)
     end
 
     test "should initiate geofence processing for that bot", ctx do
       assert {:ok, _} =
-               User.set_location_for_bot(ctx.user.id, ctx.location, ctx.bot)
+               User.set_location_for_bot(ctx.user, ctx.location, ctx.bot)
 
       assert Bot.subscription(ctx.bot, ctx.user) == :visiting
     end
@@ -653,7 +651,7 @@ defmodule Wocky.User.UserTest do
   describe "get_current_location/1" do
     test "should return the user's current location if known", ctx do
       location = Factory.build(:location)
-      {:ok, _} = User.set_location(ctx.user.id, location)
+      {:ok, _} = User.set_location(ctx.user, location)
 
       loc2 = User.get_current_location(ctx.user)
       assert loc2

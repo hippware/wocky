@@ -16,7 +16,7 @@ defmodule Wocky.User.Location.HandlerTest do
 
     Roster.befriend(owner, user)
 
-    pid = Handler.get_handler(user.id)
+    pid = Handler.get_handler(user)
 
     Bot.subscribe(bot, user)
 
