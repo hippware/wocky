@@ -27,7 +27,7 @@ config :wocky_api, WockyAPI.Endpoint,
     timeout: 90_000,
     # This must be infinity to prevent cowboy closing the connection after
     # a fixed number of requests:
-    protocol_options: [max_keepalive: :infinity]
+    protocol_options: [max_keepalive: :infinity, request_timeout: 90_000]
   ],
   url: [host: "localhost", port: 4000],
   secret_key_base:
