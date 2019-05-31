@@ -6,6 +6,10 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: ecto_sql (PR #2556)
+* Configure location accuracy uncertainty threshold to 50m (#2555)
+* Remove db lookup for REST location upload (PR #2559)
+* Refactor location auth changes (PR #2560)
+* Ensure location share cache is primed (PR #2558)
 
 
 # 2019.5.29+ra59468d
