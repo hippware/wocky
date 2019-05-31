@@ -6,9 +6,11 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   import WockyAPI.GraphQLHelper
 
   alias Wocky.Account
-  alias Wocky.Repo.{Factory, Timestamp}
-  alias Wocky.{Location, Roster}
+  alias Wocky.Location
   alias Wocky.Location.Share.Cache
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.Timestamp
+  alias Wocky.Roster
 
   setup_all :require_watcher
 

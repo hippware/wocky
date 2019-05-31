@@ -21,8 +21,11 @@ defmodule Wocky.Presence.Manager do
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Presence
-  alias Wocky.Presence.{OnlineProc, Store, Supervisor}
-  alias Wocky.{Repo, Roster}
+  alias Wocky.Presence.OnlineProc
+  alias Wocky.Presence.Store
+  alias Wocky.Presence.Supervisor
+  alias Wocky.Repo
+  alias Wocky.Roster
 
   def acquire(user) do
     Store.transaction(user.id, fn -> get_or_create(user) end)

@@ -1,13 +1,16 @@
 defmodule Wocky.MessagingTest do
   use Wocky.WatcherCase
 
-  alias Faker.{Code, Lorem}
+  alias Faker.Code
+  alias Faker.Lorem
   alias Pigeon.APNS.Notification
   alias Wocky.Messaging
-  alias Wocky.Messaging.{Conversation, Message}
+  alias Wocky.Messaging.Conversation
+  alias Wocky.Messaging.Message
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
-  alias Wocky.Repo.{Factory, ID}
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
   alias Wocky.Roster
 
   describe "archive functions" do

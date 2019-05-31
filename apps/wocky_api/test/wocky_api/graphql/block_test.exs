@@ -2,7 +2,8 @@ defmodule WockyAPI.GraphQL.BlockTest do
   use WockyAPI.GraphQLCase, async: true
 
   alias Wocky.Block
-  alias Wocky.Repo.{Factory, ID}
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
 
   setup do
     [user1, user2] = Factory.insert_list(2, :user)

@@ -5,7 +5,8 @@ defmodule Wocky.Callbacks.TROSMetadata do
 
   use DawdleDB.Handler, type: Wocky.TROS.Metadata
 
-  alias Wocky.{TROS, Waiter}
+  alias Wocky.TROS
+  alias Wocky.Waiter
 
   def handle_update(%{ready: true, id: id}, %{ready: false}) do
     id

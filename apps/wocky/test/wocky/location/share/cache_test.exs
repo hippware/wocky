@@ -3,7 +3,8 @@ defmodule Wocky.Location.Share.CacheTest do
 
   alias Wocky.Location
   alias Wocky.Location.Share.Cache
-  alias Wocky.Repo.{Factory, Timestamp}
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.Timestamp
   alias Wocky.Roster
 
   setup do

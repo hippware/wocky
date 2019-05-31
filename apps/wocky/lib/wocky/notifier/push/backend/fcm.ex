@@ -7,7 +7,8 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
 
   alias Pigeon.FCM
   alias Pigeon.FCM.Notification
-  alias Wocky.Notifier.Push.{Event, Utils}
+  alias Wocky.Notifier.Push.Event
+  alias Wocky.Notifier.Push.Utils
 
   def push(params) do
     _ =

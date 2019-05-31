@@ -10,8 +10,13 @@ defmodule Wocky.Notifier.Push do
   alias Pigeon.FCM.Notification, as: FCMNotification
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.Notifier.Push.{Event, Log, Token, Utils}
-  alias Wocky.Notifier.Push.Backend.{APNS, FCM, Sandbox}
+  alias Wocky.Notifier.Push.Backend.APNS
+  alias Wocky.Notifier.Push.Backend.FCM
+  alias Wocky.Notifier.Push.Backend.Sandbox
+  alias Wocky.Notifier.Push.Event
+  alias Wocky.Notifier.Push.Log
+  alias Wocky.Notifier.Push.Token
+  alias Wocky.Notifier.Push.Utils
   alias Wocky.Repo
 
   require Logger

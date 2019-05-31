@@ -8,7 +8,8 @@ defmodule WockyAPI.Schema.BotTypes do
   import Absinthe.Resolution.Helpers
   import Kronky.Payload
 
-  alias WockyAPI.Resolvers.{Bot, Media}
+  alias WockyAPI.Resolvers.Bot
+  alias WockyAPI.Resolvers.Media
 
   connection :bots, node_type: :bot do
     total_count_field()

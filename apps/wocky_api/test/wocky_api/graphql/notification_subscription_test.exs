@@ -4,9 +4,14 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   import Eventually
   import WockyAPI.ChannelHelper
 
-  alias Wocky.{Bot, Location, Repo, Roster}
-  alias Wocky.Bot.{Invitation, Subscription}
-  alias Wocky.Repo.{Factory, Timestamp}
+  alias Wocky.Bot
+  alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Subscription
+  alias Wocky.Location
+  alias Wocky.Repo
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.Timestamp
+  alias Wocky.Roster
 
   setup_all :require_watcher
 

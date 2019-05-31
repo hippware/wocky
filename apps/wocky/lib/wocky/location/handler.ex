@@ -7,15 +7,14 @@ defmodule Wocky.Location.Handler do
 
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.{Bot, GeoUtils, Repo}
-
-  alias Wocky.Location.{
-    BotEvent,
-    GeoFence,
-    Supervisor,
-    UserLocation,
-    UserLocation.Current
-  }
+  alias Wocky.Bot
+  alias Wocky.GeoUtils
+  alias Wocky.Location.BotEvent
+  alias Wocky.Location.GeoFence
+  alias Wocky.Location.Supervisor
+  alias Wocky.Location.UserLocation
+  alias Wocky.Location.UserLocation.Current
+  alias Wocky.Repo
 
   require Logger
 

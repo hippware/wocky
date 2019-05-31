@@ -1,9 +1,11 @@
 defmodule Wocky.Bot.ClusterSearchTest do
   use Wocky.DataCase, async: true
 
-  alias Wocky.Bot.{Cluster, ClusterSearch}
-  alias Wocky.{Bot, GeoUtils}
-  alias Wocky.Repo.{Factory}
+  alias Wocky.Bot
+  alias Wocky.Bot.Cluster
+  alias Wocky.Bot.ClusterSearch
+  alias Wocky.GeoUtils
+  alias Wocky.Repo.Factory
 
   @third 1.0 / 3.0
   describe "search/5" do

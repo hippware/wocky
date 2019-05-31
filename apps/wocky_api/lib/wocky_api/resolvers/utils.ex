@@ -7,7 +7,8 @@ defmodule WockyAPI.Resolvers.Utils do
   alias Ecto.Changeset
   alias Geo.Point
   alias Kronky.Payload
-  alias Wocky.{GeoUtils, Repo}
+  alias Wocky.GeoUtils
+  alias Wocky.Repo
 
   def get_count(%{cached_count: count}, _args, _info) do
     {:ok, count}

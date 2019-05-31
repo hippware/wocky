@@ -7,12 +7,15 @@ defmodule Wocky.Bot do
   import Ecto.Query
 
   alias Ecto.Association.NotLoaded
-  alias Ecto.{Changeset, Queryable}
+  alias Ecto.Changeset
+  alias Ecto.Queryable
   alias Geocalc.Point
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Block
-  alias Wocky.Bot.{Invitation, Item, Subscription}
+  alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Item
+  alias Wocky.Bot.Subscription
   alias Wocky.Events.GeofenceEvent
   alias Wocky.GeoUtils
   alias Wocky.Location

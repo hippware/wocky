@@ -5,9 +5,11 @@ defmodule Wocky.Notifier.Push.BackendTest do
   alias Pigeon.APNS.Notification, as: APNSNotification
   alias Pigeon.FCM.Notification, as: FCMNotification
   alias Wocky.Events.NewMessage
+  alias Wocky.Notifier.Push.Backend.APNS
+  alias Wocky.Notifier.Push.Backend.FCM
   alias Wocky.Notifier.Push.Event
-  alias Wocky.Notifier.Push.Backend.{APNS, FCM}
-  alias Wocky.Repo.{Factory, ID}
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
 
   describe "build_notification/2" do
     setup do

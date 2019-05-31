@@ -2,7 +2,8 @@ defmodule Wocky.Notifier.Email.WelcomeEmailTest do
   use Wocky.DataCase, async: false
   use Bamboo.Test
 
-  alias Faker.{Internet, Name}
+  alias Faker.Internet
+  alias Faker.Name
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Notifier.Email.WelcomeEmail

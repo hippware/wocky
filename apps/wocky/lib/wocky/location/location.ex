@@ -3,20 +3,18 @@ defmodule Wocky.Location do
 
   import Ecto.Query
 
-  alias Ecto.{Changeset, Queryable}
+  alias Ecto.Changeset
+  alias Ecto.Queryable
   alias Wocky.Account.User
   alias Wocky.Bot
+  alias Wocky.Location.BotEvent
+  alias Wocky.Location.GeoFence
+  alias Wocky.Location.Handler
+  alias Wocky.Location.Share
+  alias Wocky.Location.Share.Cache
+  alias Wocky.Location.UserLocation
+  alias Wocky.Location.UserLocation.Current
   alias Wocky.Repo
-
-  alias Wocky.Location.{
-    BotEvent,
-    GeoFence,
-    Handler,
-    Share,
-    Share.Cache,
-    UserLocation,
-    UserLocation.Current
-  }
 
   # ----------------------------------------------------------------------
   # Subscription Cache Management

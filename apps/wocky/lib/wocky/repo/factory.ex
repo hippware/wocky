@@ -3,29 +3,30 @@ defmodule Wocky.Repo.Factory do
 
   use ExMachina.Ecto, repo: Wocky.Repo
 
-  alias Faker.{
-    Address,
-    Company,
-    Internet,
-    Lorem,
-    Name,
-    String
-  }
-
+  alias Faker.Address
+  alias Faker.Company
+  alias Faker.Internet
+  alias Faker.Lorem
+  alias Faker.Name
   alias Faker.Phone.EnUs, as: Phone
+  alias Faker.String
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Account.User
   alias Wocky.Bot
   alias Wocky.Bot.Invitation, as: BotInvitation
-  alias Wocky.Bot.{Item, Subscription}
+  alias Wocky.Bot.Item
+  alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
-  alias Wocky.Location.{BotEvent, Share, UserLocation}
+  alias Wocky.Location.BotEvent
+  alias Wocky.Location.Share
+  alias Wocky.Location.UserLocation
   alias Wocky.Messaging.Message
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Notifier.Push.Log, as: PushLog
   alias Wocky.Notifier.Push.Token, as: PushToken
-  alias Wocky.Repo.{ID, Timestamp}
+  alias Wocky.Repo.ID
+  alias Wocky.Repo.Timestamp
   alias Wocky.Roster.Invitation, as: RosterInvitation
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TrafficLog

@@ -1,9 +1,12 @@
 defmodule Wocky.Location.ShareTest do
   use Wocky.WatcherCase
 
-  alias Wocky.{Block, Location, Roster}
+  alias Wocky.Block
+  alias Wocky.Location
   alias Wocky.Notifier.InBand.Notification
-  alias Wocky.Repo.{Factory, Timestamp}
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.Timestamp
+  alias Wocky.Roster
   alias Wocky.Tasks.LocShareExpire
 
   setup do

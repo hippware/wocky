@@ -2,9 +2,12 @@ defmodule Wocky.Roster.RosterTest do
   use Wocky.WatcherCase
 
   alias Faker.Name
-  alias Wocky.{Block, Bot, Repo, Roster}
+  alias Wocky.Block
+  alias Wocky.Bot
   alias Wocky.Bot.Invitation
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
+  alias Wocky.Roster
   alias Wocky.Roster.Item, as: RosterItem
 
   import Eventually

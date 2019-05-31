@@ -8,7 +8,8 @@ defmodule Wocky.Notifier.InBand.Notification do
 
   alias Ecto.Queryable
   alias Wocky.Account.User
-  alias Wocky.{Bot, Repo}
+  alias Wocky.Bot
+  alias Wocky.Repo
 
   defenum GeofenceEventType, [:enter, :exit]
 

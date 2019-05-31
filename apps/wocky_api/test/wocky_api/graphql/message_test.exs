@@ -3,8 +3,12 @@ defmodule WockyAPI.GraphQL.MessageTest do
 
   alias Faker.Lorem
   alias Wocky.Account
-  alias Wocky.{Messaging, Messaging.Message, Repo, Roster}
-  alias Wocky.Repo.{Factory, ID}
+  alias Wocky.Messaging
+  alias Wocky.Messaging.Message
+  alias Wocky.Repo
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
+  alias Wocky.Roster
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)

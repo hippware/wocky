@@ -8,11 +8,15 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.Account.User
   alias Wocky.Bot
   alias Wocky.Bot.Item
-  alias Wocky.Location.{BotEvent, UserLocation}
+  alias Wocky.Location.BotEvent
+  alias Wocky.Location.UserLocation
   alias Wocky.Notifier.Push.Log, as: PushLog
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Repo
-  alias Wocky.Repo.{Cleaner, Factory, ID, Timestamp}
+  alias Wocky.Repo.Cleaner
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
+  alias Wocky.Repo.Timestamp
   alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata

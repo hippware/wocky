@@ -6,7 +6,9 @@ defmodule Wocky.Location.GeoFenceTest do
   alias Faker.Code
   alias Timex.Duration
   alias Wocky.Bot
-  alias Wocky.Location.{BotEvent, GeoFence, UserLocation}
+  alias Wocky.Location.BotEvent
+  alias Wocky.Location.GeoFence
+  alias Wocky.Location.UserLocation
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Repo

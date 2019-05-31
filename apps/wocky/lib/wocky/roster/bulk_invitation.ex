@@ -5,7 +5,9 @@ defmodule Wocky.Roster.BulkInvitation do
 
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.{DynamicLink, PhoneNumber, Roster}
+  alias Wocky.DynamicLink
+  alias Wocky.PhoneNumber
+  alias Wocky.Roster
   alias Wocky.SMS.Messenger
 
   @type results :: [map()]

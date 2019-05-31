@@ -7,8 +7,10 @@ defmodule Wocky.Bot.ClusterSearch do
   alias Ecto.UUID
   alias Geo.Point
   alias Wocky.Account.User
-  alias Wocky.{Bot, GeoUtils, Repo}
+  alias Wocky.Bot
   alias Wocky.Bot.Cluster
+  alias Wocky.GeoUtils
+  alias Wocky.Repo
 
   @spec search(Point.t(), Point.t(), pos_integer, pos_integer, User.t()) :: [
           Bot.t() | Cluster.t()

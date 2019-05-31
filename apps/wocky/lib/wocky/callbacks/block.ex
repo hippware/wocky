@@ -6,9 +6,12 @@ defmodule Wocky.Callbacks.Block do
   use DawdleDB.Handler, type: Wocky.Block
 
   alias Wocky.Account
-  alias Wocky.{Block, Bot, Repo}
-  alias Wocky.Bot.{Invitation, Item}
+  alias Wocky.Block
+  alias Wocky.Bot
+  alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Item
   alias Wocky.Notifier.InBand.Notification
+  alias Wocky.Repo
 
   def handle_insert(new) do
     %Block{blocker: blocker, blockee: blockee} =

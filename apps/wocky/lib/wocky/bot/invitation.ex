@@ -7,7 +7,9 @@ defmodule Wocky.Bot.Invitation do
 
   alias Ecto.Changeset
   alias Wocky.Account.User
-  alias Wocky.{Bot, Repo, Roster}
+  alias Wocky.Bot
+  alias Wocky.Repo
+  alias Wocky.Roster
 
   @foreign_key_type :binary_id
   schema "bot_invitations" do

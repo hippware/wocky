@@ -2,8 +2,12 @@ defmodule Wocky.Bot.BotTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Account.User
-  alias Wocky.{Bot, GeoUtils, Repo, Roster}
-  alias Wocky.Repo.{Factory, ID}
+  alias Wocky.Bot
+  alias Wocky.GeoUtils
+  alias Wocky.Repo
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
+  alias Wocky.Roster
 
   setup do
     user = Factory.insert(:user)

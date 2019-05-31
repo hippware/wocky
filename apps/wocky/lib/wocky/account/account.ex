@@ -4,21 +4,18 @@ defmodule Wocky.Account do
   import Ecto.Query
 
   alias Ecto.Queryable
-
-  alias Wocky.{
-    Account.Auth,
-    Account.InviteCode,
-    Account.User,
-    Block,
-    Bot,
-    Bot.Invitation,
-    Bot.Subscription,
-    Events.NewUser,
-    Notifier,
-    Repo,
-    Roster,
-    TROS
-  }
+  alias Wocky.Account.Auth
+  alias Wocky.Account.InviteCode
+  alias Wocky.Account.User
+  alias Wocky.Block
+  alias Wocky.Bot
+  alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Subscription
+  alias Wocky.Events.NewUser
+  alias Wocky.Notifier
+  alias Wocky.Repo
+  alias Wocky.Roster
+  alias Wocky.TROS
 
   require Logger
 

@@ -3,7 +3,8 @@ defmodule Wocky.Callbacks.LocationShare do
 
   use DawdleDB.Handler, type: Wocky.Location.Share
 
-  alias Wocky.Events.{LocationShare, LocationShareEnd}
+  alias Wocky.Events.LocationShare
+  alias Wocky.Events.LocationShareEnd
   alias Wocky.Location
   alias Wocky.Notifier
   alias Wocky.Repo

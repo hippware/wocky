@@ -8,7 +8,8 @@ defmodule Wocky.Roster do
   alias Ecto.Queryable
   alias Wocky.Account.User
   alias Wocky.Repo
-  alias Wocky.Roster.{Invitation, Item}
+  alias Wocky.Roster.Invitation
+  alias Wocky.Roster.Item
 
   require Logger
 

@@ -7,7 +7,8 @@ defmodule WockyAPI.Callbacks.Notification do
 
   alias Absinthe.Subscription
   alias WockyAPI.Endpoint
-  alias WockyAPI.Resolvers.{Notification, User}
+  alias WockyAPI.Resolvers.Notification
+  alias WockyAPI.Resolvers.User
 
   def handle_insert(notification) do
     notification

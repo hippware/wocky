@@ -5,8 +5,10 @@ defmodule Wocky.Callbacks.RosterItem do
 
   use DawdleDB.Handler, type: Wocky.Roster.Item
 
-  alias Wocky.Bot.{Invitation, Subscription}
-  alias Wocky.{Location, Repo}
+  alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Subscription
+  alias Wocky.Location
+  alias Wocky.Repo
   alias Wocky.Roster.Item
 
   def handle_delete(old) do

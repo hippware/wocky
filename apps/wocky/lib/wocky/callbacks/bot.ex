@@ -5,7 +5,10 @@ defmodule Wocky.Callbacks.Bot do
 
   use DawdleDB.Handler, type: Wocky.Bot
 
-  alias Wocky.{Bot, Location, Repo, Waiter}
+  alias Wocky.Bot
+  alias Wocky.Location
+  alias Wocky.Repo
+  alias Wocky.Waiter
 
   def handle_insert(new) do
     %{user: user} = Repo.preload(new, [:user])

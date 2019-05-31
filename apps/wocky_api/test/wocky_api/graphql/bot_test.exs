@@ -4,11 +4,16 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Faker.Lorem
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.{Block, Bot, Roster}
-  alias Wocky.Bot.{Invitation, Item}
+  alias Wocky.Block
+  alias Wocky.Bot
+  alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Item
   alias Wocky.GeoUtils
   alias Wocky.Repo
-  alias Wocky.Repo.{Factory, ID, Timestamp}
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
+  alias Wocky.Repo.Timestamp
+  alias Wocky.Roster
 
   setup :common_setup
 

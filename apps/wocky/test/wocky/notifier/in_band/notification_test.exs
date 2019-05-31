@@ -3,19 +3,16 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
 
   alias Wocky.Block
   alias Wocky.Bot.Invitation
+  alias Wocky.Events.BotInvitation
+  alias Wocky.Events.BotInvitationResponse
+  alias Wocky.Events.BotItem
+  alias Wocky.Events.GeofenceEvent
+  alias Wocky.Events.LocationShare
+  alias Wocky.Events.LocationShareEnd
+  alias Wocky.Events.UserInvitation
   alias Wocky.Notifier
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo.Factory
-
-  alias Wocky.Events.{
-    BotInvitation,
-    BotInvitationResponse,
-    BotItem,
-    GeofenceEvent,
-    LocationShare,
-    LocationShareEnd,
-    UserInvitation
-  }
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)

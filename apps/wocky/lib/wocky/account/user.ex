@@ -3,9 +3,11 @@ defmodule Wocky.Account.User do
 
   use Wocky.Repo.Schema
 
-  alias Wocky.Account.{Avatar, InviteCode}
+  alias Wocky.Account.Avatar
+  alias Wocky.Account.InviteCode
   alias Wocky.Bot
-  alias Wocky.Bot.{Invitation, Subscription}
+  alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Subscription
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Presence
   alias Wocky.Roster.Item, as: RosterItem

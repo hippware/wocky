@@ -1,16 +1,20 @@
 defmodule WockyAPI.GraphQL.UserTest do
   use WockyAPI.GraphQLCase, async: false
 
-  alias Faker.{Lorem, Name}
+  alias Faker.Lorem
+  alias Faker.Name
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.Location
-  alias Wocky.Location.{BotEvent, UserLocation}
+  alias Wocky.Location.BotEvent
+  alias Wocky.Location.UserLocation
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Token
   alias Wocky.Repo
-  alias Wocky.Repo.{Factory, ID, Timestamp}
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
+  alias Wocky.Repo.Timestamp
   alias Wocky.Roster
 
   setup do

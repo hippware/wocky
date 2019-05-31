@@ -4,9 +4,17 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Absinthe.Subscription
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.{Bot, GeoUtils, Location, Repo, Repo.ID, Waiter}
-  alias Wocky.Bot.{Cluster, ClusterSearch, Invitation, Item}
+  alias Wocky.Bot
+  alias Wocky.Bot.Cluster
+  alias Wocky.Bot.ClusterSearch
+  alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Item
+  alias Wocky.GeoUtils
+  alias Wocky.Location
   alias Wocky.Location.UserLocation
+  alias Wocky.Repo
+  alias Wocky.Repo.ID
+  alias Wocky.Waiter
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 

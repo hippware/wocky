@@ -1,8 +1,15 @@
 defmodule Wocky.LocationTest do
   use Wocky.DataCase
 
-  alias Wocky.{Bot, Location, Repo, Repo.Factory, Repo.Timestamp, Roster}
-  alias Wocky.Location.{BotEvent, Share, UserLocation}
+  alias Wocky.Bot
+  alias Wocky.Location
+  alias Wocky.Location.BotEvent
+  alias Wocky.Location.Share
+  alias Wocky.Location.UserLocation
+  alias Wocky.Repo
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.Timestamp
+  alias Wocky.Roster
 
   setup do
     user = Factory.insert(:user)
