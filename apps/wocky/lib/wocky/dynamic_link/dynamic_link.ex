@@ -3,7 +3,8 @@ defmodule Wocky.DynamicLink do
   Interface module for dynamic link generation
   """
 
-  alias Wocky.User
+  alias Wocky.Account
+  alias Wocky.Account.User
 
   @callback invitation_link(binary()) :: {:ok, binary()} | {:error, term()}
 
@@ -12,7 +13,7 @@ defmodule Wocky.DynamicLink do
     backend = Confex.get_env(:wocky, :dynamic_link_backend)
 
     user
-    |> User.make_invite_code()
+    |> Account.make_invite_code()
     |> backend.invitation_link()
   end
 end

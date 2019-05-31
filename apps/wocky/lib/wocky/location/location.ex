@@ -4,7 +4,9 @@ defmodule Wocky.Location do
   import Ecto.Query
 
   alias Ecto.{Changeset, Queryable}
-  alias Wocky.{Repo, User}
+  alias Wocky.Account.User
+  alias Wocky.Bot
+  alias Wocky.Repo
 
   alias Wocky.Location.{
     BotEvent,

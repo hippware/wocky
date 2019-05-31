@@ -3,6 +3,9 @@ defmodule Wocky.Repo.CleanerTest do
 
   import Ecto.Query
 
+  alias Wocky.Account
+  alias Wocky.Account.InviteCode
+  alias Wocky.Account.User
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Location.{BotEvent, UserLocation}
@@ -13,8 +16,6 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
-  alias Wocky.User
-  alias Wocky.User.InviteCode
 
   setup do
     user = Factory.insert(:user)
@@ -108,8 +109,8 @@ defmodule Wocky.Repo.CleanerTest do
 
   describe "clean_expired_invite_codes" do
     setup %{user: user} do
-      old_code = User.make_invite_code(user)
-      new_code = User.make_invite_code(user)
+      old_code = Account.make_invite_code(user)
+      new_code = Account.make_invite_code(user)
 
       invitation = Repo.get_by(InviteCode, code: old_code)
       ts = Timex.shift(invitation.created_at, weeks: -6)

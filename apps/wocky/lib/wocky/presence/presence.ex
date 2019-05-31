@@ -3,9 +3,10 @@ defmodule Wocky.Presence do
   This module provides the interface for user presence management in Wocky
   """
 
+  alias Wocky.Account
+  alias Wocky.Account.User
   alias Wocky.CallbackManager
   alias Wocky.Presence.Manager
-  alias Wocky.User
 
   defstruct [
     :status,
@@ -33,7 +34,7 @@ defmodule Wocky.Presence do
     user
     |> Manager.register_sock()
     |> Manager.online_contacts()
-    |> Enum.map(&User.get_user/1)
+    |> Enum.map(&Account.get_user/1)
     |> Enum.map(&add_presence(&1, :online))
   end
 

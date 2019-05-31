@@ -2,6 +2,8 @@ defmodule WockyAPI.GraphQL.UserTest do
   use WockyAPI.GraphQLCase, async: false
 
   alias Faker.{Lorem, Name}
+  alias Wocky.Account
+  alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.Location
   alias Wocky.Location.{BotEvent, UserLocation}
@@ -10,7 +12,6 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Wocky.Repo
   alias Wocky.Repo.{Factory, ID, Timestamp}
   alias Wocky.Roster
-  alias Wocky.User
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)
@@ -45,7 +46,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert result.data == %{
                "currentUser" => %{
                  "id" => user.id,
-                 "firstName" => User.first_name(user),
+                 "firstName" => Account.first_name(user),
                  "email" => user.email,
                  "media" => %{
                    "tros_url" => user.image_url
@@ -134,7 +135,7 @@ defmodule WockyAPI.GraphQL.UserTest do
 
       assert User
              |> Repo.get(user.id)
-             |> User.first_name() == new_name
+             |> Account.first_name() == new_name
 
       assert Repo.get(User, user.id).client_data == client_data
     end
@@ -162,7 +163,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
 
     test "Set single name from empty", %{user: user} do
-      {:ok, user} = User.update(user.id, %{name: ""})
+      {:ok, user} = Account.update(user.id, %{name: ""})
 
       new_name = Name.first_name()
 
@@ -183,8 +184,8 @@ defmodule WockyAPI.GraphQL.UserTest do
              }
 
       u = Repo.get(User, user.id)
-      assert User.last_name(u) == new_name
-      assert User.first_name(u) == ""
+      assert Account.last_name(u) == new_name
+      assert Account.first_name(u) == ""
     end
 
     @query """
@@ -203,7 +204,7 @@ defmodule WockyAPI.GraphQL.UserTest do
 
       assert User
              |> Repo.get(user.id)
-             |> User.first_name() == first_name
+             |> Account.first_name() == first_name
     end
 
     test "set a user's last name", %{user: user} do
@@ -214,7 +215,7 @@ defmodule WockyAPI.GraphQL.UserTest do
 
       assert User
              |> Repo.get(user.id)
-             |> User.last_name() == last_name
+             |> Account.last_name() == last_name
     end
 
     test "set a user's first and last names", %{user: user} do
@@ -230,8 +231,8 @@ defmodule WockyAPI.GraphQL.UserTest do
       refute has_errors(result)
 
       user = Repo.get(User, user.id)
-      assert User.first_name(user) == first_name
-      assert User.last_name(user) == last_name
+      assert Account.first_name(user) == first_name
+      assert Account.last_name(user) == last_name
       assert user.name == first_name <> " " <> last_name
     end
 
@@ -1043,7 +1044,7 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "redeem invitation code", %{user: user} do
       inviter = Factory.insert(:user)
-      code = User.make_invite_code(inviter)
+      code = Account.make_invite_code(inviter)
 
       result = run_query(@query, user, %{"code" => code})
       refute has_errors(result)
@@ -1057,7 +1058,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       result = run_query(query, user)
       refute has_errors(result)
       assert result.data == %{"userDelete" => %{"result" => true}}
-      assert User.get_user(user.id) == nil
+      assert Account.get_user(user.id) == nil
     end
   end
 

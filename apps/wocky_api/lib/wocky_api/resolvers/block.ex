@@ -3,7 +3,9 @@ defmodule WockyAPI.Resolvers.Block do
 
   import Ecto.Query
 
-  alias Wocky.{Block, User}
+  alias Wocky.Account
+  alias Wocky.Account.User
+  alias Wocky.Block
   alias WockyAPI.Resolvers.Utils
 
   def get_blocks(%User{} = user, args, _info) do
@@ -25,7 +27,7 @@ defmodule WockyAPI.Resolvers.Block do
     do: do_action(&Block.unblock/2, args, blocker)
 
   defp do_action(fun, args, blocker) do
-    with %User{} = user <- User.get_user(args[:input][:user_id]) do
+    with %User{} = user <- Account.get_user(args[:input][:user_id]) do
       fun.(blocker, user)
       {:ok, true}
     else

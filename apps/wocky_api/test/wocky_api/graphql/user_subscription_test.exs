@@ -5,8 +5,9 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   import WockyAPI.ChannelHelper
   import WockyAPI.GraphQLHelper
 
+  alias Wocky.Account
   alias Wocky.Repo.{Factory, Timestamp}
-  alias Wocky.{Location, Roster, User}
+  alias Wocky.{Location, Roster}
   alias Wocky.Location.Share.Cache
 
   setup_all :require_watcher
@@ -58,7 +59,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
       subscription_id: subscription_id
     } do
       new_handle = Factory.handle()
-      User.update(friend, %{handle: new_handle})
+      Account.update(friend, %{handle: new_handle})
 
       assert_push "subscription:data", push, 2000
 
@@ -77,13 +78,13 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
     end
 
     test "updating a stranger sends no message", %{stranger: stranger} do
-      User.update(stranger, %{handle: Factory.handle()})
+      Account.update(stranger, %{handle: Factory.handle()})
 
       refute_push "subscription:data", _push, 500
     end
 
     test "updating ourself sends no message", %{user: user} do
-      User.update(user, %{handle: Factory.handle()})
+      Account.update(user, %{handle: Factory.handle()})
 
       refute_push "subscription:data", _push, 500
     end

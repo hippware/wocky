@@ -9,6 +9,8 @@ defmodule Wocky.Bot do
   alias Ecto.Association.NotLoaded
   alias Ecto.{Changeset, Queryable}
   alias Geocalc.Point
+  alias Wocky.Account
+  alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.Bot.{Invitation, Item, Subscription}
   alias Wocky.Events.GeofenceEvent
@@ -18,7 +20,6 @@ defmodule Wocky.Bot do
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.Roster
-  alias Wocky.User
   alias Wocky.Waiter
 
   require Logger
@@ -193,7 +194,7 @@ defmodule Wocky.Bot do
   def insert(params, requestor) do
     with {:ok, t} <- do_update(%Bot{}, params, &Repo.insert/1) do
       update_counter("bot.created", 1)
-      User.flag_bot_created(requestor)
+      Account.flag_bot_created(requestor)
       {:ok, t}
     end
   end
@@ -306,7 +307,7 @@ defmodule Wocky.Bot do
   end
 
   defp by_relationship_query(user, :owned) do
-    User.owned_bots_query(user)
+    Account.owned_bots_query(user)
   end
 
   defp by_relationship_query(user, :invited) do

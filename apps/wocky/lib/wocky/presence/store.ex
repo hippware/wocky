@@ -3,7 +3,7 @@ defmodule Wocky.Presence.Store do
   Redis-based store for user_id -> [presence_pid] mappings
   """
 
-  alias Wocky.User
+  alias Wocky.Account.User
 
   @lock_timeout_secs 5
 

@@ -9,9 +9,9 @@ defmodule Wocky.Block do
   import Ecto.Query
 
   alias Ecto.Queryable
+  alias Wocky.Account.User
   alias Wocky.Repo
   alias Wocky.Roster
-  alias Wocky.User
 
   @foreign_key_type :binary_id
   @primary_key false

@@ -3,7 +3,9 @@ defmodule Wocky.Roster.BulkInvitation do
   Module for sending bulk invitations, both SMS (external) and internal
   """
 
-  alias Wocky.{DynamicLink, PhoneNumber, Roster, User}
+  alias Wocky.Account
+  alias Wocky.Account.User
+  alias Wocky.{DynamicLink, PhoneNumber, Roster}
   alias Wocky.SMS.Messenger
 
   @type results :: [map()]
@@ -39,7 +41,7 @@ defmodule Wocky.Roster.BulkInvitation do
     data
     |> Enum.filter(&(&1.e164_phone_number != nil))
     |> Enum.map(& &1.e164_phone_number)
-    |> User.get_by_phone_number(requestor)
+    |> Account.get_by_phone_number(requestor)
     |> Enum.reduce(data, &insert_user/2)
   end
 

@@ -2,7 +2,8 @@ defmodule WockyAPI.GraphQL.MessageTest do
   use WockyAPI.GraphQLCase, async: true
 
   alias Faker.Lorem
-  alias Wocky.{Messaging, Messaging.Message, Repo, Roster, User}
+  alias Wocky.Account
+  alias Wocky.{Messaging, Messaging.Message, Repo, Roster}
   alias Wocky.Repo.{Factory, ID}
 
   setup do
@@ -156,7 +157,7 @@ defmodule WockyAPI.GraphQL.MessageTest do
       refute has_errors(result)
 
       user_id = user2.id
-      first_name = User.first_name(user2)
+      first_name = Account.first_name(user2)
       content = message.content
 
       assert %{

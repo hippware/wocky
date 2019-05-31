@@ -2,7 +2,9 @@ defmodule WockyAPI.Resolvers.Bot do
   @moduledoc "GraphQL resolver for bot objects"
 
   alias Absinthe.Subscription
-  alias Wocky.{Bot, GeoUtils, Location, Repo, Repo.ID, User, Waiter}
+  alias Wocky.Account
+  alias Wocky.Account.User
+  alias Wocky.{Bot, GeoUtils, Location, Repo, Repo.ID, Waiter}
   alias Wocky.Bot.{Cluster, ClusterSearch, Invitation, Item}
   alias Wocky.Location.UserLocation
   alias WockyAPI.Endpoint
@@ -95,7 +97,7 @@ defmodule WockyAPI.Resolvers.Bot do
         _args,
         _info
       ) do
-    {:ok, User.get_bot_relationships(user, bot)}
+    {:ok, Account.get_bot_relationships(user, bot)}
   end
 
   def get_bot_relationships(
@@ -103,7 +105,7 @@ defmodule WockyAPI.Resolvers.Bot do
         _args,
         _info
       ) do
-    {:ok, User.get_bot_relationships(user, bot)}
+    {:ok, Account.get_bot_relationships(user, bot)}
   end
 
   def get_lat(%{location: l}, _args, _info) do
@@ -155,7 +157,7 @@ defmodule WockyAPI.Resolvers.Bot do
     bot
     |> Bot.sub_setup_event()
     |> Waiter.wait(5000, fn ->
-      Enum.member?(User.get_bot_relationships(user, bot), :subscribed)
+      Enum.member?(Account.get_bot_relationships(user, bot), :subscribed)
     end)
 
     location = struct(UserLocation, l)
@@ -309,7 +311,7 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   defp do_invite(invitee, bot, requestor) do
-    with %User{} = invitee <- User.get_user(invitee, requestor),
+    with %User{} = invitee <- Account.get_user(invitee, requestor),
          {:ok, invitation} <- Invitation.put(invitee, bot, requestor) do
       invitation
     else

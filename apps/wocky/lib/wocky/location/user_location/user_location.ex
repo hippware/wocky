@@ -3,8 +3,8 @@ defmodule Wocky.Location.UserLocation do
 
   use Wocky.Repo.Schema
 
+  alias Wocky.Account.User
   alias Wocky.Location.BotEvent
-  alias Wocky.User
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}

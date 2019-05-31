@@ -99,7 +99,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
     resolve_type fn
       %{id: id}, %{context: %{current_user: %{id: id}}} -> :current_user
-      %Wocky.User{} = _, _ -> :other_user
+      %Wocky.Account.User{} = _, _ -> :other_user
       _, _ -> nil
     end
   end

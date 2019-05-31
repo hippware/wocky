@@ -5,7 +5,7 @@ defmodule Wocky.Messaging.Message do
 
   use Wocky.Repo.Schema
 
-  alias Wocky.User
+  alias Wocky.Account.User
 
   @foreign_key_type :binary_id
   schema "messages" do

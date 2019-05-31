@@ -18,9 +18,11 @@ defmodule Wocky.Presence.Manager do
   use GenServer
 
   alias Phoenix.PubSub
+  alias Wocky.Account
+  alias Wocky.Account.User
   alias Wocky.Presence
   alias Wocky.Presence.{OnlineProc, Store, Supervisor}
-  alias Wocky.{Repo, Roster, User}
+  alias Wocky.{Repo, Roster}
 
   def acquire(user) do
     Store.transaction(user.id, fn -> get_or_create(user) end)
@@ -243,7 +245,7 @@ defmodule Wocky.Presence.Manager do
   end
 
   defp send_offline(contact_id, user) do
-    case User.get_user(contact_id) do
+    case Account.get_user(contact_id) do
       nil ->
         :ok
 

@@ -1,7 +1,7 @@
 defmodule Wocky.Events.NewUser do
   @moduledoc false
 
-  alias Wocky.User
+  alias Wocky.Account.User
 
   defstruct [
     :user

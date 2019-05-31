@@ -25,7 +25,7 @@ defmodule WockyAPI.WatcherHelper do
     start_watcher(Wocky.Repo)
 
     on_exit(fn ->
-      Wocky.Repo.delete_all(Wocky.User)
+      Wocky.Repo.delete_all(Wocky.Account.User)
     end)
   end
 end

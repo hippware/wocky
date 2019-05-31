@@ -8,10 +8,10 @@ defmodule Wocky.Location.BotEvent do
   import Ecto.Query
   import EctoHomoiconicEnum, only: [defenum: 2]
 
+  alias Wocky.Account.User
   alias Wocky.Bot
   alias Wocky.Location.UserLocation
   alias Wocky.Repo
-  alias Wocky.User
 
   defenum EventType, [
     :enter,

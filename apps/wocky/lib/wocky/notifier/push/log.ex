@@ -3,7 +3,7 @@ defmodule Wocky.Notifier.Push.Log do
 
   use Wocky.Repo.Schema
 
-  alias Wocky.User
+  alias Wocky.Account.User
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
@@ -21,8 +21,8 @@ defmodule Wocky.Notifier.Push.Log do
   end
 
   @type t :: %Log{
-          user_id: Wocky.User.id(),
-          device: Wocky.User.device(),
+          user_id: User.id(),
+          device: User.device(),
           token: binary,
           message_id: binary,
           payload: binary,

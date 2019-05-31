@@ -1,5 +1,6 @@
 defmodule WockyAPI.LoggingSocket do
-  alias Wocky.{TrafficLog, User}
+  alias Wocky.Account
+  alias Wocky.TrafficLog
 
   defmacro __using__(opts) do
     # Macro modelled on Phoenix.Socket.__using__
@@ -94,7 +95,7 @@ defmodule WockyAPI.LoggingSocket do
         incoming: incoming?,
         packet: to_string(payload)
       }
-      |> TrafficLog.put(User.hippware?(user))
+      |> TrafficLog.put(Account.hippware?(user))
 
     :ok
   end

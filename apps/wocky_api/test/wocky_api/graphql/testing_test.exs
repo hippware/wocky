@@ -1,8 +1,10 @@
 defmodule WockyAPI.GraphQL.TestingTest do
   use WockyAPI.GraphQLCase, async: false
 
+  alias Wocky.Account
+  alias Wocky.Account.User
   alias Wocky.Location.Share
-  alias Wocky.{Repo, User}
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
 
   setup do
@@ -54,7 +56,7 @@ defmodule WockyAPI.GraphQL.TestingTest do
 
       refute has_errors(result)
 
-      assert length(User.get_owned_bots(user)) == 10
+      assert length(Account.get_owned_bots(user)) == 10
     end
 
     test "should allow multiple types", %{user: user} do
@@ -97,7 +99,7 @@ defmodule WockyAPI.GraphQL.TestingTest do
 
       assert has_errors(result)
 
-      assert User.get_owned_bots(user) == []
+      assert Account.get_owned_bots(user) == []
     end
   end
 

@@ -6,7 +6,7 @@ defmodule WockyAPI.Middleware.AuthSelf do
 
   @behaviour Absinthe.Middleware
 
-  alias Wocky.User
+  alias Wocky.Account.User
 
   def call(
         %{context: %{current_user: %User{id: id}}, source: %User{id: id}} =

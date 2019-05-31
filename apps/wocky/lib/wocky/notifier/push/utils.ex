@@ -3,7 +3,8 @@ defmodule Wocky.Notifier.Push.Utils do
   Utility functions to help with push notifications
   """
 
-  alias Wocky.{Bot, User}
+  alias Wocky.Account.User
+  alias Wocky.Bot
 
   @message_limit 512
 

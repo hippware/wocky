@@ -4,9 +4,11 @@ defmodule Wocky.Account.Register do
 
   import Ecto.Changeset
 
+  alias Wocky.Account
+  alias Wocky.Account.User
   alias Wocky.Repo
-  alias Wocky.Repo.{Factory, ID}
-  alias Wocky.User
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
 
   require Logger
 
@@ -28,7 +30,7 @@ defmodule Wocky.Account.Register do
         external_id = Factory.external_id()
 
         {:ok, _} =
-          User.update(user, %{
+          Account.update(user, %{
             provider: provider,
             external_id: external_id
           })
@@ -51,7 +53,7 @@ defmodule Wocky.Account.Register do
             {:error, :not_found}
 
           orig_user ->
-            User.update(orig_user, %{
+            Account.update(orig_user, %{
               provider: provider,
               external_id: external_id,
               phone_number: phone_number

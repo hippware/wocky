@@ -1,12 +1,11 @@
-defmodule Wocky.User.InviteCode do
+defmodule Wocky.Account.InviteCode do
   @moduledoc false
 
   use Wocky.Repo.Schema
 
   alias Ecto.Changeset
   alias Ecto.UUID
-  alias Wocky.User
-  alias __MODULE__
+  alias Wocky.Account.User
 
   @foreign_key_type :binary_id
   schema "user_invite_codes" do

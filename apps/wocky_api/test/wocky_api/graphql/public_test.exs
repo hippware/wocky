@@ -1,16 +1,16 @@
 defmodule WockyAPI.GraphQL.PublicTest do
   use WockyAPI.GraphQLCase, async: true
 
+  alias Wocky.Account
   alias Wocky.Bot.Subscription
   alias Wocky.Repo.Factory
-  alias Wocky.User
 
   setup do
     users = [user, user2] = Factory.insert_list(2, :user)
 
     Enum.map(users, fn u ->
       image = Factory.insert(:tros_metadata, user: u)
-      User.update(u, %{avatar: Factory.image_url(image)})
+      Account.update(u, %{avatar: Factory.image_url(image)})
     end)
 
     image = Factory.insert(:tros_metadata, user: user)

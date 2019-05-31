@@ -4,7 +4,8 @@ defmodule Wocky.Events.BotItem do
   to which the notified user is subscribed
   """
 
-  alias Wocky.{Bot.Item, User}
+  alias Wocky.Account.User
+  alias Wocky.Bot.Item
 
   defstruct [
     :to,

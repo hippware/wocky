@@ -3,7 +3,8 @@ defmodule Wocky.Location.Share do
 
   use Wocky.Repo.Schema
 
-  alias Wocky.{Roster, User}
+  alias Wocky.Account.User
+  alias Wocky.Roster
 
   @foreign_key_type :binary_id
   schema "user_location_shares" do

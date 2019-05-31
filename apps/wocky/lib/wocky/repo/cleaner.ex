@@ -3,6 +3,8 @@ defmodule Wocky.Repo.Cleaner do
 
   import Ecto.Query
 
+  alias Wocky.Account.InviteCode
+  alias Wocky.Account.User
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Location.{BotEvent, UserLocation}
@@ -13,8 +15,6 @@ defmodule Wocky.Repo.Cleaner do
   alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
-  alias Wocky.User
-  alias Wocky.User.InviteCode
 
   require Logger
 

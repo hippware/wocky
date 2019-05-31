@@ -6,7 +6,8 @@ defmodule Wocky.Bot.ClusterSearch do
   alias Ecto.Adapters.SQL
   alias Ecto.UUID
   alias Geo.Point
-  alias Wocky.{Bot, GeoUtils, Repo, User}
+  alias Wocky.Account.User
+  alias Wocky.{Bot, GeoUtils, Repo}
   alias Wocky.Bot.Cluster
 
   @spec search(Point.t(), Point.t(), pos_integer, pos_integer, User.t()) :: [

@@ -5,7 +5,9 @@ defmodule Wocky.Location.Handler do
 
   use GenServer
 
-  alias Wocky.{Bot, GeoUtils, Repo, User}
+  alias Wocky.Account
+  alias Wocky.Account.User
+  alias Wocky.{Bot, GeoUtils, Repo}
 
   alias Wocky.Location.{
     BotEvent,
@@ -31,7 +33,7 @@ defmodule Wocky.Location.Handler do
 
   def start_link(user_id) do
     user_id
-    |> User.get_user()
+    |> Account.get_user()
     |> start_link()
   end
 
@@ -102,7 +104,7 @@ defmodule Wocky.Location.Handler do
   @impl true
   def init(user) do
     Logger.debug(fn -> "Swarm initializing worker with user #{user.id}" end)
-    subscriptions = User.get_subscriptions(user)
+    subscriptions = Account.get_subscriptions(user)
     events = BotEvent.get_last_events(user.id)
 
     {:ok, %State{user: user, subscriptions: subscriptions, events: events},
@@ -235,7 +237,7 @@ defmodule Wocky.Location.Handler do
   end
 
   defp should_save_location?(user) do
-    GeoFence.save_locations?() || User.hippware?(user)
+    GeoFence.save_locations?() || Account.hippware?(user)
   end
 
   def save_location(user, location) do

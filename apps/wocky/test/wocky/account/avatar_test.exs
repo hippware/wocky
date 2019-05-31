@@ -1,4 +1,4 @@
-defmodule Wocky.User.AvatarTest do
+defmodule Wocky.Account.AvatarTest do
   use ExUnit.Case, async: true
 
   describe "prepare/1" do

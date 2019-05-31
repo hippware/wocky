@@ -5,7 +5,7 @@ defmodule Wocky.TROS.Metadata do
 
   use Wocky.Repo.Schema
 
-  alias Wocky.User
+  alias Wocky.Account.User
 
   @primary_key false
   @foreign_key_type :binary_id

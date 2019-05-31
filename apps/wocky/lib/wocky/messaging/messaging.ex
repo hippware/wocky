@@ -4,8 +4,11 @@ defmodule Wocky.Messaging do
   import Ecto.Query
 
   alias Ecto.Queryable
-  alias Wocky.Messaging.{Conversation, Message}
-  alias Wocky.{Repo, Roster, User}
+  alias Wocky.Account.User
+  alias Wocky.Messaging.Conversation
+  alias Wocky.Messaging.Message
+  alias Wocky.Repo
+  alias Wocky.Roster
 
   @spec send_message(User.t(), User.t(), binary, binary | nil) ::
           {:ok, Message.t()} | {:error, any}

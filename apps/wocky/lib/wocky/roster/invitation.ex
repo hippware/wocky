@@ -7,7 +7,8 @@ defmodule Wocky.Roster.Invitation do
 
   import Ecto.Query
 
-  alias Wocky.{Repo, User}
+  alias Wocky.Account.User
+  alias Wocky.Repo
 
   @foreign_key_type :binary_id
   schema "user_invitations" do

@@ -7,7 +7,7 @@ defmodule Wocky.Messaging.Conversation do
 
   import EctoHomoiconicEnum, only: [defenum: 2]
 
-  alias Wocky.User
+  alias Wocky.Account.User
 
   defenum MessageDirection, [
     :incoming,

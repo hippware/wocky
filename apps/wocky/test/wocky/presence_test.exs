@@ -3,12 +3,12 @@ defmodule Wocky.PresenceTest do
 
   import Eventually
 
+  alias Wocky.Account.User
   alias Wocky.CallbackManager
   alias Wocky.Presence
   alias Wocky.Presence.Manager
   alias Wocky.Repo.Factory
   alias Wocky.Roster
-  alias Wocky.User
 
   setup do
     [user, requestor] = Factory.insert_list(2, :user)

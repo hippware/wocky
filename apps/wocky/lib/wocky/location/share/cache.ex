@@ -5,9 +5,9 @@ defmodule Wocky.Location.Share.Cache do
 
   import Ecto.Query
 
+  alias Wocky.Account.User
   alias Wocky.Location.Share
   alias Wocky.Repo
-  alias Wocky.User
 
   @spec get(User.id()) :: [User.id()]
   def get(user_id) do

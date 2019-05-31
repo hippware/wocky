@@ -3,8 +3,8 @@ defmodule Wocky.Account.ClientVersion do
 
   use Wocky.Repo.Schema
 
+  alias Wocky.Account.User
   alias Wocky.Repo
-  alias Wocky.User
 
   @foreign_key_type :binary_id
   @primary_key false

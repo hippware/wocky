@@ -1,7 +1,8 @@
 defmodule Wocky.Bot.BotTest do
   use Wocky.DataCase, async: true
 
-  alias Wocky.{Bot, GeoUtils, Repo, Roster, User}
+  alias Wocky.Account.User
+  alias Wocky.{Bot, GeoUtils, Repo, Roster}
   alias Wocky.Repo.{Factory, ID}
 
   setup do

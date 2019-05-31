@@ -8,10 +8,11 @@ defmodule Wocky.Notifier.Push do
 
   alias Pigeon.APNS.Notification, as: APNSNotification
   alias Pigeon.FCM.Notification, as: FCMNotification
+  alias Wocky.Account
+  alias Wocky.Account.User
   alias Wocky.Notifier.Push.{Event, Log, Token, Utils}
   alias Wocky.Notifier.Push.Backend.{APNS, FCM, Sandbox}
   alias Wocky.Repo
-  alias Wocky.User
 
   require Logger
 
@@ -94,7 +95,7 @@ defmodule Wocky.Notifier.Push do
     [dev_mode: dev_mode] ++ conflict_updates()
   end
 
-  @spec disable(Wocky.User.t(), Wocky.User.device()) :: :ok
+  @spec disable(User.t(), User.device()) :: :ok
   def disable(user, device) do
     Repo.update_all(
       from(Token, where: [user_id: ^user.id, device: ^device, valid: true]),
@@ -112,7 +113,7 @@ defmodule Wocky.Notifier.Push do
     notify_all(Event.recipient(event), event)
   end
 
-  @spec notify_all(Wocky.User.t(), any) :: :ok
+  @spec notify_all(User.t(), any) :: :ok
   def notify_all(user, event) do
     if Utils.enabled?() do
       for token <- Token.all_for_user(user) do
@@ -219,7 +220,7 @@ defmodule Wocky.Notifier.Push do
   end
 
   defp maybe_extract_payload(payload, user) do
-    if User.hippware?(user) || Utils.log_payload?() do
+    if Account.hippware?(user) || Utils.log_payload?() do
       inspect(payload)
     end
   end

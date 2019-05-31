@@ -15,6 +15,7 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Phone.EnUs, as: Phone
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Server, as: ServerJWT
+  alias Wocky.Account.User
   alias Wocky.Bot
   alias Wocky.Bot.Invitation, as: BotInvitation
   alias Wocky.Bot.{Item, Subscription}
@@ -30,7 +31,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata, as: TROSMetadata
-  alias Wocky.User
 
   def user_factory do
     %User{

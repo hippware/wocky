@@ -24,7 +24,7 @@ defmodule Wocky.WatcherHelper do
         # cause the NOTIFY actions in the DB to fire) we have to do our own cleanup
         on_exit(fn ->
           Application.stop(:wocky_db_watcher)
-          Wocky.Repo.delete_all(Wocky.User)
+          Wocky.Repo.delete_all(Wocky.Account.User)
         end)
       end
     end

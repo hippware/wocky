@@ -3,7 +3,8 @@ defmodule Wocky.Location.UserLocation.Current do
 
   import Ecto.Query
 
-  alias Wocky.{CallbackManager, User}
+  alias Wocky.Account.User
+  alias Wocky.CallbackManager
   alias Wocky.Location.Share
   alias Wocky.Location.UserLocation
   alias Wocky.Repo

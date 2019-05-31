@@ -1,12 +1,12 @@
-defmodule Wocky.User.Avatar do
+defmodule Wocky.Account.Avatar do
   @moduledoc """
   Validation and logic regarding user avatars.
   """
 
+  alias Wocky.Account.User
   alias Wocky.Repo.ID
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
-  alias Wocky.User
 
   @type url :: binary
   @type t :: TROS.file_id()
