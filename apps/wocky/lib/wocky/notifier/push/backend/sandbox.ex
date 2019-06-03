@@ -9,6 +9,7 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
   """
 
   use GenServer
+  use Wocky.Config
 
   alias Pigeon.APNS.Notification
   alias Wocky.Notifier.Push.Backend.APNS
@@ -141,5 +142,5 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
     end
   end
 
-  defp reflect?, do: Confex.get_env(:wocky, __MODULE__)[:reflect]
+  defp reflect?, do: get_config(:reflect)
 end

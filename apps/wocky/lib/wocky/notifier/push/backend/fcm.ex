@@ -5,8 +5,11 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
 
   @behaviour Wocky.Notifier.Push.Backend
 
+  use Wocky.Config
+
   alias Pigeon.FCM
   alias Pigeon.FCM.Notification
+  alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Event
   alias Wocky.Notifier.Push.Utils
 
@@ -14,7 +17,10 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
     _ =
       params.event
       |> build_notification(params.token)
-      |> FCM.push(on_response: params.on_response, timeout: Utils.timeout())
+      |> FCM.push(
+        on_response: params.on_response,
+        timeout: Push.get_config(:timeout)
+      )
 
     :ok
   end
@@ -66,5 +72,5 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
 
   def error_msg(resp), do: inspect(resp)
 
-  defp package, do: Confex.get_env(:wocky, __MODULE__)[:package]
+  defp package, do: get_config(:package)
 end

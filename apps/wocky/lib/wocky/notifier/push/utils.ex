@@ -5,6 +5,7 @@ defmodule Wocky.Notifier.Push.Utils do
 
   alias Wocky.Account.User
   alias Wocky.Bot
+  alias Wocky.Notifier.Push
 
   @message_limit 512
 
@@ -61,15 +62,5 @@ defmodule Wocky.Notifier.Push.Utils do
 
   defp server, do: Confex.get_env(:wocky, :wocky_host)
 
-  defp uri_prefix, do: get_conf(:uri_prefix)
-
-  def timeout, do: get_conf(:timeout)
-
-  def sandbox?, do: get_conf(:sandbox)
-
-  def enabled?, do: get_conf(:enabled)
-
-  def log_payload?, do: get_conf(:log_payload)
-
-  defp get_conf(key), do: Confex.get_env(:wocky, Wocky.Notifier.Push)[key]
+  defp uri_prefix, do: Push.get_config(:uri_prefix)
 end

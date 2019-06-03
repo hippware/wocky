@@ -3,6 +3,7 @@ defmodule Wocky.Notifier.Push do
   The Push context. Single interface for push notifications.
   """
   use Elixometer
+  use Wocky.Config
 
   import Ecto.Query, warn: false
 
@@ -16,7 +17,6 @@ defmodule Wocky.Notifier.Push do
   alias Wocky.Notifier.Push.Event
   alias Wocky.Notifier.Push.Log
   alias Wocky.Notifier.Push.Token
-  alias Wocky.Notifier.Push.Utils
   alias Wocky.Repo
 
   require Logger
@@ -120,13 +120,15 @@ defmodule Wocky.Notifier.Push do
 
   @spec notify_all(User.t(), any) :: :ok
   def notify_all(user, event) do
-    if Utils.enabled?() do
+    config = config()
+
+    if config.enabled do
       for token <- Token.all_for_user(user) do
         platform = token.platform
 
         backend =
           cond do
-            Utils.sandbox?() -> Sandbox
+            config.sandbox -> Sandbox
             platform == :apns -> APNS
             platform == :fcm -> FCM
           end
@@ -225,13 +227,13 @@ defmodule Wocky.Notifier.Push do
   end
 
   defp maybe_extract_payload(payload, user) do
-    if Account.hippware?(user) || Utils.log_payload?() do
+    if Account.hippware?(user) || get_config(:log_payload) do
       inspect(payload)
     end
   end
 
   defp push_timeout(%__MODULE__{retries: retries} = params) do
-    timeout = Utils.timeout() * 2
+    timeout = get_config(:timeout) * 2
 
     receive do
       :push_complete -> :ok

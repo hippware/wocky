@@ -248,7 +248,7 @@ defmodule Wocky.Location.Handler do
   defp maybe_save_current_location(false, _user, _location), do: :ok
 
   defp maybe_save_current_location(true, user, location) do
-    if GeoFence.should_process?(location, GeoFence.get_config()) do
+    if GeoFence.should_process?(location, GeoFence.config()) do
       Current.set(user, location)
     else
       :ok
