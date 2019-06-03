@@ -13,6 +13,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Account.User
+  alias Wocky.Audit.TrafficLog
   alias Wocky.Bot
   alias Wocky.Bot.Invitation, as: BotInvitation
   alias Wocky.Bot.Item
@@ -29,7 +30,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster.Invitation, as: RosterInvitation
   alias Wocky.Roster.Item, as: RosterItem
-  alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata, as: TROSMetadata
 

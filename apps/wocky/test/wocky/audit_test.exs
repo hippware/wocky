@@ -1,15 +1,45 @@
-defmodule Wocky.TrafficLogTest do
+defmodule Wocky.AuditTest do
   use Wocky.DataCase, async: false
 
   alias Timex.Duration
+  alias Wocky.Audit
+  alias Wocky.Audit.TrafficLog
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.TrafficLog
 
   @packets 100
 
   setup do
-    user = Factory.insert(:user)
+    {:ok, user: Factory.insert(:user)}
+  end
+
+  describe "log_traffic/3" do
+    test "should add a traffic entry for the user", %{user: user} do
+      now = Timex.now()
+      log = Factory.params_for(:traffic_log, user_id: user.id)
+
+      result = Audit.log_traffic(log, user, log_traffic: true)
+      assert {:ok, _} = result
+
+      entry = Kernel.elem(result, 1)
+      assert %{__struct__: TrafficLog} = entry
+
+      assert Audit.get_traffic_by_period(user.id, now, default_duration()) ==
+               [entry]
+    end
+
+    test "should not log when :log_traffic is false", %{user: user} do
+      now = Timex.now()
+      log = Factory.params_for(:traffic_log, user_id: user.id)
+
+      assert {:ok, nil} = Audit.log_traffic(log, user, log_traffic: false)
+
+      assert Audit.get_traffic_by_period(user.id, now, default_duration()) ==
+               []
+    end
+  end
+
+  defp traffic_fixture(%{user: user}) do
     device = ID.new()
 
     traffic =
@@ -20,7 +50,6 @@ defmodule Wocky.TrafficLogTest do
     Factory.insert(:traffic_log, user: user, device: ID.new())
 
     {:ok,
-     user: user,
      traffic: traffic,
      device: device,
      first: hd(traffic).created_at,
@@ -28,60 +57,12 @@ defmodule Wocky.TrafficLogTest do
      last: List.last(traffic).created_at}
   end
 
-  describe "put/1" do
-    setup do
-      {:ok, user: Factory.insert(:user)}
+  describe "get_traffic_by_period/3" do
+    setup :traffic_fixture
 
-      on_exit(fn -> Application.put_env(:wocky, :log_traffic, true) end)
-    end
-
-    test "should add a traffic entry for the user", %{user: user} do
-      now = Timex.now()
-      log = Factory.params_for(:traffic_log, user_id: user.id)
-
-      put_result = TrafficLog.put(log)
-      assert {:ok, _} = put_result
-
-      entry = Kernel.elem(put_result, 1)
-      assert %{__struct__: TrafficLog} = entry
-
-      assert TrafficLog.get_by_period(user.id, now, default_duration()) == [
-               entry
-             ]
-    end
-
-    test "should not log when :log_traffic is false", %{user: user} do
-      Application.put_env(:wocky, :log_traffic, false)
-
-      now = Timex.now()
-      log = Factory.params_for(:traffic_log, user_id: user.id)
-
-      assert {:ok, nil} = TrafficLog.put(log)
-      assert TrafficLog.get_by_period(user.id, now, default_duration()) == []
-    end
-
-    test "`force` param should override log disabling", %{user: user} do
-      Application.put_env(:wocky, :log_traffic, false)
-
-      now = Timex.now()
-      log = Factory.params_for(:traffic_log, user_id: user.id)
-
-      put_result = TrafficLog.put(log, true)
-      assert {:ok, _} = put_result
-
-      entry = Kernel.elem(put_result, 1)
-      assert %{__struct__: TrafficLog} = entry
-
-      assert TrafficLog.get_by_period(user.id, now, default_duration()) == [
-               entry
-             ]
-    end
-  end
-
-  describe "get_by_period/3" do
     test "should get all traffic from the specified time/duration", ctx do
       packets =
-        TrafficLog.get_by_period(
+        Audit.get_traffic_by_period(
           ctx.user.id,
           default_start(),
           default_duration()
@@ -96,11 +77,11 @@ defmodule Wocky.TrafficLogTest do
         |> Timex.diff(ctx.first)
         |> Duration.from_microseconds()
 
-      packets! = TrafficLog.get_by_period(ctx.user.id, ctx.first, dur)
+      packets! = Audit.get_traffic_by_period(ctx.user.id, ctx.first, dur)
       assert length(packets!) == div(@packets, 2)
 
       packets! =
-        TrafficLog.get_by_period(
+        Audit.get_traffic_by_period(
           ctx.user.id,
           ctx.last,
           Duration.from_microseconds(0)
@@ -111,17 +92,23 @@ defmodule Wocky.TrafficLogTest do
 
     test "should get no traffic for a non-existant user" do
       packets =
-        TrafficLog.get_by_period(ID.new(), default_start(), default_duration())
+        Audit.get_traffic_by_period(
+          ID.new(),
+          default_start(),
+          default_duration()
+        )
 
       assert packets == []
     end
   end
 
-  describe "get_by_device/4" do
+  describe "get_traffic_by_device/4" do
+    setup :traffic_fixture
+
     test "should get all traffic from the specified device/time/duration",
          ctx do
       packets =
-        TrafficLog.get_by_device(
+        Audit.get_traffic_by_device(
           ctx.user.id,
           ctx.device,
           default_start(),
@@ -133,7 +120,7 @@ defmodule Wocky.TrafficLogTest do
 
     test "should get nothing from a different device", ctx do
       packets =
-        TrafficLog.get_by_device(
+        Audit.get_traffic_by_device(
           ctx.user.id,
           "fnord",
           default_start(),
@@ -145,7 +132,7 @@ defmodule Wocky.TrafficLogTest do
 
     test "should get no traffic for a non-existant user", ctx do
       packets =
-        TrafficLog.get_by_device(
+        Audit.get_traffic_by_device(
           ID.new(),
           ctx.device,
           default_start(),

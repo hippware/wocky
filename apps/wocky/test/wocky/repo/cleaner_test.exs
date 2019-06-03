@@ -6,6 +6,7 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.Account
   alias Wocky.Account.InviteCode
   alias Wocky.Account.User
+  alias Wocky.Audit.TrafficLog
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Location.BotEvent
@@ -17,7 +18,6 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
-  alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
 

@@ -68,9 +68,6 @@ config :wocky,
   firebase_domain_url_prefix: "https://tinyrobot.page.link",
   firebase_link_prefix: "https://tinyrobot.com/?inviteCode=",
 
-  # Diagnostics
-  log_traffic: {:system, :boolean, "WOCKY_LOG_TRAFFIC", true},
-
   # Goth config
   goth_config: %{
     type: "service_account",
@@ -115,6 +112,9 @@ config :wocky, :redlock,
       database: {:system, :integer, "REDIS_DB", 0}
     ]
   ]
+
+config :wocky, Wocky.Audit,
+  log_traffic: {:system, :boolean, "WOCKY_AUDIT_LOG_TRAFFIC", true}
 
 # location processing
 config :wocky, Wocky.Location.GeoFence,

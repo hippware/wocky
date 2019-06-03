@@ -5,6 +5,7 @@ defmodule Wocky.Repo.Cleaner do
 
   alias Wocky.Account.InviteCode
   alias Wocky.Account.User
+  alias Wocky.Audit.TrafficLog
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Location.BotEvent
@@ -13,7 +14,6 @@ defmodule Wocky.Repo.Cleaner do
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Repo
   alias Wocky.Repo.Timestamp
-  alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
 
