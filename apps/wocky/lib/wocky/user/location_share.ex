@@ -123,10 +123,14 @@ defmodule Wocky.User.LocationShare do
     end)
   end
 
-  @spec clean_expired() :: {non_neg_integer(), term()}
+  @spec clean_expired() :: {non_neg_integer(), [User.id()]}
   def clean_expired do
-    LocationShare
-    |> where([l], l.expires_at <= ^DateTime.utc_now())
-    |> Repo.delete_all(timeout: :infinity)
+    {count, user_ids} =
+      LocationShare
+      |> select([l], l.user_id)
+      |> where([l], l.expires_at <= ^DateTime.utc_now())
+      |> Repo.delete_all(timeout: :infinity)
+
+    {count, Enum.uniq(user_ids)}
   end
 end
