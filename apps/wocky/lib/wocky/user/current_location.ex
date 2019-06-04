@@ -1,8 +1,10 @@
 defmodule Wocky.User.CurrentLocation do
   @moduledoc false
 
-  alias Wocky.{CallbackManager, User}
-  alias Wocky.User.Location
+  import Ecto.Query
+
+  alias Wocky.{CallbackManager, Repo, User}
+  alias Wocky.User.{Location, LocationShare}
 
   @type callback() :: (User.t(), Location.t() -> :ok)
 
@@ -39,6 +41,28 @@ defmodule Wocky.User.CurrentLocation do
       {:ok, bin} ->
         :erlang.binary_to_term(bin)
     end
+  end
+
+  @spec delete(User.id() | User.t()) :: :ok
+  def delete(%User{id: id}), do: delete(id)
+
+  def delete(user_id) do
+    {:ok, _} = Redix.command(Redix, ["DEL", key(user_id)])
+    :ok
+  end
+
+  @spec delete_when_not_shared([User.id()]) :: non_neg_integer()
+  def delete_when_not_shared(user_ids) do
+    have_shares =
+      LocationShare
+      |> select([ls], ls.user_id)
+      |> where([ls], ls.user_id in ^user_ids)
+      |> distinct(true)
+      |> Repo.all()
+
+    (user_ids -- have_shares)
+    |> Enum.map(&delete/1)
+    |> length()
   end
 
   defp key(user_id), do: "current_loc:" <> user_id

@@ -11,8 +11,13 @@ defmodule Wocky.Tasks.Recurring do
 
   @timeout :timer.minutes(1)
 
-  def start,
-    do: Swarm.whereis_or_register_name(__MODULE__, __MODULE__, :start_link, [])
+  def start do
+    if Confex.get_env(:wocky, :enable_recurring_tasks, true) do
+      Swarm.whereis_or_register_name(__MODULE__, __MODULE__, :start_link, [])
+    else
+      {:ok, nil}
+    end
+  end
 
   def start_link, do: GenServer.start_link(__MODULE__, nil)
 
