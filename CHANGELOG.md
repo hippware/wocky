@@ -5,7 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: ecto_sql (PR #2556)
+* Update: ecto_sql (PR #2556), honeybadger (PR #2561)
+  * elixir, erlang (PR #2563), plug (PR #2564), dawdle (PR #2565)
 * Configure location accuracy uncertainty threshold to 50m (#2555)
 * Remove db lookup for REST location upload (PR #2559)
 * Refactor location auth changes (PR #2560)
