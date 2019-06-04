@@ -6,7 +6,8 @@ defmodule Wocky.Tasks.LocShareExpire do
   alias Wocky.Location
 
   def run do
-    {ls_time, {ls_count, user_ids}} = :timer.tc(&Location.clean_expired_shares/0)
+    {ls_time, {ls_count, user_ids}} =
+      :timer.tc(&Location.clean_expired_shares/0)
 
     {cl_time, cl_count} =
       :timer.tc(fn -> Location.clean_current_locations(user_ids) end)

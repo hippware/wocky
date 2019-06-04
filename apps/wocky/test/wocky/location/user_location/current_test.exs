@@ -14,8 +14,13 @@ defmodule Wocky.Location.UserLocation.CurrentTest do
   describe "delete_when_not_shared/1" do
     setup %{users: [u1, u2 | _] = users} do
       Roster.befriend(u1, u2)
-      {:ok, _} = Location.start_sharing_location(u1, u2, Timestamp.shift(days: 1))
-      {:ok, _} = Location.start_sharing_location(u2, u1, Timestamp.shift(days: 1))
+
+      {:ok, _} =
+        Location.start_sharing_location(u1, u2, Timestamp.shift(days: 1))
+
+      {:ok, _} =
+        Location.start_sharing_location(u2, u1, Timestamp.shift(days: 1))
+
       loc = Factory.build(:location)
       Enum.each(users, &Current.set(&1, loc))
       :ok
