@@ -7,17 +7,15 @@ defmodule Wocky.Callbacks.UserInvitation do
 
   alias Wocky.Events.UserInvitation
   alias Wocky.Notifier
-  alias Wocky.Repo
+  alias Wocky.Repo.Hydrator
 
   def handle_insert(new) do
-    new = Repo.preload(new, [:user, :invitee])
-
-    if new.user != nil && new.invitee != nil do
+    Hydrator.with_assocs(new, [:user, :invitee], fn rec ->
       %UserInvitation{
-        to: new.invitee,
-        from: new.user
+        to: rec.invitee,
+        from: rec.user
       }
       |> Notifier.notify()
-    end
+    end)
   end
 end

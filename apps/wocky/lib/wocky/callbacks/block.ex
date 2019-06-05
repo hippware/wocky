@@ -11,13 +11,13 @@ defmodule Wocky.Callbacks.Block do
   alias Wocky.Bot.Invitation
   alias Wocky.Bot.Item
   alias Wocky.Notifier.InBand.Notification
-  alias Wocky.Repo
+  alias Wocky.Repo.Hydrator
 
   def handle_insert(new) do
-    %Block{blocker: blocker, blockee: blockee} =
-      Repo.preload(new, [:blocker, :blockee])
-
-    if blocker != nil && blockee != nil do
+    Hydrator.with_assocs(new, [:blocker, :blockee], fn %Block{
+                                                         blocker: blocker,
+                                                         blockee: blockee
+                                                       } ->
       # Delete content items on owned bots by blocker/blockee
       delete_bot_references(blocker, blockee)
       delete_bot_references(blockee, blocker)
@@ -31,7 +31,7 @@ defmodule Wocky.Callbacks.Block do
       Notification.delete(blockee, blocker)
 
       :ok
-    end
+    end)
   end
 
   defp delete_bot_references(a, b) do

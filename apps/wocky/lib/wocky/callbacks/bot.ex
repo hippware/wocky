@@ -8,18 +8,17 @@ defmodule Wocky.Callbacks.Bot do
   alias Wocky.Bot
   alias Wocky.Location
   alias Wocky.Repo
+  alias Wocky.Repo.Hydrator
   alias Wocky.Waiter
 
   def handle_insert(new) do
-    %{user: user} = Repo.preload(new, [:user])
+    Hydrator.with_assocs(new, [:user], fn rec = %{user: user} ->
+      :ok = Bot.subscribe(rec, user)
 
-    if user != nil do
-      :ok = Bot.subscribe(new, user)
-
-      new
+      rec
       |> Bot.sub_setup_event()
       |> Waiter.notify()
-    end
+    end)
   end
 
   def handle_update(%Bot{location: new} = bot, %Bot{location: old})

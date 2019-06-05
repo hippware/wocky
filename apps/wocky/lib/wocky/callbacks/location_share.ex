@@ -7,19 +7,17 @@ defmodule Wocky.Callbacks.LocationShare do
   alias Wocky.Events.LocationShareEnd
   alias Wocky.Location
   alias Wocky.Notifier
-  alias Wocky.Repo
+  alias Wocky.Repo.Hydrator
 
   def handle_insert(new) do
-    new = Repo.preload(new, [:user, :shared_with])
-
-    if new.user != nil && new.shared_with != nil do
+    Hydrator.with_assocs(new, [:user, :shared_with], fn rec ->
       %LocationShare{
-        to: new.shared_with,
-        from: new.user,
-        expires_at: new.expires_at
+        to: rec.shared_with,
+        from: rec.user,
+        expires_at: rec.expires_at
       }
       |> Notifier.notify()
-    end
+    end)
 
     Location.refresh_share_cache(new.user_id)
   end
@@ -29,15 +27,13 @@ defmodule Wocky.Callbacks.LocationShare do
   end
 
   def handle_delete(old) do
-    old = Repo.preload(old, [:user, :shared_with])
-
-    if old.user != nil && old.shared_with != nil do
+    Hydrator.with_assocs(old, [:user, :shared_with], fn rec ->
       %LocationShareEnd{
-        to: old.shared_with,
-        from: old.user
+        to: rec.shared_with,
+        from: rec.user
       }
       |> Notifier.notify()
-    end
+    end)
 
     Location.refresh_share_cache(old.user_id)
   end

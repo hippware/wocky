@@ -9,20 +9,18 @@ defmodule Wocky.Callbacks.BotInvitation do
   alias Wocky.Events.BotInvitation
   alias Wocky.Events.BotInvitationResponse
   alias Wocky.Notifier
-  alias Wocky.Repo
+  alias Wocky.Repo.Hydrator
 
   def handle_insert(new) do
-    new = Repo.preload(new, [:user, :invitee, :bot])
-
-    if new.user != nil && new.invitee != nil && new.bot != nil do
+    Hydrator.with_assocs(new, [:user, :invitee, :bot], fn rec ->
       %BotInvitation{
-        to: new.invitee,
-        from: new.user,
-        bot: new.bot,
-        invitation: new
+        to: rec.invitee,
+        from: rec.user,
+        bot: rec.bot,
+        invitation: rec
       }
       |> Notifier.notify()
-    end
+    end)
   end
 
   def handle_update(
@@ -30,17 +28,15 @@ defmodule Wocky.Callbacks.BotInvitation do
         %Invitation{accepted: nil}
       )
       when not is_nil(accepted?) do
-    new = Repo.preload(new, [:user, :invitee, :bot])
-
-    if new.user != nil && new.invitee != nil && new.bot != nil do
+    Hydrator.with_assocs(new, [:user, :invitee, :bot], fn rec ->
       %BotInvitationResponse{
-        to: new.user,
-        from: new.invitee,
-        bot: new.bot,
-        invitation: new
+        to: rec.user,
+        from: rec.invitee,
+        bot: rec.bot,
+        invitation: rec
       }
       |> Notifier.notify()
-    end
+    end)
   end
 
   def handle_update(_new, _old), do: :ok

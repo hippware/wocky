@@ -5,11 +5,12 @@ defmodule WockyAPI.Callbacks.Message do
 
   use DawdleDB.Handler, type: Wocky.Messaging.Message
 
-  alias Wocky.Repo
+  alias Wocky.Repo.Hydrator
   alias WockyAPI.Resolvers.Message, as: MessageResolver
 
   def handle_insert(new) do
-    new = Repo.preload(new, [:sender])
-    if not is_nil(new.sender), do: MessageResolver.notify_message(new)
+    Hydrator.with_assocs(new, [:sender], fn rec ->
+      MessageResolver.notify_message(rec)
+    end)
   end
 end

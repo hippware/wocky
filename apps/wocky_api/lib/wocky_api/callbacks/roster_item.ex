@@ -5,7 +5,7 @@ defmodule WockyAPI.Callbacks.RosterItem do
 
   use DawdleDB.Handler, type: Wocky.Roster.Item
 
-  alias Wocky.Repo
+  alias Wocky.Repo.Hydrator
   alias WockyAPI.Resolvers.User
 
   def handle_insert(new),
@@ -15,10 +15,8 @@ defmodule WockyAPI.Callbacks.RosterItem do
     do: send_update(old, :none)
 
   defp send_update(item, relationship) do
-    item = Repo.preload(item, [:contact])
-
-    if item.contact != nil do
-      User.notify_contact(item, relationship)
-    end
+    Hydrator.with_assocs(item, [:contact], fn rec ->
+      User.notify_contact(rec, relationship)
+    end)
   end
 end

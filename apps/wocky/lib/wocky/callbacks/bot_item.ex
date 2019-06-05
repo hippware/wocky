@@ -8,15 +8,14 @@ defmodule Wocky.Callbacks.BotItem do
   alias Wocky.Events.BotItem
   alias Wocky.Notifier
   alias Wocky.Repo
+  alias Wocky.Repo.Hydrator
 
-  def handle_insert(item) do
-    item = Repo.preload(item, [:user, :bot])
-
-    if item.bot && item.user do
-      item.bot
-      |> recipients(item.user)
-      |> Enum.each(&do_notify(&1, item))
-    end
+  def handle_insert(new) do
+    Hydrator.with_assocs(new, [:user, :bot], fn rec ->
+      rec.bot
+      |> recipients(rec.user)
+      |> Enum.each(&do_notify(&1, rec))
+    end)
   end
 
   defp recipients(bot, sender) do
