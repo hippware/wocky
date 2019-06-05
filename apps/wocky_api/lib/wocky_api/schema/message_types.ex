@@ -7,7 +7,8 @@ defmodule WockyAPI.Schema.MessageTypes do
 
   import Kronky.Payload
 
-  alias WockyAPI.Resolvers.{Media, Message}
+  alias WockyAPI.Resolvers.Media
+  alias WockyAPI.Resolvers.Message
 
   @desc "A message to a user"
   object :message do

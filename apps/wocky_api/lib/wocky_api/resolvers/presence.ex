@@ -2,8 +2,8 @@ defmodule WockyAPI.Resolvers.Presence do
   @moduledoc "GraphQL resolver for presence data"
 
   alias Absinthe.Subscription
-  alias Wocky.User
-  alias Wocky.User.Presence
+  alias Wocky.Account.User
+  alias Wocky.Presence
   alias WockyAPI.Endpoint
 
   def set_status(args, %{context: %{current_user: user}}) do

@@ -2,13 +2,10 @@ defmodule Wocky.Notifier.Push.EventsTest do
   use ExUnit.Case, async: true
   use Wocky.DataCase
 
-  alias Wocky.Events.{
-    BotInvitation,
-    GeofenceEvent,
-    NewMessage,
-    UserInvitation
-  }
-
+  alias Wocky.Events.BotInvitation
+  alias Wocky.Events.GeofenceEvent
+  alias Wocky.Events.NewMessage
+  alias Wocky.Events.UserInvitation
   alias Wocky.Notifier.Push.Event
   alias Wocky.Repo.Factory
 

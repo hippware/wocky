@@ -4,16 +4,17 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
   import Eventually
   import WockyAPI.ChannelHelper
 
+  alias Wocky.Account.User
+  alias Wocky.Presence
   alias Wocky.Repo.Factory
   alias Wocky.Roster
-  alias Wocky.User.Presence
 
   setup_all do
     Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
 
     on_exit(fn ->
       Application.stop(:wocky_db_watcher)
-      Wocky.Repo.delete_all(Wocky.User)
+      Wocky.Repo.delete_all(User)
     end)
   end
 

@@ -5,8 +5,10 @@ defmodule Wocky.Callbacks.RosterItem do
 
   use DawdleDB.Handler, type: Wocky.Roster.Item
 
-  alias Wocky.Bot.{Invitation, Subscription}
-  alias Wocky.{Repo, User}
+  alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Subscription
+  alias Wocky.Location
+  alias Wocky.Repo
   alias Wocky.Roster.Item
 
   def handle_delete(old) do
@@ -14,8 +16,8 @@ defmodule Wocky.Callbacks.RosterItem do
 
     # Cancel location sharing
     if user != nil and contact != nil do
-      User.stop_sharing_location(user, contact)
-      User.stop_sharing_location(contact, user)
+      Location.stop_sharing_location(user, contact)
+      Location.stop_sharing_location(contact, user)
 
       Subscription.delete_for_owned_bots(contact, user)
       Subscription.delete_for_owned_bots(user, contact)

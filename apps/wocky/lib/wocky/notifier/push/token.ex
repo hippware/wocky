@@ -6,7 +6,8 @@ defmodule Wocky.Notifier.Push.Token do
   import Ecto.Query
   import EctoHomoiconicEnum, only: [defenum: 2]
 
-  alias Wocky.{Repo, User}
+  alias Wocky.Account.User
+  alias Wocky.Repo
 
   defenum PushServicePlatform, [
     :apns,
@@ -33,8 +34,8 @@ defmodule Wocky.Notifier.Push.Token do
   @type token :: binary
 
   @type t :: %Token{
-          user_id: Wocky.User.id(),
-          device: Wocky.User.device(),
+          user_id: User.id(),
+          device: User.device(),
           token: token,
           valid: boolean,
           enabled_at: DateTime,

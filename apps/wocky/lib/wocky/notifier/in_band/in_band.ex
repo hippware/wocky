@@ -3,7 +3,8 @@ defmodule Wocky.Notifier.InBand do
 
   @behaviour Wocky.Notifier
 
-  alias Wocky.Notifier.InBand.{Event, Notification}
+  alias Wocky.Notifier.InBand.Event
+  alias Wocky.Notifier.InBand.Notification
 
   @impl true
   def notify(event) do

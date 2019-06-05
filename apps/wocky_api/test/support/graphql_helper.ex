@@ -3,6 +3,7 @@ defmodule WockyAPI.GraphQLHelper do
   Helper functions for Wocky API GraphQL tests
   """
 
+  alias Wocky.Account.User
   alias Wocky.Bot
   alias Wocky.GeoUtils
 
@@ -15,7 +16,7 @@ defmodule WockyAPI.GraphQLHelper do
     )
   end
 
-  defp build_context(%Wocky.User{} = user), do: %{current_user: user}
+  defp build_context(%User{} = user), do: %{current_user: user}
   defp build_context(_), do: %{}
 
   def has_data(result) do

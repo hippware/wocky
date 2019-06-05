@@ -6,8 +6,8 @@ defmodule Wocky.Notifier.Email.WelcomeEmail do
   import Bamboo.Email
 
   alias Bamboo.MandrillHelper
+  alias Wocky.Account.User
   alias Wocky.Notifier.Email.Mailer
-  alias Wocky.User
 
   @spec send(User.t()) :: :ok
   def send(user) do

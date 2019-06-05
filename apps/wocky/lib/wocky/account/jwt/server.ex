@@ -10,8 +10,8 @@ defmodule Wocky.Account.JWT.Server do
     secret_key: {Wocky.Account.JWT.SigningKey, :fetch, [:server]},
     token_verify_module: Wocky.Account.JWT.Verify
 
+  alias Wocky.Account.User
   alias Wocky.Repo
-  alias Wocky.User
 
   def default_token_type, do: "location"
 

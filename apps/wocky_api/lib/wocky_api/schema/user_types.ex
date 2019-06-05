@@ -8,14 +8,12 @@ defmodule WockyAPI.Schema.UserTypes do
   import Absinthe.Resolution.Helpers
   import Kronky.Payload
 
-  alias WockyAPI.Resolvers.{
-    Block,
-    Bot,
-    Media,
-    Message,
-    Presence,
-    User
-  }
+  alias WockyAPI.Resolvers.Block
+  alias WockyAPI.Resolvers.Bot
+  alias WockyAPI.Resolvers.Media
+  alias WockyAPI.Resolvers.Message
+  alias WockyAPI.Resolvers.Presence
+  alias WockyAPI.Resolvers.User
 
   @desc "The main Wocky user interface"
   interface :user do
@@ -99,7 +97,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
     resolve_type fn
       %{id: id}, %{context: %{current_user: %{id: id}}} -> :current_user
-      %Wocky.User{} = _, _ -> :other_user
+      %Wocky.Account.User{} = _, _ -> :other_user
       _, _ -> nil
     end
   end

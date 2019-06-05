@@ -2,9 +2,12 @@ defmodule Wocky.Notifier.Email.WelcomeEmailTest do
   use Wocky.DataCase, async: false
   use Bamboo.Test
 
-  alias Faker.{Internet, Name}
+  alias Faker.Internet
+  alias Faker.Name
+  alias Wocky.Account
+  alias Wocky.Account.User
   alias Wocky.Notifier.Email.WelcomeEmail
-  alias Wocky.{Repo, User}
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
 
   test "send/1" do
@@ -37,7 +40,7 @@ defmodule Wocky.Notifier.Email.WelcomeEmailTest do
         name: Name.name()
       }
 
-      User.update(user.id, fields)
+      Account.update(user.id, fields)
 
       assert :meck.validate(WelcomeEmail)
       assert :meck.called(WelcomeEmail, :send, :_)
@@ -53,7 +56,7 @@ defmodule Wocky.Notifier.Email.WelcomeEmailTest do
         email: Internet.email()
       }
 
-      User.update(user.id, fields)
+      Account.update(user.id, fields)
 
       refute :meck.called(WelcomeEmail, :send, :_)
     end
@@ -65,7 +68,7 @@ defmodule Wocky.Notifier.Email.WelcomeEmailTest do
         name: Name.name()
       }
 
-      User.update(user.id, fields)
+      Account.update(user.id, fields)
 
       refute :meck.called(WelcomeEmail, :send, :_)
     end

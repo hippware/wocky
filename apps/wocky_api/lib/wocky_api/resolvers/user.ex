@@ -3,10 +3,14 @@ defmodule WockyAPI.Resolvers.User do
 
   alias Absinthe.Relay.Connection
   alias Absinthe.Subscription
-  alias Wocky.{Account, Repo, Roster, User}
+  alias Wocky.Account
+  alias Wocky.Account.User
+  alias Wocky.Location
+  alias Wocky.Location.UserLocation
   alias Wocky.Notifier.Push
+  alias Wocky.Repo
+  alias Wocky.Roster
   alias Wocky.Roster.Item
-  alias Wocky.User.Location
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
@@ -23,12 +27,12 @@ defmodule WockyAPI.Resolvers.User do
   def update_user(_root, args, %{context: %{current_user: user}}) do
     input = args[:input][:values] |> fix_name(user)
 
-    User.update(user, input)
+    Account.update(user, input)
   end
 
-  def get_first_name(user, _, _), do: {:ok, User.first_name(user)}
+  def get_first_name(user, _, _), do: {:ok, Account.first_name(user)}
 
-  def get_last_name(user, _, _), do: {:ok, User.last_name(user)}
+  def get_last_name(user, _, _), do: {:ok, Account.last_name(user)}
 
   def get_contacts(_, %{relationship: :none}, _) do
     {:error, :unsupported}
@@ -108,21 +112,21 @@ defmodule WockyAPI.Resolvers.User do
 
   def get_locations(user, args, %{context: %{current_user: user}}) do
     user
-    |> User.get_locations_query(args[:device])
+    |> Location.get_user_locations_query(args[:device])
     |> Utils.connection_from_query(user, args, order_by: [desc: :captured_at])
   end
 
   def get_location_events(user, args, %{context: %{current_user: user}}) do
     user
-    |> User.get_location_events_query(args[:device])
+    |> Location.get_user_location_events_query(args[:device])
     |> Utils.connection_from_query(user, args, order_by: [desc: :occurred_at])
   end
 
-  def get_location_events(%Location{} = loc, args, %{
+  def get_location_events(%UserLocation{} = loc, args, %{
         context: %{current_user: user}
       }) do
     user
-    |> User.get_location_events_query(loc)
+    |> Location.get_user_location_events_query(loc)
     |> Utils.connection_from_query(user, args, order_by: [desc: :occurred_at])
   end
 
@@ -131,7 +135,7 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do
-    with %User{} = user <- User.get_user(id, current_user) do
+    with %User{} = user <- Account.get_user(id, current_user) do
       {:ok, user}
     else
       _ -> user_not_found(id)
@@ -146,7 +150,7 @@ defmodule WockyAPI.Resolvers.User do
         context: %{current_user: current_user}
       }) do
     limit = args[:limit] || @default_search_results
-    {:ok, User.search_by_name(search_term, current_user, limit)}
+    {:ok, Account.search_by_name(search_term, current_user, limit)}
   end
 
   def enable_notifications(%{input: i}, %{context: %{current_user: user}}) do
@@ -163,9 +167,9 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def update_location(_root, %{input: i}, %{context: %{current_user: user}}) do
-    location = struct(Location, Map.drop(i, [:is_fetch]))
+    location = struct(UserLocation, Map.drop(i, [:is_fetch]))
 
-    with {:ok, _} <- User.set_location(user, location) do
+    with {:ok, _} <- Location.set_user_location(user, location) do
       {:ok, true}
     end
   end
@@ -179,9 +183,9 @@ defmodule WockyAPI.Resolvers.User do
   def live_share_location(_root, args, %{context: %{current_user: user}}) do
     input = args[:input]
 
-    with %User{} = shared_with <- User.get_user(input.shared_with_id, user),
+    with %User{} = shared_with <- Account.get_user(input.shared_with_id, user),
          {:ok, share} <-
-           User.start_sharing_location(user, shared_with, input.expires_at),
+           Location.start_sharing_location(user, shared_with, input.expires_at),
          {:ok, _} <- maybe_update_location(input, user) do
       {:ok, Repo.preload(share, [:shared_with, :user])}
     else
@@ -191,35 +195,39 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   defp maybe_update_location(%{location: l}, user) when not is_nil(l),
-    do: User.set_location(user, struct(Location, Map.drop(l, [:is_fetch])))
+    do:
+      Location.set_user_location(
+        user,
+        struct(UserLocation, Map.drop(l, [:is_fetch]))
+      )
 
   defp maybe_update_location(_args, _user), do: {:ok, :skip}
 
   def cancel_location_share(_root, args, %{context: %{current_user: user}}) do
     input = args[:input]
 
-    with %User{} = shared_with <- User.get_user(input.shared_with_id, user) do
-      :ok = User.stop_sharing_location(user, shared_with)
+    with %User{} = shared_with <- Account.get_user(input.shared_with_id, user) do
+      :ok = Location.stop_sharing_location(user, shared_with)
     end
 
     {:ok, true}
   end
 
   def cancel_all_location_shares(_root, _args, %{context: %{current_user: user}}) do
-    :ok = User.stop_sharing_location(user)
+    :ok = Location.stop_sharing_location(user)
 
     {:ok, true}
   end
 
   def get_location_shares(_root, args, %{context: %{current_user: user}}) do
     user
-    |> User.get_location_shares_query()
+    |> Location.get_location_shares_query()
     |> Utils.connection_from_query(user, args)
   end
 
   def get_location_sharers(_root, args, %{context: %{current_user: user}}) do
     user
-    |> User.get_location_sharers_query()
+    |> Location.get_location_sharers_query()
     |> Utils.connection_from_query(user, args)
   end
 
@@ -267,14 +275,14 @@ defmodule WockyAPI.Resolvers.User do
   def location_catchup(user) do
     result =
       user
-      |> User.get_location_sharers()
+      |> Location.get_location_sharers()
       |> Enum.reduce([], &build_location_catchup/2)
 
     {:ok, result}
   end
 
   defp build_location_catchup(share, acc) do
-    location = User.get_current_location(share.user)
+    location = Location.get_current_user_location(share.user)
 
     if location do
       [make_location_data(share.user, location) | acc]
@@ -285,7 +293,7 @@ defmodule WockyAPI.Resolvers.User do
 
   def notify_location(user, location) do
     user
-    |> User.get_location_share_targets()
+    |> Location.get_location_share_targets()
     |> Enum.each(&do_notify_location(&1, user, location))
   end
 
@@ -305,19 +313,19 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def delete(_root, _args, %{context: %{current_user: user}}) do
-    User.delete(user.id)
+    Account.delete(user.id)
     {:ok, true}
   end
 
   def user_not_found(id), do: {:error, "User not found: " <> id}
 
   def make_invite_code(_root, _args, %{context: %{current_user: user}}) do
-    code = User.make_invite_code(user)
+    code = Account.make_invite_code(user)
     {:ok, %{successful: true, result: code}}
   end
 
   def redeem_invite_code(_root, args, %{context: %{current_user: user}}) do
-    result = User.redeem_invite_code(user, args[:input][:code])
+    result = Account.redeem_invite_code(user, args[:input][:code])
     {:ok, %{successful: result, result: result}}
   end
 
@@ -336,7 +344,7 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def name_friend(_root, args, %{context: %{current_user: user}}) do
-    with %User{} = other_user <- User.get_user(args[:input][:user_id], user),
+    with %User{} = other_user <- Account.get_user(args[:input][:user_id], user),
          %Item{} <- Roster.get_item(user, other_user) do
       {:ok, _} = Roster.set_name(user, other_user, args[:input][:name])
       {:ok, true}
@@ -349,7 +357,7 @@ defmodule WockyAPI.Resolvers.User do
   defp roster_action(%User{id: id}, id, _), do: {:error, "Invalid user"}
 
   defp roster_action(user, contact_id, roster_fun) do
-    with %User{} = contact <- User.get_user(contact_id, user) do
+    with %User{} = contact <- Account.get_user(contact_id, user) do
       relationship = roster_fun.(user, contact)
       {:ok, %{relationship: relationship, user: contact}}
     else
@@ -381,10 +389,10 @@ defmodule WockyAPI.Resolvers.User do
     do: f <> " " <> l
 
   defp do_fix_name(%{first_name: f}, user),
-    do: f <> " " <> User.last_name(user)
+    do: f <> " " <> Account.last_name(user)
 
   defp do_fix_name(%{last_name: l}, user),
-    do: User.first_name(user) <> " " <> l
+    do: Account.first_name(user) <> " " <> l
 
   defp do_fix_name(_m, _user), do: nil
 end

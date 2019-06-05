@@ -2,9 +2,9 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
   use WockyAPI.ConnCase
 
   alias Faker.Address
+  alias Wocky.Location
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.User.CurrentLocation
 
   @location %{
     coords: %{
@@ -42,6 +42,10 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
     Map.put(@location, :coords, coords)
   end
 
+  defp get_user_locations(user) do
+    user |> Location.get_user_locations_query("testing") |> Repo.all()
+  end
+
   setup %{conn: conn} do
     user = Factory.insert(:user, device: "testing")
     token = Factory.get_test_location_token(user)
@@ -63,10 +67,10 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
     test "creates a db record when data is valid", %{conn: conn, user: user} do
       post conn, location_path(conn, :create, user.id), packet()
 
-      locs = user |> Ecto.assoc(:locations) |> Repo.all()
+      locs = get_user_locations(user)
       assert length(locs) == 1
 
-      cur_loc = CurrentLocation.get(user)
+      cur_loc = Location.get_current_user_location(user)
       assert cur_loc
       assert cur_loc.lat == @location.coords.latitude
       assert cur_loc.lon == @location.coords.longitude
@@ -101,10 +105,10 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       conn = post conn, location_path(conn, :create, user.id), packet(locations)
       assert response(conn, 201)
 
-      locs = user |> Ecto.assoc(:locations) |> Repo.all()
+      locs = get_user_locations(user)
       assert length(locs) == 3
 
-      cur_loc = CurrentLocation.get(user)
+      cur_loc = Location.get_current_user_location(user)
       assert cur_loc
       assert cur_loc.lat == current.coords.latitude
       assert cur_loc.lon == current.coords.longitude
@@ -123,8 +127,8 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
-      assert [] == user |> Ecto.assoc(:locations) |> Repo.all()
-      refute CurrentLocation.get(user)
+      assert [] == get_user_locations(user)
+      refute Location.get_current_user_location(user)
     end
 
     test "silently fails when longitude is missing", %{conn: conn, user: user} do
@@ -140,8 +144,8 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
-      assert [] == user |> Ecto.assoc(:locations) |> Repo.all()
-      refute CurrentLocation.get(user)
+      assert [] == get_user_locations(user)
+      refute Location.get_current_user_location(user)
     end
 
     test "silently fails when accuracy is missing", %{conn: conn, user: user} do
@@ -157,8 +161,8 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
-      assert [] == user |> Ecto.assoc(:locations) |> Repo.all()
-      refute CurrentLocation.get(user)
+      assert [] == get_user_locations(user)
+      refute Location.get_current_user_location(user)
     end
 
     test "returns 400 when device is missing", %{conn: conn, user: user} do

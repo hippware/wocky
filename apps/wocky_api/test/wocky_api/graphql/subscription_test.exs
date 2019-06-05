@@ -3,11 +3,12 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
 
   import WockyAPI.ChannelHelper
 
-  alias Wocky.{Bot, GeoUtils, Roster}
+  alias Wocky.Bot
   alias Wocky.Bot
   alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
   alias Wocky.Repo.Factory
+  alias Wocky.Roster
 
   setup_all :require_watcher
 

@@ -9,8 +9,8 @@ defmodule Wocky.TrafficLog do
 
   alias Ecto.Changeset
   alias Timex.Duration
+  alias Wocky.Account.User
   alias Wocky.Repo
-  alias Wocky.User
 
   @foreign_key_type :binary_id
   schema "traffic_logs" do

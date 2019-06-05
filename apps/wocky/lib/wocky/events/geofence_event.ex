@@ -4,7 +4,8 @@ defmodule Wocky.Events.GeofenceEvent do
   user is subscribed
   """
 
-  alias Wocky.{Bot, User}
+  alias Wocky.Account.User
+  alias Wocky.Bot
 
   defstruct [
     :to,

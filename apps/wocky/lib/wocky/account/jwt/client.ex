@@ -11,9 +11,10 @@ defmodule Wocky.Account.JWT.Client do
     token_verify_module: Wocky.Account.JWT.Verify
 
   alias Wocky.Account.ClientVersion
-  alias Wocky.Account.JWT.{Firebase, SigningKey}
+  alias Wocky.Account.JWT.Firebase
+  alias Wocky.Account.JWT.SigningKey
   alias Wocky.Account.Register
-  alias Wocky.User
+  alias Wocky.Account.User
 
   @audience "Wocky"
 

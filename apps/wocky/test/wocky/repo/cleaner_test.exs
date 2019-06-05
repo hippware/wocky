@@ -3,17 +3,23 @@ defmodule Wocky.Repo.CleanerTest do
 
   import Ecto.Query
 
+  alias Wocky.Account
+  alias Wocky.Account.InviteCode
+  alias Wocky.Account.User
   alias Wocky.Bot
   alias Wocky.Bot.Item
+  alias Wocky.Location.BotEvent
+  alias Wocky.Location.UserLocation
   alias Wocky.Notifier.Push.Log, as: PushLog
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Repo
-  alias Wocky.Repo.{Cleaner, Factory, ID, Timestamp}
+  alias Wocky.Repo.Cleaner
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
+  alias Wocky.Repo.Timestamp
   alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
-  alias Wocky.User
-  alias Wocky.User.{BotEvent, InviteCode, Location}
 
   setup do
     user = Factory.insert(:user)
@@ -107,8 +113,8 @@ defmodule Wocky.Repo.CleanerTest do
 
   describe "clean_expired_invite_codes" do
     setup %{user: user} do
-      old_code = User.make_invite_code(user)
-      new_code = User.make_invite_code(user)
+      old_code = Account.make_invite_code(user)
+      new_code = Account.make_invite_code(user)
 
       invitation = Repo.get_by(InviteCode, code: old_code)
       ts = Timex.shift(invitation.created_at, weeks: -6)
@@ -561,11 +567,11 @@ defmodule Wocky.Repo.CleanerTest do
     end
 
     test "should remove the stale location", ctx do
-      refute Repo.get(Location, ctx.stale.id)
+      refute Repo.get(UserLocation, ctx.stale.id)
     end
 
     test "should not remove the recent location", ctx do
-      assert Repo.get(Location, ctx.recent.id)
+      assert Repo.get(UserLocation, ctx.recent.id)
     end
   end
 

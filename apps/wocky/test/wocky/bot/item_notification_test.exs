@@ -3,7 +3,8 @@ defmodule Wocky.Bot.ItemNotificationTest do
 
   import Wocky.PushHelper
 
-  alias Faker.{Code, Lorem}
+  alias Faker.Code
+  alias Faker.Lorem
   alias Pigeon.APNS.Notification
   alias Wocky.Bot
   alias Wocky.Bot.Item

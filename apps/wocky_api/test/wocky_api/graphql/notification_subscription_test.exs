@@ -4,9 +4,14 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   import Eventually
   import WockyAPI.ChannelHelper
 
-  alias Wocky.{Bot, Repo, Roster, User}
-  alias Wocky.Bot.{Invitation, Subscription}
-  alias Wocky.Repo.{Factory, Timestamp}
+  alias Wocky.Bot
+  alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Subscription
+  alias Wocky.Location
+  alias Wocky.Repo
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.Timestamp
+  alias Wocky.Roster
 
   setup_all :require_watcher
 
@@ -192,7 +197,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     } do
       expires_at = Timestamp.shift(days: 1) |> DateTime.truncate(:second)
       Roster.befriend(user, user2)
-      User.start_sharing_location(user2, user, expires_at)
+      Location.start_sharing_location(user2, user, expires_at)
 
       assert_push "subscription:data", push, 2000
 
@@ -210,7 +215,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     } do
       expires_at = Timestamp.shift(days: 1) |> DateTime.truncate(:second)
       Roster.befriend(user, user2)
-      User.start_sharing_location(user2, user, expires_at)
+      Location.start_sharing_location(user2, user, expires_at)
 
       assert_push "subscription:data", push, 2000
 
@@ -220,7 +225,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
         "expiresAt" => Timestamp.to_string!(expires_at)
       })
 
-      User.stop_sharing_location(user2, user)
+      Location.stop_sharing_location(user2, user)
 
       assert_push "subscription:data", push, 2000
 

@@ -3,7 +3,8 @@ defmodule WockyAPI.Application do
 
   use Application
 
-  alias Wocky.User.{CurrentLocation, Presence}
+  alias Wocky.Location.UserLocation.Current, as: CurrentLocation
+  alias Wocky.Presence
   alias WockyAPI.Callbacks
   alias WockyAPI.Endpoint
   alias WockyAPI.Middleware.Instrumenter, as: AbsintheInstrumenter

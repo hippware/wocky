@@ -3,7 +3,7 @@ defmodule WockyAPI.Callbacks.Message do
   Callbacks for DB message changes
   """
 
-  use DawdleDB.Handler, type: Wocky.Message
+  use DawdleDB.Handler, type: Wocky.Messaging.Message
 
   alias Wocky.Repo
   alias WockyAPI.Resolvers.Message, as: MessageResolver

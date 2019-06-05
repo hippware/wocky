@@ -7,19 +7,22 @@ defmodule Wocky.Bot do
   import Ecto.Query
 
   alias Ecto.Association.NotLoaded
-  alias Ecto.{Changeset, Queryable}
+  alias Ecto.Changeset
+  alias Ecto.Queryable
   alias Geocalc.Point
+  alias Wocky.Account
+  alias Wocky.Account.User
   alias Wocky.Block
-  alias Wocky.Bot.{Invitation, Item, Subscription}
+  alias Wocky.Bot.Invitation
+  alias Wocky.Bot.Item
+  alias Wocky.Bot.Subscription
   alias Wocky.Events.GeofenceEvent
   alias Wocky.GeoUtils
+  alias Wocky.Location
   alias Wocky.Notifier
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.Roster
-  alias Wocky.User
-  alias Wocky.User.GeoFence
-  alias Wocky.User.Location.Handler, as: LocationHandler
   alias Wocky.Waiter
 
   require Logger
@@ -194,7 +197,7 @@ defmodule Wocky.Bot do
   def insert(params, requestor) do
     with {:ok, t} <- do_update(%Bot{}, params, &Repo.insert/1) do
       update_counter("bot.created", 1)
-      User.flag_bot_created(requestor)
+      Account.flag_bot_created(requestor)
       {:ok, t}
     end
   end
@@ -247,7 +250,7 @@ defmodule Wocky.Bot do
   @spec subscribe(t, User.t()) :: :ok | {:error, :permission_denied}
   def subscribe(bot, user) do
     with true <- Roster.self_or_friend?(user.id, bot.user_id) do
-      LocationHandler.add_subscription(user, bot)
+      Location.add_subscription(user, bot)
       Subscription.put(user, bot)
     else
       false -> {:error, :permission_denied}
@@ -256,8 +259,8 @@ defmodule Wocky.Bot do
 
   @spec unsubscribe(t, User.t()) :: :ok | {:error, any}
   def unsubscribe(bot, user) do
-    GeoFence.exit_bot(user, bot, "unsubscribe")
-    LocationHandler.remove_subscription(user, bot)
+    Location.exit_bot(user, bot, "unsubscribe")
+    Location.remove_subscription(user, bot)
     Subscription.delete(user, bot)
   end
 
@@ -307,7 +310,7 @@ defmodule Wocky.Bot do
   end
 
   defp by_relationship_query(user, :owned) do
-    User.owned_bots_query(user)
+    Account.owned_bots_query(user)
   end
 
   defp by_relationship_query(user, :invited) do

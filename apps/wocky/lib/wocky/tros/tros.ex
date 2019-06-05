@@ -6,10 +6,10 @@ defmodule Wocky.TROS do
 
   import Ecto.Query
 
+  alias Wocky.Account.User
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.TROS.Metadata
-  alias Wocky.User
 
   @type owner :: binary
   @type file_id :: binary

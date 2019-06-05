@@ -7,7 +7,8 @@ defmodule WockyAPI.Schema.BlockTypes do
 
   import Kronky.Payload
 
-  alias WockyAPI.Resolvers.{Block, Media}
+  alias WockyAPI.Resolvers.Block
+  alias WockyAPI.Resolvers.Media
 
   @desc "A block on a user"
   object :block do

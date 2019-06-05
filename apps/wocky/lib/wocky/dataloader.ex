@@ -3,7 +3,9 @@ defmodule Wocky.Dataloader do
   Module to encapsulate Dataloader setup
   """
 
-  alias Wocky.{Block, Repo, User}
+  alias Wocky.Account.User
+  alias Wocky.Block
+  alias Wocky.Repo
 
   def get(ctx) do
     Dataloader.new()

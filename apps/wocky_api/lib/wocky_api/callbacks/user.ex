@@ -3,9 +3,9 @@ defmodule WockyAPI.Callbacks.User do
   Callbacks for DB user changes
   """
 
-  use DawdleDB.Handler, type: Wocky.User
+  use DawdleDB.Handler, type: Wocky.Account.User
 
-  alias Wocky.User
+  alias Wocky.Account.User
   alias WockyAPI.Resolvers.User, as: UserResolver
 
   def handle_update(%User{} = user, _old) do

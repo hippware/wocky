@@ -31,7 +31,7 @@ defmodule Wocky.WatcherCase do
     # Because we can't use the Sandbox in its :manual mode (because it doesn't
     # cause the NOTIFY actions in the DB to fire) we have to do our own cleanup
     on_exit(fn ->
-      Wocky.Repo.delete_all(Wocky.User)
+      Wocky.Repo.delete_all(Wocky.Account.User)
     end)
   end
 end

@@ -1,7 +1,7 @@
 defmodule Wocky.Events.UserInvitation do
   @moduledoc "Notification for a user inviting another user to be their friend"
 
-  alias Wocky.User
+  alias Wocky.Account.User
 
   defstruct [
     :to,

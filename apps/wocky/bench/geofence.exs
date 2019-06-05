@@ -1,5 +1,5 @@
+alias Wocky.Location.GeoFence
 alias Wocky.Repo.Factory
-alias Wocky.User.GeoFence
 
 no_bots = Factory.insert(:user)
 bots_10 = Factory.insert(:user)

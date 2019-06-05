@@ -1,8 +1,8 @@
 defmodule Wocky.Repo.Migrations.AddWelcomedField do
   use Wocky.Repo.Migration
 
+  alias Wocky.Account.User
   alias Wocky.Repo
-  alias Wocky.User
 
   def change do
     alter table(:users) do

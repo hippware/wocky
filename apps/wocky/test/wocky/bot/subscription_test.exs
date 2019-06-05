@@ -4,7 +4,8 @@ defmodule Wocky.Bot.SubscriptionTest do
   alias Ecto.Adapters.SQL
   alias Wocky.Bot.Subscription
   alias Wocky.Repo
-  alias Wocky.Repo.{Factory, ID}
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
 
   setup do
     [user, owner, visitor] = Factory.insert_list(3, :user)

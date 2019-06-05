@@ -8,7 +8,7 @@ defmodule Wocky.Account.JWT.Firebase do
     project_id: "my-project-1480497595993"
 
   alias Wocky.Account.Register
-  alias Wocky.User
+  alias Wocky.Account.User
 
   def subject_for_token(%User{} = user, _claims) do
     {:ok, Register.get_external_id(user)}

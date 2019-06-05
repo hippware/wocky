@@ -6,10 +6,10 @@ defmodule Wocky.Bot.Item do
   import Ecto.Query
 
   alias Ecto.Changeset
+  alias Wocky.Account.User
   alias Wocky.Bot
   alias Wocky.Repo
   alias Wocky.Repo.ID
-  alias Wocky.User
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: false}

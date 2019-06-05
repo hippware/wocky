@@ -2,8 +2,13 @@ defmodule WockyAPI.GraphQL.MessageTest do
   use WockyAPI.GraphQLCase, async: true
 
   alias Faker.Lorem
-  alias Wocky.{Message, Repo, Roster, User}
-  alias Wocky.Repo.{Factory, ID}
+  alias Wocky.Account
+  alias Wocky.Messaging
+  alias Wocky.Messaging.Message
+  alias Wocky.Repo
+  alias Wocky.Repo.Factory
+  alias Wocky.Repo.ID
+  alias Wocky.Roster
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)
@@ -156,7 +161,7 @@ defmodule WockyAPI.GraphQL.MessageTest do
       refute has_errors(result)
 
       user_id = user2.id
-      first_name = User.first_name(user2)
+      first_name = Account.first_name(user2)
       content = message.content
 
       assert %{
@@ -208,7 +213,7 @@ defmodule WockyAPI.GraphQL.MessageTest do
       refute has_errors(result)
 
       assert [%Message{content: ^text}] =
-               user2 |> Message.get_query() |> Repo.all()
+               user2 |> Messaging.get_messages_query() |> Repo.all()
     end
   end
 end

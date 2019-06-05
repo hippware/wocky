@@ -7,7 +7,7 @@ config :wocky,
   country_code_lookup_method:
     {:system, :atom, "WOCKY_CC_LOOKUP_METHOD", :twilio}
 
-config :wocky, Wocky.User.GeoFence,
+config :wocky, Wocky.Location.GeoFence,
   async_processing: true,
   visit_timeout_enabled: false
 

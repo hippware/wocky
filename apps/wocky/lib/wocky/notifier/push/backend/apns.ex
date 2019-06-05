@@ -6,8 +6,10 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
   @behaviour Wocky.Notifier.Push.Backend
 
   alias Pigeon.APNS
-  alias Pigeon.APNS.{Error, Notification}
-  alias Wocky.Notifier.Push.{Event, Utils}
+  alias Pigeon.APNS.Error
+  alias Pigeon.APNS.Notification
+  alias Wocky.Notifier.Push.Event
+  alias Wocky.Notifier.Push.Utils
 
   require Logger
 

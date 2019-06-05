@@ -3,7 +3,7 @@ use Mix.Config
 config :wocky,
   start_watcher: true
 
-config :wocky, Wocky.User.GeoFence,
+config :wocky, Wocky.Location.GeoFence,
   enter_debounce_seconds: 0,
   exit_debounce_seconds: 0
 

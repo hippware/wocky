@@ -1,7 +1,7 @@
 defmodule Wocky.Events.LocationShare do
   @moduledoc "A user has started to share their location to the recipient"
 
-  alias Wocky.User
+  alias Wocky.Account.User
 
   defstruct [
     :to,

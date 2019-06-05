@@ -4,9 +4,12 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
   import Mock
 
   alias Faker.Name
-  alias Wocky.{Block, Repo, Roster, User}
+  alias Wocky.Account.User
+  alias Wocky.Block
   alias Wocky.DynamicLink.Sandbox, as: DLSandbox
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
+  alias Wocky.Roster
   alias Wocky.SMS.Sandbox, as: SMSSandbox
 
   setup do

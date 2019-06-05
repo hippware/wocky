@@ -6,7 +6,8 @@ defmodule WockyAPI.Middleware.RefreshCurrentUser do
 
   @behaviour Absinthe.Middleware
 
-  alias Wocky.User
+  alias Wocky.Account
+  alias Wocky.Account.User
 
   # If the mutation provided a new user object, just drop that in
   def call(
@@ -29,7 +30,7 @@ defmodule WockyAPI.Middleware.RefreshCurrentUser do
     %{
       resolution
       | context:
-          case User.get_user(id, user) do
+          case Account.get_user(id, user) do
             nil -> Map.delete(context, :current_user)
             updated_user -> %{context | current_user: updated_user}
           end

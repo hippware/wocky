@@ -1,5 +1,5 @@
+alias Wocky.Account.User
 alias Wocky.Repo.Factory
-alias Wocky.User
 
 no_bots = Factory.insert(:user)
 bots_10 = Factory.insert(:user)
