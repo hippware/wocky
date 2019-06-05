@@ -115,7 +115,9 @@ config :wocky, :redlock,
 
 config :wocky, Wocky.Audit,
   log_traffic: {:system, :boolean, "WOCKY_AUDIT_LOG_TRAFFIC", true},
-  log_locations: {:system, :boolean, "WOCKY_AUDIT_LOG_LOCATIONS", true}
+  log_locations: {:system, :boolean, "WOCKY_AUDIT_LOG_LOCATIONS", true},
+  log_push: {:system, :boolean, "WOCKY_AUDIT_LOG_PUSH", true},
+  log_push_payload: {:system, :boolean, "WOCKY_AUDIT_LOG_PUSH_PAYLOAD", true}
 
 # location processing
 config :wocky, Wocky.Location.GeoFence,
@@ -137,8 +139,7 @@ config :wocky, Wocky.Notifier.Push,
   enabled: {:system, :boolean, "WOCKY_PUSH_ENABLED", false},
   sandbox: {:system, :boolean, "WOCKY_PUSH_SANDBOX", false},
   uri_prefix: {:system, :string, "WOCKY_PUSH_URI_PREFIX", "tinyrobot"},
-  timeout: {:system, :integer, "WOCKY_PUSH_TIMEOUT", 60_000},
-  log_payload: {:system, :boolean, "WOCKY_PUSH_LOG_PAYLOAD", true}
+  timeout: {:system, :integer, "WOCKY_PUSH_TIMEOUT", 60_000}
 
 config :wocky, Wocky.Notifier.Push.Backend.APNS,
   topic: {:system, :string, "WOCKY_PUSH_APNS_TOPIC", "app"}

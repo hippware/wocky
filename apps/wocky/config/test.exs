@@ -14,12 +14,12 @@ config :wocky, Wocky.Repo,
 
 config :wocky, Wocky.Audit,
   log_traffic: false,
-  log_locations: false
+  log_locations: false,
+  log_push: false
 
 config :wocky, Wocky.Notifier.Push,
   enabled: true,
-  sandbox: true,
-  logging: false
+  sandbox: true
 
 config :wocky, Wocky.Notifier.Push.Backend.Sandbox, reflect: true
 

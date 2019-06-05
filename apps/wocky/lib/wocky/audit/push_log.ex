@@ -1,4 +1,4 @@
-defmodule Wocky.Notifier.Push.Log do
+defmodule Wocky.Audit.PushLog do
   @moduledoc "Schema for push notification logs"
 
   use Wocky.Repo.Schema
@@ -20,7 +20,7 @@ defmodule Wocky.Notifier.Push.Log do
     belongs_to :user, User
   end
 
-  @type t :: %Log{
+  @type t :: %__MODULE__{
           user_id: User.id(),
           device: User.device(),
           token: binary,
@@ -42,7 +42,7 @@ defmodule Wocky.Notifier.Push.Log do
 
   @doc false
   def insert_changeset(attrs) do
-    %Log{}
+    %__MODULE__{}
     |> cast(attrs, @insert_attrs)
     |> validate_required(@insert_attrs -- [:message_id, :payload, :details])
     |> foreign_key_constraint(:user_id)

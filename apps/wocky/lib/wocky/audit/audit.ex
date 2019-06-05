@@ -11,6 +11,7 @@ defmodule Wocky.Audit do
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Audit.LocationLog
+  alias Wocky.Audit.PushLog
   alias Wocky.Audit.TrafficLog
   alias Wocky.Location.BotEvent
   alias Wocky.Repo
@@ -104,6 +105,38 @@ defmodule Wocky.Audit do
     BotEvent
     |> where(user_id: ^user_id)
     |> where(device: ^device)
+  end
+
+  # ===================================================================
+  # Push notification logging
+
+  @doc "Write a push notification record to the database"
+  @spec log_push(map(), User.t(), Keyword.t()) ::
+          {:ok, PushLog.t() | nil} | {:error, Changeset.t()}
+  def log_push(fields, user, opts \\ []) do
+    config = config(opts)
+
+    if should_log?(:push, user, config) do
+      fields
+      |> format_msg(user, config)
+      |> PushLog.insert_changeset()
+      |> Repo.insert()
+    else
+      {:ok, nil}
+    end
+  end
+
+  defp format_msg(fields, user, config) do
+    fields
+    |> Map.take([:device, :token, :message_id, :response, :details])
+    |> Map.put(:user_id, user.id)
+    |> Map.put(:payload, maybe_extract_payload(fields.payload, user, config))
+  end
+
+  defp maybe_extract_payload(payload, user, config) do
+    if should_log?(:push_payload, user, config) do
+      inspect(payload)
+    end
   end
 
   # ===================================================================

@@ -7,11 +7,11 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.Account.InviteCode
   alias Wocky.Account.User
   alias Wocky.Audit.LocationLog
+  alias Wocky.Audit.PushLog
   alias Wocky.Audit.TrafficLog
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Location.BotEvent
-  alias Wocky.Notifier.Push.Log, as: PushLog
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Repo
   alias Wocky.Repo.Cleaner
