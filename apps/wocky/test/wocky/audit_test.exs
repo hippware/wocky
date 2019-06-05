@@ -146,4 +146,19 @@ defmodule Wocky.AuditTest do
   defp default_start, do: Timex.subtract(Timex.now(), Duration.from_hours(1))
 
   defp default_duration, do: Duration.from_hours(1)
+
+  describe "get_locations_query/2" do
+    setup do
+      user = Factory.insert(:user)
+      Factory.insert_list(5, :location_log, user_id: user.id, device: "test")
+
+      {:ok, user: user}
+    end
+
+    test "should return a query for retrieving user locations", ctx do
+      query = Audit.get_locations_query(ctx.user, "test")
+
+      assert query |> Repo.all() |> length() == 5
+    end
+  end
 end

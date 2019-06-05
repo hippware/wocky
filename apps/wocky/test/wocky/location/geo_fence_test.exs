@@ -51,16 +51,16 @@ defmodule Wocky.Location.GeoFenceTest do
 
   describe "check_for_bot_events/2 with bad data" do
     setup %{user: user, bot: bot} do
-      loc = %UserLocation{
-        user: user,
-        lat: Bot.lat(bot),
-        lon: Bot.lon(bot),
-        accuracy: 10,
-        is_moving: true,
-        speed: 3,
-        captured_at: DateTime.utc_now(),
-        device: @device
-      }
+      loc =
+        UserLocation.new(%{
+          user_id: user.id,
+          lat: Bot.lat(bot),
+          lon: Bot.lon(bot),
+          accuracy: 10,
+          is_moving: true,
+          speed: 3,
+          device: @device
+        })
 
       {:ok, inside_loc: loc}
     end
@@ -91,16 +91,16 @@ defmodule Wocky.Location.GeoFenceTest do
 
   describe "check_for_bot_events/2 with a user inside a bot perimeter" do
     setup %{user: user, bot: bot} do
-      loc = %UserLocation{
-        user: user,
-        lat: Bot.lat(bot),
-        lon: Bot.lon(bot),
-        accuracy: 10,
-        is_moving: true,
-        speed: 3,
-        captured_at: DateTime.utc_now(),
-        device: @device
-      }
+      loc =
+        UserLocation.new(%{
+          user_id: user.id,
+          lat: Bot.lat(bot),
+          lon: Bot.lon(bot),
+          accuracy: 10,
+          is_moving: true,
+          speed: 3,
+          device: @device
+        })
 
       {:ok, inside_loc: loc}
     end
@@ -271,14 +271,14 @@ defmodule Wocky.Location.GeoFenceTest do
   check_for_bot_event/3 with a user inside a bot perimeter - no debounce
   """ do
     setup %{user: user, bot: bot} do
-      loc = %UserLocation{
-        user: user,
-        lat: Bot.lat(bot),
-        lon: Bot.lon(bot),
-        accuracy: 10,
-        captured_at: DateTime.utc_now(),
-        device: @device
-      }
+      loc =
+        UserLocation.new(%{
+          user_id: user.id,
+          lat: Bot.lat(bot),
+          lon: Bot.lon(bot),
+          accuracy: 10,
+          device: @device
+        })
 
       {:ok, inside_loc: loc}
     end
@@ -400,16 +400,16 @@ defmodule Wocky.Location.GeoFenceTest do
 
   describe "check_for_bot_events/2 with a user outside a bot perimeter" do
     setup %{user: user, bot: bot} do
-      loc = %UserLocation{
-        user: user,
-        lat: Bot.lat(bot) + 0.0015,
-        lon: Bot.lon(bot),
-        accuracy: 10,
-        is_moving: true,
-        speed: 3,
-        captured_at: DateTime.utc_now(),
-        device: @device
-      }
+      loc =
+        UserLocation.new(%{
+          user_id: user.id,
+          lat: Bot.lat(bot) + 0.0015,
+          lon: Bot.lon(bot),
+          accuracy: 10,
+          is_moving: true,
+          speed: 3,
+          device: @device
+        })
 
       {:ok, outside_loc: loc}
     end

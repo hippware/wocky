@@ -6,10 +6,13 @@ defmodule Wocky.Audit do
   import Ecto.Query
 
   alias Ecto.Changeset
+  alias Ecto.Queryable
   alias Timex.Duration
   alias Wocky.Account
   alias Wocky.Account.User
+  alias Wocky.Audit.LocationLog
   alias Wocky.Audit.TrafficLog
+  alias Wocky.Location.BotEvent
   alias Wocky.Repo
 
   # ===================================================================
@@ -60,6 +63,47 @@ defmodule Wocky.Audit do
   defp device_traffic(query, user_id, device, startt, duration) do
     query = users_traffic(query, user_id, startt, duration)
     from t in query, where: t.device == ^device
+  end
+
+  # ===================================================================
+  # Location logging
+
+  @doc "Write a location record to the database"
+  @spec log_location(map(), User.t(), Keyword.t()) ::
+          {:ok, LocationLog.t() | nil} | {:error, Changeset.t()}
+  def log_location(fields, user, opts \\ []) do
+    config = config(opts)
+
+    if should_log?(:location, user, config) do
+      %LocationLog{user_id: user.id}
+      |> LocationLog.changeset(fields)
+      |> Repo.insert()
+    else
+      {:ok, nil}
+    end
+  end
+
+  @spec get_locations_query(User.t(), User.device()) :: Queryable.t()
+  def get_locations_query(%User{id: user_id}, device) do
+    LocationLog
+    |> where(user_id: ^user_id)
+    |> where(device: ^device)
+  end
+
+  @spec get_location_events_query(
+          User.t(),
+          User.device() | LocationLog.t()
+        ) ::
+          Queryable.t()
+  def get_location_events_query(_user, %LocationLog{} = loc) do
+    Ecto.assoc(loc, :events)
+  end
+
+  def get_location_events_query(%User{id: user_id}, device)
+      when is_binary(device) do
+    BotEvent
+    |> where(user_id: ^user_id)
+    |> where(device: ^device)
   end
 
   # ===================================================================

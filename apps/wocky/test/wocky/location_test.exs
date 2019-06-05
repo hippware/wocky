@@ -28,30 +28,16 @@ defmodule Wocky.LocationTest do
       {:ok, bot: bot, lat: Bot.lat(bot), lon: Bot.lon(bot)}
     end
 
-    test "should save the location to the database", ctx do
-      location = %UserLocation{
-        lat: ctx.lat,
-        lon: ctx.lon,
-        accuracy: 10,
-        device: "testing",
-        captured_at: DateTime.utc_now()
-      }
-
-      assert {:ok, %UserLocation{id: id}} =
-               Location.set_user_location(ctx.user, location)
-
-      assert Repo.get(UserLocation, id)
-    end
-
     test "should initiate geofence processing", ctx do
-      assert Location.set_user_location(
-               ctx.user,
-               "testing",
-               ctx.lat,
-               ctx.lon,
-               10
-             ) == :ok
+      location =
+        UserLocation.new(%{
+          lat: ctx.lat,
+          lon: ctx.lon,
+          accuracy: 10,
+          device: "testing"
+        })
 
+      assert {:ok, _} = Location.set_user_location(ctx.user, location)
       assert BotEvent.get_last_event_type(ctx.id, ctx.bot.id) == :transition_in
     end
   end
@@ -64,26 +50,15 @@ defmodule Wocky.LocationTest do
       Roster.befriend(ctx.user, user2)
       Bot.subscribe(bot, ctx.user)
 
-      location = %UserLocation{
-        lat: Bot.lat(bot),
-        lon: Bot.lon(bot),
-        accuracy: 10,
-        device: "testing",
-        captured_at: DateTime.utc_now()
-      }
+      location =
+        UserLocation.new(%{
+          lat: Bot.lat(bot),
+          lon: Bot.lon(bot),
+          accuracy: 10,
+          device: "testing"
+        })
 
       {:ok, bot: bot, location: location}
-    end
-
-    test "should save the location to the database", ctx do
-      assert {:ok, %UserLocation{id: id}} =
-               Location.set_user_location_for_bot(
-                 ctx.user,
-                 ctx.location,
-                 ctx.bot
-               )
-
-      assert Repo.get(UserLocation, id)
     end
 
     test "should initiate geofence processing for that bot", ctx do
@@ -112,20 +87,6 @@ defmodule Wocky.LocationTest do
 
     test "should return nil if the user's location is unknown", ctx do
       refute Location.get_current_user_location(ctx.user)
-    end
-  end
-
-  describe "get_locations_query/2" do
-    setup ctx do
-      Factory.insert_list(5, :location, user_id: ctx.id, device: "test")
-
-      :ok
-    end
-
-    test "should return a query for retrieving user locations", ctx do
-      query = Location.get_user_locations_query(ctx.user, "test")
-
-      assert query |> Repo.all() |> length() == 5
     end
   end
 

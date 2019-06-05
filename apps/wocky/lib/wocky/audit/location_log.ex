@@ -1,12 +1,14 @@
-defmodule Wocky.Location.UserLocation do
+defmodule Wocky.Audit.LocationLog do
   @moduledoc false
 
   use Wocky.Repo.Schema
 
   alias Wocky.Account.User
-  alias Wocky.GeoUtils
+  alias Wocky.Location.BotEvent
 
-  embedded_schema do
+  @foreign_key_type :binary_id
+  @primary_key {:id, :binary_id, autogenerate: true}
+  schema "user_locations" do
     field :user_id, :binary_id, null: false
     field :device, :string, null: false
     field :lat, :float, null: false
@@ -24,11 +26,14 @@ defmodule Wocky.Location.UserLocation do
     field :activity_confidence, :integer
     field :battery_level, :float
     field :battery_charging, :boolean
-    field :created_at, :utc_datetime_usec
+
+    timestamps()
+
+    belongs_to :user, User, define_field: false
+    has_many :events, BotEvent, foreign_key: :location_id
   end
 
   @type t :: %__MODULE__{
-          id: String.t(),
           user_id: User.id() | nil,
           device: User.device(),
           lat: float,
@@ -46,10 +51,11 @@ defmodule Wocky.Location.UserLocation do
           activity_confidence: integer | nil,
           battery_level: float | nil,
           battery_charging: boolean | nil,
-          created_at: DateTime.t() | nil
+          created_at: DateTime.t() | nil,
+          updated_at: DateTime.t() | nil
         }
 
-  @fields [
+  @insert_fields [
     :device,
     :lat,
     :lon,
@@ -71,7 +77,7 @@ defmodule Wocky.Location.UserLocation do
   @doc false
   def changeset(struct, params) do
     struct
-    |> cast(params, @fields)
+    |> cast(params, @insert_fields)
     |> validate_required([:device, :lat, :lon, :accuracy, :captured_at])
     |> validate_number(:accuracy, greater_than_or_equal_to: 0)
     |> validate_number(
@@ -85,40 +91,4 @@ defmodule Wocky.Location.UserLocation do
       less_than_or_equal_to: 180
     )
   end
-
-  @spec new(map()) :: t()
-  def new(fields) do
-    {nlat, nlon} = GeoUtils.normalize_lat_lon(fields.lat, fields.lon)
-
-    nfields =
-      fields
-      |> Map.put(:lat, nlat)
-      |> Map.put(:lon, nlon)
-      |> Map.put(:captured_at, normalize_captured_at(fields))
-      |> Map.put(:created_at, DateTime.utc_now())
-
-    struct(__MODULE__, nfields)
-  end
-
-  def validate(location) do
-    fields = Map.from_struct(location)
-    changeset = changeset(%__MODULE__{}, fields)
-
-    if changeset.valid? do
-      :ok
-    else
-      {:error, changeset}
-    end
-  end
-
-  defp normalize_captured_at(%{captured_at: time})
-       when is_binary(time) do
-    {:ok, dt, 0} = DateTime.from_iso8601(time)
-    dt
-  end
-
-  defp normalize_captured_at(%{captured_at: %DateTime{} = dt}),
-    do: dt
-
-  defp normalize_captured_at(_), do: DateTime.utc_now()
 end

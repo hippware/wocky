@@ -9,6 +9,7 @@ defmodule Wocky.Location.BotEvent do
   import EctoHomoiconicEnum, only: [defenum: 2]
 
   alias Wocky.Account.User
+  alias Wocky.Audit.LocationLog
   alias Wocky.Bot
   alias Wocky.Location.UserLocation
   alias Wocky.Repo
@@ -34,7 +35,7 @@ defmodule Wocky.Location.BotEvent do
 
     belongs_to :user, User
     belongs_to :bot, Bot
-    belongs_to :location, UserLocation, foreign_key: :location_id
+    belongs_to :location, LocationLog, foreign_key: :location_id
   end
 
   @type event ::

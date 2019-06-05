@@ -34,4 +34,4 @@ data:
 
   # Turned off temporarilly for load testing purproses
   WOCKY_AUDIT_LOG_TRAFFIC: "false"
-  WOCKY_GEOFENCE_SAVE_LOCATIONS: "false"
+  WOCKY_AUDIT_LOG_LOCATIONS: "false"

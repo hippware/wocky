@@ -7,7 +7,6 @@ defmodule Wocky.Location do
   alias Ecto.Queryable
   alias Wocky.Account.User
   alias Wocky.Bot
-  alias Wocky.Location.BotEvent
   alias Wocky.Location.GeoFence
   alias Wocky.Location.Handler
   alias Wocky.Location.Share
@@ -25,44 +24,6 @@ defmodule Wocky.Location do
 
   # ----------------------------------------------------------------------
   # User Location
-
-  @spec get_user_locations_query(User.t(), User.device()) :: Queryable.t()
-  def get_user_locations_query(%User{id: user_id}, device) do
-    UserLocation
-    |> where(user_id: ^user_id)
-    |> where(device: ^device)
-  end
-
-  @spec get_user_location_events_query(
-          User.t(),
-          User.device() | UserLocation.t()
-        ) ::
-          Queryable.t()
-  def get_user_location_events_query(_user, %UserLocation{} = loc) do
-    Ecto.assoc(loc, :events)
-  end
-
-  def get_user_location_events_query(%User{id: user_id}, device)
-      when is_binary(device) do
-    BotEvent
-    |> where(user_id: ^user_id)
-    |> where(device: ^device)
-  end
-
-  @spec set_user_location(User.t(), User.device(), float(), float(), float()) ::
-          :ok | {:error, any}
-  def set_user_location(user, device, lat, lon, accuracy) do
-    location = %UserLocation{
-      lat: lat,
-      lon: lon,
-      accuracy: accuracy,
-      device: device
-    }
-
-    with {:ok, _} <- set_user_location(user, location) do
-      :ok
-    end
-  end
 
   @doc """
   Sets the user's current location to the provided Location struct and runs the

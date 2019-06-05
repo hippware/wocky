@@ -114,12 +114,12 @@ config :wocky, :redlock,
   ]
 
 config :wocky, Wocky.Audit,
-  log_traffic: {:system, :boolean, "WOCKY_AUDIT_LOG_TRAFFIC", true}
+  log_traffic: {:system, :boolean, "WOCKY_AUDIT_LOG_TRAFFIC", true},
+  log_locations: {:system, :boolean, "WOCKY_AUDIT_LOG_LOCATIONS", true}
 
 # location processing
 config :wocky, Wocky.Location.GeoFence,
   enable_notifications: true,
-  async_processing: false,
   debounce: true,
   enter_debounce_seconds:
     {:system, :integer, "WOCKY_ENTER_DEBOUNCE_SECONDS", 30},
@@ -130,8 +130,7 @@ config :wocky, Wocky.Location.GeoFence,
   max_exit_distance:
     {:system, :integer, "WOCKY_GEOFENCE_MAX_EXIT_DISTANCE", 200},
   stale_update_seconds:
-    {:system, :integer, "WOCKY_GEOFENCE_STALE_UPDATE_SECONDS", 300},
-  save_locations: {:system, :boolean, "WOCKY_GEOFENCE_SAVE_LOCATIONS", true}
+    {:system, :integer, "WOCKY_GEOFENCE_STALE_UPDATE_SECONDS", 300}
 
 # Push notifications
 config :wocky, Wocky.Notifier.Push,

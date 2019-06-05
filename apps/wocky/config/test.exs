@@ -12,7 +12,9 @@ config :wocky, Wocky.Repo,
   # ms (30 minutes)
   ownership_timeout: 1_800_000
 
-config :wocky, Wocky.Audit, log_traffic: false
+config :wocky, Wocky.Audit,
+  log_traffic: false,
+  log_locations: false
 
 config :wocky, Wocky.Notifier.Push,
   enabled: true,

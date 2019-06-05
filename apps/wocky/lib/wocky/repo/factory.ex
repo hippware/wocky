@@ -13,6 +13,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Account.User
+  alias Wocky.Audit.LocationLog
   alias Wocky.Audit.TrafficLog
   alias Wocky.Bot
   alias Wocky.Bot.Invitation, as: BotInvitation
@@ -134,8 +135,18 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def location_factory do
-    %UserLocation{
+  def location_log_factory do
+    struct(LocationLog, location_fields())
+  end
+
+  def location_factory(attrs) do
+    location_fields()
+    |> Map.merge(attrs)
+    |> UserLocation.new()
+  end
+
+  defp location_fields do
+    %{
       device: device(),
       lat: Address.latitude(),
       lon: Address.longitude(),
@@ -151,7 +162,7 @@ defmodule Wocky.Repo.Factory do
       device: device(),
       event: :enter,
       occurred_at: DateTime.utc_now(),
-      location: build(:location)
+      location: build(:location_log)
     }
   end
 
