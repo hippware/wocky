@@ -89,7 +89,7 @@ defmodule Wocky.Location do
   defdelegate get_current_user_location(user), to: Current, as: :get
 
   @doc "Cleans up current location cache."
-  @spec clean_current_locations([User.t()]) :: :ok
+  @spec clean_current_locations([User.t()]) :: non_neg_integer()
   defdelegate clean_current_locations(user_ids),
     to: Current,
     as: :delete_when_not_shared
