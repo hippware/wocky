@@ -12,6 +12,9 @@ defprotocol Wocky.Notifier.Push.Event do
 
   @doc "Returns a URI identifying this specific event"
   def uri(event)
+
+  @doc "Returns a keyword list of optional parameters"
+  def opts(event)
 end
 
 defimpl Wocky.Notifier.Push.Event, for: Any do
@@ -22,6 +25,8 @@ defimpl Wocky.Notifier.Push.Event, for: Any do
   def message(_event), do: ""
 
   def uri(_event), do: ""
+
+  def opts(_event), do: []
 end
 
 defimpl Wocky.Notifier.Push.Event, for: BitString do
@@ -32,4 +37,6 @@ defimpl Wocky.Notifier.Push.Event, for: BitString do
   def message(string), do: string
 
   def uri(_event), do: ""
+
+  def opts(_event), do: []
 end

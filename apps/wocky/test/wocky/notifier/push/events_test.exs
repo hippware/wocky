@@ -4,6 +4,7 @@ defmodule Wocky.Notifier.Push.EventsTest do
 
   alias Wocky.Events.BotInvitation
   alias Wocky.Events.GeofenceEvent
+  alias Wocky.Events.LocationRequest
   alias Wocky.Events.NewMessage
   alias Wocky.Events.UserInvitation
   alias Wocky.Notifier.Push.Event
@@ -106,6 +107,14 @@ defmodule Wocky.Notifier.Push.EventsTest do
       assert uri =~ "/bot"
       assert uri =~ "/#{@test_server}"
       assert uri =~ "/#{b.id}"
+    end
+  end
+
+  describe "LocationRequest" do
+    test "returns has appropriate options", %{user: user} do
+      opts = Event.opts(%LocationRequest{to: user})
+      assert opts[:background]
+      assert opts[:extra_fields] == %{"location-request" => 1}
     end
   end
 end

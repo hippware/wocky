@@ -38,4 +38,6 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.NewMessage do
   end
 
   def uri(%{from: from}), do: make_uri(:conversation, from.id)
+
+  def opts(_), do: []
 end

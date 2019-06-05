@@ -24,13 +24,14 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
 
   def build_notification(event, token) do
     uri = Event.uri(event)
+    opts = Event.opts(event)
 
     event
     |> Event.message()
     |> Utils.maybe_truncate_message()
     |> Notification.new(token, topic())
-    |> Notification.put_badge(1)
     |> Notification.put_custom(%{"uri" => uri})
+    |> add_opts(opts)
   end
 
   def get_response(%Notification{response: response}), do: response
@@ -48,4 +49,14 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
   def error_msg(resp), do: Error.msg(resp)
 
   defp topic, do: Confex.get_env(:wocky, __MODULE__)[:topic]
+
+  defp add_opts(notification, opts) do
+    opts[:background]
+    |> if do
+      Notification.put_content_available(notification)
+    else
+      Notification.put_badge(notification, 1)
+    end
+    |> Notification.put_custom(Keyword.get(opts, :extra_fields, %{}))
+  end
 end

@@ -34,6 +34,8 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.BotItem do
   end
 
   def uri(%{item: item}), do: make_uri(:bot, item.bot.id)
+
+  def opts(_), do: []
 end
 
 defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.BotItem do
