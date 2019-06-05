@@ -7,13 +7,10 @@ defmodule Wocky.Callbacks.Message do
 
   alias Wocky.Events.NewMessage
   alias Wocky.Notifier
-  alias Wocky.Repo
+  alias Wocky.Repo.Hydrator
 
   def handle_insert(new) do
-    new = Repo.preload(new, [:sender, :recipient])
-
-    if new.sender != nil && new.recipient != nil,
-      do: send_push(new)
+    Hydrator.with_assocs(new, [:sender, :recipient], &send_push(&1))
   end
 
   defp send_push(msg) do

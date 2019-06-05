@@ -7,16 +7,14 @@ defmodule Wocky.Callbacks.BotSubscription do
 
   alias Wocky.Bot
   alias Wocky.Location
-  alias Wocky.Repo
+  alias Wocky.Repo.Hydrator
 
-  def handle_delete(subscription) do
-    subscription = Repo.preload(subscription, [:user])
-
-    if subscription.user != nil do
+  def handle_delete(new) do
+    Hydrator.with_assocs(new, [:user], fn rec ->
       Location.remove_subscription(
-        subscription.user,
-        %Bot{id: subscription.bot_id}
+        rec.user,
+        %Bot{id: rec.bot_id}
       )
-    end
+    end)
   end
 end

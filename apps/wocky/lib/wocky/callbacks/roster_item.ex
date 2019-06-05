@@ -8,14 +8,15 @@ defmodule Wocky.Callbacks.RosterItem do
   alias Wocky.Bot.Invitation
   alias Wocky.Bot.Subscription
   alias Wocky.Location
-  alias Wocky.Repo
+  alias Wocky.Repo.Hydrator
   alias Wocky.Roster.Item
 
   def handle_delete(old) do
-    %Item{user: user, contact: contact} = Repo.preload(old, [:user, :contact])
-
     # Cancel location sharing
-    if user != nil and contact != nil do
+    Hydrator.with_assocs(old, [:user, :contact], fn %Item{
+                                                      user: user,
+                                                      contact: contact
+                                                    } ->
       Location.stop_sharing_location(user, contact)
       Location.stop_sharing_location(contact, user)
 
@@ -24,7 +25,7 @@ defmodule Wocky.Callbacks.RosterItem do
 
       Invitation.delete(contact, user)
       Invitation.delete(user, contact)
-    end
+    end)
 
     :ok
   end
