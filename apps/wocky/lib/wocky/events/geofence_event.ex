@@ -39,6 +39,8 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.GeofenceEvent do
   end
 
   def uri(%{bot: bot}), do: make_uri(:bot, bot.id, true, "visitors")
+
+  def opts(_), do: []
 end
 
 defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.GeofenceEvent do

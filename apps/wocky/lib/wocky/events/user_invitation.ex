@@ -28,6 +28,8 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.UserInvitation do
   end
 
   def uri(%{from: from} = _event), do: make_uri(:invitations, from.id)
+
+  def opts(_), do: []
 end
 
 defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.UserInvitation do
