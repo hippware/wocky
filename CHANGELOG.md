@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Ability to ask the client to send a new location data point (#2025)
+
+
+# 2019.6.5+r05cadfa
+
 * Update: ecto_sql (PR #2556), honeybadger (PR #2561)
   * elixir, erlang (PR #2563), plug (PR #2564), dawdle (PR #2565)
   * firebase_admin_ex (PR #2567)
@@ -14,6 +19,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Ensure location share cache is primed (PR #2558)
 * Remove cached location when last share expires (PR #2566)
 * Refactor the `User` module (#2549)
+* Preload cleanup (PR #2570)
 
 
 # 2019.5.29+ra59468d
