@@ -1,15 +1,8 @@
 defmodule Wocky.Bot.InvitationTest do
-  use Wocky.WatcherCase
+  use Wocky.DataCase
 
-  import Wocky.PushHelper
-
-  alias Faker.Code
-  alias Pigeon.APNS.Notification
   alias Wocky.Bot
   alias Wocky.Bot.Invitation
-  alias Wocky.Notifier.InBand.Notification, as: IBNotification
-  alias Wocky.Notifier.Push
-  alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
   alias Wocky.Roster
 
@@ -17,11 +10,6 @@ defmodule Wocky.Bot.InvitationTest do
     [user, invitee, stranger] = Factory.insert_list(3, :user, device: "testing")
     Roster.befriend(user, invitee)
     bot = Factory.insert(:bot, user: user)
-
-    Sandbox.clear_notifications(global: true)
-
-    :ok = Push.enable(invitee, invitee.device, Code.isbn13())
-    :ok = Push.enable(user, user.device, Code.isbn13())
 
     {:ok, user: user, invitee: invitee, stranger: stranger, bot: bot}
   end
@@ -32,20 +20,6 @@ defmodule Wocky.Bot.InvitationTest do
 
       assert invitation == Repo.get_by(Invitation, id: invitation.id)
       assert invitation.accepted == nil
-
-      msgs = Sandbox.wait_notifications(count: 1, timeout: 500, global: true)
-      assert length(msgs) == 1
-
-      assert %Notification{
-               payload: %{
-                 "aps" => %{"alert" => message}
-               }
-             } = hd(msgs)
-
-      assert message ==
-               "@#{ctx.user.handle} invited you to follow #{ctx.bot.title}"
-
-      assert clear_expected_notifications(1)
     end
 
     test "refuse invitation to non-owned bot", ctx do
@@ -53,8 +27,6 @@ defmodule Wocky.Bot.InvitationTest do
 
       assert {:error, :permission_denied} ==
                Invitation.put(ctx.invitee, ctx.bot, other_user)
-
-      assert no_more_push_notifications()
     end
 
     test "refuse invitation to non-friend", ctx do
@@ -71,11 +43,6 @@ defmodule Wocky.Bot.InvitationTest do
 
       assert DateTime.compare(invitation.updated_at, invitation2.updated_at) ==
                :lt
-
-      assert_eventually(in_band_notifications(ctx.invitee) == 1)
-      assert in_band_notifications(ctx.user) == 0
-
-      assert clear_expected_notifications(1)
     end
   end
 
@@ -141,8 +108,6 @@ defmodule Wocky.Bot.InvitationTest do
                Invitation.respond(ctx.invitation, true, ctx.invitee)
 
       assert invitation.accepted == true
-
-      clear_expected_notifications(1)
     end
 
     test "Invitee becomes subscribed if they accept", ctx do
@@ -152,28 +117,6 @@ defmodule Wocky.Bot.InvitationTest do
                Invitation.respond(ctx.invitation, true, ctx.invitee)
 
       assert Bot.subscription(ctx.bot, ctx.invitee) == :subscribed
-      clear_expected_notifications(1)
-    end
-
-    test "Inviter receives a push notification on acceptance", ctx do
-      assert {:ok, invitation} =
-               Invitation.respond(ctx.invitation, true, ctx.invitee)
-
-      msgs = Sandbox.wait_notifications(count: 1, timeout: 500, global: true)
-      assert length(msgs) == 1
-
-      assert %Notification{
-               payload: %{
-                 "aps" => %{"alert" => message}
-               }
-             } = hd(msgs)
-
-      assert message ==
-               "@#{ctx.invitee.handle} accepted your invitation to #{
-                 ctx.bot.title
-               }"
-
-      clear_expected_notifications(1)
     end
 
     test "Invitee can decline", ctx do
@@ -181,8 +124,6 @@ defmodule Wocky.Bot.InvitationTest do
                Invitation.respond(ctx.invitation, false, ctx.invitee)
 
       assert invitation.accepted == false
-
-      assert no_more_push_notifications()
     end
 
     test "Invitee does not become subscribed if they decline", ctx do
@@ -192,14 +133,11 @@ defmodule Wocky.Bot.InvitationTest do
                Invitation.respond(ctx.invitation, false, ctx.invitee)
 
       assert Bot.subscription(ctx.bot, ctx.invitee) == nil
-      assert no_more_push_notifications()
     end
 
     test "Inviter cannot respond", ctx do
       assert {:error, :permission_denied} =
                Invitation.respond(ctx.invitation, false, ctx.user)
-
-      assert no_more_push_notifications()
     end
 
     test "Other user cannot respond", ctx do
@@ -209,8 +147,6 @@ defmodule Wocky.Bot.InvitationTest do
                  false,
                  Factory.insert(:user)
                )
-
-      assert no_more_push_notifications()
     end
   end
 
@@ -218,7 +154,6 @@ defmodule Wocky.Bot.InvitationTest do
     setup %{user: user, invitee: invitee} do
       invitation = Factory.insert(:bot_invitation, user: user, invitee: invitee)
       invitation2 = Factory.insert(:bot_invitation, invitee: invitee)
-      Sandbox.wait_notifications(count: 2, timeout: 500, global: true)
 
       Invitation.delete(user, invitee)
 
@@ -242,11 +177,6 @@ defmodule Wocky.Bot.InvitationTest do
         bot: ctx.bot
       )
 
-    clear_expected_notifications(1)
-
     {:ok, invitation: invitation}
   end
-
-  defp in_band_notifications(user),
-    do: user |> IBNotification.user_query(nil, nil) |> Repo.all() |> length()
 end
