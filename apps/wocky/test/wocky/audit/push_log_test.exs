@@ -1,5 +1,7 @@
 defmodule Wocky.Audit.PushLogTest do
-  use Wocky.DataCase, async: true
+  use ExUnit.Case, async: true
+
+  import Wocky.DataCase
 
   alias Wocky.Audit.PushLog
 

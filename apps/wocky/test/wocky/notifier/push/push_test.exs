@@ -1,5 +1,5 @@
 defmodule Wocky.Notifier.Push.PushTest do
-  use Wocky.DataCase
+  use Wocky.DataCase, async: true
 
   import ExUnit.CaptureLog
 

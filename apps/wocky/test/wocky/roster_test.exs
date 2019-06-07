@@ -1,5 +1,5 @@
-defmodule Wocky.Roster.RosterTest do
-  use Wocky.DataCase
+defmodule Wocky.RosterTest do
+  use Wocky.DataCase, async: true
 
   alias Faker.Name
   alias Wocky.Block

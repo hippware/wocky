@@ -1,5 +1,5 @@
 defmodule Wocky.BlockTest do
-  use Wocky.DataCase
+  use Wocky.DataCase, async: true
 
   alias Wocky.Block
   alias Wocky.Bot

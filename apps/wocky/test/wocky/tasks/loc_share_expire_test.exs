@@ -1,5 +1,5 @@
 defmodule Wocky.Tasks.LocShareExpireTest do
-  use Wocky.DataCase
+  use Wocky.DataCase, async: true
 
   alias Wocky.Location
   alias Wocky.Repo.Factory

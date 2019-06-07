@@ -1,7 +1,5 @@
 defmodule Wocky.Location.GeoFenceTest do
-  use Wocky.DataCase
-
-  import Ecto.Query
+  use Wocky.DataCase, async: true
 
   alias Faker.Code
   alias Timex.Duration

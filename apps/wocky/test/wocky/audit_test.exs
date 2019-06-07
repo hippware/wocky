@@ -1,5 +1,5 @@
 defmodule Wocky.AuditTest do
-  use Wocky.DataCase, async: false
+  use Wocky.DataCase, async: true
 
   alias Timex.Duration
   alias Wocky.Audit

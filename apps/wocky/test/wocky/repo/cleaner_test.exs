@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.CleanerTest do
-  use Wocky.DataCase, async: false
+  use Wocky.DataCase, async: true
 
   import Ecto.Query
 

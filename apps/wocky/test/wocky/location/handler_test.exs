@@ -1,5 +1,5 @@
 defmodule Wocky.Location.HandlerTest do
-  use Wocky.DataCase
+  use Wocky.DataCase, async: false
 
   alias Wocky.Bot
   alias Wocky.Location.Handler

@@ -1,5 +1,5 @@
 defmodule Wocky.Location.Share.CacheTest do
-  use Wocky.DataCase
+  use Wocky.DataCase, async: true
 
   import Eventually
 
