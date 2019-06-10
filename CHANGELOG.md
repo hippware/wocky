@@ -6,6 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Ability to ask the client to send a new location data point (#2025)
+* Remove next environment and old ansible file (PR #2578)
 
 
 # 2019.6.5+r05cadfa
