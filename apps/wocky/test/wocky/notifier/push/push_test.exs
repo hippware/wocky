@@ -164,18 +164,21 @@ defmodule Wocky.Notifier.Push.PushTest do
     end
   end
 
-  describe "push timeout" do
-    test "should log an error when the push request fails and times out",
-         ctx do
-      assert capture_log(fn ->
-               assert_raise RuntimeError, "requested_raise", fn ->
-                 Push.notify_all(ctx.user, "raise")
-               end
-             end) == ""
+  # TODO This is an important case to test, but I am not sure that this is the
+  # right way to test it. This test ends up with spurious logging output to the
+  # console when the test suite runs.
+  # describe "push timeout" do
+  #   test "should log an error when the push request fails and times out",
+  #        ctx do
+  #     assert capture_log(fn ->
+  #              assert_raise RuntimeError, "requested_raise", fn ->
+  #                Push.notify_all(ctx.user, "raise")
+  #              end
+  #            end) == ""
 
-      assert capture_log(fn -> Process.sleep(500) end) =~ "timeout expired"
-    end
-  end
+  #     assert capture_log(fn -> Process.sleep(500) end) =~ "timeout expired"
+  #   end
+  # end
 
   describe "retry success" do
     test "should retry and succeed even if the first attempt fails", ctx do
