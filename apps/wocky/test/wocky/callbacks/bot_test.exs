@@ -1,7 +1,7 @@
 defmodule Wocky.Callbacks.BotTest do
   use Wocky.WatcherCase
 
-  alias Wocky.Bot
+  alias Wocky.Bots
   alias Wocky.Callbacks.Bot, as: Callback
   alias Wocky.GeoUtils
   alias Wocky.Location.Handler
@@ -23,14 +23,14 @@ defmodule Wocky.Callbacks.BotTest do
     # Make sure the handler is instantiated
     pid = Handler.get_handler(user)
 
-    Bot.subscribe(bot, user)
+    Bots.subscribe(bot, user)
 
-    Bot.update(bot, %{location: GeoUtils.point(1.0, 2.0)})
+    Bots.update(bot, %{location: GeoUtils.point(1.0, 2.0)})
 
     assert_eventually(
       (
         %{subscriptions: [bot]} = :sys.get_state(pid)
-        Bot.lat(bot) == 1.0 and Bot.lon(bot) == 2.0
+        Bots.lat(bot) == 1.0 and Bots.lon(bot) == 2.0
       )
     )
   end

@@ -1,8 +1,8 @@
-defmodule Wocky.Bot.SubscriptionTest do
+defmodule Wocky.Bots.SubscriptionTest do
   use Wocky.DataCase, async: true
 
   alias Ecto.Adapters.SQL
-  alias Wocky.Bot.Subscription
+  alias Wocky.Bots.Subscription
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID

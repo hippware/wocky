@@ -9,8 +9,8 @@ defmodule Wocky.Account.AccountTest do
   alias Wocky.Account.InviteCode
   alias Wocky.Account.User
   alias Wocky.Block
-  alias Wocky.Bot
-  alias Wocky.Bot.Invitation
+  alias Wocky.Bots
+  alias Wocky.Bots.Invitation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -454,7 +454,7 @@ defmodule Wocky.Account.AccountTest do
     unaffiliated_bot = Factory.insert(:bot, user: other_user)
 
     Invitation.put(ctx.user, invited_bot, other_user)
-    Bot.subscribe(subscribed_bot, ctx.user)
+    Bots.subscribe(subscribed_bot, ctx.user)
 
     {:ok,
      other_user: other_user,

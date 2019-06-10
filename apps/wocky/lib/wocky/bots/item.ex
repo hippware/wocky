@@ -1,4 +1,4 @@
-defmodule Wocky.Bot.Item do
+defmodule Wocky.Bots.Item do
   @moduledoc "Represents an item published to a bot"
 
   use Wocky.Repo.Schema
@@ -7,7 +7,8 @@ defmodule Wocky.Bot.Item do
 
   alias Ecto.Changeset
   alias Wocky.Account.User
-  alias Wocky.Bot
+  alias Wocky.Bots
+  alias Wocky.Bots.Bot
   alias Wocky.Repo
   alias Wocky.Repo.ID
 
@@ -84,7 +85,7 @@ defmodule Wocky.Bot.Item do
   end
 
   defp maybe_update_bot({:ok, _} = result, bot) do
-    Bot.bump_update_time(bot)
+    Bots.bump_update_time(bot)
     result
   end
 

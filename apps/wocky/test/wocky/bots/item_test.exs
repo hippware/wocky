@@ -1,9 +1,9 @@
-defmodule Wocky.Bot.ItemTest do
+defmodule Wocky.Bots.ItemTest do
   use Wocky.DataCase, async: true
 
   alias Faker.Lorem
-  alias Wocky.Bot
-  alias Wocky.Bot.Item
+  alias Wocky.Bots.Bot
+  alias Wocky.Bots.Item
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 

@@ -1,21 +1,19 @@
-defmodule Wocky.Bot do
+defmodule Wocky.Bots do
   @moduledoc "Schema and API for working with Bots."
 
   use Elixometer
-  use Wocky.Repo.Schema
 
+  import Ecto.Changeset
   import Ecto.Query
 
-  alias Ecto.Association.NotLoaded
-  alias Ecto.Changeset
   alias Ecto.Queryable
   alias Geocalc.Point
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Block
-  alias Wocky.Bot.Invitation
-  alias Wocky.Bot.Item
-  alias Wocky.Bot.Subscription
+  alias Wocky.Bots.Bot
+  alias Wocky.Bots.Invitation
+  alias Wocky.Bots.Subscription
   alias Wocky.Events.GeofenceEvent
   alias Wocky.GeoUtils
   alias Wocky.Location
@@ -28,96 +26,10 @@ defmodule Wocky.Bot do
   require Logger
   require Record
 
-  @foreign_key_type :binary_id
-  @primary_key {:id, :binary_id, autogenerate: false}
-  schema "bots" do
-    # Bot title
-    field :title, :string, default: ""
-    # True if this is a preallocated bot ID
-    field :pending, :boolean
-    # Bot shortname for URL representation
-    field :shortname, :string
-    # User-supplied description
-    field :description, :string, default: ""
-    # Bot graphical image TROS url
-    field :image_url, :string
-    # Bot type (freeform string from server's perspective)
-    field :type, :string, default: ""
-    # Bot icon (freeform string from server's perspective)
-    field :icon, :string, default: ""
-    # Free-form string field describing bot's location
-    field :address, :string, default: ""
-    # Opaque field containing adress related information
-    field :address_data, :string, default: ""
-    # Location
-    field :location, Geo.PostGIS.Geometry
-    # Radius of bot circle
-    field :radius, :float, default: 100.0
-    # Visibility of bot
-    field :tags, {:array, :string}
-
-    timestamps()
-
-    belongs_to :user, User
-
-    has_many :items, Item
-    has_many :invitations, Invitation
-
-    many_to_many(:subscribers, User, join_through: Subscription)
-  end
-
-  @type id :: binary
-  @type not_loaded :: %NotLoaded{}
-
-  @type relationship ::
-          :visible
-          | :owned
-          | :subscribed
-          | :subscribed_not_owned
-          | :invited
-          | :visiting
-
-  @type t :: %Bot{
-          id: nil | id,
-          title: binary,
-          pending: nil | boolean,
-          shortname: nil | binary,
-          description: binary,
-          image_url: nil | binary,
-          type: binary,
-          icon: nil | binary,
-          address: binary,
-          address_data: binary,
-          location: nil | Geo.Point.t(),
-          radius: nil | float,
-          tags: nil | [binary],
-          user: not_loaded | User.t(),
-          items: not_loaded | [Item.t()],
-          invitations: not_loaded | [Invitation.t()],
-          subscribers: not_loaded | [User.t()]
-        }
-
-  @change_fields [
-    :id,
-    :user_id,
-    :title,
-    :shortname,
-    :description,
-    :image_url,
-    :type,
-    :icon,
-    :address,
-    :address_data,
-    :location,
-    :radius,
-    :tags
-  ]
-  @required_fields [:id, :user_id, :title, :location, :radius]
-
   # ----------------------------------------------------------------------
   # Database interaction
 
-  @spec get(Bot.id(), boolean) :: t | nil
+  @spec get(Bot.id(), boolean()) :: Bot.t() | nil
   def get(id, include_pending \\ false)
 
   def get(id, include_pending) when is_binary(id) do
@@ -138,14 +50,14 @@ defmodule Wocky.Bot do
   defp maybe_filter_pending(queryable, true),
     do: where(queryable, pending: false)
 
-  @spec get_bot(id, User.t(), boolean) :: t | nil
+  @spec get_bot(Bot.id(), User.t(), boolean()) :: Bot.t() | nil
   def get_bot(id, requestor, include_pending \\ false) do
     id
     |> get_bot_query(requestor, include_pending)
     |> Repo.one()
   end
 
-  @spec get_bot_query(id, User.t(), boolean) :: Queryable.t()
+  @spec get_bot_query(Bot.id(), User.t(), boolean()) :: Queryable.t()
   def get_bot_query(id, requestor, include_pending \\ false) do
     id
     |> get_query(include_pending)
@@ -175,7 +87,7 @@ defmodule Wocky.Bot do
     )
   end
 
-  @spec get_owned_bot(id, User.t(), boolean) :: t | nil
+  @spec get_owned_bot(Bot.id(), User.t(), boolean()) :: Bot.t() | nil
   def get_owned_bot(id, %User{id: user_id}, include_pending \\ false) do
     Bot
     |> where(id: ^id, user_id: ^user_id)
@@ -183,7 +95,7 @@ defmodule Wocky.Bot do
     |> Repo.one()
   end
 
-  @spec preallocate(User.t()) :: t | no_return
+  @spec preallocate(User.t()) :: Bot.t() | no_return()
   def preallocate(user) do
     params = %{id: ID.new(), user_id: user.id, pending: true}
 
@@ -193,7 +105,7 @@ defmodule Wocky.Bot do
     |> Repo.insert!()
   end
 
-  @spec insert(map, User.t()) :: {:ok, t} | {:error, any}
+  @spec insert(map(), User.t()) :: {:ok, Bot.t()} | {:error, any()}
   def insert(params, requestor) do
     with {:ok, t} <- do_update(%Bot{}, params, &Repo.insert/1) do
       update_counter("bot.created", 1)
@@ -202,13 +114,13 @@ defmodule Wocky.Bot do
     end
   end
 
-  @spec update(t, map) :: {:ok, t} | {:error, any}
+  @spec update(Bot.t(), map()) :: {:ok, Bot.t()} | {:error, any()}
   def update(bot, params) do
     do_update(bot, params, &Repo.update/1)
   end
 
   defp do_update(struct, params, op) do
-    struct |> changeset(params) |> op.()
+    struct |> Bot.changeset(params) |> op.()
   end
 
   @spec bump_update_time(Bot.t()) :: :ok
@@ -220,34 +132,22 @@ defmodule Wocky.Bot do
     :ok
   end
 
-  @spec delete(t) :: :ok
+  @spec delete(Bot.t()) :: :ok
   def delete(bot) do
     Repo.delete(bot)
     update_counter("bot.deleted", 1)
     :ok
   end
 
-  @spec changeset(t, map) :: Changeset.t()
-  def changeset(struct, params) do
-    struct
-    |> cast(params, @change_fields)
-    |> validate_required(@required_fields)
-    |> validate_number(:radius, greater_than: 0)
-    |> validate_not_nil([:description])
-    |> put_change(:pending, false)
-    |> unique_constraint(:shortname)
-    |> foreign_key_constraint(:user_id)
-  end
-
   # ----------------------------------------------------------------------
   # Bot relationships
 
-  @spec subscription(t, User.t()) :: Subscription.state()
+  @spec subscription(Bot.t(), User.t()) :: Subscription.state()
   def subscription(bot, user) do
     Subscription.state(user, bot)
   end
 
-  @spec subscribe(t, User.t()) :: :ok | {:error, :permission_denied}
+  @spec subscribe(Bot.t(), User.t()) :: :ok | {:error, :permission_denied}
   def subscribe(bot, user) do
     if Roster.self_or_friend?(user.id, bot.user_id) do
       Location.add_subscription(user, bot)
@@ -257,21 +157,21 @@ defmodule Wocky.Bot do
     end
   end
 
-  @spec unsubscribe(t, User.t()) :: :ok | {:error, any}
+  @spec unsubscribe(Bot.t(), User.t()) :: :ok | {:error, any}
   def unsubscribe(bot, user) do
     Location.exit_bot(user, bot, "unsubscribe")
     Location.remove_subscription(user, bot)
     Subscription.delete(user, bot)
   end
 
-  @spec visit(t, User.t(), boolean) :: :ok
+  @spec visit(Bot.t(), User.t(), boolean()) :: :ok
   def visit(bot, user, notify) do
     Subscription.visit(user, bot)
     if notify, do: send_visit_notifications(user, bot, :enter)
     :ok
   end
 
-  @spec depart(t, User.t(), boolean) :: :ok
+  @spec depart(Bot.t(), User.t(), boolean()) :: :ok
   def depart(bot, user, notify) do
     Subscription.depart(user, bot)
     if notify, do: send_visit_notifications(user, bot, :exit)
@@ -293,8 +193,8 @@ defmodule Wocky.Bot do
   defp do_send_visit_notification(subscriber, event),
     do: Notifier.notify(%GeofenceEvent{event | to: subscriber})
 
-  @spec by_relationship_query(User.t(), relationship(), User.t() | nil) ::
-          Ecto.Queryable.t()
+  @spec by_relationship_query(User.t(), Bot.relationship(), User.t() | nil) ::
+          Queryable.t()
   def by_relationship_query(user, rel, user) do
     by_relationship_query(user, rel)
   end
@@ -346,7 +246,7 @@ defmodule Wocky.Bot do
     |> order_by([..., s], desc: s.visited_at)
   end
 
-  @spec active_bots_query(User.t()) :: Ecto.Queryable.t()
+  @spec active_bots_query(User.t()) :: Queryable.t()
   def active_bots_query(user) do
     user
     |> by_relationship_query(:subscribed)
@@ -360,7 +260,7 @@ defmodule Wocky.Bot do
     |> order_by([..., a], desc: a.visited_at)
   end
 
-  @spec subscribers_query(t) :: [User.t()]
+  @spec subscribers_query(Bot.t()) :: [User.t()]
   def subscribers_query(bot) do
     Ecto.assoc(bot, :subscribers)
   end
@@ -407,12 +307,12 @@ defmodule Wocky.Bot do
   # ----------------------------------------------------------------------
   # Location
 
-  @spec lat(Bot.t()) :: float
+  @spec lat(Bot.t()) :: float()
   def lat(%Bot{location: %Geo.Point{coordinates: {_, lat}}})
       when not is_nil(lat),
       do: lat
 
-  @spec lon(Bot.t()) :: float
+  @spec lon(Bot.t()) :: float()
   def lon(%Bot{location: %Geo.Point{coordinates: {lon, _}}})
       when not is_nil(lon),
       do: lon
@@ -421,11 +321,11 @@ defmodule Wocky.Bot do
   def location(bot), do: %{lat: lat(bot), lon: lon(bot)}
 
   @doc "Returns the bot's distance from the specified location in meters."
-  @spec distance_from(Bot.t(), Point.t()) :: float
+  @spec distance_from(Bot.t(), Point.t()) :: float()
   def distance_from(bot, loc), do: Geocalc.distance_between(location(bot), loc)
 
   @doc "Returns true if the location is within the bot's radius."
-  @spec contains?(Bot.t(), Point.t()) :: boolean
+  @spec contains?(Bot.t(), Point.t()) :: boolean()
   def contains?(bot, loc), do: Geocalc.within?(bot.radius, location(bot), loc)
 
   def filter_by_location(query, point_a, point_b) do

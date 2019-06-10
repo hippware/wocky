@@ -5,7 +5,7 @@ defmodule Wocky.Events.GeofenceEvent do
   """
 
   alias Wocky.Account.User
-  alias Wocky.Bot
+  alias Wocky.Bots.Bot
 
   defstruct [
     :to,

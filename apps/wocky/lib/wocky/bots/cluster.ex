@@ -1,4 +1,4 @@
-defmodule Wocky.Bot.Cluster do
+defmodule Wocky.Bots.Cluster do
   @moduledoc """
   Struct representing a group of bots around an area
   """
@@ -8,7 +8,7 @@ defmodule Wocky.Bot.Cluster do
     :location
   ]
 
-  @type t :: %Wocky.Bot.Cluster{
+  @type t :: %Wocky.Bots.Cluster{
           count: integer,
           location: Geo.Point.t()
         }

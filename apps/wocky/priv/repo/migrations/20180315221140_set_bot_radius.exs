@@ -1,7 +1,7 @@
 defmodule Wocky.Repo.Migrations.SetBotRadius do
   use Wocky.Repo.Migration
 
-  alias Wocky.Bot
+  alias Wocky.Bots.Bot
   alias Wocky.Repo
 
   def up do

@@ -7,9 +7,9 @@ defmodule Wocky.Callbacks.Block do
 
   alias Wocky.Account
   alias Wocky.Block
-  alias Wocky.Bot
-  alias Wocky.Bot.Invitation
-  alias Wocky.Bot.Item
+  alias Wocky.Bots
+  alias Wocky.Bots.Invitation
+  alias Wocky.Bots.Item
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo.Hydrator
 
@@ -39,7 +39,7 @@ defmodule Wocky.Callbacks.Block do
     |> Account.get_owned_bots()
     |> Enum.each(fn bot ->
       Item.delete(bot, b)
-      Bot.unsubscribe(bot, b)
+      Bots.unsubscribe(bot, b)
     end)
   end
 end

@@ -6,7 +6,7 @@ defmodule Wocky.Location do
   alias Ecto.Changeset
   alias Ecto.Queryable
   alias Wocky.Account.User
-  alias Wocky.Bot
+  alias Wocky.Bots.Bot
   alias Wocky.Location.GeoFence
   alias Wocky.Location.Handler
   alias Wocky.Location.Share

@@ -3,9 +3,9 @@ defmodule Wocky.Callbacks.BotInvitation do
   DB Callback handler for bot invitations
   """
 
-  use DawdleDB.Handler, type: Wocky.Bot.Invitation
+  use DawdleDB.Handler, type: Wocky.Bots.Invitation
 
-  alias Wocky.Bot.Invitation
+  alias Wocky.Bots.Invitation
   alias Wocky.Events.BotInvitation
   alias Wocky.Events.BotInvitationResponse
   alias Wocky.Notifier

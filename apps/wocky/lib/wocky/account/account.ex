@@ -8,9 +8,9 @@ defmodule Wocky.Account do
   alias Wocky.Account.InviteCode
   alias Wocky.Account.User
   alias Wocky.Block
-  alias Wocky.Bot
-  alias Wocky.Bot.Invitation
-  alias Wocky.Bot.Subscription
+  alias Wocky.Bots.Bot
+  alias Wocky.Bots.Invitation
+  alias Wocky.Bots.Subscription
   alias Wocky.Events.NewUser
   alias Wocky.Notifier
   alias Wocky.Repo

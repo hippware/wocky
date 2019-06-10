@@ -5,7 +5,7 @@ defmodule Wocky.Callbacks.BotInvitationTest do
 
   alias Faker.Code
   alias Pigeon.APNS.Notification
-  alias Wocky.Bot.Invitation
+  alias Wocky.Bots.Invitation
   alias Wocky.Callbacks.BotInvitation, as: Callback
   alias Wocky.Notifier.InBand.Notification, as: IBNotification
   alias Wocky.Notifier.Push

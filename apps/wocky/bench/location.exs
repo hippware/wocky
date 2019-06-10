@@ -1,5 +1,5 @@
 alias Faker.Util
-alias Wocky.Bot
+alias Wocky.Bots
 alias Wocky.Location
 alias Wocky.Repo.Factory
 

@@ -8,7 +8,7 @@ defmodule Wocky.Notifier.InBand.Notification do
 
   alias Ecto.Queryable
   alias Wocky.Account.User
-  alias Wocky.Bot
+  alias Wocky.Bots.Bot
   alias Wocky.Repo
 
   defenum GeofenceEventType, [:enter, :exit]
@@ -33,8 +33,8 @@ defmodule Wocky.Notifier.InBand.Notification do
     belongs_to :user, User
     belongs_to :other_user, User
     belongs_to :bot, Bot
-    belongs_to :bot_item, Bot.Item
-    belongs_to :bot_invitation, Bot.Invitation, type: :integer
+    belongs_to :bot_item, Wocky.Bots.Item
+    belongs_to :bot_invitation, Wocky.Bots.Invitation, type: :integer
 
     timestamps()
   end

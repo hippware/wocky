@@ -3,7 +3,7 @@ defmodule Wocky.Callbacks.BotItem do
   Callbacks for DB bot item changes
   """
 
-  use DawdleDB.Handler, type: Wocky.Bot.Item
+  use DawdleDB.Handler, type: Wocky.Bots.Item
 
   alias Wocky.Events.BotItem
   alias Wocky.Notifier

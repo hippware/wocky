@@ -1,4 +1,4 @@
-defmodule Wocky.Bot.Subscription do
+defmodule Wocky.Bots.Subscription do
   @moduledoc "Represents a subscription relationship between a User and a Bot"
 
   use Elixometer
@@ -8,7 +8,7 @@ defmodule Wocky.Bot.Subscription do
 
   alias Ecto.Changeset
   alias Wocky.Account.User
-  alias Wocky.Bot
+  alias Wocky.Bots.Bot
   alias Wocky.Repo
 
   @foreign_key_type :binary_id

@@ -15,10 +15,10 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Account.User
-  alias Wocky.Bot
-  alias Wocky.Bot.Invitation, as: BotInvitation
-  alias Wocky.Bot.Item
-  alias Wocky.Bot.Subscription
+  alias Wocky.Bots.Bot
+  alias Wocky.Bots.Invitation, as: BotInvitation
+  alias Wocky.Bots.Item
+  alias Wocky.Bots.Subscription
   alias Wocky.GeoUtils
   alias Wocky.Location.BotEvent
   alias Wocky.Location.Share

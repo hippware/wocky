@@ -1,8 +1,8 @@
 defmodule Wocky.Callbacks.BotSubscriptionTest do
   use Wocky.WatcherCase
 
-  alias Wocky.Bot
-  alias Wocky.Bot.Subscription
+  alias Wocky.Bots
+  alias Wocky.Bots.Subscription
   alias Wocky.Callbacks.BotSubscription, as: Callback
   alias Wocky.Location.Handler
   alias Wocky.Repo.Factory
@@ -23,8 +23,8 @@ defmodule Wocky.Callbacks.BotSubscriptionTest do
     # Make sure the handler is instantiated
     pid = Handler.get_handler(user)
 
-    Bot.subscribe(bot, user)
-    Bot.delete(bot)
+    Bots.subscribe(bot, user)
+    Bots.delete(bot)
 
     refute_eventually(Subscription.get(user, bot))
 

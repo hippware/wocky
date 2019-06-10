@@ -5,7 +5,8 @@ defmodule Wocky.Location.GeoFence do
 
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.Bot
+  alias Wocky.Bots
+  alias Wocky.Bots.Bot
   alias Wocky.Location.BotEvent
   alias Wocky.Location.UserLocation
   alias Wocky.Repo
@@ -26,7 +27,7 @@ defmodule Wocky.Location.GeoFence do
 
     if inside?(last_event) do
       _ = BotEvent.insert_system(user, bot, :exit, reason)
-      Bot.depart(bot, user, config.enable_notifications)
+      Bots.depart(bot, user, config.enable_notifications)
     end
 
     :ok
@@ -113,7 +114,7 @@ defmodule Wocky.Location.GeoFence do
     event = Map.get(events, bot.id)
 
     bot
-    |> Bot.contains?(Map.from_struct(loc))
+    |> Bots.contains?(Map.from_struct(loc))
     |> handle_intersection(user, bot, event, loc, config, acc)
   end
 
@@ -226,7 +227,7 @@ defmodule Wocky.Location.GeoFence do
   end
 
   defp too_far?(bot, loc, config) do
-    Bot.distance_from(bot, Map.from_struct(loc)) > config.max_exit_distance
+    Bots.distance_from(bot, Map.from_struct(loc)) > config.max_exit_distance
   end
 
   defp debounce_complete?(_, _, %{debounce: false}, _), do: true
@@ -263,16 +264,16 @@ defmodule Wocky.Location.GeoFence do
   end
 
   defp maybe_visit_bot(:enter, user, bot, notify),
-    do: Bot.visit(bot, user, notify)
+    do: Bots.visit(bot, user, notify)
 
   defp maybe_visit_bot(:reactivate, user, bot, notify),
-    do: Bot.visit(bot, user, notify)
+    do: Bots.visit(bot, user, notify)
 
   defp maybe_visit_bot(:exit, user, bot, notify),
-    do: Bot.depart(bot, user, notify)
+    do: Bots.depart(bot, user, notify)
 
   defp maybe_visit_bot(:timeout, user, bot, notify),
-    do: Bot.depart(bot, user, notify)
+    do: Bots.depart(bot, user, notify)
 
   defp maybe_visit_bot(_, _, _, _), do: :ok
 

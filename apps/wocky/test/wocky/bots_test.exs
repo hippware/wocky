@@ -1,8 +1,9 @@
-defmodule Wocky.Bot.BotTest do
+defmodule Wocky.BotsTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Account.User
-  alias Wocky.Bot
+  alias Wocky.Bots
+  alias Wocky.Bots.Bot
   alias Wocky.GeoUtils
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -16,51 +17,6 @@ defmodule Wocky.Bot.BotTest do
     {:ok, user: user, bot: bot}
   end
 
-  describe "validations" do
-    setup do
-      {:ok,
-       attrs: %{
-         id: ID.new(),
-         user_id: ID.new(),
-         title: "test bot",
-         location: GeoUtils.point(5.0, 5.0)
-       }}
-    end
-
-    test "should pass with valid attributes", %{attrs: attrs} do
-      assert Bot.changeset(%Bot{}, attrs).valid?
-    end
-
-    test "should set pending to 'false'", %{attrs: attrs} do
-      changeset = Bot.changeset(%Bot{}, attrs)
-      refute changeset.changes.pending
-    end
-
-    test "should fail with missing fields", %{attrs: attrs} do
-      changeset = Bot.changeset(%Bot{}, %{})
-
-      refute changeset.valid?
-
-      errors = Map.keys(errors_on(changeset))
-
-      for {attr, _} <- attrs do
-        assert Enum.member?(errors, attr)
-      end
-    end
-
-    test "should fail with negative radius", %{attrs: attrs} do
-      changeset = Bot.changeset(%Bot{}, Map.put(attrs, :radius, -1))
-      refute changeset.valid?
-      assert errors_on(changeset).radius
-    end
-
-    test "should fail with a nil description", %{attrs: attrs} do
-      changeset = Bot.changeset(%Bot{}, Map.put(attrs, :description, nil))
-      refute changeset.valid?
-      assert errors_on(changeset).description
-    end
-  end
-
   describe "get/2" do
     setup ctx do
       pending = Factory.insert(:bot, user: ctx.user, pending: true)
@@ -69,19 +25,19 @@ defmodule Wocky.Bot.BotTest do
     end
 
     test "should return the requested bot", %{bot: bot} do
-      assert bot.id |> Bot.get() |> Repo.preload(:user) == bot
+      assert bot.id |> Bots.get() |> Repo.preload(:user) == bot
     end
 
     test "should return nil for non-existant bots" do
-      refute Bot.get(ID.new())
+      refute Bots.get(ID.new())
     end
 
     test "should not return pending bots by default", %{pending: pending} do
-      refute Bot.get(pending.id)
+      refute Bots.get(pending.id)
     end
 
     test "should return pending bots if specified", %{pending: pending} do
-      assert pending.id |> Bot.get(true) |> Repo.preload(:user) == pending
+      assert pending.id |> Bots.get(true) |> Repo.preload(:user) == pending
     end
   end
 
@@ -94,32 +50,32 @@ defmodule Wocky.Bot.BotTest do
 
     test "should return the requested bot for the owner",
          %{bot: bot, user: user} do
-      assert bot.id |> Bot.get_bot(user) |> Repo.preload(:user) == bot
+      assert bot.id |> Bots.get_bot(user) |> Repo.preload(:user) == bot
     end
 
     test "should return no bot for a stranger",
          %{bot: bot} do
       stranger = Factory.insert(:user)
-      assert bot.id |> Bot.get_bot(stranger) == nil
+      assert bot.id |> Bots.get_bot(stranger) == nil
     end
 
     test "should return the bot for a subscriber", ctx do
       subscriber = Factory.insert(:user)
       Roster.befriend(subscriber, ctx.user)
-      Bot.subscribe(ctx.bot, subscriber)
+      Bots.subscribe(ctx.bot, subscriber)
 
-      assert ctx.bot.id |> Bot.get_bot(subscriber) |> Repo.preload(:user) ==
+      assert ctx.bot.id |> Bots.get_bot(subscriber) |> Repo.preload(:user) ==
                ctx.bot
     end
 
     test "should not return pending bot by default",
          %{pending: pending, user: user} do
-      assert pending.id |> Bot.get_bot(user) == nil
+      assert pending.id |> Bots.get_bot(user) == nil
     end
 
     test "should return pending bot if explicity requested",
          %{pending: pending, user: user} do
-      assert pending.id |> Bot.get_bot(user, true) |> Repo.preload(:user) ==
+      assert pending.id |> Bots.get_bot(user, true) |> Repo.preload(:user) ==
                pending
     end
   end
@@ -133,29 +89,29 @@ defmodule Wocky.Bot.BotTest do
 
     test "should return the requested bot for the owner",
          %{bot: bot, user: user} do
-      assert bot.id |> Bot.get_owned_bot(user) |> Repo.preload(:user) == bot
+      assert bot.id |> Bots.get_owned_bot(user) |> Repo.preload(:user) == bot
     end
 
     test "should return no bot for a stranger",
          %{bot: bot} do
       stranger = Factory.insert(:user)
-      assert bot.id |> Bot.get_owned_bot(stranger) == nil
+      assert bot.id |> Bots.get_owned_bot(stranger) == nil
     end
 
     test "should return no bot for a subscriber", %{bot: bot} do
       subscriber = Factory.insert(:user)
-      Bot.subscribe(bot, subscriber)
-      assert bot.id |> Bot.get_owned_bot(subscriber) == nil
+      Bots.subscribe(bot, subscriber)
+      assert bot.id |> Bots.get_owned_bot(subscriber) == nil
     end
 
     test "should not return pending bot by default",
          %{pending: pending, user: user} do
-      assert pending.id |> Bot.get_owned_bot(user) == nil
+      assert pending.id |> Bots.get_owned_bot(user) == nil
     end
 
     test "should return pending bot if explicity requested",
          %{pending: pending, user: user} do
-      assert pending.id |> Bot.get_owned_bot(user, true) |> Repo.preload(:user) ==
+      assert pending.id |> Bots.get_owned_bot(user, true) |> Repo.preload(:user) ==
                pending
     end
   end
@@ -165,11 +121,11 @@ defmodule Wocky.Bot.BotTest do
       [stranger, subscriber, visitor, invitee] = Factory.insert_list(4, :user)
       Enum.map([subscriber, visitor, invitee], &Roster.befriend(&1, ctx.user))
 
-      Bot.subscribe(ctx.bot, ctx.user)
-      Bot.subscribe(ctx.bot, subscriber)
-      Bot.subscribe(ctx.bot, visitor)
-      Bot.visit(ctx.bot, visitor, false)
-      Bot.Invitation.put(invitee, ctx.bot, ctx.user)
+      Bots.subscribe(ctx.bot, ctx.user)
+      Bots.subscribe(ctx.bot, subscriber)
+      Bots.subscribe(ctx.bot, visitor)
+      Bots.visit(ctx.bot, visitor, false)
+      Bots.Invitation.put(invitee, ctx.bot, ctx.user)
 
       {:ok,
        stranger: stranger,
@@ -180,123 +136,123 @@ defmodule Wocky.Bot.BotTest do
 
     test "visible", ctx do
       assert ctx.user
-             |> Bot.by_relationship_query(:visible, ctx.user)
+             |> Bots.by_relationship_query(:visible, ctx.user)
              |> has_bot(ctx.bot)
 
       assert ctx.stranger
-             |> Bot.by_relationship_query(:visible, ctx.user)
+             |> Bots.by_relationship_query(:visible, ctx.user)
              |> is_empty()
 
       assert ctx.subscriber
-             |> Bot.by_relationship_query(:visible, ctx.user)
+             |> Bots.by_relationship_query(:visible, ctx.user)
              |> has_bot(ctx.bot)
 
       assert ctx.visitor
-             |> Bot.by_relationship_query(:visible, ctx.user)
+             |> Bots.by_relationship_query(:visible, ctx.user)
              |> has_bot(ctx.bot)
 
       assert ctx.invitee
-             |> Bot.by_relationship_query(:visible, ctx.user)
+             |> Bots.by_relationship_query(:visible, ctx.user)
              |> has_bot(ctx.bot)
     end
 
     test "subscribed", ctx do
       assert ctx.user
-             |> Bot.by_relationship_query(:subscribed, ctx.user)
+             |> Bots.by_relationship_query(:subscribed, ctx.user)
              |> has_bot(ctx.bot)
 
       assert ctx.stranger
-             |> Bot.by_relationship_query(:subscribed, ctx.user)
+             |> Bots.by_relationship_query(:subscribed, ctx.user)
              |> is_empty()
 
       assert ctx.subscriber
-             |> Bot.by_relationship_query(:subscribed, ctx.user)
+             |> Bots.by_relationship_query(:subscribed, ctx.user)
              |> has_bot(ctx.bot)
 
       assert ctx.visitor
-             |> Bot.by_relationship_query(:subscribed, ctx.user)
+             |> Bots.by_relationship_query(:subscribed, ctx.user)
              |> has_bot(ctx.bot)
 
       assert ctx.invitee
-             |> Bot.by_relationship_query(:subscribed, ctx.user)
+             |> Bots.by_relationship_query(:subscribed, ctx.user)
              |> is_empty()
     end
 
     test "owned", ctx do
       assert ctx.user
-             |> Bot.by_relationship_query(:owned, ctx.user)
+             |> Bots.by_relationship_query(:owned, ctx.user)
              |> has_bot(ctx.bot)
 
       assert ctx.stranger
-             |> Bot.by_relationship_query(:owned, ctx.user)
+             |> Bots.by_relationship_query(:owned, ctx.user)
              |> is_empty()
 
       assert ctx.subscriber
-             |> Bot.by_relationship_query(:owned, ctx.user)
+             |> Bots.by_relationship_query(:owned, ctx.user)
              |> is_empty()
 
       assert ctx.visitor
-             |> Bot.by_relationship_query(:owned, ctx.user)
+             |> Bots.by_relationship_query(:owned, ctx.user)
              |> is_empty()
 
       assert ctx.invitee
-             |> Bot.by_relationship_query(:owned, ctx.user)
+             |> Bots.by_relationship_query(:owned, ctx.user)
              |> is_empty()
     end
 
     test "visiting", ctx do
       assert ctx.user
-             |> Bot.by_relationship_query(:visiting, ctx.user)
+             |> Bots.by_relationship_query(:visiting, ctx.user)
              |> is_empty()
 
       assert ctx.stranger
-             |> Bot.by_relationship_query(:visiting, ctx.user)
+             |> Bots.by_relationship_query(:visiting, ctx.user)
              |> is_empty()
 
       assert ctx.subscriber
-             |> Bot.by_relationship_query(:visiting, ctx.user)
+             |> Bots.by_relationship_query(:visiting, ctx.user)
              |> is_empty()
 
       assert ctx.visitor
-             |> Bot.by_relationship_query(:visiting, ctx.user)
+             |> Bots.by_relationship_query(:visiting, ctx.user)
              |> has_bot(ctx.bot)
 
       assert ctx.invitee
-             |> Bot.by_relationship_query(:visiting, ctx.user)
+             |> Bots.by_relationship_query(:visiting, ctx.user)
              |> is_empty()
     end
 
     test "subscribed_not_owned", ctx do
       assert ctx.user
-             |> Bot.by_relationship_query(
+             |> Bots.by_relationship_query(
                :subscribed_not_owned,
                ctx.user
              )
              |> is_empty()
 
       assert ctx.stranger
-             |> Bot.by_relationship_query(
+             |> Bots.by_relationship_query(
                :subscribed_not_owned,
                ctx.user
              )
              |> is_empty()
 
       assert ctx.subscriber
-             |> Bot.by_relationship_query(
+             |> Bots.by_relationship_query(
                :subscribed_not_owned,
                ctx.user
              )
              |> has_bot(ctx.bot)
 
       assert ctx.visitor
-             |> Bot.by_relationship_query(
+             |> Bots.by_relationship_query(
                :subscribed_not_owned,
                ctx.user
              )
              |> has_bot(ctx.bot)
 
       assert ctx.invitee
-             |> Bot.by_relationship_query(
+             |> Bots.by_relationship_query(
                :subscribed_not_owned,
                ctx.user
              )
@@ -305,56 +261,56 @@ defmodule Wocky.Bot.BotTest do
 
     test "invited", ctx do
       assert ctx.user
-             |> Bot.by_relationship_query(:invited, ctx.user)
+             |> Bots.by_relationship_query(:invited, ctx.user)
              |> is_empty()
 
       assert ctx.stranger
-             |> Bot.by_relationship_query(:invited, ctx.user)
+             |> Bots.by_relationship_query(:invited, ctx.user)
              |> is_empty()
 
       assert ctx.subscriber
-             |> Bot.by_relationship_query(:invited, ctx.user)
+             |> Bots.by_relationship_query(:invited, ctx.user)
              |> is_empty()
 
       assert ctx.visitor
-             |> Bot.by_relationship_query(:invited, ctx.user)
+             |> Bots.by_relationship_query(:invited, ctx.user)
              |> is_empty()
 
       assert ctx.invitee
-             |> Bot.by_relationship_query(:invited, ctx.user)
+             |> Bots.by_relationship_query(:invited, ctx.user)
              |> has_bot(ctx.bot)
     end
 
     test "people to whom the bot is not visible will not get it as a result",
          ctx do
       assert ctx.user
-             |> Bot.by_relationship_query(:visible, ctx.stranger)
+             |> Bots.by_relationship_query(:visible, ctx.stranger)
              |> is_empty()
 
       assert ctx.user
-             |> Bot.by_relationship_query(:owned, ctx.stranger)
+             |> Bots.by_relationship_query(:owned, ctx.stranger)
              |> is_empty()
 
       assert ctx.subscriber
-             |> Bot.by_relationship_query(
+             |> Bots.by_relationship_query(
                :subscribed,
                ctx.stranger
              )
              |> is_empty()
 
       assert ctx.visitor
-             |> Bot.by_relationship_query(:visiting, ctx.stranger)
+             |> Bots.by_relationship_query(:visiting, ctx.stranger)
              |> is_empty()
 
       assert ctx.subscriber
-             |> Bot.by_relationship_query(
+             |> Bots.by_relationship_query(
                :subscribed_not_owned,
                ctx.stranger
              )
              |> is_empty()
 
       assert ctx.invitee
-             |> Bot.by_relationship_query(:invited, ctx.stranger)
+             |> Bots.by_relationship_query(:invited, ctx.stranger)
              |> is_empty()
     end
   end
@@ -363,29 +319,29 @@ defmodule Wocky.Bot.BotTest do
     setup ctx do
       subscriber = Factory.insert(:user)
       Roster.befriend(subscriber, ctx.user)
-      Bot.subscribe(ctx.bot, subscriber)
+      Bots.subscribe(ctx.bot, subscriber)
 
       {:ok, subscriber: subscriber}
     end
 
     test "should not return unvisted bot", ctx do
-      assert ctx.subscriber |> Bot.active_bots_query() |> is_empty()
+      assert ctx.subscriber |> Bots.active_bots_query() |> is_empty()
     end
 
     test "should return visted bot", ctx do
-      Bot.visit(ctx.bot, ctx.subscriber, false)
-      assert ctx.subscriber |> Bot.active_bots_query() |> has_bot(ctx.bot)
+      Bots.visit(ctx.bot, ctx.subscriber, false)
+      assert ctx.subscriber |> Bots.active_bots_query() |> has_bot(ctx.bot)
     end
 
     test "should return bots with most recently visited first", ctx do
       bot2 = Factory.insert(:bot, user: ctx.user)
-      Bot.subscribe(bot2, ctx.subscriber)
-      Bot.visit(ctx.bot, ctx.subscriber, false)
-      Bot.visit(bot2, ctx.subscriber, false)
+      Bots.subscribe(bot2, ctx.subscriber)
+      Bots.visit(ctx.bot, ctx.subscriber, false)
+      Bots.visit(bot2, ctx.subscriber, false)
 
       bot_ids =
         ctx.subscriber
-        |> Bot.active_bots_query()
+        |> Bots.active_bots_query()
         |> Repo.all()
         |> Enum.map(& &1.id)
 
@@ -395,7 +351,7 @@ defmodule Wocky.Bot.BotTest do
 
   describe "preallocate/2" do
     setup ctx do
-      preallocated = Bot.preallocate(ctx.user)
+      preallocated = Bots.preallocate(ctx.user)
 
       {:ok, preallocated: preallocated}
     end
@@ -412,7 +368,7 @@ defmodule Wocky.Bot.BotTest do
 
     test "raises on error" do
       assert_raise Ecto.InvalidChangesetError, fn ->
-        Bot.preallocate(Factory.build(:user))
+        Bots.preallocate(Factory.build(:user))
       end
     end
   end
@@ -421,26 +377,26 @@ defmodule Wocky.Bot.BotTest do
     test "returns an ok result on success", %{user: user} do
       bot_params = Factory.params_for(:bot, user: user)
 
-      assert {:ok, _} = Bot.insert(bot_params, user)
+      assert {:ok, _} = Bots.insert(bot_params, user)
     end
 
     test "returns an error result on failure", %{user: user} do
-      assert {:error, _} = Bot.insert(%{}, user)
+      assert {:error, _} = Bots.insert(%{}, user)
     end
   end
 
   describe "update/2" do
     test "returns an ok result on success", %{bot: bot} do
-      assert {:ok, _} = Bot.update(bot, %{title: "updated bot"})
+      assert {:ok, _} = Bots.update(bot, %{title: "updated bot"})
     end
 
     test "returns an error result on failure" do
-      assert {:error, _} = Bot.update(%Bot{}, %{})
+      assert {:error, _} = Bots.update(%Bot{}, %{})
     end
 
     test "should normalize latitude and longitude", %{bot: bot} do
       {:ok, %Bot{id: id}} =
-        Bot.update(bot, %{location: GeoUtils.point(-95.0, -185)})
+        Bots.update(bot, %{location: GeoUtils.point(-95.0, -185)})
 
       assert Repo.get(Bot, id).location == GeoUtils.point(-85, 175)
     end
@@ -448,7 +404,7 @@ defmodule Wocky.Bot.BotTest do
 
   describe "delete/1" do
     setup ctx do
-      result = Bot.delete(ctx.bot)
+      result = Bots.delete(ctx.bot)
 
       {:ok, result: result}
     end
@@ -466,13 +422,13 @@ defmodule Wocky.Bot.BotTest do
     setup ctx do
       sub = Factory.insert(:user)
       Roster.befriend(sub, ctx.user)
-      Bot.subscribe(ctx.bot, sub)
+      Bots.subscribe(ctx.bot, sub)
 
       {:ok, sub: sub}
     end
 
     test "subscribers_query/1", %{bot: bot, user: user} do
-      subscribers = bot |> Bot.subscribers_query() |> Repo.all()
+      subscribers = bot |> Bots.subscribers_query() |> Repo.all()
 
       assert length(subscribers) == 1
       assert %User{} = hd(subscribers)
@@ -480,27 +436,27 @@ defmodule Wocky.Bot.BotTest do
     end
 
     test "subscriber_query/2", %{bot: bot, sub: sub} do
-      subscriber = bot |> Bot.subscriber_query(sub.id) |> Repo.one()
+      subscriber = bot |> Bots.subscriber_query(sub.id) |> Repo.one()
 
       assert subscriber.id == sub.id
     end
 
     test "subscriber_query/2 with non-subscriber", %{bot: bot} do
-      assert bot |> Bot.subscriber_query(ID.new()) |> Repo.one() == nil
+      assert bot |> Bots.subscriber_query(ID.new()) |> Repo.one() == nil
     end
   end
 
   describe "visitors_query/1" do
     test "should get no visitors when none are present", ctx do
-      assert ctx.bot |> Bot.visitors_query() |> Repo.one() == nil
+      assert ctx.bot |> Bots.visitors_query() |> Repo.one() == nil
     end
 
     test "should get visitors when they are present", ctx do
       visitor = Factory.insert(:user)
       Roster.befriend(visitor, ctx.user)
-      Bot.subscribe(ctx.bot, visitor)
-      Bot.visit(ctx.bot, visitor, false)
-      assert ctx.bot |> Bot.visitors_query() |> Repo.one() == visitor
+      Bots.subscribe(ctx.bot, visitor)
+      Bots.visit(ctx.bot, visitor, false)
+      assert ctx.bot |> Bots.visitors_query() |> Repo.one() == visitor
     end
   end
 
@@ -550,23 +506,23 @@ defmodule Wocky.Bot.BotTest do
 
   describe "filter_by_location/3" do
     test "finds included bot", ctx do
-      a = GeoUtils.point(Bot.lat(ctx.bot) - 0.1, Bot.lon(ctx.bot) - 0.1)
-      b = GeoUtils.point(Bot.lat(ctx.bot) + 0.1, Bot.lon(ctx.bot) + 0.1)
+      a = GeoUtils.point(Bots.lat(ctx.bot) - 0.1, Bots.lon(ctx.bot) - 0.1)
+      b = GeoUtils.point(Bots.lat(ctx.bot) + 0.1, Bots.lon(ctx.bot) + 0.1)
 
       assert Bot
              |> where(id: ^ctx.bot.id)
-             |> Bot.filter_by_location(a, b)
+             |> Bots.filter_by_location(a, b)
              |> Repo.one()
              |> Repo.preload(:user) == ctx.bot
     end
 
     test "does not find excluded bot", ctx do
-      a = GeoUtils.point(Bot.lat(ctx.bot) - 0.1, Bot.lon(ctx.bot) - 0.1)
-      b = GeoUtils.point(Bot.lat(ctx.bot) - 0.2, Bot.lon(ctx.bot) + 0.1)
+      a = GeoUtils.point(Bots.lat(ctx.bot) - 0.1, Bots.lon(ctx.bot) - 0.1)
+      b = GeoUtils.point(Bots.lat(ctx.bot) - 0.2, Bots.lon(ctx.bot) + 0.1)
 
       assert Bot
              |> where(id: ^ctx.bot.id)
-             |> Bot.filter_by_location(a, b)
+             |> Bots.filter_by_location(a, b)
              |> Repo.one() == nil
     end
   end
@@ -581,9 +537,9 @@ defmodule Wocky.Bot.BotTest do
 
       stranger = Factory.insert(:user)
 
-      :ok = Bot.subscribe(bot, friend1)
-      :ok = Bot.subscribe(bot, friend2)
-      {:error, :permission_denied} = Bot.subscribe(bot, stranger)
+      :ok = Bots.subscribe(bot, friend1)
+      :ok = Bots.subscribe(bot, friend2)
+      {:error, :permission_denied} = Bots.subscribe(bot, stranger)
 
       {:ok, friend1: friend1, friend2: friend2, stranger: stranger}
     end
@@ -594,7 +550,7 @@ defmodule Wocky.Bot.BotTest do
       stranger: stranger,
       bot: bot
     } do
-      recipients = Bot.notification_recipients(bot, friend1)
+      recipients = Bots.notification_recipients(bot, friend1)
       assert Enum.member?(recipients, friend1)
       assert Enum.member?(recipients, friend2)
       refute Enum.member?(recipients, stranger)
@@ -606,7 +562,7 @@ defmodule Wocky.Bot.BotTest do
   defp run_is_visible_query(bot, user) do
     Bot
     |> where(id: ^bot.id)
-    |> Bot.is_visible_query(user)
+    |> Bots.is_visible_query(user)
     |> preload(:user)
     |> Repo.one()
   end

@@ -2,7 +2,7 @@ defmodule WockyAPI.GraphQL.PublicTest do
   use WockyAPI.GraphQLCase, async: true
 
   alias Wocky.Account
-  alias Wocky.Bot.Subscription
+  alias Wocky.Bots.Subscription
   alias Wocky.Repo.Factory
 
   setup do

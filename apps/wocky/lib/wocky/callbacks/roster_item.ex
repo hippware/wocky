@@ -5,8 +5,8 @@ defmodule Wocky.Callbacks.RosterItem do
 
   use DawdleDB.Handler, type: Wocky.Roster.Item
 
-  alias Wocky.Bot.Invitation
-  alias Wocky.Bot.Subscription
+  alias Wocky.Bots.Invitation
+  alias Wocky.Bots.Subscription
   alias Wocky.Location
   alias Wocky.Repo.Hydrator
   alias Wocky.Roster.Item

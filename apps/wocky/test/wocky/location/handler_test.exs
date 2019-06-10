@@ -1,7 +1,7 @@
 defmodule Wocky.Location.HandlerTest do
   use Wocky.DataCase, async: false
 
-  alias Wocky.Bot
+  alias Wocky.Bots
   alias Wocky.Location.Handler
   alias Wocky.Repo.Factory
   alias Wocky.Roster
@@ -16,7 +16,7 @@ defmodule Wocky.Location.HandlerTest do
 
     pid = Handler.get_handler(user)
 
-    Bot.subscribe(bot, user)
+    Bots.subscribe(bot, user)
 
     {:ok, pid: pid, user: user, bot: bot}
   end
@@ -27,7 +27,7 @@ defmodule Wocky.Location.HandlerTest do
     end
 
     test "should remove a bot subscription", %{user: user, bot: bot, pid: pid} do
-      Bot.unsubscribe(bot, user)
+      Bots.unsubscribe(bot, user)
 
       assert %{subscriptions: []} = :sys.get_state(pid)
     end

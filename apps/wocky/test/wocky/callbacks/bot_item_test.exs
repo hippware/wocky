@@ -6,8 +6,8 @@ defmodule Wocky.Callbacks.BotItemTest do
   alias Faker.Code
   alias Faker.Lorem
   alias Pigeon.APNS.Notification
-  alias Wocky.Bot
-  alias Wocky.Bot.Item
+  alias Wocky.Bots
+  alias Wocky.Bots.Item
   alias Wocky.Callbacks.BotItem, as: Callback
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
@@ -23,8 +23,8 @@ defmodule Wocky.Callbacks.BotItemTest do
     bot = Factory.insert(:bot, user: user)
     Roster.befriend(user, author)
     Roster.befriend(user, sub)
-    Bot.subscribe(bot, author)
-    Bot.subscribe(bot, sub)
+    Bots.subscribe(bot, author)
+    Bots.subscribe(bot, sub)
 
     Sandbox.clear_notifications(global: true)
 
