@@ -43,7 +43,7 @@ defmodule WockyAPI.Controllers.LocationController do
   defp has_required_keys(_), do: false
 
   defp make_location(%{"coords" => c} = l, device) do
-    %UserLocation{
+    %{
       lat: c["latitude"],
       lon: c["longitude"],
       accuracy: c["accuracy"],
@@ -57,6 +57,7 @@ defmodule WockyAPI.Controllers.LocationController do
       is_moving: l["is_moving"],
       device: device
     }
+    |> UserLocation.new()
     |> maybe_add_activity(l["activity"])
     |> maybe_add_battery(l["battery"])
   end

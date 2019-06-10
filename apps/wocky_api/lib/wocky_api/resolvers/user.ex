@@ -5,6 +5,8 @@ defmodule WockyAPI.Resolvers.User do
   alias Absinthe.Subscription
   alias Wocky.Account
   alias Wocky.Account.User
+  alias Wocky.Audit
+  alias Wocky.Audit.LocationLog
   alias Wocky.Location
   alias Wocky.Location.UserLocation
   alias Wocky.Notifier.Push
@@ -112,21 +114,21 @@ defmodule WockyAPI.Resolvers.User do
 
   def get_locations(user, args, %{context: %{current_user: user}}) do
     user
-    |> Location.get_user_locations_query(args[:device])
+    |> Audit.get_locations_query(args[:device])
     |> Utils.connection_from_query(user, args, order_by: [desc: :captured_at])
   end
 
   def get_location_events(user, args, %{context: %{current_user: user}}) do
     user
-    |> Location.get_user_location_events_query(args[:device])
+    |> Audit.get_location_events_query(args[:device])
     |> Utils.connection_from_query(user, args, order_by: [desc: :occurred_at])
   end
 
-  def get_location_events(%UserLocation{} = loc, args, %{
+  def get_location_events(%LocationLog{} = loc, args, %{
         context: %{current_user: user}
       }) do
     user
-    |> Location.get_user_location_events_query(loc)
+    |> Audit.get_location_events_query(loc)
     |> Utils.connection_from_query(user, args, order_by: [desc: :occurred_at])
   end
 
@@ -167,7 +169,7 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def update_location(_root, %{input: i}, %{context: %{current_user: user}}) do
-    location = struct(UserLocation, Map.drop(i, [:is_fetch]))
+    location = UserLocation.new(i)
 
     with {:ok, _} <- Location.set_user_location(user, location) do
       {:ok, true}
@@ -195,11 +197,7 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   defp maybe_update_location(%{location: l}, user) when not is_nil(l),
-    do:
-      Location.set_user_location(
-        user,
-        struct(UserLocation, Map.drop(l, [:is_fetch]))
-      )
+    do: Location.set_user_location(user, UserLocation.new(l))
 
   defp maybe_update_location(_args, _user), do: {:ok, :skip}
 

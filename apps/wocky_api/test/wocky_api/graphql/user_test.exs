@@ -421,7 +421,7 @@ defmodule WockyAPI.GraphQL.UserTest do
   describe "location queries" do
     setup %{user: user} do
       bot = Factory.insert(:bot, user: user)
-      loc = Factory.insert(:location, user_id: user.id)
+      loc = Factory.insert(:location_log, user_id: user.id)
       BotEvent.insert(user, loc.device, bot, loc, :enter)
 
       {:ok, loc: loc, bot: bot}
@@ -614,7 +614,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                lon: ^lon,
                device: ^device,
                accuracy: ^accuracy
-             } = Repo.get_by(UserLocation, user_id: user.id)
+             } = Location.get_current_user_location(user)
     end
 
     test "invalid location", %{user: user} do
@@ -635,7 +635,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Repo.get_by(UserLocation, user_id: user.id) == nil
+      refute Location.get_current_user_location(user)
     end
 
     @query """

@@ -68,9 +68,6 @@ config :wocky,
   firebase_domain_url_prefix: "https://tinyrobot.page.link",
   firebase_link_prefix: "https://tinyrobot.com/?inviteCode=",
 
-  # Diagnostics
-  log_traffic: {:system, :boolean, "WOCKY_LOG_TRAFFIC", true},
-
   # Goth config
   goth_config: %{
     type: "service_account",
@@ -116,10 +113,15 @@ config :wocky, :redlock,
     ]
   ]
 
+config :wocky, Wocky.Audit,
+  log_traffic: {:system, :boolean, "WOCKY_AUDIT_LOG_TRAFFIC", true},
+  log_locations: {:system, :boolean, "WOCKY_AUDIT_LOG_LOCATIONS", true},
+  log_push: {:system, :boolean, "WOCKY_AUDIT_LOG_PUSH", true},
+  log_push_payload: {:system, :boolean, "WOCKY_AUDIT_LOG_PUSH_PAYLOAD", true}
+
 # location processing
 config :wocky, Wocky.Location.GeoFence,
   enable_notifications: true,
-  async_processing: false,
   debounce: true,
   enter_debounce_seconds:
     {:system, :integer, "WOCKY_ENTER_DEBOUNCE_SECONDS", 30},
@@ -130,16 +132,14 @@ config :wocky, Wocky.Location.GeoFence,
   max_exit_distance:
     {:system, :integer, "WOCKY_GEOFENCE_MAX_EXIT_DISTANCE", 200},
   stale_update_seconds:
-    {:system, :integer, "WOCKY_GEOFENCE_STALE_UPDATE_SECONDS", 300},
-  save_locations: {:system, :boolean, "WOCKY_GEOFENCE_SAVE_LOCATIONS", true}
+    {:system, :integer, "WOCKY_GEOFENCE_STALE_UPDATE_SECONDS", 300}
 
 # Push notifications
 config :wocky, Wocky.Notifier.Push,
   enabled: {:system, :boolean, "WOCKY_PUSH_ENABLED", false},
   sandbox: {:system, :boolean, "WOCKY_PUSH_SANDBOX", false},
   uri_prefix: {:system, :string, "WOCKY_PUSH_URI_PREFIX", "tinyrobot"},
-  timeout: {:system, :integer, "WOCKY_PUSH_TIMEOUT", 60_000},
-  log_payload: {:system, :boolean, "WOCKY_PUSH_LOG_PAYLOAD", true}
+  timeout: {:system, :integer, "WOCKY_PUSH_TIMEOUT", 60_000}
 
 config :wocky, Wocky.Notifier.Push.Backend.APNS,
   topic: {:system, :string, "WOCKY_PUSH_APNS_TOPIC", "app"}

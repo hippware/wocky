@@ -8,7 +8,6 @@ defmodule Wocky.Notifier.Push.PushTest do
   alias Pigeon.APNS.Notification
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
-  alias Wocky.Notifier.Push.Log
   alias Wocky.Notifier.Push.Token
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -150,19 +149,6 @@ defmodule Wocky.Notifier.Push.PushTest do
 
       assert String.length(sent_message) > String.length(rcvd_message)
       assert String.slice(rcvd_message, -3..-1) == "..."
-    end
-
-    test "should create a db log entry", ctx do
-      :ok = Push.notify_all(ctx.user, @message)
-      assert_receive %Notification{}, 5000
-
-      log =
-        Repo.one(
-          from Log,
-            where: [user_id: ^ctx.user.id, device: ^ctx.device]
-        )
-
-      refute is_nil(log)
     end
 
     test "token is invalidated when the service returns an error", ctx do

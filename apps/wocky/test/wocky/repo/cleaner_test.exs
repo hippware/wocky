@@ -6,18 +6,18 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.Account
   alias Wocky.Account.InviteCode
   alias Wocky.Account.User
+  alias Wocky.Audit.LocationLog
+  alias Wocky.Audit.PushLog
+  alias Wocky.Audit.TrafficLog
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Location.BotEvent
-  alias Wocky.Location.UserLocation
-  alias Wocky.Notifier.Push.Log, as: PushLog
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Repo
   alias Wocky.Repo.Cleaner
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
-  alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
 
@@ -552,10 +552,10 @@ defmodule Wocky.Repo.CleanerTest do
   describe "clean stale locations" do
     setup do
       stale_ts = Timestamp.shift(months: -7)
-      stale_location = Factory.insert(:location, created_at: stale_ts)
+      stale_location = Factory.insert(:location_log, created_at: stale_ts)
 
       recent_ts = Timestamp.shift(months: -5)
-      recent_location = Factory.insert(:location, created_at: recent_ts)
+      recent_location = Factory.insert(:location_log, created_at: recent_ts)
 
       assert {:ok, result} = Cleaner.clean_stale_locations()
 
@@ -567,11 +567,11 @@ defmodule Wocky.Repo.CleanerTest do
     end
 
     test "should remove the stale location", ctx do
-      refute Repo.get(UserLocation, ctx.stale.id)
+      refute Repo.get(LocationLog, ctx.stale.id)
     end
 
     test "should not remove the recent location", ctx do
-      assert Repo.get(UserLocation, ctx.recent.id)
+      assert Repo.get(LocationLog, ctx.recent.id)
     end
   end
 
@@ -592,7 +592,7 @@ defmodule Wocky.Repo.CleanerTest do
       assert result == 1
     end
 
-    test "should remove the stale location", ctx do
+    test "should remove the stale bot event", ctx do
       refute Repo.get(BotEvent, ctx.stale.id)
     end
 

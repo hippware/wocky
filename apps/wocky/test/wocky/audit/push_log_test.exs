@@ -1,12 +1,12 @@
-defmodule Wocky.Notifier.Push.LogTest do
+defmodule Wocky.Audit.PushLogTest do
   use Wocky.DataCase, async: true
 
-  alias Wocky.Notifier.Push.Log
+  alias Wocky.Audit.PushLog
 
   @attrs [:user_id, :device, :token, :response]
 
   test "required attributes" do
-    changeset = Log.insert_changeset(%{})
+    changeset = PushLog.insert_changeset(%{})
     refute changeset.valid?
 
     for a <- @attrs do

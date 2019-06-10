@@ -168,9 +168,7 @@ defmodule WockyAPI.Resolvers.Bot do
       Enum.member?(Account.get_bot_relationships(user, bot), :subscribed)
     end)
 
-    location = struct(UserLocation, l)
-
-    Location.set_user_location_for_bot(user, location, bot)
+    Location.set_user_location_for_bot(user, UserLocation.new(l), bot)
   end
 
   defp maybe_update_location(_, _, _), do: {:ok, :skip}

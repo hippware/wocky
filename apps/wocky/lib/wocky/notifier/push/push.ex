@@ -3,20 +3,19 @@ defmodule Wocky.Notifier.Push do
   The Push context. Single interface for push notifications.
   """
   use Elixometer
+  use Wocky.Config
 
   import Ecto.Query, warn: false
 
   alias Pigeon.APNS.Notification, as: APNSNotification
   alias Pigeon.FCM.Notification, as: FCMNotification
-  alias Wocky.Account
   alias Wocky.Account.User
+  alias Wocky.Audit
   alias Wocky.Notifier.Push.Backend.APNS
   alias Wocky.Notifier.Push.Backend.FCM
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Notifier.Push.Event
-  alias Wocky.Notifier.Push.Log
   alias Wocky.Notifier.Push.Token
-  alias Wocky.Notifier.Push.Utils
   alias Wocky.Repo
 
   require Logger
@@ -120,13 +119,15 @@ defmodule Wocky.Notifier.Push do
 
   @spec notify_all(User.t(), any) :: :ok
   def notify_all(user, event) do
-    if Utils.enabled?() do
+    config = config()
+
+    if config.enabled do
       for token <- Token.all_for_user(user) do
         platform = token.platform
 
         backend =
           cond do
-            Utils.sandbox?() -> Sandbox
+            config.sandbox -> Sandbox
             platform == :apns -> APNS
             platform == :fcm -> FCM
           end
@@ -181,7 +182,9 @@ defmodule Wocky.Notifier.Push do
     send(timeout_pid, :push_complete)
     resp = params.backend.get_response(notification)
     update_metric(resp)
-    db_log(log_msg(notification, params))
+
+    _ = Audit.log_push(log_msg(notification, params), params.user)
+
     maybe_handle_error(%{params | resp: resp})
   end
 
@@ -218,20 +221,8 @@ defmodule Wocky.Notifier.Push do
   defp update_metric(resp),
     do: update_counter("push_notfications.#{to_string(resp)}", 1)
 
-  defp db_log(msg) do
-    msg
-    |> Log.insert_changeset()
-    |> Repo.insert!()
-  end
-
-  defp maybe_extract_payload(payload, user) do
-    if Account.hippware?(user) || Utils.log_payload?() do
-      inspect(payload)
-    end
-  end
-
   defp push_timeout(%__MODULE__{retries: retries} = params) do
-    timeout = Utils.timeout() * 2
+    timeout = get_config(:timeout) * 2
 
     receive do
       :push_complete -> :ok
@@ -243,7 +234,6 @@ defmodule Wocky.Notifier.Push do
   end
 
   defp log_msg(n, %__MODULE__{
-         user: user,
          device: device,
          token: token,
          backend: backend
@@ -251,11 +241,10 @@ defmodule Wocky.Notifier.Push do
     resp = backend.get_response(n)
 
     %{
-      user_id: user.id,
       device: device,
       token: token,
       message_id: backend.get_id(n),
-      payload: maybe_extract_payload(backend.get_payload(n), user),
+      payload: backend.get_payload(n),
       response: to_string(resp),
       details: backend.error_msg(resp)
     }
@@ -269,8 +258,7 @@ defmodule Wocky.Notifier.Push do
        }) do
     _ = Logger.error("PN Error: timeout expired")
 
-    %{
-      user_id: user.id,
+    fields = %{
       device: device,
       token: token,
       message_id: nil,
@@ -278,8 +266,8 @@ defmodule Wocky.Notifier.Push do
       response: "timeout",
       details: "Timeout waiting for response from Pigeon"
     }
-    |> Log.insert_changeset()
-    |> Repo.insert!()
+
+    _ = Audit.log_push(fields, user)
   end
 
   defp log_failure(%__MODULE__{
@@ -288,8 +276,7 @@ defmodule Wocky.Notifier.Push do
          device: device,
          event: event
        }) do
-    %{
-      user_id: user.id,
+    fields = %{
       device: device,
       token: token,
       message_id: nil,
@@ -298,7 +285,7 @@ defmodule Wocky.Notifier.Push do
       details:
         "Maximum number of #{@max_retries} retries sending push notification."
     }
-    |> Log.insert_changeset()
-    |> Repo.insert!()
+
+    _ = Audit.log_push(fields, user)
   end
 end

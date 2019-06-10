@@ -3,7 +3,6 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
   alias Faker.Address
   alias Wocky.Location
-  alias Wocky.Repo
   alias Wocky.Repo.Factory
 
   @location %{
@@ -42,10 +41,6 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
     Map.put(@location, :coords, coords)
   end
 
-  defp get_user_locations(user) do
-    user |> Location.get_user_locations_query("testing") |> Repo.all()
-  end
-
   setup %{conn: conn} do
     user = Factory.insert(:user, device: "testing")
     token = Factory.get_test_location_token(user)
@@ -64,11 +59,8 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       assert response(conn, 201)
     end
 
-    test "creates a db record when data is valid", %{conn: conn, user: user} do
+    test "caches location when data is valid", %{conn: conn, user: user} do
       post conn, location_path(conn, :create, user.id), packet()
-
-      locs = get_user_locations(user)
-      assert length(locs) == 1
 
       cur_loc = Location.get_current_user_location(user)
       assert cur_loc
@@ -105,9 +97,6 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       conn = post conn, location_path(conn, :create, user.id), packet(locations)
       assert response(conn, 201)
 
-      locs = get_user_locations(user)
-      assert length(locs) == 3
-
       cur_loc = Location.get_current_user_location(user)
       assert cur_loc
       assert cur_loc.lat == current.coords.latitude
@@ -127,7 +116,6 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
-      assert [] == get_user_locations(user)
       refute Location.get_current_user_location(user)
     end
 
@@ -144,7 +132,6 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
-      assert [] == get_user_locations(user)
       refute Location.get_current_user_location(user)
     end
 
@@ -161,7 +148,6 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
-      assert [] == get_user_locations(user)
       refute Location.get_current_user_location(user)
     end
 

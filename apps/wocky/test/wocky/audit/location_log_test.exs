@@ -1,7 +1,7 @@
-defmodule Wocky.Location.UserLocationTest do
+defmodule Wocky.Audit.LocationLogTest do
   use Wocky.DataCase
 
-  alias Wocky.Location.UserLocation
+  alias Wocky.Audit.LocationLog
   alias Wocky.Repo.Factory
 
   setup do
@@ -12,7 +12,7 @@ defmodule Wocky.Location.UserLocationTest do
 
   describe "changeset/2 validations" do
     setup %{user: user} do
-      {:ok, loc: %UserLocation{user: user}}
+      {:ok, loc: %LocationLog{user: user}}
     end
 
     test "should pass with valid attributes", %{loc: loc} do
@@ -24,12 +24,12 @@ defmodule Wocky.Location.UserLocationTest do
         captured_at: DateTime.utc_now()
       }
 
-      changeset = UserLocation.changeset(loc, data)
+      changeset = LocationLog.changeset(loc, data)
       assert changeset.valid?
     end
 
     test "should fail if fields are missing", %{loc: loc} do
-      changeset = UserLocation.changeset(loc, %{})
+      changeset = LocationLog.changeset(loc, %{})
       refute changeset.valid?
 
       for a <- [:device, :lat, :lon, :accuracy, :captured_at] do
@@ -39,7 +39,7 @@ defmodule Wocky.Location.UserLocationTest do
 
     test "should fail if the accuracy is negative", %{loc: loc} do
       data = %{device: "testing", lat: 1.0, lon: 1.0, accuracy: -1}
-      changeset = UserLocation.changeset(loc, data)
+      changeset = LocationLog.changeset(loc, data)
       assert errors_on(changeset)[:accuracy]
     end
   end

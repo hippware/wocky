@@ -5,15 +5,15 @@ defmodule Wocky.Repo.Cleaner do
 
   alias Wocky.Account.InviteCode
   alias Wocky.Account.User
+  alias Wocky.Audit.LocationLog
+  alias Wocky.Audit.PushLog
+  alias Wocky.Audit.TrafficLog
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Location.BotEvent
-  alias Wocky.Location.UserLocation
-  alias Wocky.Notifier.Push.Log, as: PushLog
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Repo
   alias Wocky.Repo.Timestamp
-  alias Wocky.TrafficLog
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
 
@@ -283,7 +283,7 @@ defmodule Wocky.Repo.Cleaner do
     expire_date = Timestamp.shift(months: -6)
 
     {deleted, nil} =
-      UserLocation
+      LocationLog
       |> where([u], u.created_at <= ^expire_date)
       |> Repo.delete_all(timeout: :infinity)
 

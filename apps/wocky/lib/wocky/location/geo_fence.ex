@@ -1,6 +1,8 @@
 defmodule Wocky.Location.GeoFence do
   @moduledoc false
 
+  use Wocky.Config
+
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Bot
@@ -14,12 +16,12 @@ defmodule Wocky.Location.GeoFence do
 
   @spec save_locations? :: boolean
   def save_locations? do
-    get_config().save_locations
+    config().save_locations
   end
 
   @spec exit_bot(User.t(), Bot.t(), String.t()) :: :ok
   def exit_bot(user, bot, reason) do
-    config = get_config()
+    config = config()
     last_event = BotEvent.get_last_event_type(user.id, bot.id)
 
     if inside?(last_event) do
@@ -46,7 +48,7 @@ defmodule Wocky.Location.GeoFence do
   @spec check_for_bot_event(Bot.t(), UserLocation.t(), User.t(), events()) ::
           {:ok, UserLocation.t(), events()}
   def check_for_bot_event(bot, loc, user, events) do
-    config = get_config(debounce: false)
+    config = config(debounce: false)
 
     new_events =
       if should_process?(loc, config) do
@@ -74,7 +76,7 @@ defmodule Wocky.Location.GeoFence do
   @spec check_for_bot_events(UserLocation.t(), User.t(), [Bot.t()], events()) ::
           {:ok, UserLocation.t(), events()}
   def check_for_bot_events(%UserLocation{} = loc, user, subs, events) do
-    config = get_config()
+    config = config()
 
     new_events =
       if should_process?(loc, config) do
@@ -99,27 +101,9 @@ defmodule Wocky.Location.GeoFence do
   end
 
   @doc false
-  @spec get_config(Keyword.t()) :: map()
-  def get_config(opts \\ []) do
-    Confex.fetch_env!(:wocky, __MODULE__)
-    |> Keyword.merge(opts)
-    |> Enum.into(%{})
-  end
-
-  @doc false
   @spec should_process?(UserLocation.t(), map()) :: boolean()
   def should_process?(%UserLocation{accuracy: accuracy}, config),
     do: accuracy <= config.max_accuracy_threshold
-
-  # defp maybe_do_async(fun, %{async_processing: true}) do
-  #   {:ok, _} = Task.start_link(fun)
-  #   :ok
-  # end
-
-  # defp maybe_do_async(fun, _) do
-  #   fun.()
-  #   :ok
-  # end
 
   defp check_for_events(bots, user, loc, events, config) do
     Enum.reduce(bots, [], &check_for_event(&1, user, loc, events, config, &2))

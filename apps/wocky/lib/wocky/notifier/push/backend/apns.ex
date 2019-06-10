@@ -5,6 +5,8 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
 
   @behaviour Wocky.Notifier.Push.Backend
 
+  use Wocky.Config
+
   alias Pigeon.APNS
   alias Pigeon.APNS.Error
   alias Pigeon.APNS.Notification
@@ -48,7 +50,7 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
 
   def error_msg(resp), do: Error.msg(resp)
 
-  defp topic, do: Confex.get_env(:wocky, __MODULE__)[:topic]
+  defp topic, do: get_config(:topic)
 
   defp add_opts(notification, opts) do
     opts[:background]

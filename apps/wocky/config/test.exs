@@ -5,6 +5,24 @@ config :wocky,
   enable_recurring_tasks: false,
   bot_report_channel: "report-testing"
 
+# Configure your database
+config :wocky, Wocky.Repo,
+  database: "wocky_test",
+  pool: Ecto.Adapters.SQL.Sandbox,
+  # ms (30 minutes)
+  ownership_timeout: 1_800_000
+
+config :wocky, Wocky.Audit,
+  log_traffic: false,
+  log_locations: false,
+  log_push: false
+
+config :wocky, Wocky.Notifier.Push,
+  enabled: true,
+  sandbox: true
+
+config :wocky, Wocky.Notifier.Push.Backend.Sandbox, reflect: true
+
 config :guardian_firebase,
   load_keys_on_startup: false,
   local_keys: [
@@ -63,20 +81,6 @@ config :guardian_firebase,
       """
     }
   ]
-
-config :wocky, Wocky.Notifier.Push,
-  enabled: true,
-  sandbox: true,
-  logging: false
-
-config :wocky, Wocky.Notifier.Push.Backend.Sandbox, reflect: true
-
-# Configure your database
-config :wocky, Wocky.Repo,
-  database: "wocky_test",
-  pool: Ecto.Adapters.SQL.Sandbox,
-  # ms (30 minutes)
-  ownership_timeout: 1_800_000
 
 # Make token tests go faster:
 config :bcrypt_elixir, bcrypt_log_rounds: 4

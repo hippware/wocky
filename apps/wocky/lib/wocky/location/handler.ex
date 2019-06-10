@@ -7,14 +7,13 @@ defmodule Wocky.Location.Handler do
 
   alias Wocky.Account
   alias Wocky.Account.User
+  alias Wocky.Audit
   alias Wocky.Bot
-  alias Wocky.GeoUtils
   alias Wocky.Location.BotEvent
   alias Wocky.Location.GeoFence
   alias Wocky.Location.Supervisor
   alias Wocky.Location.UserLocation
   alias Wocky.Location.UserLocation.Current
-  alias Wocky.Repo
 
   require Logger
 
@@ -197,58 +196,19 @@ defmodule Wocky.Location.Handler do
   end
 
   defp prepare_location(user, location, current?) do
-    with nloc <- normalize_location(location),
-         {:ok, loc} <- maybe_save_location(user, nloc),
-         :ok <- maybe_save_current_location(current?, user, nloc) do
-      {:ok, loc}
+    with :ok <- UserLocation.validate(location),
+         {:ok, loclog} <- Audit.log_location(location, user) do
+      nloc = %UserLocation{location | id: loclog && loclog.id}
+      maybe_save_current_location(current?, user, nloc)
+
+      {:ok, nloc}
     end
-  end
-
-  defp normalize_location(location) do
-    {nlat, nlon} = GeoUtils.normalize_lat_lon(location.lat, location.lon)
-
-    %UserLocation{
-      location
-      | lat: nlat,
-        lon: nlon,
-        captured_at: normalize_captured_at(location),
-        created_at: DateTime.utc_now()
-    }
-  end
-
-  defp normalize_captured_at(%UserLocation{captured_at: time})
-       when is_binary(time) do
-    {:ok, dt, 0} = DateTime.from_iso8601(time)
-    dt
-  end
-
-  defp normalize_captured_at(%UserLocation{captured_at: %DateTime{} = dt}),
-    do: dt
-
-  defp normalize_captured_at(_), do: DateTime.utc_now()
-
-  defp maybe_save_location(user, location) do
-    if should_save_location?(user) do
-      save_location(user, location)
-    else
-      {:ok, location}
-    end
-  end
-
-  defp should_save_location?(user) do
-    GeoFence.save_locations?() || Account.hippware?(user)
-  end
-
-  def save_location(user, location) do
-    %UserLocation{user_id: user.id}
-    |> UserLocation.changeset(Map.from_struct(location))
-    |> Repo.insert()
   end
 
   defp maybe_save_current_location(false, _user, _location), do: :ok
 
   defp maybe_save_current_location(true, user, location) do
-    if GeoFence.should_process?(location, GeoFence.get_config()) do
+    if GeoFence.should_process?(location, GeoFence.config()) do
       Current.set(user, location)
     else
       :ok
