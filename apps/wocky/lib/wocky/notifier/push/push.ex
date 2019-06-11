@@ -271,6 +271,8 @@ defmodule Wocky.Notifier.Push do
     }
 
     _ = Audit.log_push(fields, user)
+
+    :ok
   end
 
   defp log_failure(%__MODULE__{
@@ -290,5 +292,7 @@ defmodule Wocky.Notifier.Push do
     }
 
     _ = Audit.log_push(fields, user)
+
+    :ok
   end
 end
