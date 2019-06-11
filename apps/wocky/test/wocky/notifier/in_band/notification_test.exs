@@ -1,5 +1,5 @@
 defmodule Wocky.Notifier.InBand.NotificationTest do
-  use Wocky.DataCase
+  use Wocky.DataCase, async: true
 
   alias Wocky.Block
   alias Wocky.Bot.Invitation

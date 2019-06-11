@@ -1,5 +1,5 @@
 defmodule Wocky.Location.UserLocation.CurrentTest do
-  use Wocky.DataCase
+  use Wocky.DataCase, async: true
 
   alias Wocky.Location
   alias Wocky.Location.UserLocation.Current

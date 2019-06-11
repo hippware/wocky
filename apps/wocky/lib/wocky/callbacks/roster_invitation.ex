@@ -1,4 +1,4 @@
-defmodule Wocky.Callbacks.UserInvitation do
+defmodule Wocky.Callbacks.RosterInvitation do
   @moduledoc """
   DB Callback handler for user invitations
   """

@@ -1,16 +1,12 @@
-defmodule Wocky.Roster.RosterTest do
-  use Wocky.WatcherCase
+defmodule Wocky.RosterTest do
+  use Wocky.DataCase, async: true
 
   alias Faker.Name
   alias Wocky.Block
-  alias Wocky.Bot
-  alias Wocky.Bot.Invitation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Roster
   alias Wocky.Roster.Item, as: RosterItem
-
-  import Eventually
 
   setup do
     # A user with 5 friends
@@ -307,34 +303,6 @@ defmodule Wocky.Roster.RosterTest do
     test "should have no effect on self", ctx do
       assert Roster.invite(ctx.user, ctx.user) == :self
       assert Roster.relationship(ctx.user, ctx.user) == :self
-    end
-  end
-
-  describe "unfriend cleanup" do
-    setup ctx do
-      user_bot = Factory.insert(:bot, user: ctx.user)
-      contact_bot = Factory.insert(:bot, user: ctx.contact)
-      {:ok, user_bot: user_bot, contact_bot: contact_bot}
-    end
-
-    test "bots should no longer be subscribed", ctx do
-      Bot.subscribe(ctx.user_bot, ctx.contact)
-      Bot.subscribe(ctx.contact_bot, ctx.user)
-
-      Roster.unfriend(ctx.user, ctx.contact)
-
-      refute_eventually(Bot.subscription(ctx.user_bot, ctx.contact))
-      refute_eventually(Bot.subscription(ctx.contact_bot, ctx.user))
-    end
-
-    test "bot invitations should be removed", ctx do
-      Invitation.put(ctx.contact, ctx.user_bot, ctx.user)
-      Invitation.put(ctx.user, ctx.contact_bot, ctx.contact)
-
-      Roster.unfriend(ctx.user, ctx.contact)
-
-      refute_eventually(Invitation.get(ctx.user_bot, ctx.contact))
-      refute_eventually(Invitation.get(ctx.contact_bot, ctx.user))
     end
   end
 end

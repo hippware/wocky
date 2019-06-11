@@ -1,11 +1,13 @@
 defmodule Wocky.Audit.LocationLogTest do
-  use Wocky.DataCase
+  use ExUnit.Case, async: true
+
+  import Wocky.DataCase
 
   alias Wocky.Audit.LocationLog
   alias Wocky.Repo.Factory
 
   setup do
-    user = Factory.insert(:user)
+    user = Factory.build(:user)
 
     {:ok, user: user}
   end

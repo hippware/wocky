@@ -1,4 +1,4 @@
-defmodule Wocky.Bot.ItemNotificationTest do
+defmodule Wocky.Callbacks.BotItemTest do
   use Wocky.WatcherCase
 
   import Wocky.PushHelper
@@ -8,10 +8,15 @@ defmodule Wocky.Bot.ItemNotificationTest do
   alias Pigeon.APNS.Notification
   alias Wocky.Bot
   alias Wocky.Bot.Item
+  alias Wocky.Callbacks.BotItem, as: Callback
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
   alias Wocky.Roster
+
+  setup_all do
+    Callback.register()
+  end
 
   setup do
     [user, author, sub] = Factory.insert_list(3, :user, device: "testing")

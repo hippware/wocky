@@ -4,3 +4,5 @@ use Mix.Config
 config :logger,
   compile_time_purge_level: :error,
   level: :error
+
+config :honeybadger, environment_name: :test

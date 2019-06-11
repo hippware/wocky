@@ -1,5 +1,5 @@
 defmodule Wocky.PhoneNumberTest do
-  use Wocky.DataCase, async: true
+  use ExUnit.Case, async: true
 
   alias Faker.Phone.EnUs
   alias Wocky.PhoneNumber
@@ -7,6 +7,7 @@ defmodule Wocky.PhoneNumberTest do
   setup do
     orig_lm = Confex.get_env(:wocky, :country_code_lookup_method)
     orig_cc = Confex.get_env(:wocky, :country_code_hardwire_value)
+
     Application.put_env(:wocky, :country_code_lookup_method, :faker)
     Application.put_env(:wocky, :country_code_hardwire_value, "XX")
 

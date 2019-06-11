@@ -1,12 +1,19 @@
-defmodule Wocky.Roster.RosterNotificationTest do
+defmodule Wocky.Callbacks.RosterInvitationTest do
   use Wocky.WatcherCase
 
   alias Faker.Code
-  alias Pigeon.APNS.Notification
+  alias Pigeon.APNS.Notification, as: APNSNotification
+  alias Wocky.Callbacks.RosterInvitation, as: Callback
+  alias Wocky.Notifier.InBand.Notification
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
+  alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Roster
+
+  setup_all do
+    Callback.register()
+  end
 
   setup do
     [user1, user2] = Factory.insert_list(2, :user, device: "testing")
@@ -27,13 +34,15 @@ defmodule Wocky.Roster.RosterNotificationTest do
       msgs = Sandbox.wait_notifications(count: 1, timeout: 10_000, global: true)
       assert length(msgs) == 1
 
-      assert %Notification{
+      assert %APNSNotification{
                payload: %{
                  "aps" => %{"alert" => message}
                }
              } = hd(msgs)
 
       assert message == "@#{ctx.user2.handle} invited you to be their friend"
+
+      assert_eventually(Repo.get_by(Notification, user_id: ctx.user1.id) != nil)
     end
   end
 end

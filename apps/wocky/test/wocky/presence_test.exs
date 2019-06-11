@@ -26,6 +26,11 @@ defmodule Wocky.PresenceTest do
 
       Presence.set_status(ctx.user, :online)
       assert_eventually(Presence.get(ctx.user, ctx.requestor).status == :online)
+
+      # Set the user's presence to offline and wait for it to register.
+      # Doing this prevents a crash due to a db connection ownership error.
+      Presence.set_status(ctx.user, :offline)
+      assert_eventually(Presence.get(ctx.user, ctx.requestor).status == :offline)
     end
 
     test "presence deregistration on connection close", ctx do

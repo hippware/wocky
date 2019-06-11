@@ -1,5 +1,5 @@
 defmodule Wocky.Account.RegisterTest do
-  use Wocky.DataCase
+  use Wocky.DataCase, async: true
 
   alias Wocky.Account.Register
   alias Wocky.Account.User

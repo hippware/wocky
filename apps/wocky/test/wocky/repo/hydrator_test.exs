@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.HydratorTest do
-  use Wocky.DataCase
+  use Wocky.DataCase, async: true
 
   alias Wocky.Bot.Subscription
   alias Wocky.Repo.Factory

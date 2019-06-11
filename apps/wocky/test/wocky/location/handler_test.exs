@@ -1,9 +1,7 @@
 defmodule Wocky.Location.HandlerTest do
-  use Wocky.WatcherCase
+  use Wocky.DataCase, async: false
 
   alias Wocky.Bot
-  alias Wocky.Bot.Subscription
-  alias Wocky.GeoUtils
   alias Wocky.Location.Handler
   alias Wocky.Repo.Factory
   alias Wocky.Roster
@@ -32,29 +30,6 @@ defmodule Wocky.Location.HandlerTest do
       Bot.unsubscribe(bot, user)
 
       assert %{subscriptions: []} = :sys.get_state(pid)
-    end
-  end
-
-  describe "bot update callback" do
-    test "should update the bot subscription", %{bot: bot, pid: pid} do
-      Bot.update(bot, %{location: GeoUtils.point(1.0, 2.0)})
-
-      assert_eventually(
-        (
-          %{subscriptions: [bot]} = :sys.get_state(pid)
-          Bot.lat(bot) == 1.0 and Bot.lon(bot) == 2.0
-        )
-      )
-    end
-  end
-
-  describe "subscription delete callback" do
-    test "should remove the bot subscription", %{user: user, bot: bot, pid: pid} do
-      Bot.delete(bot)
-
-      refute_eventually(Subscription.get(user, bot))
-
-      assert_eventually([] == :sys.get_state(pid).subscriptions)
     end
   end
 end

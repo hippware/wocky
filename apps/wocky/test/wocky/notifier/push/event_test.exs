@@ -1,5 +1,5 @@
 defmodule Wocky.Notifier.Push.EventTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   alias Wocky.Notifier.Push.Event
 

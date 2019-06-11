@@ -1,5 +1,5 @@
 defmodule Wocky.Account.AuthTest do
-  use Wocky.DataCase
+  use Wocky.DataCase, async: true
 
   alias Wocky.Account
   alias Wocky.Account.JWT.Client, as: ClientJWT

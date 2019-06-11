@@ -256,7 +256,10 @@ defmodule Wocky.Notifier.Push do
          device: device,
          event: event
        }) do
-    _ = Logger.error("PN Error: timeout expired")
+    # TODO This log message is not informative. It is currently used only
+    # to test that timeouts are handled, and we should find a better way to
+    # do that.
+    # _ = Logger.error("PN Error: timeout expired")
 
     fields = %{
       device: device,

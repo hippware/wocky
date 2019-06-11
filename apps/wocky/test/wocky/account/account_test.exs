@@ -1,5 +1,5 @@
 defmodule Wocky.Account.AccountTest do
-  use Wocky.DataCase
+  use Wocky.DataCase, async: true
 
   alias Ecto.Adapters.SQL
   alias Faker.Internet

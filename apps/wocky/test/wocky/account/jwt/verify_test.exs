@@ -1,5 +1,5 @@
 defmodule Wocky.Account.JWT.VerifyTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Verify
