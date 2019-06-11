@@ -1,4 +1,4 @@
-defmodule Wocky.BotsTest do
+defmodule Wocky.Bots.BotsTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Account.User

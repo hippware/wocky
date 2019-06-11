@@ -1,15 +1,11 @@
 defmodule WockyAPI.Resolvers.Bot do
   @moduledoc "GraphQL resolver for bot objects"
 
-  import Ecto.Query
-
   alias Absinthe.Subscription
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Bots
   alias Wocky.Bots.Bot
-  alias Wocky.Bots.Cluster
-  alias Wocky.Bots.ClusterSearch
   alias Wocky.Bots.Invitation
   alias Wocky.Bots.Item
   alias Wocky.GeoUtils
@@ -41,19 +37,14 @@ defmodule WockyAPI.Resolvers.Bot do
   def get_local_bots(_root, args, %{context: %{current_user: requestor}}) do
     point_a = Utils.map_point(args[:point_a])
     point_b = Utils.map_point(args[:point_b])
+    limit = args[:limit] || @default_local_bots
 
-    with :ok <- check_area(point_a, point_b) do
-      limit = args[:limit] || @default_local_bots
+    case Bots.get_local_bots(requestor, point_a, point_b, limit) do
+      {:ok, bots} ->
+        {:ok, %{bots: bots, area_too_large: false}}
 
-      bots =
-        requestor
-        |> Bots.by_relationship_query(:subscribed, requestor)
-        |> Bots.filter_by_location(point_a, point_b)
-        |> limit(^limit)
-        |> order_by(desc: :created_at)
-        |> Repo.all()
-
-      {:ok, %{bots: bots, area_too_large: false}}
+      {:error, :area_too_large} ->
+        {:ok, %{bots: [], area_too_large: true}}
     end
   end
 
@@ -61,23 +52,18 @@ defmodule WockyAPI.Resolvers.Bot do
     point_a = Utils.map_point(args[:point_a])
     point_b = Utils.map_point(args[:point_b])
 
-    with :ok <- check_area(point_a, point_b) do
-      results =
-        ClusterSearch.search(
-          point_a,
-          point_b,
-          args[:lat_divs],
-          args[:lon_divs],
-          requestor
-        )
+    case Bots.get_local_bots_cluster(
+           requestor,
+           point_a,
+           point_b,
+           args[:lat_divs],
+           args[:lon_divs]
+         ) do
+      {:ok, bots, clusters} ->
+        {:ok, %{bots: bots, clusters: clusters, area_too_large: false}}
 
-      {bots, clusters} =
-        Enum.split_with(results, fn
-          %Bot{} -> true
-          %Cluster{} -> false
-        end)
-
-      {:ok, %{bots: bots, clusters: clusters, area_too_large: false}}
+      {:error, :area_too_large} ->
+        {:ok, %{bots: [], clusters: [], area_too_large: true}}
     end
   end
 
@@ -346,23 +332,11 @@ defmodule WockyAPI.Resolvers.Bot do
     end
   end
 
-  defp check_area(point_a, point_b) do
-    diagonal =
-      Geocalc.distance_between(point_a.coordinates, point_b.coordinates)
-
-    if diagonal > max_local_bots_search_radius() do
-      {:ok, %{bots: [], clusters: [], area_too_large: true}}
-    else
-      :ok
-    end
-  end
-
   def default_local_bots, do: @default_local_bots
 
   def max_local_bots, do: @max_local_bots
 
-  def max_local_bots_search_radius,
-    do: Confex.get_env(:wocky_api, :max_local_bots_search_radius)
+  defdelegate max_local_bots_search_radius, to: Bots
 
   defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
   defp not_owned_error, do: {:error, "Operation only permitted on owned bots"}

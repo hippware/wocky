@@ -12,6 +12,8 @@ defmodule Wocky.Bots do
   alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.Bots.Bot
+  alias Wocky.Bots.Cluster
+  alias Wocky.Bots.ClusterSearch
   alias Wocky.Bots.Invitation
   alias Wocky.Bots.Subscription
   alias Wocky.Events.GeofenceEvent
@@ -328,6 +330,40 @@ defmodule Wocky.Bots do
   @spec contains?(Bot.t(), Point.t()) :: boolean()
   def contains?(bot, loc), do: Geocalc.within?(bot.radius, location(bot), loc)
 
+  # ----------------------------------------------------------------------
+  # Searching by location
+
+  def max_local_bots_search_radius,
+    do: Confex.get_env(:wocky, :max_local_bots_search_radius)
+
+  def get_local_bots(user, point_a, point_b, limit) do
+    with :ok <- check_area(point_a, point_b) do
+      bots =
+        user
+        |> by_relationship_query(:subscribed, user)
+        |> filter_by_location(point_a, point_b)
+        |> limit(^limit)
+        |> order_by(desc: :created_at)
+        |> Repo.all()
+
+      {:ok, bots}
+    end
+  end
+
+  def get_local_bots_cluster(user, point_a, point_b, lat_divs, lon_divs) do
+    with :ok <- check_area(point_a, point_b) do
+      results = ClusterSearch.search(point_a, point_b, lat_divs, lon_divs, user)
+
+      {bots, clusters} =
+        Enum.split_with(results, fn
+          %Bot{} -> true
+          %Cluster{} -> false
+        end)
+
+      {:ok, bots, clusters}
+    end
+  end
+
   def filter_by_location(query, point_a, point_b) do
     query
     |> where(
@@ -339,5 +375,16 @@ defmodule Wocky.Bots do
         ^GeoUtils.get_lat(point_b)
       )
     )
+  end
+
+  defp check_area(point_a, point_b) do
+    diagonal =
+      Geocalc.distance_between(point_a.coordinates, point_b.coordinates)
+
+    if diagonal > max_local_bots_search_radius() do
+      {:error, :area_too_large}
+    else
+      :ok
+    end
   end
 end
