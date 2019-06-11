@@ -31,7 +31,3 @@ data:
   REPLACE_OS_VARS: "true"
   REDIS_HOST: wocky-cache.byxmud.ng.0001.usw2.cache.amazonaws.com
   REDIS_DB: "3"
-
-  # Turned off temporarilly for load testing purproses
-  WOCKY_AUDIT_LOG_TRAFFIC: "false"
-  WOCKY_AUDIT_LOG_LOCATIONS: "false"
