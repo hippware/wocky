@@ -16,7 +16,7 @@ defmodule Wocky.Location.UserLocation do
     field :heading, :float
     field :altitude, :float
     field :altitude_accuracy, :float
-    field :captured_at, :utc_datetime_usec
+    field :captured_at, :utc_datetime
     field :uuid, :string
     field :is_moving, :boolean
     field :odometer, :float

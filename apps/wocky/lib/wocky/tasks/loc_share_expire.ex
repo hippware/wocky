@@ -12,11 +12,14 @@ defmodule Wocky.Tasks.LocShareExpire do
     {cl_time, cl_count} =
       :timer.tc(fn -> Location.clean_current_locations(user_ids) end)
 
-    Logger.info(
-      "Deleted #{ls_count} expired shares in #{ls_time}μs and #{cl_count} stale locations in #{
-        cl_time
-      }μs"
-    )
+    if ls_count > 0 || cl_count > 0 do
+      Logger.info(
+        """
+        Deleted #{ls_count} expired shares in #{ls_time}μs and #{cl_count} \
+        stale locations in #{cl_time}μs
+        """
+      )
+    end
 
     :ok
   end
