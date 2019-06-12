@@ -10,6 +10,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Consolidate auditing (PR #2575)
 * Update: geo (PR #2582)
 * Test cleanup (PR #2580)
+* Dialyzer fixes (PR #2584)
+* Re-enable traffic and location logging on testing (PR #2583)
 
 
 # 2019.6.5+r05cadfa
