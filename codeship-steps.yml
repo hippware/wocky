@@ -4,6 +4,12 @@
 - name: build_and_test
   type: parallel
   steps:
+  - name: run_lint
+    type: serial
+    service: wocky-build
+    steps:
+    - name: lint
+      command: make lint
   - name: run_tests
     type: serial
     service: wocky-test
