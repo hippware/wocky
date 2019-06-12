@@ -197,7 +197,7 @@ defmodule Wocky.Location.Handler do
 
   defp prepare_location(user, location, current?) do
     with :ok <- UserLocation.validate(location),
-         {:ok, loclog} <- Audit.log_location(location, user) do
+         {:ok, loclog} <- Audit.log_location(Map.from_struct(location), user) do
       nloc = %UserLocation{location | id: loclog && loclog.id}
       maybe_save_current_location(current?, user, nloc)
 
