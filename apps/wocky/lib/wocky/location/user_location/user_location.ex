@@ -16,7 +16,7 @@ defmodule Wocky.Location.UserLocation do
     field :heading, :float
     field :altitude, :float
     field :altitude_accuracy, :float
-    field :captured_at, :utc_datetime
+    field :captured_at, :utc_datetime_usec
     field :uuid, :string
     field :is_moving, :boolean
     field :odometer, :float
@@ -65,7 +65,8 @@ defmodule Wocky.Location.UserLocation do
     :activity,
     :activity_confidence,
     :battery_level,
-    :battery_charging
+    :battery_charging,
+    :created_at
   ]
 
   @doc false
@@ -97,7 +98,9 @@ defmodule Wocky.Location.UserLocation do
       |> Map.put(:captured_at, normalize_captured_at(fields))
       |> Map.put(:created_at, DateTime.utc_now())
 
-    struct(__MODULE__, nfields)
+    %__MODULE__{}
+    |> changeset(nfields)
+    |> apply_changes()
   end
 
   def validate(location) do
