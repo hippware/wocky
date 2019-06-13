@@ -309,10 +309,12 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def invite(_root, args, %{context: %{current_user: requestor}}) do
-    with %Bot{} = bot <- Bot.get_owned_bot(args[:input][:bot_id], requestor) do
-      {:ok, Enum.map(args[:input][:user_ids], &do_invite(&1, bot, requestor))}
-    else
-      nil -> {:error, "Invalid bot"}
+    case Bot.get_owned_bot(args[:input][:bot_id], requestor) do
+      nil ->
+        {:error, "Invalid bot"}
+
+      bot ->
+        {:ok, Enum.map(args[:input][:user_ids], &do_invite(&1, bot, requestor))}
     end
   end
 

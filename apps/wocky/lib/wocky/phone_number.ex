@@ -42,9 +42,10 @@ defmodule Wocky.PhoneNumber do
   end
 
   defp do_get_country_code(:twilio, phone_number) do
-    with {:ok, info} <- Lookup.retrieve(phone_number, type: :phoneNumber) do
-      {:ok, info.country_code}
-    else
+    case Lookup.retrieve(phone_number, type: :phoneNumber) do
+      {:ok, info} ->
+        {:ok, info.country_code}
+
       {:error, error, code} ->
         {:error, "Twillio error: #{inspect(error)} #{inspect(code)}"}
     end

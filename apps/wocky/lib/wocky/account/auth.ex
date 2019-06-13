@@ -109,7 +109,7 @@ defmodule Wocky.Account.Auth do
   end
 
   defp find_or_create(method, id, phone, opts) do
-    with {:ok, {user, _}} = Register.find_or_create(method, id, phone) do
+    with {:ok, {user, _}} <- Register.find_or_create(method, id, phone) do
       maybe_record_client_version(user, opts)
       {:ok, %{user: user, device: opts["dvc"]}}
     end
