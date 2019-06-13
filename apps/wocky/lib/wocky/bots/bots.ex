@@ -15,6 +15,7 @@ defmodule Wocky.Bots do
   alias Wocky.Bots.Cluster
   alias Wocky.Bots.ClusterSearch
   alias Wocky.Bots.Invitation
+  alias Wocky.Bots.Item
   alias Wocky.Bots.Subscription
   alias Wocky.Events.GeofenceEvent
   alias Wocky.GeoUtils
@@ -123,15 +124,6 @@ defmodule Wocky.Bots do
 
   defp do_update(struct, params, op) do
     struct |> Bot.changeset(params) |> op.()
-  end
-
-  @spec bump_update_time(Bot.t()) :: :ok
-  def bump_update_time(bot) do
-    bot
-    |> cast(%{updated_at: NaiveDateTime.utc_now()}, [:updated_at])
-    |> Repo.update!()
-
-    :ok
   end
 
   @spec delete(Bot.t()) :: :ok
@@ -386,5 +378,120 @@ defmodule Wocky.Bots do
     else
       :ok
     end
+  end
+
+  # ----------------------------------------------------------------------
+  # Bot items
+
+  @spec get_items(Bot.t()) :: [Item.t()]
+  def get_items(bot) do
+    bot |> get_items_query() |> Repo.all()
+  end
+
+  @spec get_items_query(Bot.t()) :: Queryable.t()
+  def get_items_query(bot) do
+    Ecto.assoc(bot, :items)
+  end
+
+  @spec get_item(Bot.t(), Item.id()) :: Item.t() | nil
+  def get_item(bot, id) do
+    Item
+    |> where(id: ^id, bot_id: ^bot.id)
+    |> Repo.one()
+  end
+
+  @spec put_item(Bot.t(), Item.id(), binary(), binary(), User.t()) ::
+          {:ok, Item.t()} | {:error, any()}
+  def put_item(
+        %{id: bot_id} = bot,
+        id,
+        content,
+        image_url,
+        %{id: user_id} = user
+      ) do
+    id_valid? = ID.valid?(id)
+    id = if id_valid?, do: id, else: ID.new()
+
+    case id_valid? && Repo.get(Item, id) do
+      x when is_nil(x) or x == false ->
+        id
+        |> do_insert_item(bot, user, content, image_url)
+        |> maybe_update_bot(bot)
+
+      %Item{user_id: ^user_id, bot_id: ^bot_id} = old_item ->
+        old_item
+        |> do_update_item(content, image_url)
+        |> maybe_update_bot(bot)
+
+      _ ->
+        {:error, :permission_denied}
+    end
+  end
+
+  defp do_update_item(item, content, image_url) do
+    item
+    |> Item.changeset(%{content: content, image_url: image_url})
+    |> Repo.update()
+  end
+
+  defp do_insert_item(id, bot, user, content, image_url) do
+    %Item{}
+    |> Item.changeset(%{
+      id: id,
+      bot_id: bot.id,
+      user_id: user.id,
+      content: content,
+      image_url: image_url
+    })
+    |> Repo.insert()
+  end
+
+  defp maybe_update_bot({:ok, _} = result, bot) do
+    bot
+    |> cast(%{updated_at: DateTime.utc_now()}, [:updated_at])
+    |> Repo.update!()
+
+    result
+  end
+
+  defp maybe_update_bot(result, _), do: result
+
+  @spec delete_item(Bot.t(), Item.id(), User.t()) ::
+          :ok | {:error, :not_found | :permission_denied}
+  def delete_item(%Bot{user_id: user_id} = bot, id, %User{id: user_id}) do
+    {deleted, _} =
+      bot
+      |> Ecto.assoc(:items)
+      |> where(id: ^id)
+      |> Repo.delete_all()
+
+    case deleted do
+      0 -> {:error, :not_found}
+      1 -> :ok
+    end
+  end
+
+  def delete_item(bot, id, %User{id: user_id}) do
+    case get_item(bot, id) do
+      %Item{user_id: ^user_id} = item ->
+        Repo.delete(item)
+        :ok
+
+      nil ->
+        {:error, :not_found}
+
+      _ ->
+        {:error, :permission_denied}
+    end
+  end
+
+  @spec delete_items(Bot.t(), User.t()) :: :ok
+  def delete_items(bot, %User{id: user_id}) do
+    bot
+    |> Ecto.assoc(:items)
+    |> where(user_id: ^user_id)
+    |> Repo.delete_all()
+
+    :ok
   end
 end

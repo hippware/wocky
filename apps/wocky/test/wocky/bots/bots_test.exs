@@ -1,9 +1,11 @@
 defmodule Wocky.Bots.BotsTest do
   use Wocky.DataCase, async: true
 
+  alias Faker.Lorem
   alias Wocky.Account.User
   alias Wocky.Bots
   alias Wocky.Bots.Bot
+  alias Wocky.Bots.Item
   alias Wocky.GeoUtils
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -572,4 +574,130 @@ defmodule Wocky.Bots.BotsTest do
 
   defp is_empty(query),
     do: query |> Repo.one() == nil
+
+  describe "bot items" do
+    setup do
+      [owner, author] = Factory.insert_list(2, :user)
+      bot = Factory.insert(:bot, user: owner)
+      item = Factory.insert(:item, bot: bot, user: owner)
+      item2 = Factory.insert(:item, bot: bot, user: author)
+
+      {:ok,
+       owner: owner,
+       author: author,
+       bot: bot,
+       id: item.id,
+       item: item,
+       item2: item2}
+    end
+
+    test "get_items/1", %{bot: bot} do
+      assert bot |> Bots.get_items() |> length() == 2
+
+      new_bot = Factory.build(:bot)
+      assert Bots.get_items(new_bot) == []
+    end
+
+    test "get_item/2", %{id: id, bot: bot} do
+      assert Bots.get_item(bot, id)
+      refute Bots.get_item(Factory.build(:bot), id)
+      refute Bots.get_item(bot, ID.new())
+    end
+
+    test "put_item/5 when an item does not already exist", ctx do
+      assert {:ok, %Item{id: new_id}} =
+               Bots.put_item(ctx.bot, ID.new(), "testing", nil, ctx.owner)
+
+      assert Bots.get_item(ctx.bot, new_id)
+
+      bot = Repo.get(Bot, ctx.bot.id)
+      assert DateTime.compare(bot.updated_at, ctx.bot.updated_at) == :gt
+    end
+
+    test "put_item/5 when an item already exists", ctx do
+      assert {:ok, %Item{}} =
+               Bots.put_item(ctx.bot, ctx.id, "testing", "image", ctx.owner)
+
+      item = Bots.get_item(ctx.bot, ctx.id)
+      assert item.content == "testing"
+      assert item.image_url == "image"
+
+      bot = Repo.get(Bot, ctx.bot.id)
+      assert DateTime.compare(bot.updated_at, ctx.bot.updated_at) == :gt
+    end
+
+    test "put_item/5 when a non-UUID id is supplied", ctx do
+      assert {:ok, %Item{id: id}} =
+               Bots.put_item(ctx.bot, Lorem.word(), "testing", nil, ctx.owner)
+
+      assert ID.valid?(id)
+    end
+
+    test "put_item/5 with invalid input", ctx do
+      assert {:error, _} =
+               Bots.put_item(
+                 Factory.build(:bot),
+                 ID.new(),
+                 Lorem.word(),
+                 nil,
+                 ctx.author
+               )
+
+      assert {:error, _} =
+               Bots.put_item(
+                 ctx.bot,
+                 ID.new(),
+                 Lorem.word(),
+                 nil,
+                 Factory.build(:user)
+               )
+    end
+
+    test "put_item/5 when updating another user's item", ctx do
+      user = Factory.insert(:user)
+      item = Factory.insert(:item, user: user, bot: ctx.bot)
+      content = Lorem.paragraph()
+
+      # should refuse to publish an item that already exists
+      # and is owned by another user
+      assert Bots.put_item(ctx.bot, item.id, content, nil, ctx.owner) ==
+               {:error, :permission_denied}
+    end
+
+    test "delete_item/3 when the item doesn't exist", ctx do
+      bad_bot = Factory.build(:bot)
+
+      assert Bots.delete_item(bad_bot, ctx.id, ctx.owner) ==
+               {:error, :not_found}
+
+      assert Bots.delete_item(ctx.bot, ID.new(), ctx.owner) ==
+               {:error, :not_found}
+    end
+
+    test "delete_item/3 when an item exists", ctx do
+      assert Bots.delete_item(ctx.bot, ctx.item2.id, ctx.author) == :ok
+      refute Bots.get_item(ctx.bot, ctx.item2.id)
+    end
+
+    test "delete_item/3 when an item exists and the bot owner deletes it",
+         ctx do
+      assert Bots.delete_item(ctx.bot, ctx.item2.id, ctx.owner) == :ok
+      refute Bots.get_item(ctx.bot, ctx.item2.id)
+    end
+
+    test "delete_item/3 when an item exists and another user deletes it", ctx do
+      assert Bots.delete_item(ctx.bot, ctx.id, ctx.author) ==
+               {:error, :permission_denied}
+
+      assert Bots.get_item(ctx.bot, ctx.id)
+    end
+
+    test "delete_items/2", ctx do
+      assert Bots.delete_items(ctx.bot, ctx.author) == :ok
+      refute Bots.get_item(ctx.bot, ctx.item2.id)
+
+      # should return :ok when the user doesn't exist
+      assert Bots.delete_items(ctx.bot, Factory.build(:user)) == :ok
+    end
+  end
 end

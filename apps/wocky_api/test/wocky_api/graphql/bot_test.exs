@@ -1603,7 +1603,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       assert %{"botItemPublish" => %{"result" => %{"id" => id}}} = result.data
 
       assert %Item{id: ^id, content: ^content, image_url: ^image_url} =
-               Item.get(id, bot)
+               Bots.get_item(bot, id)
     end
 
     test "update existing item", %{user: user, bot2: bot2, item: item} do
@@ -1620,7 +1620,7 @@ defmodule WockyAPI.GraphQL.BotTest do
         })
 
       refute has_errors(result)
-      assert %Item{content: ^content, id: ^id} = Item.get(id, bot2)
+      assert %Item{content: ^content, id: ^id} = Bots.get_item(bot2, id)
     end
 
     test "publish item with invalid bot id", %{user: user} do

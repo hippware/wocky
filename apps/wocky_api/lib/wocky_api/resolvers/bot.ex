@@ -7,7 +7,6 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Wocky.Bots
   alias Wocky.Bots.Bot
   alias Wocky.Bots.Invitation
-  alias Wocky.Bots.Item
   alias Wocky.GeoUtils
   alias Wocky.Location
   alias Wocky.Location.UserLocation
@@ -168,7 +167,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
   def get_items(bot, args, _info) do
     bot
-    |> Item.items_query()
+    |> Bots.get_items_query()
     |> Utils.connection_from_query(bot, args)
   end
 
@@ -272,9 +271,12 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def publish_item(_root, %{input: args}, %{context: %{current_user: requestor}}) do
+    id = args[:id]
+    content = args[:content]
+    image_url = args[:image_url]
+
     with %Bot{} = bot <- Bots.get_bot(args.bot_id, requestor),
-         {:ok, item} <-
-           Item.put(args[:id], bot, requestor, args[:content], args[:image_url]) do
+         {:ok, item} <- Bots.put_item(bot, id, content, image_url, requestor) do
       {:ok, item}
     else
       nil -> not_found_error(args.bot_id)
@@ -285,7 +287,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
   def delete_item(_root, args, %{context: %{current_user: requestor}}) do
     with %Bot{} = bot <- Bots.get_bot(args[:input][:bot_id], requestor),
-         :ok <- Item.delete(args[:input][:id], bot, requestor) do
+         :ok <- Bots.delete_item(bot, args[:input][:id], requestor) do
       {:ok, true}
     else
       nil -> not_found_error(args[:input][:bot_id])
