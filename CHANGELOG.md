@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: honeybadger (PR #2588), phoenix (PR #2589)
+
+
+# 2019.6.12+rcc76921
+
 * Ability to ask the client to send a new location data point (#2025)
 * Remove next environment and old ansible file (PR #2578)
 * Consolidate auditing (PR #2575)
@@ -12,6 +17,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Test cleanup (PR #2580)
 * Dialyzer fixes (PR #2584)
 * Re-enable traffic and location logging on testing (PR #2583)
+* Fix a cast error in the location audit log (#2586, PR #2587)
+* Try to fix location auditing crash (#2590, PR #2591)
+  * Make sure UserLocation fields are properly cast (PR #2592)
 
 
 # 2019.6.5+r05cadfa
