@@ -136,7 +136,7 @@ defmodule Wocky.Location.Handler do
       ) do
     Logger.debug(fn -> "Swarm set location for bot with user #{user.id}" end)
 
-    case prepare_location(user, location, current?) do
+    case prepare_location(user, location, true) do
       {:ok, loc} = result ->
         {:ok, _, new_events} =
           GeoFence.check_for_bot_event(bot, loc, user, events)
