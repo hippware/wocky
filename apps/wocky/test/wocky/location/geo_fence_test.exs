@@ -281,15 +281,6 @@ defmodule Wocky.Location.GeoFenceTest do
       {:ok, inside_loc: loc}
     end
 
-    test "bots with a negative radius should not generate an event", ctx do
-      bot = ctx.bot |> cast(%{radius: -1}, [:radius]) |> Repo.update!()
-
-      GeoFence.check_for_bot_event(bot, ctx.inside_loc, ctx.user)
-
-      assert BotEvent.get_last_event(ctx.user.id, ctx.bot.id) == nil
-      assert Sandbox.list_notifications() == []
-    end
-
     test "with no bot perimeter events", ctx do
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
