@@ -114,15 +114,17 @@ defmodule Wocky.Account do
   """
   @spec sms_allowed_inc?(User.t()) :: boolean()
   def sms_allowed_inc?(user) do
-    with %User{} = u <- get_user(user.id) do
-      if u.smss_sent < Confex.get_env(:wocky, :max_sms_per_user) do
-        {:ok, _} = __MODULE__.update(user.id, %{smss_sent: u.smss_sent + 1})
-        true
-      else
-        allowed_unlimited_smss?(user)
-      end
-    else
-      _ -> false
+    case get_user(user.id) do
+      nil ->
+        false
+
+      u ->
+        if u.smss_sent < Confex.get_env(:wocky, :max_sms_per_user) do
+          {:ok, _} = __MODULE__.update(user.id, %{smss_sent: u.smss_sent + 1})
+          true
+        else
+          allowed_unlimited_smss?(user)
+        end
     end
   end
 

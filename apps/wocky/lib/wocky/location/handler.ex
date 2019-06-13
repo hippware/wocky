@@ -117,13 +117,14 @@ defmodule Wocky.Location.Handler do
       ) do
     Logger.debug(fn -> "Swarm set location with user #{user.id}" end)
 
-    with {:ok, loc} = result <- prepare_location(user, location, current?) do
-      {:ok, _, new_events} =
-        GeoFence.check_for_bot_events(loc, user, subscriptions, events)
+    case prepare_location(user, location, current?) do
+      {:ok, loc} = result ->
+        {:ok, _, new_events} =
+          GeoFence.check_for_bot_events(loc, user, subscriptions, events)
 
-      {:reply, result, %{state | events: new_events}, @timeout}
-    else
-      error ->
+        {:reply, result, %{state | events: new_events}, @timeout}
+
+      {:error, _} = error ->
         {:reply, error, state, @timeout}
     end
   end
@@ -135,13 +136,14 @@ defmodule Wocky.Location.Handler do
       ) do
     Logger.debug(fn -> "Swarm set location for bot with user #{user.id}" end)
 
-    with {:ok, loc} = result <- prepare_location(user, location, true) do
-      {:ok, _, new_events} =
-        GeoFence.check_for_bot_event(bot, loc, user, events)
+    case prepare_location(user, location, true) do
+      {:ok, loc} = result ->
+        {:ok, _, new_events} =
+          GeoFence.check_for_bot_event(bot, loc, user, events)
 
-      {:reply, result, %{state | events: new_events}, @timeout}
-    else
-      error ->
+        {:reply, result, %{state | events: new_events}, @timeout}
+
+      {:error, _} = error ->
         {:reply, error, state, @timeout}
     end
   end

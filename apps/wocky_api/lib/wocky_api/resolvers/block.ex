@@ -27,11 +27,13 @@ defmodule WockyAPI.Resolvers.Block do
     do: do_action(&Block.unblock/2, args, blocker)
 
   defp do_action(fun, args, blocker) do
-    with %User{} = user <- Account.get_user(args[:input][:user_id]) do
-      fun.(blocker, user)
-      {:ok, true}
-    else
-      _ -> {:error, "Invalid user"}
+    case Account.get_user(args[:input][:user_id]) do
+      nil ->
+        {:error, "Invalid user"}
+
+      user ->
+        fun.(blocker, user)
+        {:ok, true}
     end
   end
 

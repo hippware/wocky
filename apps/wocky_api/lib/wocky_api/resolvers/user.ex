@@ -137,10 +137,9 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do
-    with %User{} = user <- Account.get_user(id, current_user) do
-      {:ok, user}
-    else
-      _ -> user_not_found(id)
+    case Account.get_user(id, current_user) do
+      nil -> user_not_found(id)
+      user -> {:ok, user}
     end
   end
 
@@ -355,11 +354,13 @@ defmodule WockyAPI.Resolvers.User do
   defp roster_action(%User{id: id}, id, _), do: {:error, "Invalid user"}
 
   defp roster_action(user, contact_id, roster_fun) do
-    with %User{} = contact <- Account.get_user(contact_id, user) do
-      relationship = roster_fun.(user, contact)
-      {:ok, %{relationship: relationship, user: contact}}
-    else
-      _ -> {:error, "Invalid user"}
+    case Account.get_user(contact_id, user) do
+      nil ->
+        {:error, "Invalid user"}
+
+      contact ->
+        relationship = roster_fun.(user, contact)
+        {:ok, %{relationship: relationship, user: contact}}
     end
   end
 

@@ -25,6 +25,10 @@
         excluded: [~r"/_build/", ~r"/deps/", ~r"/node_modules/"]
       },
       #
+      # Load and configure plugins here:
+      #
+      plugins: [],
+      #
       # If you create your own checks, you must specify the source files for
       # them here, so they can be loaded by Credo before running the analysis.
       #
@@ -64,17 +68,18 @@
         # You can customize the priority of any check
         # Priority values are: `low, normal, high, higher`
         #
-        {Credo.Check.Design.AliasUsage, [
-          priority: :low,
-          if_called_more_often_than: 2,
-          if_nested_deeper_than: 1
-        ]},
+        {Credo.Check.Design.AliasUsage,
+         [
+           priority: :low,
+           if_called_more_often_than: 2,
+           if_nested_deeper_than: 1
+         ]},
         # You can also customize the exit_status of each check.
         # If you don't want TODO comments to cause `mix credo` to fail, just
         # set this value to 0 (zero).
         #
-        {Credo.Check.Design.TagTODO, [exit_status: 0]},
-        {Credo.Check.Design.TagFIXME, [exit_status: 0]},
+        {Credo.Check.Design.TagTODO, false},
+        {Credo.Check.Design.TagFIXME, false},
 
         #
         ## Readability Checks
@@ -82,7 +87,8 @@
         {Credo.Check.Readability.AliasOrder, []},
         {Credo.Check.Readability.FunctionNames, []},
         {Credo.Check.Readability.LargeNumbers, []},
-        {Credo.Check.Readability.MaxLineLength, [priority: :low, max_length: 120]},
+        {Credo.Check.Readability.MaxLineLength,
+         [priority: :low, max_length: 120]},
         {Credo.Check.Readability.ModuleAttributeNames, []},
         {Credo.Check.Readability.ModuleDoc, []},
         {Credo.Check.Readability.ModuleNames, []},
@@ -113,11 +119,8 @@
         {Credo.Check.Refactor.NegatedConditionsInUnless, []},
         {Credo.Check.Refactor.NegatedConditionsWithElse, []},
         {Credo.Check.Refactor.Nesting, []},
-        {Credo.Check.Refactor.PipeChainStart, [
-          excluded_argument_types: [:atom, :binary, :fn, :keyword, :number],
-          excluded_functions: ["from"]
-        ]},
         {Credo.Check.Refactor.UnlessWithElse, []},
+        {Credo.Check.Refactor.WithClauses, []},
 
         #
         ## Warnings
@@ -145,11 +148,18 @@
         #
         {Credo.Check.Consistency.MultiAliasImportRequireUse, []},
         {Credo.Check.Design.DuplicatedCode, []},
+        {Credo.Check.Readability.MultiAlias, []},
         {Credo.Check.Readability.Specs, false},
+        {Credo.Check.Readability.SinglePipe, false},
         {Credo.Check.Refactor.ABCSize, false},
         {Credo.Check.Refactor.AppendSingleItem, []},
         {Credo.Check.Refactor.DoubleBooleanNegation, []},
         {Credo.Check.Refactor.ModuleDependencies, false},
+        {Credo.Check.Refactor.PipeChainStart,
+         [
+           excluded_argument_types: [:atom, :binary, :fn, :keyword, :number],
+           excluded_functions: ["from"]
+         ]},
         {Credo.Check.Refactor.VariableRebinding, [allow_bang: true]},
         {Credo.Check.Warning.MapGetUnsafePass, []},
         {Credo.Check.Warning.UnsafeToAtom, []},
@@ -157,16 +167,17 @@
         #
         # Custom checks can be created using `mix credo.gen.check`.
         #
-        {CredoFilenameConsistency.Check.Consistency.FilenameConsistency, [
-          excluded_paths: [
-            "apps/wocky/mix.exs",
-            "apps/wocky/priv",
-            "apps/wocky/test/support",
-            "apps/wocky_api/mix.exs",
-            "apps/wocky_api/test/support",
-          ],
-          acronyms: [{"GraphQL", "graphql"}, {"AInt", "aint"}]
-        ]}
+        {CredoFilenameConsistency.Check.Consistency.FilenameConsistency,
+         [
+           excluded_paths: [
+             "apps/wocky/mix.exs",
+             "apps/wocky/priv",
+             "apps/wocky/test/support",
+             "apps/wocky_api/mix.exs",
+             "apps/wocky_api/test/support"
+           ],
+           acronyms: [{"GraphQL", "graphql"}, {"AInt", "aint"}]
+         ]}
       ]
     }
   ]

@@ -42,10 +42,12 @@ defmodule WockyAPI.Resolvers.Message do
     do: {:ok, Messaging.get_messages_query(requestor)}
 
   defp get_messages_query(other_user_id, requestor) do
-    with %User{} = other_user <- Account.get_user(other_user_id, requestor) do
-      {:ok, Messaging.get_messages_query(requestor, other_user)}
-    else
-      nil -> UserResolver.user_not_found(other_user_id)
+    case Account.get_user(other_user_id, requestor) do
+      nil ->
+        UserResolver.user_not_found(other_user_id)
+
+      other_user ->
+        {:ok, Messaging.get_messages_query(requestor, other_user)}
     end
   end
 

@@ -31,7 +31,7 @@ defmodule Wocky.Bot.Invitation do
         %Bot{id: bot_id, user_id: user_id},
         %User{id: user_id} = user
       ) do
-    with true <- Roster.friend?(invitee, user) do
+    if Roster.friend?(invitee, user) do
       %Invitation{}
       |> changeset(%{
         user_id: user.id,
@@ -44,7 +44,7 @@ defmodule Wocky.Bot.Invitation do
         conflict_target: [:user_id, :bot_id, :invitee_id]
       )
     else
-      _ -> {:error, :permission_denied}
+      {:error, :permission_denied}
     end
   end
 

@@ -21,10 +21,12 @@ defmodule Wocky.TROS.Store.S3 do
   end
 
   def do_delete(file_id) do
-    with {:ok, result} <- do_request(file_id, :delete) do
-      check_result_get_headers(result, 204)
-    else
-      {:error, _} = error -> error
+    case do_request(file_id, :delete) do
+      {:ok, result} ->
+        check_result_get_headers(result, 204)
+
+      {:error, _} = error ->
+        error
     end
   end
 
