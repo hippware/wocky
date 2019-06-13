@@ -25,6 +25,10 @@
         excluded: [~r"/_build/", ~r"/deps/", ~r"/node_modules/"]
       },
       #
+      # Load and configure plugins here:
+      #
+      plugins: [],
+      #
       # If you create your own checks, you must specify the source files for
       # them here, so they can be loaded by Credo before running the analysis.
       #
@@ -115,12 +119,8 @@
         {Credo.Check.Refactor.NegatedConditionsInUnless, []},
         {Credo.Check.Refactor.NegatedConditionsWithElse, []},
         {Credo.Check.Refactor.Nesting, []},
-        {Credo.Check.Refactor.PipeChainStart,
-         [
-           excluded_argument_types: [:atom, :binary, :fn, :keyword, :number],
-           excluded_functions: ["from"]
-         ]},
         {Credo.Check.Refactor.UnlessWithElse, []},
+        {Credo.Check.Refactor.WithClauses, []},
 
         #
         ## Warnings
@@ -150,10 +150,16 @@
         {Credo.Check.Design.DuplicatedCode, []},
         {Credo.Check.Readability.MultiAlias, []},
         {Credo.Check.Readability.Specs, false},
+        {Credo.Check.Readability.SinglePipe, false},
         {Credo.Check.Refactor.ABCSize, false},
         {Credo.Check.Refactor.AppendSingleItem, []},
         {Credo.Check.Refactor.DoubleBooleanNegation, []},
         {Credo.Check.Refactor.ModuleDependencies, false},
+        {Credo.Check.Refactor.PipeChainStart,
+         [
+           excluded_argument_types: [:atom, :binary, :fn, :keyword, :number],
+           excluded_functions: ["from"]
+         ]},
         {Credo.Check.Refactor.VariableRebinding, [allow_bang: true]},
         {Credo.Check.Warning.MapGetUnsafePass, []},
         {Credo.Check.Warning.UnsafeToAtom, []},
