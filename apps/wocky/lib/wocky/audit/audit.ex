@@ -5,6 +5,8 @@ defmodule Wocky.Audit do
 
   import Ecto.Query
 
+  require Logger
+
   alias Ecto.Changeset
   alias Ecto.Queryable
   alias Timex.Duration
@@ -26,6 +28,8 @@ defmodule Wocky.Audit do
     config = config(opts)
 
     if should_log?(:traffic, user, config) do
+      log(fields, :traffic)
+
       fields
       |> TrafficLog.changeset()
       |> Repo.insert()
@@ -76,6 +80,8 @@ defmodule Wocky.Audit do
     config = config(opts)
 
     if should_log?(:location, user, config) do
+      log(fields, :location)
+
       %LocationLog{user_id: user.id}
       |> LocationLog.changeset(fields)
       |> Repo.insert()
@@ -117,6 +123,8 @@ defmodule Wocky.Audit do
     config = config(opts)
 
     if should_log?(:push, user, config) do
+      log(fields, :push)
+
       fields
       |> format_msg(user, config)
       |> PushLog.insert_changeset()
@@ -147,4 +155,7 @@ defmodule Wocky.Audit do
   end
 
   defp config_key(mode), do: String.to_existing_atom("log_#{mode}")
+
+  defp log(fields, type), do:
+  Logger.info(Poison.encode!(fields), [class: :audit, audit_type: type])
 end
