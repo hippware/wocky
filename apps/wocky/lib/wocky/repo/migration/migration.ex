@@ -8,6 +8,7 @@ defmodule Wocky.Repo.Migration do
       import Ecto.Migration, except: [timestamps: 0]
       import Wocky.Repo.Migration
       @disable_ddl_transaction false
+      @disable_migration_lock false
       @before_compile Ecto.Migration
     end
   end
