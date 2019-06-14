@@ -1,11 +1,17 @@
 use ExGuard.Config
 
-"specs"
+"tests"
 |> guard(run_on_start: true)
-|> command("mix espec")
+|> command("mix test --color")
 |> watch({~r{lib/(?<dir>.+)/(?<file>.+).ex$},
-    fn (m) -> "spec/#{m["dir"]}/#{m["file"]}_spec.exs" end})
-|> watch({~r{spec/(?<dir>.+)/(?<file>.+)_spec.exs$},
-    fn (m) -> "spec/#{m["dir"]}/#{m["file"]}_spec.exs" end})
-|> watch(~r{\.(erl|ex|eex|xrl|yrl)\z}i)
-|> ignore(~r|db/migrations/|)
+    fn (m) -> "test/#{m["dir"]}/#{m["file"]}_test.exs" end})
+|> watch({~r{(?<path>test/.+/.+_test\.exs$)}, fn (m) -> "#{m["path"]}" end})
+|> ignore(~r{(lib|test)/.+/\.\#})
+|> notification(:off)
+
+"credo"
+|> guard(run_on_start: false)
+|> command("mix credo --color --strict -a --format oneline")
+|> watch({~r{(?<path>apps/.+/(lib|test)/.+\.exs?$)}, fn (m) -> "#{m["path"]}" end})
+|> ignore(~r{(lib|test)/.+/\.\#})
+|> notification(:auto)
