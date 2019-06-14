@@ -2,7 +2,6 @@ defmodule WockyAPI.GraphQL.BotTest do
   use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Lorem
-  alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.Bots
@@ -10,6 +9,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Wocky.Bots.Invitation
   alias Wocky.Bots.Item
   alias Wocky.GeoUtils
+  alias Wocky.Relations
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -1814,7 +1814,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "gives users access to the bot", shared do
-      refute Account.can_access?(shared.user3, shared.bot)
+      refute Relations.can_access?(shared.user3, shared.bot)
 
       Factory.insert(:bot_invitation,
         user: shared.user,
@@ -1822,7 +1822,7 @@ defmodule WockyAPI.GraphQL.BotTest do
         invitee: shared.user3
       )
 
-      assert Account.can_access?(shared.user3, shared.bot)
+      assert Relations.can_access?(shared.user3, shared.bot)
     end
   end
 
@@ -1857,7 +1857,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       refute has_errors(result)
 
       assert %Invitation{accepted: true} = Repo.get_by(Invitation, id: id)
-      assert Account.can_access?(shared.user3, shared.bot)
+      assert Relations.can_access?(shared.user3, shared.bot)
     end
 
     test "accepting with location", %{id: id} = shared do

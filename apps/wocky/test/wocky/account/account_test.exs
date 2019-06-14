@@ -465,33 +465,6 @@ defmodule Wocky.Account.AccountTest do
      unaffiliated_bot: unaffiliated_bot}
   end
 
-  describe "bot relationships" do
-    setup :setup_bot_relationships
-
-    test "can_access?/2", ctx do
-      assert Account.can_access?(ctx.user, ctx.owned_bot)
-      assert Account.can_access?(ctx.user, ctx.invited_bot)
-      refute Account.can_access?(ctx.user, ctx.unaffiliated_bot)
-    end
-
-    test "get_subscriptions/1", ctx do
-      subscriptions = Account.get_subscriptions(ctx.user)
-
-      assert length(subscriptions) == 1
-      assert Enum.any?(subscriptions, &same_bot(&1, ctx.subscribed_bot))
-      refute Enum.any?(subscriptions, &same_bot(&1, ctx.owned_bot))
-      refute Enum.any?(subscriptions, &same_bot(&1, ctx.pending_bot))
-    end
-
-    test "get_owned_bots/1", ctx do
-      bots = Account.get_owned_bots(ctx.user)
-
-      assert length(bots) == 1
-      assert Enum.any?(bots, &same_bot(&1, ctx.owned_bot))
-      refute Enum.any?(bots, &same_bot(&1, ctx.pending_bot))
-    end
-  end
-
   describe "searchable checks" do
     setup :setup_bot_relationships
 
@@ -611,8 +584,6 @@ defmodule Wocky.Account.AccountTest do
       assert Repo.get(User, user.id).bot_created
     end
   end
-
-  defp same_bot(bot1, bot2), do: bot1.id == bot2.id
 
   defp is_searchable_sp(user, bot),
     do: run_stored_proc(user, bot, "is_searchable")

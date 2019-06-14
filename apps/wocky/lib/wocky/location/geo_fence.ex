@@ -3,12 +3,12 @@ defmodule Wocky.Location.GeoFence do
 
   use Wocky.Config
 
-  alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Bots
   alias Wocky.Bots.Bot
   alias Wocky.Location.BotEvent
   alias Wocky.Location.UserLocation
+  alias Wocky.Relations
   alias Wocky.Repo
 
   require Logger
@@ -67,7 +67,7 @@ defmodule Wocky.Location.GeoFence do
   # Use check_for_bot_events/4 instead.
   @doc false
   def check_for_bot_events(%UserLocation{} = loc, user) do
-    subs = Account.get_subscriptions(user)
+    subs = Relations.get_subscriptions(user)
     events = BotEvent.get_last_events(user.id)
 
     check_for_bot_events(loc, user, subs, events)

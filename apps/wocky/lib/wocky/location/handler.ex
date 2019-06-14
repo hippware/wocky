@@ -14,6 +14,7 @@ defmodule Wocky.Location.Handler do
   alias Wocky.Location.Supervisor
   alias Wocky.Location.UserLocation
   alias Wocky.Location.UserLocation.Current
+  alias Wocky.Relations
 
   require Logger
 
@@ -102,7 +103,7 @@ defmodule Wocky.Location.Handler do
   @impl true
   def init(user) do
     Logger.debug(fn -> "Swarm initializing worker with user #{user.id}" end)
-    subscriptions = Account.get_subscriptions(user)
+    subscriptions = Relations.get_subscriptions(user)
     events = BotEvent.get_last_events(user.id)
 
     {:ok, %State{user: user, subscriptions: subscriptions, events: events},

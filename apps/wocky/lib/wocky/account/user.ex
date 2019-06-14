@@ -71,9 +71,6 @@ defmodule Wocky.Account.User do
   @type handle :: binary
   @type role :: binary
 
-  @type bot_relationship ::
-          :owned | :invited | :subscribed | :visitor | :visible
-
   @type t :: %User{
           id: id,
           handle: nil | handle,

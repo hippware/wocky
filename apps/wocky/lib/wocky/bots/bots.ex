@@ -21,6 +21,7 @@ defmodule Wocky.Bots do
   alias Wocky.GeoUtils
   alias Wocky.Location
   alias Wocky.Notifier
+  alias Wocky.Relations
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.Roster
@@ -204,7 +205,7 @@ defmodule Wocky.Bots do
   end
 
   defp by_relationship_query(user, :owned) do
-    Account.owned_bots_query(user)
+    Relations.owned_bots_query(user)
   end
 
   defp by_relationship_query(user, :invited) do

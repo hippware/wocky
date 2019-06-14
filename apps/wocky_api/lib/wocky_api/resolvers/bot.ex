@@ -10,6 +10,7 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Wocky.GeoUtils
   alias Wocky.Location
   alias Wocky.Location.UserLocation
+  alias Wocky.Relations
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.Waiter
@@ -91,7 +92,7 @@ defmodule WockyAPI.Resolvers.Bot do
         _args,
         _info
       ) do
-    {:ok, Account.get_bot_relationships(user, bot)}
+    {:ok, Relations.get_bot_relationships(user, bot)}
   end
 
   def get_bot_relationships(
@@ -99,7 +100,7 @@ defmodule WockyAPI.Resolvers.Bot do
         _args,
         _info
       ) do
-    {:ok, Account.get_bot_relationships(user, bot)}
+    {:ok, Relations.get_bot_relationships(user, bot)}
   end
 
   def get_lat(%{location: l}, _args, _info) do
@@ -151,7 +152,7 @@ defmodule WockyAPI.Resolvers.Bot do
     bot
     |> Bots.sub_setup_event()
     |> Waiter.wait(5000, fn ->
-      Enum.member?(Account.get_bot_relationships(user, bot), :subscribed)
+      Enum.member?(Relations.get_bot_relationships(user, bot), :subscribed)
     end)
 
     Location.set_user_location_for_bot(user, UserLocation.new(l), bot)

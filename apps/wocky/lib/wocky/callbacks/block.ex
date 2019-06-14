@@ -5,11 +5,11 @@ defmodule Wocky.Callbacks.Block do
 
   use DawdleDB.Handler, type: Wocky.Block
 
-  alias Wocky.Account
   alias Wocky.Block
   alias Wocky.Bots
   alias Wocky.Bots.Invitation
   alias Wocky.Notifier.InBand.Notification
+  alias Wocky.Relations
   alias Wocky.Repo.Hydrator
 
   def handle_insert(new) do
@@ -35,7 +35,7 @@ defmodule Wocky.Callbacks.Block do
 
   defp delete_bot_references(a, b) do
     a
-    |> Account.get_owned_bots()
+    |> Relations.get_owned_bots()
     |> Enum.each(fn bot ->
       Bots.delete_items(bot, b)
       Bots.unsubscribe(bot, b)
