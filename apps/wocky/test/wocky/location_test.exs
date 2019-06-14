@@ -6,6 +6,7 @@ defmodule Wocky.LocationTest do
   alias Wocky.Location.BotEvent
   alias Wocky.Location.Share
   alias Wocky.Location.UserLocation
+  alias Wocky.Relations
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
@@ -23,7 +24,7 @@ defmodule Wocky.LocationTest do
       bot = Factory.insert(:bot, user: user2)
 
       Roster.befriend(ctx.user, user2)
-      Bots.subscribe(bot, ctx.user)
+      Relations.subscribe(bot, ctx.user)
 
       {:ok, bot: bot, lat: Bots.lat(bot), lon: Bots.lon(bot)}
     end
@@ -48,7 +49,7 @@ defmodule Wocky.LocationTest do
       bot = Factory.insert(:bot, user: user2)
 
       Roster.befriend(ctx.user, user2)
-      Bots.subscribe(bot, ctx.user)
+      Relations.subscribe(bot, ctx.user)
 
       location =
         UserLocation.new(%{
@@ -69,7 +70,7 @@ defmodule Wocky.LocationTest do
                  ctx.bot
                )
 
-      assert Bots.subscription(ctx.bot, ctx.user) == :visiting
+      assert Relations.subscription(ctx.bot, ctx.user) == :visiting
     end
   end
 

@@ -10,6 +10,7 @@ defmodule Wocky.Callbacks.BotItemTest do
   alias Wocky.Callbacks.BotItem, as: Callback
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
+  alias Wocky.Relations
   alias Wocky.Repo.Factory
   alias Wocky.Roster
 
@@ -22,8 +23,8 @@ defmodule Wocky.Callbacks.BotItemTest do
     bot = Factory.insert(:bot, user: user)
     Roster.befriend(user, author)
     Roster.befriend(user, sub)
-    Bots.subscribe(bot, author)
-    Bots.subscribe(bot, sub)
+    Relations.subscribe(bot, author)
+    Relations.subscribe(bot, sub)
 
     Sandbox.clear_notifications(global: true)
 

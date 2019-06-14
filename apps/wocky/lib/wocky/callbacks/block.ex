@@ -38,7 +38,7 @@ defmodule Wocky.Callbacks.Block do
     |> Relations.get_owned_bots()
     |> Enum.each(fn bot ->
       Bots.delete_items(bot, b)
-      Bots.unsubscribe(bot, b)
+      Relations.unsubscribe(bot, b)
     end)
   end
 end

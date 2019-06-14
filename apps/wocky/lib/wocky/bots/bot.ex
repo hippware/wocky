@@ -51,14 +51,6 @@ defmodule Wocky.Bots.Bot do
   @type id :: binary
   @type not_loaded :: %NotLoaded{}
 
-  @type relationship ::
-          :visible
-          | :owned
-          | :subscribed
-          | :subscribed_not_owned
-          | :invited
-          | :visiting
-
   @type t :: %Bot{
           id: nil | id,
           title: binary,

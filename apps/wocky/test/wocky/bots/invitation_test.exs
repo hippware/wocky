@@ -1,8 +1,8 @@
 defmodule Wocky.Bots.InvitationTest do
   use Wocky.DataCase, async: true
 
-  alias Wocky.Bots
   alias Wocky.Bots.Invitation
+  alias Wocky.Relations
   alias Wocky.Repo.Factory
   alias Wocky.Roster
 
@@ -111,12 +111,12 @@ defmodule Wocky.Bots.InvitationTest do
     end
 
     test "Invitee becomes subscribed if they accept", ctx do
-      assert Bots.subscription(ctx.bot, ctx.invitee) == nil
+      assert Relations.subscription(ctx.bot, ctx.invitee) == nil
 
       assert {:ok, invitation} =
                Invitation.respond(ctx.invitation, true, ctx.invitee)
 
-      assert Bots.subscription(ctx.bot, ctx.invitee) == :subscribed
+      assert Relations.subscription(ctx.bot, ctx.invitee) == :subscribed
     end
 
     test "Invitee can decline", ctx do
@@ -127,12 +127,12 @@ defmodule Wocky.Bots.InvitationTest do
     end
 
     test "Invitee does not become subscribed if they decline", ctx do
-      assert Bots.subscription(ctx.bot, ctx.invitee) == nil
+      assert Relations.subscription(ctx.bot, ctx.invitee) == nil
 
       assert {:ok, invitation} =
                Invitation.respond(ctx.invitation, false, ctx.invitee)
 
-      assert Bots.subscription(ctx.bot, ctx.invitee) == nil
+      assert Relations.subscription(ctx.bot, ctx.invitee) == nil
     end
 
     test "Inviter cannot respond", ctx do

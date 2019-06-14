@@ -27,7 +27,7 @@ defmodule Wocky.Location.GeoFence do
 
     if inside?(last_event) do
       _ = BotEvent.insert_system(user, bot, :exit, reason)
-      Bots.depart(bot, user, config.enable_notifications)
+      Relations.depart(bot, user, config.enable_notifications)
     end
 
     :ok
@@ -264,16 +264,16 @@ defmodule Wocky.Location.GeoFence do
   end
 
   defp maybe_visit_bot(:enter, user, bot, notify),
-    do: Bots.visit(bot, user, notify)
+    do: Relations.visit(bot, user, notify)
 
   defp maybe_visit_bot(:reactivate, user, bot, notify),
-    do: Bots.visit(bot, user, notify)
+    do: Relations.visit(bot, user, notify)
 
   defp maybe_visit_bot(:exit, user, bot, notify),
-    do: Bots.depart(bot, user, notify)
+    do: Relations.depart(bot, user, notify)
 
   defp maybe_visit_bot(:timeout, user, bot, notify),
-    do: Bots.depart(bot, user, notify)
+    do: Relations.depart(bot, user, notify)
 
   defp maybe_visit_bot(_, _, _, _), do: :ok
 

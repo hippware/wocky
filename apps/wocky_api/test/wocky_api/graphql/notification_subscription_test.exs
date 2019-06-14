@@ -4,10 +4,10 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   import Eventually
   import WockyAPI.ChannelHelper
 
-  alias Wocky.Bots
   alias Wocky.Bots.Invitation
   alias Wocky.Bots.Subscription
   alias Wocky.Location
+  alias Wocky.Relations
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
@@ -102,7 +102,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     } do
       Roster.befriend(user, user2)
 
-      Bots.visit(bot, user2, true)
+      Relations.visit(bot, user2, true)
 
       assert_push "subscription:data", push, 2000
 
@@ -122,7 +122,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     } do
       Roster.befriend(user, user2)
 
-      Bots.depart(bot, user2, true)
+      Relations.depart(bot, user2, true)
 
       assert_push "subscription:data", push, 2000
 

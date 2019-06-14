@@ -7,8 +7,8 @@ defmodule Wocky.Bots.Invitation do
 
   alias Ecto.Changeset
   alias Wocky.Account.User
-  alias Wocky.Bots
   alias Wocky.Bots.Bot
+  alias Wocky.Relations
   alias Wocky.Repo
   alias Wocky.Roster
 
@@ -110,7 +110,7 @@ defmodule Wocky.Bots.Invitation do
   defp maybe_subscribe(_, false), do: :ok
 
   defp maybe_subscribe(invitation, true) do
-    Bots.subscribe(invitation.bot, invitation.invitee)
+    Relations.subscribe(invitation.bot, invitation.invitee)
   end
 
   @spec delete(User.t(), User.t()) :: :ok

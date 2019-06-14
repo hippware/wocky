@@ -1,10 +1,10 @@
 defmodule Wocky.Callbacks.RosterItemTest do
   use Wocky.WatcherCase
 
-  alias Wocky.Bots
   alias Wocky.Bots.Invitation
   alias Wocky.Callbacks.RosterItem, as: Callback
   alias Wocky.Location
+  alias Wocky.Relations
   alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster
@@ -28,13 +28,13 @@ defmodule Wocky.Callbacks.RosterItemTest do
 
   describe "unfriend cleanup" do
     test "bots should no longer be subscribed", ctx do
-      Bots.subscribe(ctx.user_bot, ctx.contact)
-      Bots.subscribe(ctx.contact_bot, ctx.user)
+      Relations.subscribe(ctx.user_bot, ctx.contact)
+      Relations.subscribe(ctx.contact_bot, ctx.user)
 
       Roster.unfriend(ctx.user, ctx.contact)
 
-      refute_eventually(Bots.subscription(ctx.user_bot, ctx.contact))
-      refute_eventually(Bots.subscription(ctx.contact_bot, ctx.user))
+      refute_eventually(Relations.subscription(ctx.user_bot, ctx.contact))
+      refute_eventually(Relations.subscription(ctx.contact_bot, ctx.user))
     end
 
     test "bot invitations should be removed", ctx do
