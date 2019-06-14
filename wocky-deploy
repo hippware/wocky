@@ -52,7 +52,7 @@ if [ "${CI_COMMIT_MESSAGE}" != "" ]; then
 fi
 
 # Add a tag to mark the image as the current one deployed on the environment
-MANIFEST=$(aws ecr batch-get-image --repository-name hippware/wocky --image-ids imageTag=${REVISION} --query 'images[].imageManifest' --output text)
-aws ecr put-image --repository-name hippware/wocky --image-tag deployed-${wocky_env} --image-manifest "$MANIFEST"
+MANIFEST=$(aws ecr batch-get-image --region us-west-2 --repository-name hippware/wocky --image-ids imageTag=${REVISION} --query 'images[].imageManifest' --output text)
+aws ecr put-image --region us-west-2 --repository-name hippware/wocky --image-tag deployed-${wocky_env} --image-manifest "$MANIFEST"
 
 kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete "${msg}"
