@@ -5,7 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: honeybadger (PR #2588), phoenix (PR #2589)
+* Update: honeybadger (PR #2588), phoenix (PR #2589), credo (PR #2585)
+  * gen_stage (PR #2595)
+* Add logging for audit fields (PR #2594)
 
 
 # 2019.6.12+rcc76921
