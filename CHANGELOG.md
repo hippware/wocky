@@ -6,8 +6,10 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: honeybadger (PR #2588), phoenix (PR #2589), credo (PR #2585)
-  * gen_stage (PR #2595)
+  * gen_stage (PR #2595), ecto_sql (PR #2596)
 * Add logging for audit fields (PR #2594)
+* Add deployed tag to deployed image (PR #2597)
+* Set correct region (PR #2598)
 
 
 # 2019.6.12+rcc76921
