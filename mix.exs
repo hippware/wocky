@@ -34,7 +34,8 @@ defmodule Wocky.Release.Mixfile do
       {:dialyxir, "~> 1.0.0-rc.4", only: [:dev, :test], runtime: false},
       {:distillery, "~> 2.0", runtime: false},
       {:excoveralls, "~> 0.8", only: [:dev, :test], runtime: false},
-      {:ex_guard, "~> 1.1", only: [:dev, :test], runtime: false}
+      {:ex_guard, "~> 1.1", only: [:dev, :test], runtime: false},
+      {:mix_test_watch, "~> 0.8", only: :dev, runtime: false}
     ]
   end
 
