@@ -199,18 +199,11 @@ defmodule Wocky.Location.Handler do
 
   defp prepare_location(user, location, current?) do
     with :ok <- UserLocation.validate(location) do
-      nloc =
-        case Audit.log_location(Map.from_struct(location), user, log_location: true) do
-          {:ok, loclog} when not is_nil(loclog) ->
-            %UserLocation{location | id: loclog.id}
+      Audit.log_location(location, user, log_location: true)
 
-          _else ->
-            location
-        end
+      maybe_save_current_location(current?, user, location)
 
-      maybe_save_current_location(current?, user, nloc)
-
-      {:ok, nloc}
+      {:ok, location}
     end
   end
 

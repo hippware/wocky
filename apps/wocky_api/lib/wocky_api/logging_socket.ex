@@ -1,5 +1,6 @@
 defmodule WockyAPI.LoggingSocket do
   alias Wocky.Audit
+  alias Wocky.Audit.TrafficLog
 
   defmacro __using__(opts) do
     # Macro modelled on Phoenix.Socket.__using__
@@ -83,20 +84,16 @@ defmodule WockyAPI.LoggingSocket do
     user = socket.assigns[:user]
     device = socket.assigns[:device]
 
-    # Ignore the return value here so that we don't crash the socket if the
-    # log operation fails.
-    _ =
-      %{
-        user_id: user && user.id,
-        device: device,
-        host: context.host,
-        ip: context.peer,
-        incoming: incoming?,
-        packet: to_string(payload)
-      }
-      |> Audit.log_traffic(user)
-
-    :ok
+    %TrafficLog{
+      user_id: user && user.id,
+      device: device,
+      host: context.host,
+      ip: context.peer,
+      incoming: incoming?,
+      packet: to_string(payload),
+      created_at: DateTime.utc_now()
+    }
+    |> Audit.log_traffic(user)
   end
 
   def maybe_log_reply({:reply, :ok, {:text, payload}, state} = reply) do

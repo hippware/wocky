@@ -1,5 +1,7 @@
 defmodule Wocky.Repo.Factory do
-  @moduledoc false
+  @moduledoc """
+  Factory for Ecto-persisted structures
+  """
 
   use ExMachina.Ecto, repo: Wocky.Repo
 
@@ -13,9 +15,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Account.User
-  alias Wocky.Audit.LocationLog
-  alias Wocky.Audit.PushLog
-  alias Wocky.Audit.TrafficLog
   alias Wocky.Bot
   alias Wocky.Bot.Invitation, as: BotInvitation
   alias Wocky.Bot.Item
@@ -125,33 +124,15 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def traffic_log_factory do
-    %TrafficLog{
-      device: device(),
-      ip: Internet.ip_v6_address() <> ":5020",
-      host: Internet.domain_name(),
-      packet: Lorem.paragraph(),
-      incoming: false
-    }
-  end
-
-  def location_log_factory do
-    struct(LocationLog, location_fields())
-  end
-
-  def location_factory(attrs) do
-    location_fields()
-    |> Map.merge(attrs)
-    |> UserLocation.new()
-  end
-
-  defp location_fields do
-    %{
+  def location_factory do
+    %UserLocation{
+      user_id: build(:user).id,
       device: device(),
       lat: Address.latitude(),
       lon: Address.longitude(),
       accuracy: 10.0,
-      activity: Lorem.word()
+      activity: Lorem.word(),
+      captured_at: DateTime.utc_now()
     }
   end
 
@@ -161,19 +142,7 @@ defmodule Wocky.Repo.Factory do
       user: build(:user),
       device: device(),
       event: :enter,
-      occurred_at: DateTime.utc_now(),
-      location: build(:location_log)
-    }
-  end
-
-  def push_log_factory do
-    %PushLog{
-      user: build(:user),
-      device: device(),
-      token: ID.new(),
-      message_id: ID.new(),
-      payload: ~s(%{"aps" => %{"alert" => #{Lorem.sentence()}}}),
-      response: "success"
+      occurred_at: DateTime.utc_now()
     }
   end
 

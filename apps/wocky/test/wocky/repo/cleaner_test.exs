@@ -6,9 +6,6 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.Account
   alias Wocky.Account.InviteCode
   alias Wocky.Account.User
-  alias Wocky.Audit.LocationLog
-  alias Wocky.Audit.PushLog
-  alias Wocky.Audit.TrafficLog
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Location.BotEvent
@@ -80,34 +77,6 @@ defmodule Wocky.Repo.CleanerTest do
 
     test "should not remove the recent, non-pending bot", ctx do
       assert Repo.get(Bot, ctx.new_nonpending.id)
-    end
-  end
-
-  describe "clean_traffic_logs" do
-    setup %{user: user} do
-      new = Factory.insert(:traffic_log, user: user)
-
-      old =
-        Factory.insert(
-          :traffic_log,
-          user: user,
-          created_at: Timestamp.shift(months: -2)
-        )
-
-      {:ok, result} = Cleaner.clean_traffic_logs()
-      {:ok, result: result, new: new, old: old}
-    end
-
-    test "should return the number of log entries removed", %{result: result} do
-      assert result == 1
-    end
-
-    test "should remove the old log entry", %{old: old} do
-      refute Repo.get(TrafficLog, old.id)
-    end
-
-    test "should not remove the recent log entry", %{new: new} do
-      assert Repo.get(TrafficLog, new.id)
     end
   end
 
@@ -489,34 +458,6 @@ defmodule Wocky.Repo.CleanerTest do
     end
   end
 
-  describe "clean_notification_logs" do
-    setup %{user: user} do
-      new = Factory.insert(:push_log, user: user)
-
-      old =
-        Factory.insert(
-          :push_log,
-          user: user,
-          created_at: Timestamp.shift(months: -2)
-        )
-
-      {:ok, result} = Cleaner.clean_notification_logs()
-      {:ok, result: result, new: new, old: old}
-    end
-
-    test "should return the number of log entries removed", %{result: result} do
-      assert result == 1
-    end
-
-    test "should remove the old log entry", ctx do
-      refute Repo.get(PushLog, ctx.old.id)
-    end
-
-    test "should not remove the recent log entry", ctx do
-      assert Repo.get(PushLog, ctx.new.id)
-    end
-  end
-
   describe "clean transient users" do
     setup do
       transient = Factory.insert(:user, transient: true)
@@ -546,32 +487,6 @@ defmodule Wocky.Repo.CleanerTest do
       refute Repo.get(User, ctx.exp_transient.id)
 
       Application.delete_env(:wocky, :expire_transient_users_after_days)
-    end
-  end
-
-  describe "clean stale locations" do
-    setup do
-      stale_ts = Timestamp.shift(months: -7)
-      stale_location = Factory.insert(:location_log, created_at: stale_ts)
-
-      recent_ts = Timestamp.shift(months: -5)
-      recent_location = Factory.insert(:location_log, created_at: recent_ts)
-
-      assert {:ok, result} = Cleaner.clean_stale_locations()
-
-      {:ok, stale: stale_location, recent: recent_location, result: result}
-    end
-
-    test "should return the number of locations removed", %{result: result} do
-      assert result == 1
-    end
-
-    test "should remove the stale location", ctx do
-      refute Repo.get(LocationLog, ctx.stale.id)
-    end
-
-    test "should not remove the recent location", ctx do
-      assert Repo.get(LocationLog, ctx.recent.id)
     end
   end
 

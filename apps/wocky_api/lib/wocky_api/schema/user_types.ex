@@ -8,6 +8,7 @@ defmodule WockyAPI.Schema.UserTypes do
   import Absinthe.Resolution.Helpers
   import Kronky.Payload
 
+  alias Absinthe.Relay.Connection
   alias WockyAPI.Resolvers.Block
   alias WockyAPI.Resolvers.Bot
   alias WockyAPI.Resolvers.Media
@@ -140,16 +141,16 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The user's location history for a given device"
     connection field :locations, node_type: :locations do
-      connection_complexity()
+      deprecate "This query is no longer supported and will return no data"
       arg :device, non_null(:string)
-      resolve &User.get_locations/3
+      resolve fn _, args, _ -> Connection.from_list([], args) end
     end
 
     @desc "The user's location event history"
     connection field :location_events, node_type: :location_events do
-      connection_complexity()
+      deprecate "This query is no longer supported and will return no data"
       arg :device, non_null(:string)
-      resolve &User.get_location_events/3
+      resolve fn _, args, _ -> Connection.from_list([], args) end
     end
 
     @desc "The user's live location sharing sessions"
@@ -321,6 +322,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
   @desc "A user location update entry"
   object :location do
+    # DEPRECATED - all referring connections are deprecated return empty lists
     @desc "Unique ID of the location report"
     field :id, :uuid
 
@@ -347,8 +349,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "List of events triggered by this location update"
     connection field :events, node_type: :location_events do
-      connection_complexity()
-      resolve &User.get_location_events/3
+      resolve fn _, args, _ -> Connection.from_list([], args) end
     end
   end
 
