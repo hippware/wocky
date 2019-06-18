@@ -3,9 +3,9 @@ defmodule WockyAPI.Callbacks.BotSubscription do
   Callbacks for DB bot changes
   """
 
-  use DawdleDB.Handler, type: Wocky.Bots.Subscription
+  use DawdleDB.Handler, type: Wocky.Relations.Subscription
 
-  alias Wocky.Bots.Subscription
+  alias Wocky.Relations.Subscription
   alias Wocky.Repo.Hydrator
   alias WockyAPI.Resolvers.Bot, as: BotResolver
 

@@ -6,11 +6,11 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Wocky.Account.User
   alias Wocky.Bots
   alias Wocky.Bots.Bot
-  alias Wocky.Bots.Invitation
   alias Wocky.GeoUtils
   alias Wocky.Location
   alias Wocky.Location.UserLocation
   alias Wocky.Relations
+  alias Wocky.Relations.Invitation
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.Waiter
@@ -203,7 +203,7 @@ defmodule WockyAPI.Resolvers.Bot do
         not_found_error(input[:id])
 
       bot ->
-        with :ok <- Relations.subscribe(bot, requestor),
+        with :ok <- Relations.subscribe(requestor, bot),
              {:ok, _} <- maybe_update_location(input, requestor, bot) do
           {:ok, true}
         else
@@ -221,7 +221,7 @@ defmodule WockyAPI.Resolvers.Bot do
         not_found_error(bot_id)
 
       bot ->
-        :ok = Relations.unsubscribe(bot, requestor)
+        :ok = Relations.unsubscribe(requestor, bot)
         {:ok, true}
     end
   end
@@ -310,7 +310,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
   defp do_invite(invitee, bot, requestor) do
     with %User{} = invitee <- Account.get_user(invitee, requestor),
-         {:ok, invitation} <- Invitation.put(invitee, bot, requestor) do
+         {:ok, invitation} <- Relations.invite(invitee, bot, requestor) do
       invitation
     else
       nil -> {:error, "Invalid user"}
@@ -324,8 +324,8 @@ defmodule WockyAPI.Resolvers.Bot do
         %{input: %{invitation_id: id, accept: accept?} = input},
         %{context: %{current_user: requestor}}
       ) do
-    with %Invitation{} = invitation <- Invitation.get(id, requestor),
-         {:ok, result} <- Invitation.respond(invitation, accept?, requestor),
+    with %Invitation{} = invitation <- Relations.get_invitation(id, requestor),
+         {:ok, result} <- Relations.respond(invitation, accept?, requestor),
          {:ok, _} <- maybe_update_location(input, requestor, result.bot) do
       {:ok, true}
     else

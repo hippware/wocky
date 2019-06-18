@@ -6,10 +6,10 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Wocky.Block
   alias Wocky.Bots
   alias Wocky.Bots.Bot
-  alias Wocky.Bots.Invitation
   alias Wocky.Bots.Item
   alias Wocky.GeoUtils
   alias Wocky.Relations
+  alias Wocky.Relations.Invitation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -136,7 +136,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     """
 
     test "get subscribed but not owned bots", %{user: user, bot2: bot2} do
-      Relations.subscribe(bot2, user)
+      Relations.subscribe(user, bot2)
 
       result = run_query(@query, user)
 
@@ -665,15 +665,15 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   describe "active bots" do
     setup %{user: user, bot: bot, user2: user2, bot2: bot2} do
-      Relations.subscribe(bot, user)
-      Relations.subscribe(bot2, user)
-      Relations.visit(bot, user, false)
+      Relations.subscribe(user, bot)
+      Relations.subscribe(user, bot2)
+      Relations.visit(user, bot, false)
 
-      Relations.subscribe(bot2, user2)
-      Relations.visit(bot2, user2, false)
+      Relations.subscribe(user2, bot2)
+      Relations.visit(user2, bot2, false)
 
       for b <- Factory.insert_list(3, :bot) do
-        Relations.subscribe(b, user)
+        Relations.subscribe(user, b)
       end
 
       :ok
@@ -745,9 +745,9 @@ defmodule WockyAPI.GraphQL.BotTest do
         Enum.reduce(1..4, {[], [], []}, fn x, {o, s, u} ->
           loc = GeoUtils.point(x, x)
           owned = Factory.insert(:bot, user: user, location: loc)
-          Relations.subscribe(owned, user)
+          Relations.subscribe(user, owned)
           subscribed = Factory.insert(:bot, user: user2, location: loc)
-          Relations.subscribe(subscribed, user)
+          Relations.subscribe(user, subscribed)
           unrelated = Factory.insert(:bot, user: user2, location: loc)
           {[owned.id | o], [subscribed.id | s], [unrelated.id | u]}
         end)
@@ -856,7 +856,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     test "search area straddling 180th meridian", ctx do
       loc = GeoUtils.point(0.0, -179.0)
       bot = Factory.insert(:bot, user: ctx.user, location: loc)
-      Relations.subscribe(bot, ctx.user)
+      Relations.subscribe(ctx.user, bot)
 
       result =
         run_query(@query, ctx.user, %{
@@ -909,7 +909,7 @@ defmodule WockyAPI.GraphQL.BotTest do
           Factory.insert(:bot, location: l, user: ctx.user)
         end)
 
-      Enum.each(b, &Relations.subscribe(&1, ctx.user))
+      Enum.each(b, &Relations.subscribe(ctx.user, &1))
 
       {:ok, bots: b}
     end
@@ -1192,7 +1192,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                "botSubscribe" => %{"result" => true, "messages" => []}
              }
 
-      assert Relations.subscription(bot, user) == :subscribed
+      assert Relations.subscription(user, bot) == :subscribed
     end
 
     test "subscribe to a non-existent bot", %{user: user} do
@@ -1222,7 +1222,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                "botSubscribe" => %{"result" => true, "messages" => []}
              }
 
-      assert Relations.subscription(bot, user) == :visiting
+      assert Relations.subscription(user, bot) == :visiting
     end
 
     test "subscribe with location outside bot", %{user: user, unsubbed_bot: bot} do
@@ -1244,7 +1244,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                "botSubscribe" => %{"result" => true, "messages" => []}
              }
 
-      assert Relations.subscription(bot, user) == :subscribed
+      assert Relations.subscription(user, bot) == :subscribed
     end
 
     test "subscribe with invalid location", %{user: user, unsubbed_bot: bot} do
@@ -1282,13 +1282,13 @@ defmodule WockyAPI.GraphQL.BotTest do
     """
 
     test "unsubscribe", %{user: user, bot2: bot2} do
-      Relations.subscribe(bot2, user)
+      Relations.subscribe(user, bot2)
 
       result = run_query(@query, user, %{"id" => bot2.id})
 
       refute has_errors(result)
       assert result.data == %{"botUnsubscribe" => %{"result" => true}}
-      assert Relations.subscription(bot2, user) == nil
+      assert Relations.subscription(user, bot2) == nil
     end
 
     test "unsubscribe from a non-existent bot", %{user: user} do
@@ -1321,7 +1321,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     """
 
     test "get bot subscribers", %{bot: bot, user: user, user2: user2} do
-      Relations.subscribe(bot, user2)
+      Relations.subscribe(user2, bot)
 
       result =
         run_query(@query, user, %{
@@ -1354,8 +1354,8 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "get bot visitors", %{bot: bot, user: user, user2: user2} do
-      Relations.subscribe(bot, user2)
-      Relations.visit(bot, user2, false)
+      Relations.subscribe(user2, bot)
+      Relations.visit(user2, bot, false)
 
       result = run_query(@query, user, %{"id" => bot.id, "type" => "VISITOR"})
 
@@ -1388,7 +1388,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "get bot subscribers by id", %{bot: bot, user: user} do
-      Relations.subscribe(bot, user)
+      Relations.subscribe(user, bot)
       result = run_query(@query, user, %{"id" => bot.id, "user_id" => user.id})
 
       refute has_errors(result)
@@ -1894,7 +1894,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       refute has_errors(result)
 
       assert %Invitation{accepted: false} = Repo.get_by(Invitation, id: id)
-      refute Relations.subscription(shared.bot, shared.user3)
+      refute Relations.subscription(shared.user3, shared.bot)
     end
 
     test "can't accept an invitation to someone else", shared do

@@ -3,7 +3,7 @@ defmodule Wocky.Events.BotInvitation do
 
   alias Wocky.Account.User
   alias Wocky.Bots.Bot
-  alias Wocky.Bots.Invitation
+  alias Wocky.Relations.Invitation
 
   defstruct [
     :to,

@@ -16,7 +16,7 @@ defmodule Wocky.Location.HandlerTest do
 
     pid = Handler.get_handler(user)
 
-    Relations.subscribe(bot, user)
+    Relations.subscribe(user, bot)
 
     {:ok, pid: pid, user: user, bot: bot}
   end
@@ -27,7 +27,7 @@ defmodule Wocky.Location.HandlerTest do
     end
 
     test "should remove a bot subscription", %{user: user, bot: bot, pid: pid} do
-      Relations.unsubscribe(bot, user)
+      Relations.unsubscribe(user, bot)
 
       assert %{subscriptions: []} = :sys.get_state(pid)
     end

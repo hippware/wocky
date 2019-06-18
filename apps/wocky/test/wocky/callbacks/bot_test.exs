@@ -24,7 +24,7 @@ defmodule Wocky.Callbacks.BotTest do
     # Make sure the handler is instantiated
     pid = Handler.get_handler(user)
 
-    Relations.subscribe(bot, user)
+    Relations.subscribe(user, bot)
 
     Bots.update(bot, %{location: GeoUtils.point(1.0, 2.0)})
 

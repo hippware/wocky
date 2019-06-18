@@ -5,11 +5,11 @@ defmodule Wocky.Callbacks.BotInvitationTest do
 
   alias Faker.Code
   alias Pigeon.APNS.Notification
-  alias Wocky.Bots.Invitation
   alias Wocky.Callbacks.BotInvitation, as: Callback
   alias Wocky.Notifier.InBand.Notification, as: IBNotification
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
+  alias Wocky.Relations
   alias Wocky.Repo.Factory
   alias Wocky.Roster
 
@@ -32,7 +32,7 @@ defmodule Wocky.Callbacks.BotInvitationTest do
 
   describe "sending an invitation" do
     test "should send a notification", ctx do
-      assert {:ok, invitation} = Invitation.put(ctx.invitee, ctx.bot, ctx.user)
+      assert {:ok, invitation} = Relations.invite(ctx.invitee, ctx.bot, ctx.user)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 500, global: true)
       assert length(msgs) == 1
@@ -50,8 +50,8 @@ defmodule Wocky.Callbacks.BotInvitationTest do
     end
 
     test "subsequent invitations should overwrite existing ones", ctx do
-      assert {:ok, _} = Invitation.put(ctx.invitee, ctx.bot, ctx.user)
-      assert {:ok, _} = Invitation.put(ctx.invitee, ctx.bot, ctx.user)
+      assert {:ok, _} = Relations.invite(ctx.invitee, ctx.bot, ctx.user)
+      assert {:ok, _} = Relations.invite(ctx.invitee, ctx.bot, ctx.user)
 
       assert_eventually(in_band_notifications(ctx.invitee) == 1)
       assert in_band_notifications(ctx.user) == 0
@@ -76,7 +76,7 @@ defmodule Wocky.Callbacks.BotInvitationTest do
 
     test "Inviter receives a push notification on acceptance", ctx do
       assert {:ok, invitation} =
-               Invitation.respond(ctx.invitation, true, ctx.invitee)
+               Relations.respond(ctx.invitation, true, ctx.invitee)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 500, global: true)
       assert length(msgs) == 1
@@ -97,7 +97,7 @@ defmodule Wocky.Callbacks.BotInvitationTest do
 
     test "Inviter does not recieve a notification if invitee declines", ctx do
       assert {:ok, invitation} =
-               Invitation.respond(ctx.invitation, false, ctx.invitee)
+               Relations.respond(ctx.invitation, false, ctx.invitee)
 
       assert no_more_push_notifications()
     end

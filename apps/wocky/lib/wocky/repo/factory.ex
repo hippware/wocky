@@ -16,9 +16,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Account.User
   alias Wocky.Bots.Bot
-  alias Wocky.Bots.Invitation, as: BotInvitation
   alias Wocky.Bots.Item
-  alias Wocky.Bots.Subscription
   alias Wocky.GeoUtils
   alias Wocky.Location.BotEvent
   alias Wocky.Location.Share
@@ -26,6 +24,8 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Messaging.Message
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Notifier.Push.Token, as: PushToken
+  alias Wocky.Relations.Invitation, as: BotInvitation
+  alias Wocky.Relations.Subscription
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster.Invitation, as: RosterInvitation

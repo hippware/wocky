@@ -7,7 +7,6 @@ defmodule Wocky.Callbacks.Block do
 
   alias Wocky.Block
   alias Wocky.Bots
-  alias Wocky.Bots.Invitation
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Relations
   alias Wocky.Repo.Hydrator
@@ -22,8 +21,8 @@ defmodule Wocky.Callbacks.Block do
       delete_bot_references(blockee, blocker)
 
       # Delete invitations
-      Invitation.delete(blocker, blockee)
-      Invitation.delete(blockee, blocker)
+      Relations.delete_invitation(blocker, blockee)
+      Relations.delete_invitation(blockee, blocker)
 
       # Delete notifications
       Notification.delete(blocker, blockee)
@@ -38,7 +37,7 @@ defmodule Wocky.Callbacks.Block do
     |> Relations.get_owned_bots()
     |> Enum.each(fn bot ->
       Bots.delete_items(bot, b)
-      Relations.unsubscribe(bot, b)
+      Relations.unsubscribe(b, bot)
     end)
   end
 end

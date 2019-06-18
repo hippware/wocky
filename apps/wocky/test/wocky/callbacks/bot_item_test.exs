@@ -23,8 +23,8 @@ defmodule Wocky.Callbacks.BotItemTest do
     bot = Factory.insert(:bot, user: user)
     Roster.befriend(user, author)
     Roster.befriend(user, sub)
-    Relations.subscribe(bot, author)
-    Relations.subscribe(bot, sub)
+    Relations.subscribe(author, bot)
+    Relations.subscribe(sub, bot)
 
     Sandbox.clear_notifications(global: true)
 

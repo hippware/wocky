@@ -2,9 +2,9 @@ defmodule Wocky.Callbacks.BlockTest do
   use Wocky.WatcherCase
 
   alias Wocky.Block
-  alias Wocky.Bots.Invitation
   alias Wocky.Callbacks.Block, as: Callback
   alias Wocky.Notifier.InBand.Notification
+  alias Wocky.Relations.Invitation
   alias Wocky.Repo.Factory
 
   setup_all do

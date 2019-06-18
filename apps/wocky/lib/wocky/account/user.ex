@@ -6,10 +6,10 @@ defmodule Wocky.Account.User do
   alias Wocky.Account.Avatar
   alias Wocky.Account.InviteCode
   alias Wocky.Bots.Bot
-  alias Wocky.Bots.Invitation
-  alias Wocky.Bots.Subscription
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Presence
+  alias Wocky.Relations.Invitation
+  alias Wocky.Relations.Subscription
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
 

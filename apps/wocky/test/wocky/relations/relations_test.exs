@@ -1,13 +1,13 @@
 defmodule Wocky.Relations.RelationsTest do
   use Wocky.DataCase, async: true
 
+  alias Ecto.Adapters.SQL
   alias Wocky.Account.User
   alias Wocky.Bots
   alias Wocky.Bots.Bot
-  alias Wocky.Bots.Invitation
-  # alias Wocky.Bots.Subscription
   alias Wocky.GeoUtils
   alias Wocky.Relations
+  alias Wocky.Relations.Invitation
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Roster
@@ -45,7 +45,7 @@ defmodule Wocky.Relations.RelationsTest do
     test "should return the bot for a subscriber", ctx do
       subscriber = Factory.insert(:user)
       Roster.befriend(subscriber, ctx.user)
-      Relations.subscribe(ctx.bot, subscriber)
+      Relations.subscribe(subscriber, ctx.bot)
 
       assert ctx.bot.id |> Relations.get_bot(subscriber) |> Repo.preload(:user) ==
                ctx.bot
@@ -83,7 +83,7 @@ defmodule Wocky.Relations.RelationsTest do
 
     test "should return no bot for a subscriber", %{bot: bot} do
       subscriber = Factory.insert(:user)
-      Relations.subscribe(bot, subscriber)
+      Relations.subscribe(subscriber, bot)
       assert bot.id |> Relations.get_owned_bot(subscriber) == nil
     end
 
@@ -103,7 +103,7 @@ defmodule Wocky.Relations.RelationsTest do
     setup ctx do
       subscriber = Factory.insert(:user)
       Roster.befriend(subscriber, ctx.user)
-      Relations.subscribe(ctx.bot, subscriber)
+      Relations.subscribe(subscriber, ctx.bot)
 
       {:ok, subscriber: subscriber}
     end
@@ -113,15 +113,15 @@ defmodule Wocky.Relations.RelationsTest do
     end
 
     test "should return visted bot", ctx do
-      Relations.visit(ctx.bot, ctx.subscriber, false)
+      Relations.visit(ctx.subscriber, ctx.bot, false)
       assert ctx.subscriber |> Relations.active_bots_query() |> has_bot(ctx.bot)
     end
 
     test "should return bots with most recently visited first", ctx do
       bot2 = Factory.insert(:bot, user: ctx.user)
-      Relations.subscribe(bot2, ctx.subscriber)
-      Relations.visit(ctx.bot, ctx.subscriber, false)
-      Relations.visit(bot2, ctx.subscriber, false)
+      Relations.subscribe(ctx.subscriber, bot2)
+      Relations.visit(ctx.subscriber, ctx.bot, false)
+      Relations.visit(ctx.subscriber, bot2, false)
 
       bot_ids =
         ctx.subscriber
@@ -167,8 +167,8 @@ defmodule Wocky.Relations.RelationsTest do
       subscribed_bot = Factory.insert(:bot, user: other_user)
       unaffiliated_bot = Factory.insert(:bot, user: other_user)
 
-      Invitation.put(ctx.user, invited_bot, other_user)
-      Relations.subscribe(subscribed_bot, ctx.user)
+      Relations.invite(ctx.user, invited_bot, other_user)
+      Relations.subscribe(ctx.user, subscribed_bot)
 
       {:ok,
        other_user: other_user,
@@ -252,11 +252,11 @@ defmodule Wocky.Relations.RelationsTest do
       [stranger, subscriber, visitor, invitee] = Factory.insert_list(4, :user)
       Enum.map([subscriber, visitor, invitee], &Roster.befriend(&1, ctx.user))
 
-      Relations.subscribe(ctx.bot, ctx.user)
-      Relations.subscribe(ctx.bot, subscriber)
-      Relations.subscribe(ctx.bot, visitor)
-      Relations.visit(ctx.bot, visitor, false)
-      Invitation.put(invitee, ctx.bot, ctx.user)
+      Relations.subscribe(ctx.user, ctx.bot)
+      Relations.subscribe(subscriber, ctx.bot)
+      Relations.subscribe(visitor, ctx.bot)
+      Relations.visit(visitor, ctx.bot, false)
+      Relations.invite(invitee, ctx.bot, ctx.user)
 
       {:ok,
        stranger: stranger,
@@ -450,7 +450,7 @@ defmodule Wocky.Relations.RelationsTest do
     setup ctx do
       sub = Factory.insert(:user)
       Roster.befriend(sub, ctx.user)
-      Relations.subscribe(ctx.bot, sub)
+      Relations.subscribe(sub, ctx.bot)
 
       {:ok, sub: sub}
     end
@@ -482,8 +482,8 @@ defmodule Wocky.Relations.RelationsTest do
     test "should get visitors when they are present", ctx do
       visitor = Factory.insert(:user)
       Roster.befriend(visitor, ctx.user)
-      Relations.subscribe(ctx.bot, visitor)
-      Relations.visit(ctx.bot, visitor, false)
+      Relations.subscribe(visitor, ctx.bot)
+      Relations.visit(visitor, ctx.bot, false)
       assert ctx.bot |> Relations.visitors_query() |> Repo.one() == visitor
     end
   end
@@ -498,9 +498,9 @@ defmodule Wocky.Relations.RelationsTest do
 
       stranger = Factory.insert(:user)
 
-      :ok = Relations.subscribe(bot, friend1)
-      :ok = Relations.subscribe(bot, friend2)
-      {:error, :permission_denied} = Relations.subscribe(bot, stranger)
+      :ok = Relations.subscribe(friend1, bot)
+      :ok = Relations.subscribe(friend2, bot)
+      {:error, :permission_denied} = Relations.subscribe(stranger, bot)
 
       {:ok, friend1: friend1, friend2: friend2, stranger: stranger}
     end
@@ -533,4 +533,370 @@ defmodule Wocky.Relations.RelationsTest do
     do: query |> Repo.one() == nil
 
   defp same_bot(bot1, bot2), do: bot1.id == bot2.id
+
+  # -------------------------------------------------------------------
+  # Subsriptions
+
+  def create_subscription(ctx) do
+    [user, visitor] = Factory.insert_list(2, :user)
+    Roster.befriend(ctx.user, user)
+    Roster.befriend(ctx.user, visitor)
+
+    Factory.insert(:subscription, user: user, bot: ctx.bot)
+
+    Factory.insert(
+      :subscription,
+      user: visitor,
+      bot: ctx.bot,
+      visitor: true
+    )
+
+    {:ok, owner: ctx.user, user: user, visitor: visitor}
+  end
+
+  describe "subscription/2" do
+    setup :create_subscription
+
+    test "should return :subscribed if the user is subscribed to the bot",
+         ctx do
+      assert Relations.subscription(ctx.user, ctx.bot) == :subscribed
+    end
+
+    test "should return nil when the user does not exist", ctx do
+      user = Factory.build(:user, device: "testing")
+      refute Relations.subscription(user, ctx.bot)
+    end
+
+    test "should return nil when the bot does not exist", ctx do
+      bot = Factory.build(:bot)
+      refute Relations.subscription(ctx.user, bot)
+    end
+
+    test "should return nil when the user is not subscribed to the bot", ctx do
+      refute Relations.subscription(ctx.owner, ctx.bot)
+    end
+
+    test "should return :visitor when the user is a visitor", ctx do
+      assert Relations.subscription(ctx.visitor, ctx.bot) == :visiting
+    end
+  end
+
+  describe "get_subscription/2" do
+    setup :create_subscription
+
+    test "should return the subscription", ctx do
+      assert Relations.get_subscription(ctx.user, ctx.bot)
+    end
+
+    test "should return nil when the user does not exist", ctx do
+      user = Factory.build(:user)
+      refute Relations.get_subscription(user, ctx.bot)
+    end
+
+    test "should return nil when the bot does not exist", ctx do
+      bot = Factory.build(:bot)
+      refute Relations.get_subscription(ctx.user, bot)
+    end
+
+    test "should return nil when the user is not subscribed to the bot", ctx do
+      refute Relations.get_subscription(ctx.owner, ctx.bot)
+    end
+  end
+
+  describe "subscribe/2" do
+    setup :create_subscription
+
+    test "when a subscription does not already exist", ctx do
+      new_user = Factory.insert(:user)
+      Roster.befriend(new_user, ctx.owner)
+
+      result = Relations.subscribe(new_user, ctx.bot)
+
+      assert result == :ok
+      assert Relations.subscription(new_user, ctx.bot) == :subscribed
+    end
+
+    test "when a subscription already exists", ctx do
+      result = Relations.subscribe(ctx.visitor, ctx.bot)
+
+      assert result == :ok
+      assert Relations.subscription(ctx.visitor, ctx.bot) == :visiting
+    end
+  end
+
+  describe "unsubscribe/2" do
+    setup :create_subscription
+
+    test "when a subscription exists", ctx do
+      result = Relations.unsubscribe(ctx.user, ctx.bot)
+
+      assert result == :ok
+      refute Relations.subscription(ctx.user, ctx.bot)
+    end
+
+    test "when the bot owner is trying to unsubscribe", ctx do
+      assert {:error, _} = Relations.unsubscribe(ctx.owner, ctx.bot)
+    end
+
+    test "when the user doesn't exist", ctx do
+      user = Factory.build(:user)
+
+      assert Relations.unsubscribe(user, ctx.bot) == :ok
+    end
+
+    test "when the bot doesn't exist", ctx do
+      bot = Factory.build(:bot)
+
+      assert Relations.unsubscribe(ctx.user, bot) == :ok
+    end
+  end
+
+  describe "delete_subscriptions_for_owned_bots/2" do
+    setup :create_subscription
+
+    test "should delete subscriptions to bots owned by the specified user",
+         ctx do
+      assert :ok == Relations.delete_subscriptions_for_owned_bots(ctx.owner, ctx.user)
+      refute Relations.subscription(ctx.user, ctx.bot)
+    end
+
+    test "should not delete subscriptions to bots owned by another user", ctx do
+      u = Factory.insert(:user)
+      assert :ok == Relations.delete_subscriptions_for_owned_bots(u, ctx.user)
+      assert Relations.subscription(ctx.user, ctx.bot) == :subscribed
+    end
+  end
+
+  describe "visit/2" do
+    setup :create_subscription
+
+    test "should set the subscriber as a visitor", ctx do
+      assert Relations.visit(ctx.user, ctx.bot) == :ok
+      assert Relations.subscription(ctx.user, ctx.bot) == :visiting
+    end
+  end
+
+  describe "depart/2" do
+    setup :create_subscription
+
+    test "should set the visitor as a subscriber", ctx do
+      assert Relations.depart(ctx.visitor, ctx.bot) == :ok
+      assert Relations.subscription(ctx.visitor, ctx.bot) == :subscribed
+    end
+  end
+
+  describe "is_subscribed/2 stored procedure" do
+    setup :create_subscription
+
+    test "should return true if the user is subscribed to the bot", ctx do
+      assert is_subscribed_sp(ctx.user, ctx.bot)
+    end
+
+    test "should return false when the user does not exist", ctx do
+      user = Factory.build(:user, device: "testing")
+      refute is_subscribed_sp(user, ctx.bot)
+    end
+
+    test "should return false when the bot does not exist", ctx do
+      bot = Factory.build(:bot)
+      refute is_subscribed_sp(ctx.user, bot)
+    end
+
+    test "should return false when the user is not subscribed to the bot",
+         ctx do
+      refute is_subscribed_sp(ctx.owner, ctx.bot)
+    end
+  end
+
+  defp is_subscribed_sp(user, bot) do
+    {:ok, u} = Ecto.UUID.dump(user.id)
+    {:ok, b} = Ecto.UUID.dump(bot.id)
+
+    Repo
+    |> SQL.query!("SELECT is_subscribed($1, $2)", [u, b])
+    |> Map.get(:rows)
+    |> hd
+    |> hd
+  end
+
+  # -------------------------------------------------------------------
+  # Invitations
+
+  describe "invite/3" do
+    setup ctx do
+      [invitee, stranger] = Factory.insert_list(2, :user, device: "testing")
+      Roster.befriend(ctx.user, invitee)
+
+      {:ok, invitee: invitee, stranger: stranger}
+    end
+
+    test "should create an invitation", ctx do
+      assert {:ok, invitation} = Relations.invite(ctx.invitee, ctx.bot, ctx.user)
+
+      assert invitation == Repo.get_by(Invitation, id: invitation.id)
+      assert invitation.accepted == nil
+    end
+
+    test "refuse invitation to non-owned bot", ctx do
+      other_user = Factory.insert(:user)
+
+      assert {:error, :permission_denied} ==
+               Relations.invite(ctx.invitee, ctx.bot, other_user)
+    end
+
+    test "refuse invitation to non-friend", ctx do
+      assert {:error, :permission_denied} =
+               Relations.invite(ctx.stranger, ctx.bot, ctx.user)
+    end
+
+    test "subsequent invitations should overwrite existing ones", ctx do
+      assert {:ok, invitation} = Relations.invite(ctx.invitee, ctx.bot, ctx.user)
+
+      assert {:ok, invitation2} = Relations.invite(ctx.invitee, ctx.bot, ctx.user)
+
+      assert invitation.id == invitation2.id
+
+      assert DateTime.compare(invitation.updated_at, invitation2.updated_at) ==
+               :lt
+    end
+  end
+
+  defp setup_invitation(ctx) do
+    invitee = Factory.insert(:user, device: "testing")
+    Roster.befriend(ctx.user, invitee)
+
+    invitation =
+      Factory.insert(:bot_invitation,
+        user: ctx.user,
+        invitee: invitee,
+        bot: ctx.bot
+      )
+
+    {:ok, invitee: invitee, invitation: invitation}
+  end
+
+  describe "get_invitation/2 by id" do
+    setup :setup_invitation
+
+    test "User can get their own invitation", ctx do
+      assert %Invitation{} = Relations.get_invitation(ctx.invitation.id, ctx.user)
+    end
+
+    test "Invitee can get their own invitation", ctx do
+      assert %Invitation{} = Relations.get_invitation(ctx.invitation.id, ctx.invitee)
+    end
+
+    test "Unrelated user cannot get the invitation", ctx do
+      refute Relations.get_invitation(ctx.invitation.id, Factory.insert(:user))
+    end
+  end
+
+  describe "get_invitation/2 by bot id" do
+    setup :setup_invitation
+
+    test "User can get their own invitation", ctx do
+      assert %Invitation{} = Relations.get_invitation(ctx.bot, ctx.user)
+    end
+
+    test "Invitee can get their own invitation", ctx do
+      assert %Invitation{} = Relations.get_invitation(ctx.bot, ctx.invitee)
+    end
+
+    test "Unrelated user cannot get the invitation", ctx do
+      assert nil == Relations.get_invitation(ctx.bot, Factory.insert(:user))
+    end
+  end
+
+  describe "exists?/2 - true" do
+    setup :setup_invitation
+
+    test "exists by id", ctx do
+      assert Relations.exists?(ctx.invitation.id, ctx.user)
+    end
+
+    test "exists by bot", ctx do
+      assert Relations.exists?(ctx.bot, ctx.user)
+    end
+  end
+
+  describe "exists?/2 - false" do
+    test "does not exist by id", ctx do
+      refute Relations.exists?(1, ctx.user)
+    end
+
+    test "does not exist by bot", ctx do
+      refute Relations.exists?(ctx.bot, ctx.user)
+    end
+  end
+
+  describe "respond/3" do
+    setup :setup_invitation
+
+    test "Invitee can accept", ctx do
+      assert {:ok, invitation} =
+               Relations.respond(ctx.invitation, true, ctx.invitee)
+
+      assert invitation.accepted == true
+    end
+
+    test "Invitee becomes subscribed if they accept", ctx do
+      assert Relations.subscription(ctx.invitee, ctx.bot) == nil
+
+      assert {:ok, invitation} =
+               Relations.respond(ctx.invitation, true, ctx.invitee)
+
+      assert Relations.subscription(ctx.invitee, ctx.bot) == :subscribed
+    end
+
+    test "Invitee can decline", ctx do
+      assert {:ok, invitation} =
+               Relations.respond(ctx.invitation, false, ctx.invitee)
+
+      assert invitation.accepted == false
+    end
+
+    test "Invitee does not become subscribed if they decline", ctx do
+      assert Relations.subscription(ctx.invitee, ctx.bot) == nil
+
+      assert {:ok, invitation} =
+               Relations.respond(ctx.invitation, false, ctx.invitee)
+
+      assert Relations.subscription(ctx.invitee, ctx.bot) == nil
+    end
+
+    test "Inviter cannot respond", ctx do
+      assert {:error, :permission_denied} =
+               Relations.respond(ctx.invitation, false, ctx.user)
+    end
+
+    test "Other user cannot respond", ctx do
+      assert {:error, :permission_denied} =
+               Relations.respond(
+                 ctx.invitation,
+                 false,
+                 Factory.insert(:user)
+               )
+    end
+  end
+
+  describe "delete_invitation/2" do
+    setup :setup_invitation
+
+    setup %{user: user, invitee: invitee} do
+      invitation = Factory.insert(:bot_invitation, user: user, invitee: invitee)
+      invitation2 = Factory.insert(:bot_invitation, invitee: invitee)
+
+      Relations.delete_invitation(user, invitee)
+
+      {:ok, invitation: invitation, invitation2: invitation2}
+    end
+
+    test "it should delete the invitation between the users", ctx do
+      refute Repo.get(Invitation, ctx.invitation.id)
+    end
+
+    test "it should not delete other invitations to the user", ctx do
+      assert Repo.get(Invitation, ctx.invitation2.id)
+    end
+  end
 end

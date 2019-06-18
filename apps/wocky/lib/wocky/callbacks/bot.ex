@@ -15,7 +15,7 @@ defmodule Wocky.Callbacks.Bot do
 
   def handle_insert(new) do
     Hydrator.with_assocs(new, [:user], fn rec = %{user: user} ->
-      :ok = Relations.subscribe(rec, user)
+      :ok = Relations.subscribe(user, rec)
 
       rec
       |> Bots.sub_setup_event()

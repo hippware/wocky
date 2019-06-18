@@ -88,7 +88,7 @@ defmodule Wocky.Bots.ClusterSearchTest do
         Factory.insert(:bot, location: l, user: u)
       end)
 
-    Enum.each(b, &Relations.subscribe(&1, u))
+    Enum.each(b, &Relations.subscribe(u, &1))
 
     {:ok, user: u, bots: b}
   end

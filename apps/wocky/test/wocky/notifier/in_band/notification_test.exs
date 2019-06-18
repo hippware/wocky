@@ -2,7 +2,6 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Block
-  alias Wocky.Bots.Invitation
   alias Wocky.Events.BotInvitation
   alias Wocky.Events.BotInvitationResponse
   alias Wocky.Events.BotItem
@@ -12,6 +11,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
   alias Wocky.Events.UserInvitation
   alias Wocky.Notifier
   alias Wocky.Notifier.InBand.Notification
+  alias Wocky.Relations.Invitation
   alias Wocky.Repo.Factory
 
   setup do

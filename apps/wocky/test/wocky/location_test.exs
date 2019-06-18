@@ -24,7 +24,7 @@ defmodule Wocky.LocationTest do
       bot = Factory.insert(:bot, user: user2)
 
       Roster.befriend(ctx.user, user2)
-      Relations.subscribe(bot, ctx.user)
+      Relations.subscribe(ctx.user, bot)
 
       {:ok, bot: bot, lat: Bots.lat(bot), lon: Bots.lon(bot)}
     end
@@ -49,7 +49,7 @@ defmodule Wocky.LocationTest do
       bot = Factory.insert(:bot, user: user2)
 
       Roster.befriend(ctx.user, user2)
-      Relations.subscribe(bot, ctx.user)
+      Relations.subscribe(ctx.user, bot)
 
       location =
         UserLocation.new(%{
@@ -70,7 +70,7 @@ defmodule Wocky.LocationTest do
                  ctx.bot
                )
 
-      assert Relations.subscription(ctx.bot, ctx.user) == :visiting
+      assert Relations.subscription(ctx.user, ctx.bot) == :visiting
     end
   end
 
