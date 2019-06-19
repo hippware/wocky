@@ -1881,8 +1881,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       user_id = shared.user3.id
 
-      assert [%{id: ^user_id}] =
-               shared.bot |> Relations.visitors_query() |> Repo.all()
+      assert [%{id: ^user_id}] = Relations.get_visitors(shared.bot)
     end
 
     test "declining", %{id: id} = shared do
