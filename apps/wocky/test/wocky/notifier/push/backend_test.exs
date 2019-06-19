@@ -54,7 +54,8 @@ defmodule Wocky.Notifier.Push.BackendTest do
                payload: %{
                  "aps" => %{
                    "alert" => ^body,
-                   "badge" => 1
+                   "badge" => 1,
+                   "sound" => "default"
                  },
                  "uri" => ^url
                },
