@@ -70,7 +70,7 @@ defmodule Wocky.MessagingTest do
     end
   end
 
-  describe "send_message/4" do
+  describe "send_message/5" do
     setup do
       [user, friend, stranger] = Factory.insert_list(3, :user)
 
@@ -81,7 +81,7 @@ defmodule Wocky.MessagingTest do
 
     test "should send a message to a friend", %{user: u, friend: f} do
       text = Lorem.paragraph()
-      assert {:ok, _} = Messaging.send_message(f, u, text)
+      assert {:ok, _} = Messaging.send_message(f, u, text, nil, nil)
 
       assert [%Message{content: ^text}] =
                f |> Messaging.get_messages_query(u) |> Repo.all()
@@ -89,7 +89,7 @@ defmodule Wocky.MessagingTest do
 
     test "should fail sending to an stranger", %{user: u, stranger: s} do
       assert {:error, :permission_denied} =
-               Messaging.send_message(s, s, Lorem.paragraph())
+               Messaging.send_message(s, s, Lorem.paragraph(), nil, nil)
 
       assert [] = s |> Messaging.get_messages_query(u) |> Repo.all()
     end
@@ -99,7 +99,9 @@ defmodule Wocky.MessagingTest do
                Messaging.send_message(
                  Factory.build(:user),
                  u,
-                 Lorem.paragraph()
+                 Lorem.paragraph(),
+                 nil,
+                 nil
                )
     end
   end

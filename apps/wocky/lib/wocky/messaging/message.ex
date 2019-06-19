@@ -11,6 +11,7 @@ defmodule Wocky.Messaging.Message do
   schema "messages" do
     field :content, :string
     field :image_url, :string
+    field :client_data, :string
 
     belongs_to :sender, User
     belongs_to :recipient, User
