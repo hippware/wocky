@@ -32,8 +32,8 @@ defmodule Wocky.Callbacks.RosterItemTest do
 
       Roster.unfriend(ctx.user, ctx.contact)
 
-      refute_eventually(Relations.subscription(ctx.contact, ctx.user_bot))
-      refute_eventually(Relations.subscription(ctx.user, ctx.contact_bot))
+      refute_eventually(Relations.subscribed?(ctx.contact, ctx.user_bot))
+      refute_eventually(Relations.subscribed?(ctx.user, ctx.contact_bot))
     end
 
     test "bot invitations should be removed", ctx do
@@ -42,8 +42,8 @@ defmodule Wocky.Callbacks.RosterItemTest do
 
       Roster.unfriend(ctx.user, ctx.contact)
 
-      refute_eventually(Relations.get_invitation(ctx.user_bot, ctx.contact))
-      refute_eventually(Relations.get_invitation(ctx.contact_bot, ctx.user))
+      refute_eventually(Relations.invited?(ctx.contact, ctx.user_bot))
+      refute_eventually(Relations.invited?(ctx.user, ctx.contact_bot))
     end
 
     test "locations shares should be canceled", ctx do

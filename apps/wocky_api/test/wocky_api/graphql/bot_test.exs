@@ -1192,7 +1192,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                "botSubscribe" => %{"result" => true, "messages" => []}
              }
 
-      assert Relations.subscription(user, bot) == :subscribed
+      assert Relations.subscribed?(user, bot)
     end
 
     test "subscribe to a non-existent bot", %{user: user} do
@@ -1222,7 +1222,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                "botSubscribe" => %{"result" => true, "messages" => []}
              }
 
-      assert Relations.subscription(user, bot) == :visiting
+      assert Relations.visiting?(user, bot)
     end
 
     test "subscribe with location outside bot", %{user: user, unsubbed_bot: bot} do
@@ -1244,7 +1244,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                "botSubscribe" => %{"result" => true, "messages" => []}
              }
 
-      assert Relations.subscription(user, bot) == :subscribed
+      assert Relations.subscribed?(user, bot)
     end
 
     test "subscribe with invalid location", %{user: user, unsubbed_bot: bot} do
@@ -1288,7 +1288,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       refute has_errors(result)
       assert result.data == %{"botUnsubscribe" => %{"result" => true}}
-      assert Relations.subscription(user, bot2) == nil
+      refute Relations.subscribed?(user, bot2)
     end
 
     test "unsubscribe from a non-existent bot", %{user: user} do
@@ -1814,7 +1814,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "gives users access to the bot", shared do
-      refute Relations.can_access?(shared.user3, shared.bot)
+      refute Relations.visible?(shared.user3, shared.bot)
 
       Factory.insert(:bot_invitation,
         user: shared.user,
@@ -1822,7 +1822,7 @@ defmodule WockyAPI.GraphQL.BotTest do
         invitee: shared.user3
       )
 
-      assert Relations.can_access?(shared.user3, shared.bot)
+      assert Relations.visible?(shared.user3, shared.bot)
     end
   end
 
@@ -1857,7 +1857,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       refute has_errors(result)
 
       assert %Invitation{accepted: true} = Repo.get_by(Invitation, id: id)
-      assert Relations.can_access?(shared.user3, shared.bot)
+      assert Relations.visible?(shared.user3, shared.bot)
     end
 
     test "accepting with location", %{id: id} = shared do
@@ -1894,7 +1894,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       refute has_errors(result)
 
       assert %Invitation{accepted: false} = Repo.get_by(Invitation, id: id)
-      refute Relations.subscription(shared.user3, shared.bot)
+      refute Relations.subscribed?(shared.user3, shared.bot)
     end
 
     test "can't accept an invitation to someone else", shared do
@@ -1912,7 +1912,7 @@ defmodule WockyAPI.GraphQL.BotTest do
           "input" => %{"invitation_id" => to_string(id), "accept" => true}
         })
 
-      assert error_msg(result) =~ "Permission denied"
+      assert error_msg(result) =~ "Invalid invitation"
     end
   end
 

@@ -69,7 +69,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     bot = Factory.insert(:bot, user: user)
     Relations.subscribe(user2, bot)
 
-    assert_eventually(Relations.subscription(user, bot) == :subscribed)
+    assert_eventually(Relations.subscribed?(user, bot))
 
     {:ok, user2: user2, bot: bot, ref: ref, subscription_id: subscription_id}
   end

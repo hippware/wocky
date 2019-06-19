@@ -23,9 +23,6 @@ defmodule Wocky.Relations do
   alias Wocky.Repo
   alias Wocky.Roster
 
-  @type bot_relationship ::
-          :owned | :invited | :subscribed | :visitor | :visible
-
   @type relationship ::
           :visible
           | :owned
@@ -35,7 +32,7 @@ defmodule Wocky.Relations do
           | :visiting
 
   # ----------------------------------------------------------------------
-  # Bot relationships
+  # Get bots by relationship to user
 
   @spec get_bot(Bot.id(), User.t(), boolean()) :: Bot.t() | nil
   def get_bot(id, requestor, include_pending \\ false) do
@@ -75,32 +72,9 @@ defmodule Wocky.Relations do
     |> where(pending: false)
   end
 
-  @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
-  def is_visible_query(queryable, user) do
-    queryable
-    |> Block.object_visible_query(user)
-    |> join(
-      :left,
-      [b, ...],
-      invitation in Invitation,
-      on: b.id == invitation.bot_id and invitation.invitee_id == ^user.id
-    )
-    |> join(
-      :left,
-      [b, ...],
-      sub in Subscription,
-      on: b.id == sub.bot_id and sub.user_id == ^user.id
-    )
-    |> where(
-      [b, ..., invitation, sub],
-      b.user_id == ^user.id or not is_nil(sub.user_id) or
-        not is_nil(invitation.user_id)
-    )
-  end
-
   @doc "Returns all bots that the user subscribes to"
-  @spec get_subscriptions(User.t()) :: [Bot.t()]
-  def get_subscriptions(user) do
+  @spec get_subscribed_bots(User.t()) :: [Bot.t()]
+  def get_subscribed_bots(user) do
     Bot
     |> where(pending: false)
     |> join(
@@ -111,6 +85,20 @@ defmodule Wocky.Relations do
     )
     |> where([b, s], not is_nil(s.user_id))
     |> select([:id, :title, :location])
+    |> Repo.all()
+  end
+
+  @doc """
+  Returns all active bots for a user.
+
+  An "active" bot is a bot that the user subscribes to that currently has
+  visitors. The list is sorted by the enter time of the most recent visitor
+  to each bot.
+  """
+  @spec get_active_bots(User.t()) :: [Bot.t()]
+  def get_active_bots(user) do
+    user
+    |> active_bots_query()
     |> Repo.all()
   end
 
@@ -145,7 +133,7 @@ defmodule Wocky.Relations do
     end
   end
 
-  def get_local_bots_cluster(user, point_a, point_b, lat_divs, lon_divs) do
+  def get_local_bots_clustered(user, point_a, point_b, lat_divs, lon_divs) do
     with :ok <- check_area(point_a, point_b) do
       results = ClusterSearch.search(point_a, point_b, lat_divs, lon_divs, user)
 
@@ -183,27 +171,13 @@ defmodule Wocky.Relations do
     end
   end
 
-  @spec can_access?(User.t(), Bot.t()) :: boolean
-  def can_access?(user, bot) do
-    owns?(user, bot) || invited?(bot, user) || subscription(user, bot) != nil
+  @spec get_bots_by_relationship(User.t(), relationship(), User.t() | nil) ::
+          [Bot.t()]
+  def get_bots_by_relationship(user, relationship, requestor \\ nil) do
+    user
+    |> by_relationship_query(relationship, requestor)
+    |> Repo.all()
   end
-
-  defp owns?(user, bot), do: user.id == bot.user_id
-
-  @spec get_bot_relationships(User.t(), Bot.t()) :: [bot_relationship()]
-  def get_bot_relationships(user, bot) do
-    sub = get_subscription(user, bot)
-
-    [:visible]
-    |> maybe_add_rel(bot.user_id == user.id, :owned)
-    |> maybe_add_rel(invited?(bot, user), :invited)
-    |> maybe_add_rel(sub != nil, [:subscribed])
-    |> maybe_add_rel(sub != nil && sub.visitor, :visitor)
-    |> List.flatten()
-  end
-
-  defp maybe_add_rel(list, true, rel), do: [rel | list]
-  defp maybe_add_rel(list, false, _rel), do: list
 
   @spec by_relationship_query(User.t(), relationship(), User.t() | nil) ::
           Queryable.t()
@@ -258,12 +232,45 @@ defmodule Wocky.Relations do
     |> order_by([..., s], desc: s.visited_at)
   end
 
-  # ----------------------------------------------------------------------
-  # Subscriptions
+  @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
+  def is_visible_query(queryable, user) do
+    queryable
+    |> Block.object_visible_query(user)
+    |> join(
+      :left,
+      [b, ...],
+      invitation in Invitation,
+      on: b.id == invitation.bot_id and invitation.invitee_id == ^user.id
+    )
+    |> join(
+      :left,
+      [b, ...],
+      sub in Subscription,
+      on: b.id == sub.bot_id and sub.user_id == ^user.id
+    )
+    |> where(
+      [b, ..., invitation, sub],
+      b.user_id == ^user.id or not is_nil(sub.user_id) or
+        not is_nil(invitation.user_id)
+    )
+  end
 
-  @spec subscribers_query(Bot.t()) :: [User.t()]
+  # ----------------------------------------------------------------------
+  # Get users by relationship to bot
+
+  @spec get_subscribers(Bot.t()) :: [User.t()]
+  def get_subscribers(bot) do
+    bot |> subscribers_query() |> Repo.all()
+  end
+
+  @spec subscribers_query(Bot.t()) :: Queryable.t()
   def subscribers_query(bot) do
     Ecto.assoc(bot, :subscribers)
+  end
+
+  @spec get_subscriber(Bot.t(), User.id()) :: User.t() | nil
+  def get_subscriber(bot, user_id) do
+    bot |> subscriber_query(user_id) |> Repo.one()
   end
 
   @spec subscriber_query(Bot.t(), User.id()) :: Queryable.t()
@@ -271,6 +278,11 @@ defmodule Wocky.Relations do
     bot
     |> Ecto.assoc(:subscribers)
     |> where([..., s], s.user_id == ^user_id)
+  end
+
+  @spec get_visitors(Bot.t()) :: [User.t()]
+  def get_visitors(bot) do
+    bot |> visitors_query() |> Repo.all()
   end
 
   @spec visitors_query(Bot.t()) :: Queryable.t()
@@ -281,18 +293,81 @@ defmodule Wocky.Relations do
     |> order_by([..., s], desc: s.visited_at)
   end
 
+  @doc false
+  @spec notification_recipients(Bot.t(), User.t()) :: [User.t()]
+  def notification_recipients(bot, sender) do
+    # TODO We might be able to reduce the round trips to the database
+    # by combining the friends query and the subscriber query. That would
+    # result in an ugly join, so I am doing the easy thing for now.
+    bot = Repo.preload(bot, [:subscribers])
+    subscribers = MapSet.new(bot.subscribers)
+
+    friends =
+      sender
+      |> Roster.friends_query(sender)
+      |> Repo.all()
+      |> MapSet.new()
+      |> MapSet.put(sender)
+
+    subscribers
+    |> MapSet.intersection(friends)
+    |> MapSet.to_list()
+  end
+
+  # ----------------------------------------------------------------------
+  # Query a user's relationship to a bot
+
+  @spec owned?(User.t(), Bot.t()) :: boolean()
+  def owned?(user, bot), do: user.id == bot.user_id
+
+  @spec invited?(User.t(), Bot.t()) :: boolean()
+  def invited?(user, bot) do
+    result =
+      Invitation
+      |> where([i], i.bot_id == ^bot.id and i.invitee_id == ^user.id)
+      |> Repo.one()
+
+    result != nil
+  end
+
+  @spec subscribed?(User.t(), Bot.t()) :: boolean()
+  def subscribed?(user, bot) do
+    get_subscription(user, bot) != nil
+  end
+
+  @spec visiting?(User.t(), Bot.t()) :: boolean()
+  def visiting?(user, bot) do
+    sub = get_subscription(user, bot)
+
+    sub != nil && sub.visitor
+  end
+
+  @spec visible?(User.t(), Bot.t()) :: boolean()
+  def visible?(user, bot) do
+    owned?(user, bot) || invited?(user, bot) || subscribed?(user, bot)
+  end
+
+  @spec get_bot_relationships(User.t(), Bot.t()) :: [relationship()]
+  def get_bot_relationships(user, bot) do
+    sub = get_subscription(user, bot)
+
+    [:visible]
+    |> maybe_add_rel(owned?(user, bot), :owned)
+    |> maybe_add_rel(invited?(user, bot), :invited)
+    |> maybe_add_rel(sub != nil, [:subscribed])
+    |> maybe_add_rel(sub != nil && sub.visitor, :visitor)
+    |> List.flatten()
+  end
+
+  defp maybe_add_rel(list, true, rel), do: [rel | list]
+  defp maybe_add_rel(list, false, _rel), do: list
+
+  # ----------------------------------------------------------------------
+  # Subscriptions
+
   @spec get_subscription(User.t(), Bot.t()) :: Subscription.t() | nil
   def get_subscription(user, bot) do
     Repo.get_by(Subscription, user_id: user.id, bot_id: bot.id)
-  end
-
-  @spec subscription(User.t(), Bot.t()) :: Subscription.state()
-  def subscription(user, bot) do
-    case get_subscription(user, bot) do
-      nil -> nil
-      %Subscription{visitor: true} -> :visiting
-      %Subscription{} -> :subscribed
-    end
   end
 
   @spec subscribe(User.t(), Bot.t()) :: :ok | {:error, :permission_denied}
@@ -377,30 +452,8 @@ defmodule Wocky.Relations do
     |> Enum.each(&do_send_visit_notification(&1, event))
   end
 
-  @doc false
-  @spec notification_recipients(Bot.t(), User.t()) :: [User.t()]
-  def notification_recipients(bot, sender) do
-    # TODO We might be able to reduce the round trips to the database
-    # by combining the friends query and the subscriber query. That would
-    # result in an ugly join, so I am doing the easy thing for now.
-    bot = Repo.preload(bot, [:subscribers])
-    subscribers = MapSet.new(bot.subscribers)
-
-    friends =
-      sender
-      |> Roster.friends_query(sender)
-      |> Repo.all()
-      |> MapSet.new()
-      |> MapSet.put(sender)
-
-    subscribers
-    |> MapSet.intersection(friends)
-    |> MapSet.to_list()
-  end
-
   defp do_send_visit_notification(subscriber, event),
     do: Notifier.notify(%GeofenceEvent{event | to: subscriber})
-
 
   @spec delete_subscriptions_for_owned_bots(User.t(), User.t()) :: :ok
   def delete_subscriptions_for_owned_bots(bot_owner, user) do
@@ -444,41 +497,13 @@ defmodule Wocky.Relations do
 
   def invite(_, _, _), do: {:error, :permission_denied}
 
-  @spec get_invitation(Invitation.id() | Bot.t(), User.t()) ::
-           Invitation.t() | nil
-  def get_invitation(%Bot{} = bot, requestor) do
+  @spec get_invitation(Invitation.id(), User.t()) :: Invitation.t() | nil
+  def get_invitation(id, invitee) do
     Invitation
-    |> where(
-      [i],
-      i.bot_id == ^bot.id and
-        (i.user_id == ^requestor.id or i.invitee_id == ^requestor.id)
-    )
+    |> where([i], i.id == ^id and i.invitee_id == ^invitee.id)
+    |> preload([:bot, :invitee])
     |> Repo.one()
   end
-
-  def get_invitation(id, requestor) do
-    Invitation
-    |> where(
-      [i],
-      i.id == ^id and
-        (i.user_id == ^requestor.id or i.invitee_id == ^requestor.id)
-    )
-    |> Repo.one()
-  end
-
-  @spec invited?(Bot.t(), User.t()) :: boolean()
-  def invited?(bot, requestor) do
-    result =
-      Invitation
-      |> where([i], i.bot_id == ^bot.id and i.invitee_id == ^requestor.id)
-      |> Repo.one()
-
-    result != nil
-  end
-
-  @spec exists?(Invitation.id() | Bot.t(), User.t()) :: boolean()
-  def exists?(bot_or_id, requestor),
-    do: get_invitation(bot_or_id, requestor) != nil
 
   @spec respond(Invitation.t(), boolean(), User.t()) ::
           {:ok, Invitation.t()} | {:error, any()}
@@ -487,8 +512,6 @@ defmodule Wocky.Relations do
         accepted?,
         %User{id: invitee_id}
       ) do
-    invitation = Repo.preload(invitation, [:bot, :invitee])
-
     with {:ok, result} <- do_respond(invitation, accepted?),
          :ok <- maybe_subscribe(invitation, accepted?) do
       {:ok, result}

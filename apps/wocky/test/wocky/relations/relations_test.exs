@@ -12,16 +12,27 @@ defmodule Wocky.Relations.RelationsTest do
   alias Wocky.Repo.ID
   alias Wocky.Roster
 
+  defp eq_bot(bot1, bot2),
+    do: Map.drop(bot1, [:user]) == Map.drop(bot2, [:user])
+
+  defp assert_bot_eq(bot1, bot2),
+    do: assert(eq_bot(bot1, bot2))
+
+  defp has_item(items, item),
+    do: Enum.any?(items, &same_item(&1, item))
+
+  defp same_item(%{id: _} = x, %{id: _} = y), do: x.id == y.id
+  defp same_item(x, y), do: x == y
+
+  defp has_bot([bot1 | _], bot2), do: eq_bot(bot1, bot2)
+
+  defp is_empty(list), do: list == []
+
   setup do
     user = Factory.insert(:user)
     bot = Factory.insert(:bot, user: user)
 
-    {:ok,
-     user: user,
-     bot: bot,
-     id: user.id,
-     external_id: user.external_id,
-     phone_number: user.phone_number}
+    {:ok, user: user, bot: bot}
   end
 
   describe "get_bot/3" do
@@ -31,15 +42,13 @@ defmodule Wocky.Relations.RelationsTest do
       {:ok, pending: pending}
     end
 
-    test "should return the requested bot for the owner",
-         %{bot: bot, user: user} do
-      assert bot.id |> Relations.get_bot(user) |> Repo.preload(:user) == bot
+    test "should return the requested bot for the owner", ctx do
+      ctx.bot.id |> Relations.get_bot(ctx.user) |> assert_bot_eq(ctx.bot)
     end
 
-    test "should return no bot for a stranger",
-         %{bot: bot} do
+    test "should return no bot for a stranger", ctx do
       stranger = Factory.insert(:user)
-      assert bot.id |> Relations.get_bot(stranger) == nil
+      refute Relations.get_bot(ctx.bot.id, stranger)
     end
 
     test "should return the bot for a subscriber", ctx do
@@ -47,19 +56,17 @@ defmodule Wocky.Relations.RelationsTest do
       Roster.befriend(subscriber, ctx.user)
       Relations.subscribe(subscriber, ctx.bot)
 
-      assert ctx.bot.id |> Relations.get_bot(subscriber) |> Repo.preload(:user) ==
-               ctx.bot
+      ctx.bot.id |> Relations.get_bot(subscriber) |> assert_bot_eq(ctx.bot)
     end
 
-    test "should not return pending bot by default",
-         %{pending: pending, user: user} do
-      assert pending.id |> Relations.get_bot(user) == nil
+    test "should not return pending bot by default", ctx do
+      refute Relations.get_bot(ctx.pending.id, ctx.user)
     end
 
-    test "should return pending bot if explicity requested",
-         %{pending: pending, user: user} do
-      assert pending.id |> Relations.get_bot(user, true) |> Repo.preload(:user) ==
-               pending
+    test "should return pending bot if explicity requested", ctx do
+      ctx.pending.id
+      |> Relations.get_bot(ctx.user, true)
+      |> assert_bot_eq(ctx.pending)
     end
   end
 
@@ -70,36 +77,74 @@ defmodule Wocky.Relations.RelationsTest do
       {:ok, pending: pending}
     end
 
-    test "should return the requested bot for the owner",
-         %{bot: bot, user: user} do
-      assert bot.id |> Relations.get_owned_bot(user) |> Repo.preload(:user) == bot
+    test "should return the requested bot for the owner", ctx do
+      ctx.bot.id |> Relations.get_owned_bot(ctx.user) |> assert_bot_eq(ctx.bot)
     end
 
-    test "should return no bot for a stranger",
-         %{bot: bot} do
+    test "should return no bot for a stranger", ctx do
       stranger = Factory.insert(:user)
-      assert bot.id |> Relations.get_owned_bot(stranger) == nil
+      refute Relations.get_owned_bot(ctx.bot.id, stranger)
     end
 
-    test "should return no bot for a subscriber", %{bot: bot} do
+    test "should return no bot for a subscriber", ctx do
       subscriber = Factory.insert(:user)
-      Relations.subscribe(subscriber, bot)
-      assert bot.id |> Relations.get_owned_bot(subscriber) == nil
+      Relations.subscribe(subscriber, ctx.bot)
+      refute Relations.get_owned_bot(ctx.bot.id, subscriber)
     end
 
-    test "should not return pending bot by default",
-         %{pending: pending, user: user} do
-      assert pending.id |> Relations.get_owned_bot(user) == nil
+    test "should not return pending bot by default", ctx do
+      refute Relations.get_owned_bot(ctx.pending.id, ctx.user)
     end
 
-    test "should return pending bot if explicity requested",
-         %{pending: pending, user: user} do
-      assert pending.id |> Relations.get_owned_bot(user, true) |> Repo.preload(:user) ==
-               pending
+    test "should return pending bot if explicity requested", ctx do
+      ctx.pending.id
+      |> Relations.get_owned_bot(ctx.user, true)
+      |> assert_bot_eq(ctx.pending)
     end
   end
 
-  describe "active_bots_query/1" do
+  describe "get_owned_bots/1" do
+    setup ctx do
+      owned_bot = Factory.insert(:bot, user: ctx.user)
+      pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)
+
+      {:ok, owned_bot: owned_bot, pending_bot: pending_bot}
+    end
+
+    test "should return all owned bots", ctx do
+      bots = Relations.get_owned_bots(ctx.user)
+
+      assert length(bots) == 2
+      assert has_item(bots, ctx.owned_bot)
+      refute has_item(bots, ctx.pending_bot)
+    end
+  end
+
+  describe "get_subscribed_bots/1" do
+    setup ctx do
+      pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)
+      subscribed_bot = Factory.insert(:bot)
+
+      Roster.befriend(ctx.user, subscribed_bot.user)
+      Relations.subscribe(ctx.user, subscribed_bot)
+
+      {:ok,
+       owned_bot: ctx.bot,
+       pending_bot: pending_bot,
+       subscribed_bot: subscribed_bot}
+    end
+
+    test "should return all subscribed bots", ctx do
+      subscriptions = Relations.get_subscribed_bots(ctx.user)
+
+      assert length(subscriptions) == 1
+      assert has_item(subscriptions, ctx.subscribed_bot)
+      refute has_item(subscriptions, ctx.owned_bot)
+      refute has_item(subscriptions, ctx.pending_bot)
+    end
+  end
+
+  describe "get_active_bots/1" do
     setup ctx do
       subscriber = Factory.insert(:user)
       Roster.befriend(subscriber, ctx.user)
@@ -109,12 +154,12 @@ defmodule Wocky.Relations.RelationsTest do
     end
 
     test "should not return unvisted bot", ctx do
-      assert ctx.subscriber |> Relations.active_bots_query() |> is_empty()
+      assert Relations.get_active_bots(ctx.subscriber) == []
     end
 
     test "should return visted bot", ctx do
       Relations.visit(ctx.subscriber, ctx.bot, false)
-      assert ctx.subscriber |> Relations.active_bots_query() |> has_bot(ctx.bot)
+      assert ctx.subscriber |> Relations.get_active_bots() |> has_item(ctx.bot)
     end
 
     test "should return bots with most recently visited first", ctx do
@@ -125,8 +170,7 @@ defmodule Wocky.Relations.RelationsTest do
 
       bot_ids =
         ctx.subscriber
-        |> Relations.active_bots_query()
-        |> Repo.all()
+        |> Relations.get_active_bots()
         |> Enum.map(& &1.id)
 
       assert bot_ids == [bot2.id, ctx.bot.id]
@@ -138,69 +182,231 @@ defmodule Wocky.Relations.RelationsTest do
       a = GeoUtils.point(Bots.lat(ctx.bot) - 0.1, Bots.lon(ctx.bot) - 0.1)
       b = GeoUtils.point(Bots.lat(ctx.bot) + 0.1, Bots.lon(ctx.bot) + 0.1)
 
-      assert Bot
-             |> where(id: ^ctx.bot.id)
-             |> Relations.filter_by_location(a, b)
-             |> Repo.one()
-             |> Repo.preload(:user) == ctx.bot
+      bot =
+        Bot
+        |> where(id: ^ctx.bot.id)
+        |> Relations.filter_by_location(a, b)
+        |> Repo.one()
+
+      assert_bot_eq(bot, ctx.bot)
     end
 
     test "does not find excluded bot", ctx do
       a = GeoUtils.point(Bots.lat(ctx.bot) - 0.1, Bots.lon(ctx.bot) - 0.1)
       b = GeoUtils.point(Bots.lat(ctx.bot) - 0.2, Bots.lon(ctx.bot) + 0.1)
 
-      assert Bot
+      refute Bot
              |> where(id: ^ctx.bot.id)
              |> Relations.filter_by_location(a, b)
-             |> Repo.one() == nil
+             |> Repo.one()
     end
   end
 
-  describe "bot relationships" do
+  describe "get_bots_by_relationship/3" do
     setup ctx do
-      other_user = Factory.insert(:user)
-      Roster.befriend(ctx.user, other_user)
+      [stranger, subscriber, visitor, invitee] = Factory.insert_list(4, :user)
+      Enum.map([subscriber, visitor, invitee], &Roster.befriend(&1, ctx.user))
 
-      owned_bot = Factory.insert(:bot, user: ctx.user)
-      pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)
-      invited_bot = Factory.insert(:bot, user: other_user)
-      subscribed_bot = Factory.insert(:bot, user: other_user)
-      unaffiliated_bot = Factory.insert(:bot, user: other_user)
-
-      Relations.invite(ctx.user, invited_bot, other_user)
-      Relations.subscribe(ctx.user, subscribed_bot)
+      Relations.subscribe(ctx.user, ctx.bot)
+      Relations.subscribe(subscriber, ctx.bot)
+      Relations.subscribe(visitor, ctx.bot)
+      Relations.visit(visitor, ctx.bot, false)
+      Relations.invite(invitee, ctx.bot, ctx.user)
 
       {:ok,
-       other_user: other_user,
-       owned_bot: owned_bot,
-       pending_bot: pending_bot,
-       invited_bot: invited_bot,
-       subscribed_bot: subscribed_bot,
-       unaffiliated_bot: unaffiliated_bot}
+       stranger: stranger,
+       subscriber: subscriber,
+       visitor: visitor,
+       invitee: invitee}
     end
 
-    test "can_access?/2", ctx do
-      assert Relations.can_access?(ctx.user, ctx.owned_bot)
-      assert Relations.can_access?(ctx.user, ctx.invited_bot)
-      refute Relations.can_access?(ctx.user, ctx.unaffiliated_bot)
+    test "visible", ctx do
+      assert ctx.user
+             |> Relations.get_bots_by_relationship(:visible, ctx.user)
+             |> has_bot(ctx.bot)
+
+      assert ctx.stranger
+             |> Relations.get_bots_by_relationship(:visible, ctx.user)
+             |> is_empty()
+
+      assert ctx.subscriber
+             |> Relations.get_bots_by_relationship(:visible, ctx.user)
+             |> has_bot(ctx.bot)
+
+      assert ctx.visitor
+             |> Relations.get_bots_by_relationship(:visible, ctx.user)
+             |> has_bot(ctx.bot)
+
+      assert ctx.invitee
+             |> Relations.get_bots_by_relationship(:visible, ctx.user)
+             |> has_bot(ctx.bot)
     end
 
-    test "get_subscriptions/1", ctx do
-      subscriptions = Relations.get_subscriptions(ctx.user)
+    test "subscribed", ctx do
+      assert ctx.user
+             |> Relations.get_bots_by_relationship(:subscribed, ctx.user)
+             |> has_bot(ctx.bot)
 
-      assert length(subscriptions) == 1
-      assert Enum.any?(subscriptions, &same_bot(&1, ctx.subscribed_bot))
-      refute Enum.any?(subscriptions, &same_bot(&1, ctx.owned_bot))
-      refute Enum.any?(subscriptions, &same_bot(&1, ctx.pending_bot))
+      assert ctx.stranger
+             |> Relations.get_bots_by_relationship(:subscribed, ctx.user)
+             |> is_empty()
+
+      assert ctx.subscriber
+             |> Relations.get_bots_by_relationship(:subscribed, ctx.user)
+             |> has_bot(ctx.bot)
+
+      assert ctx.visitor
+             |> Relations.get_bots_by_relationship(:subscribed, ctx.user)
+             |> has_bot(ctx.bot)
+
+      assert ctx.invitee
+             |> Relations.get_bots_by_relationship(:subscribed, ctx.user)
+             |> is_empty()
     end
 
-    test "get_owned_bots/1", ctx do
-      bots = Relations.get_owned_bots(ctx.user)
+    test "owned", ctx do
+      assert ctx.user
+             |> Relations.get_bots_by_relationship(:owned, ctx.user)
+             |> has_bot(ctx.bot)
 
-      assert length(bots) == 2
-      assert Enum.any?(bots, &same_bot(&1, ctx.owned_bot))
-      refute Enum.any?(bots, &same_bot(&1, ctx.pending_bot))
+      assert ctx.stranger
+             |> Relations.get_bots_by_relationship(:owned, ctx.user)
+             |> is_empty()
+
+      assert ctx.subscriber
+             |> Relations.get_bots_by_relationship(:owned, ctx.user)
+             |> is_empty()
+
+      assert ctx.visitor
+             |> Relations.get_bots_by_relationship(:owned, ctx.user)
+             |> is_empty()
+
+      assert ctx.invitee
+             |> Relations.get_bots_by_relationship(:owned, ctx.user)
+             |> is_empty()
     end
+
+    test "visiting", ctx do
+      assert ctx.user
+             |> Relations.get_bots_by_relationship(:visiting, ctx.user)
+             |> is_empty()
+
+      assert ctx.stranger
+             |> Relations.get_bots_by_relationship(:visiting, ctx.user)
+             |> is_empty()
+
+      assert ctx.subscriber
+             |> Relations.get_bots_by_relationship(:visiting, ctx.user)
+             |> is_empty()
+
+      assert ctx.visitor
+             |> Relations.get_bots_by_relationship(:visiting, ctx.user)
+             |> has_bot(ctx.bot)
+
+      assert ctx.invitee
+             |> Relations.get_bots_by_relationship(:visiting, ctx.user)
+             |> is_empty()
+    end
+
+    test "subscribed_not_owned", ctx do
+      assert ctx.user
+             |> Relations.get_bots_by_relationship(
+               :subscribed_not_owned,
+               ctx.user
+             )
+             |> is_empty()
+
+      assert ctx.stranger
+             |> Relations.get_bots_by_relationship(
+               :subscribed_not_owned,
+               ctx.user
+             )
+             |> is_empty()
+
+      assert ctx.subscriber
+             |> Relations.get_bots_by_relationship(
+               :subscribed_not_owned,
+               ctx.user
+             )
+             |> has_bot(ctx.bot)
+
+      assert ctx.visitor
+             |> Relations.get_bots_by_relationship(
+               :subscribed_not_owned,
+               ctx.user
+             )
+             |> has_bot(ctx.bot)
+
+      assert ctx.invitee
+             |> Relations.get_bots_by_relationship(
+               :subscribed_not_owned,
+               ctx.user
+             )
+             |> is_empty()
+    end
+
+    test "invited", ctx do
+      assert ctx.user
+             |> Relations.get_bots_by_relationship(:invited, ctx.user)
+             |> is_empty()
+
+      assert ctx.stranger
+             |> Relations.get_bots_by_relationship(:invited, ctx.user)
+             |> is_empty()
+
+      assert ctx.subscriber
+             |> Relations.get_bots_by_relationship(:invited, ctx.user)
+             |> is_empty()
+
+      assert ctx.visitor
+             |> Relations.get_bots_by_relationship(:invited, ctx.user)
+             |> is_empty()
+
+      assert ctx.invitee
+             |> Relations.get_bots_by_relationship(:invited, ctx.user)
+             |> has_bot(ctx.bot)
+    end
+
+    test "people to whom the bot is not visible will not get it as a result",
+         ctx do
+      assert ctx.user
+             |> Relations.get_bots_by_relationship(:visible, ctx.stranger)
+             |> is_empty()
+
+      assert ctx.user
+             |> Relations.get_bots_by_relationship(:owned, ctx.stranger)
+             |> is_empty()
+
+      assert ctx.subscriber
+             |> Relations.get_bots_by_relationship(
+               :subscribed,
+               ctx.stranger
+             )
+             |> is_empty()
+
+      assert ctx.visitor
+             |> Relations.get_bots_by_relationship(:visiting, ctx.stranger)
+             |> is_empty()
+
+      assert ctx.subscriber
+             |> Relations.get_bots_by_relationship(
+               :subscribed_not_owned,
+               ctx.stranger
+             )
+             |> is_empty()
+
+      assert ctx.invitee
+             |> Relations.get_bots_by_relationship(:invited, ctx.stranger)
+             |> is_empty()
+    end
+  end
+
+  defp run_is_visible_query(bot, user) do
+    Bot
+    |> where(id: ^bot.id)
+    |> Relations.is_visible_query(user)
+    |> preload(:user)
+    |> Repo.one()
   end
 
   describe "is_visible_query/2" do
@@ -247,205 +453,6 @@ defmodule Wocky.Relations.RelationsTest do
     end
   end
 
-  describe "by_relationship_query/3" do
-    setup ctx do
-      [stranger, subscriber, visitor, invitee] = Factory.insert_list(4, :user)
-      Enum.map([subscriber, visitor, invitee], &Roster.befriend(&1, ctx.user))
-
-      Relations.subscribe(ctx.user, ctx.bot)
-      Relations.subscribe(subscriber, ctx.bot)
-      Relations.subscribe(visitor, ctx.bot)
-      Relations.visit(visitor, ctx.bot, false)
-      Relations.invite(invitee, ctx.bot, ctx.user)
-
-      {:ok,
-       stranger: stranger,
-       subscriber: subscriber,
-       visitor: visitor,
-       invitee: invitee}
-    end
-
-    test "visible", ctx do
-      assert ctx.user
-             |> Relations.by_relationship_query(:visible, ctx.user)
-             |> has_bot(ctx.bot)
-
-      assert ctx.stranger
-             |> Relations.by_relationship_query(:visible, ctx.user)
-             |> is_empty()
-
-      assert ctx.subscriber
-             |> Relations.by_relationship_query(:visible, ctx.user)
-             |> has_bot(ctx.bot)
-
-      assert ctx.visitor
-             |> Relations.by_relationship_query(:visible, ctx.user)
-             |> has_bot(ctx.bot)
-
-      assert ctx.invitee
-             |> Relations.by_relationship_query(:visible, ctx.user)
-             |> has_bot(ctx.bot)
-    end
-
-    test "subscribed", ctx do
-      assert ctx.user
-             |> Relations.by_relationship_query(:subscribed, ctx.user)
-             |> has_bot(ctx.bot)
-
-      assert ctx.stranger
-             |> Relations.by_relationship_query(:subscribed, ctx.user)
-             |> is_empty()
-
-      assert ctx.subscriber
-             |> Relations.by_relationship_query(:subscribed, ctx.user)
-             |> has_bot(ctx.bot)
-
-      assert ctx.visitor
-             |> Relations.by_relationship_query(:subscribed, ctx.user)
-             |> has_bot(ctx.bot)
-
-      assert ctx.invitee
-             |> Relations.by_relationship_query(:subscribed, ctx.user)
-             |> is_empty()
-    end
-
-    test "owned", ctx do
-      assert ctx.user
-             |> Relations.by_relationship_query(:owned, ctx.user)
-             |> has_bot(ctx.bot)
-
-      assert ctx.stranger
-             |> Relations.by_relationship_query(:owned, ctx.user)
-             |> is_empty()
-
-      assert ctx.subscriber
-             |> Relations.by_relationship_query(:owned, ctx.user)
-             |> is_empty()
-
-      assert ctx.visitor
-             |> Relations.by_relationship_query(:owned, ctx.user)
-             |> is_empty()
-
-      assert ctx.invitee
-             |> Relations.by_relationship_query(:owned, ctx.user)
-             |> is_empty()
-    end
-
-    test "visiting", ctx do
-      assert ctx.user
-             |> Relations.by_relationship_query(:visiting, ctx.user)
-             |> is_empty()
-
-      assert ctx.stranger
-             |> Relations.by_relationship_query(:visiting, ctx.user)
-             |> is_empty()
-
-      assert ctx.subscriber
-             |> Relations.by_relationship_query(:visiting, ctx.user)
-             |> is_empty()
-
-      assert ctx.visitor
-             |> Relations.by_relationship_query(:visiting, ctx.user)
-             |> has_bot(ctx.bot)
-
-      assert ctx.invitee
-             |> Relations.by_relationship_query(:visiting, ctx.user)
-             |> is_empty()
-    end
-
-    test "subscribed_not_owned", ctx do
-      assert ctx.user
-             |> Relations.by_relationship_query(
-               :subscribed_not_owned,
-               ctx.user
-             )
-             |> is_empty()
-
-      assert ctx.stranger
-             |> Relations.by_relationship_query(
-               :subscribed_not_owned,
-               ctx.user
-             )
-             |> is_empty()
-
-      assert ctx.subscriber
-             |> Relations.by_relationship_query(
-               :subscribed_not_owned,
-               ctx.user
-             )
-             |> has_bot(ctx.bot)
-
-      assert ctx.visitor
-             |> Relations.by_relationship_query(
-               :subscribed_not_owned,
-               ctx.user
-             )
-             |> has_bot(ctx.bot)
-
-      assert ctx.invitee
-             |> Relations.by_relationship_query(
-               :subscribed_not_owned,
-               ctx.user
-             )
-             |> is_empty()
-    end
-
-    test "invited", ctx do
-      assert ctx.user
-             |> Relations.by_relationship_query(:invited, ctx.user)
-             |> is_empty()
-
-      assert ctx.stranger
-             |> Relations.by_relationship_query(:invited, ctx.user)
-             |> is_empty()
-
-      assert ctx.subscriber
-             |> Relations.by_relationship_query(:invited, ctx.user)
-             |> is_empty()
-
-      assert ctx.visitor
-             |> Relations.by_relationship_query(:invited, ctx.user)
-             |> is_empty()
-
-      assert ctx.invitee
-             |> Relations.by_relationship_query(:invited, ctx.user)
-             |> has_bot(ctx.bot)
-    end
-
-    test "people to whom the bot is not visible will not get it as a result",
-         ctx do
-      assert ctx.user
-             |> Relations.by_relationship_query(:visible, ctx.stranger)
-             |> is_empty()
-
-      assert ctx.user
-             |> Relations.by_relationship_query(:owned, ctx.stranger)
-             |> is_empty()
-
-      assert ctx.subscriber
-             |> Relations.by_relationship_query(
-               :subscribed,
-               ctx.stranger
-             )
-             |> is_empty()
-
-      assert ctx.visitor
-             |> Relations.by_relationship_query(:visiting, ctx.stranger)
-             |> is_empty()
-
-      assert ctx.subscriber
-             |> Relations.by_relationship_query(
-               :subscribed_not_owned,
-               ctx.stranger
-             )
-             |> is_empty()
-
-      assert ctx.invitee
-             |> Relations.by_relationship_query(:invited, ctx.stranger)
-             |> is_empty()
-    end
-  end
-
   describe "subscribers" do
     setup ctx do
       sub = Factory.insert(:user)
@@ -455,28 +462,26 @@ defmodule Wocky.Relations.RelationsTest do
       {:ok, sub: sub}
     end
 
-    test "subscribers_query/1", %{bot: bot, user: user} do
-      subscribers = bot |> Relations.subscribers_query() |> Repo.all()
+    test "get_subscribers/1", %{bot: bot, user: user} do
+      subscribers = Relations.get_subscribers(bot)
 
       assert length(subscribers) == 1
       assert %User{} = hd(subscribers)
       refute Enum.member?(subscribers, user)
     end
 
-    test "subscriber_query/2", %{bot: bot, sub: sub} do
-      subscriber = bot |> Relations.subscriber_query(sub.id) |> Repo.one()
-
-      assert subscriber.id == sub.id
+    test "get_subscriber/2", %{bot: bot, sub: sub} do
+      assert bot |> Relations.get_subscriber(sub.id) |> same_item(sub)
     end
 
-    test "subscriber_query/2 with non-subscriber", %{bot: bot} do
-      assert bot |> Relations.subscriber_query(ID.new()) |> Repo.one() == nil
+    test "get_subscriber/2 with non-subscriber", %{bot: bot} do
+      refute Relations.get_subscriber(bot, ID.new())
     end
   end
 
-  describe "visitors_query/1" do
+  describe "get_visitors/1" do
     test "should get no visitors when none are present", ctx do
-      assert ctx.bot |> Relations.visitors_query() |> Repo.one() == nil
+      assert Relations.get_visitors(ctx.bot) == []
     end
 
     test "should get visitors when they are present", ctx do
@@ -484,7 +489,7 @@ defmodule Wocky.Relations.RelationsTest do
       Roster.befriend(visitor, ctx.user)
       Relations.subscribe(visitor, ctx.bot)
       Relations.visit(visitor, ctx.bot, false)
-      assert ctx.bot |> Relations.visitors_query() |> Repo.one() == visitor
+      assert Relations.get_visitors(ctx.bot) == [visitor]
     end
   end
 
@@ -518,21 +523,86 @@ defmodule Wocky.Relations.RelationsTest do
     end
   end
 
-  defp run_is_visible_query(bot, user) do
-    Bot
-    |> where(id: ^bot.id)
-    |> Relations.is_visible_query(user)
-    |> preload(:user)
-    |> Repo.one()
+  describe "bot relationships" do
+    setup ctx do
+      other_user = Factory.insert(:user)
+      Roster.befriend(ctx.user, other_user)
+
+      owned_bot = Factory.insert(:bot, user: ctx.user)
+      pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)
+      invited_bot = Factory.insert(:bot, user: other_user)
+      subscribed_bot = Factory.insert(:bot, user: other_user)
+      unaffiliated_bot = Factory.insert(:bot, user: other_user)
+
+      Relations.invite(ctx.user, invited_bot, other_user)
+      Relations.subscribe(ctx.user, subscribed_bot)
+
+      {:ok,
+       other_user: other_user,
+       owned_bot: owned_bot,
+       pending_bot: pending_bot,
+       invited_bot: invited_bot,
+       subscribed_bot: subscribed_bot,
+       unaffiliated_bot: unaffiliated_bot}
+    end
+
+    test "owned?/2", ctx do
+      assert Relations.owned?(ctx.user, ctx.owned_bot)
+      refute Relations.owned?(ctx.user, ctx.invited_bot)
+      refute Relations.owned?(ctx.user, ctx.subscribed_bot)
+      refute Relations.owned?(ctx.user, ctx.unaffiliated_bot)
+    end
+
+    test "invited?/2", ctx do
+      refute Relations.invited?(ctx.user, ctx.owned_bot)
+      assert Relations.invited?(ctx.user, ctx.invited_bot)
+      refute Relations.invited?(ctx.user, ctx.subscribed_bot)
+      refute Relations.invited?(ctx.user, ctx.unaffiliated_bot)
+    end
+
+    test "subscribed?/2", ctx do
+      refute Relations.subscribed?(ctx.user, ctx.invited_bot)
+      assert Relations.subscribed?(ctx.user, ctx.subscribed_bot)
+      refute Relations.subscribed?(ctx.user, ctx.unaffiliated_bot)
+    end
+
+    test "visiting?/2", ctx do
+      refute Relations.visiting?(ctx.user, ctx.owned_bot)
+      refute Relations.visiting?(ctx.user, ctx.invited_bot)
+      refute Relations.visiting?(ctx.user, ctx.subscribed_bot)
+      refute Relations.visiting?(ctx.user, ctx.unaffiliated_bot)
+
+      Relations.visit(ctx.user, ctx.subscribed_bot)
+      assert Relations.visiting?(ctx.user, ctx.subscribed_bot)
+    end
+
+    test "visible?/2", ctx do
+      assert Relations.visible?(ctx.user, ctx.owned_bot)
+      assert Relations.visible?(ctx.user, ctx.invited_bot)
+      assert Relations.visible?(ctx.user, ctx.subscribed_bot)
+      refute Relations.visible?(ctx.user, ctx.unaffiliated_bot)
+    end
+
+    test "get_bot_relationships/2", ctx do
+      rels! = Relations.get_bot_relationships(ctx.user, ctx.owned_bot)
+
+      assert length(rels!) == 2
+      assert Enum.member?(rels!, :visible)
+      assert Enum.member?(rels!, :owned)
+
+      rels! = Relations.get_bot_relationships(ctx.user, ctx.invited_bot)
+
+      assert length(rels!) == 2
+      assert Enum.member?(rels!, :visible)
+      assert Enum.member?(rels!, :invited)
+
+      rels! = Relations.get_bot_relationships(ctx.user, ctx.subscribed_bot)
+
+      assert length(rels!) == 2
+      assert Enum.member?(rels!, :visible)
+      assert Enum.member?(rels!, :subscribed)
+    end
   end
-
-  defp has_bot(query, bot),
-    do: query |> Repo.one() |> Repo.preload(:user) == bot
-
-  defp is_empty(query),
-    do: query |> Repo.one() == nil
-
-  defp same_bot(bot1, bot2), do: bot1.id == bot2.id
 
   # -------------------------------------------------------------------
   # Subsriptions
@@ -552,33 +622,6 @@ defmodule Wocky.Relations.RelationsTest do
     )
 
     {:ok, owner: ctx.user, user: user, visitor: visitor}
-  end
-
-  describe "subscription/2" do
-    setup :create_subscription
-
-    test "should return :subscribed if the user is subscribed to the bot",
-         ctx do
-      assert Relations.subscription(ctx.user, ctx.bot) == :subscribed
-    end
-
-    test "should return nil when the user does not exist", ctx do
-      user = Factory.build(:user, device: "testing")
-      refute Relations.subscription(user, ctx.bot)
-    end
-
-    test "should return nil when the bot does not exist", ctx do
-      bot = Factory.build(:bot)
-      refute Relations.subscription(ctx.user, bot)
-    end
-
-    test "should return nil when the user is not subscribed to the bot", ctx do
-      refute Relations.subscription(ctx.owner, ctx.bot)
-    end
-
-    test "should return :visitor when the user is a visitor", ctx do
-      assert Relations.subscription(ctx.visitor, ctx.bot) == :visiting
-    end
   end
 
   describe "get_subscription/2" do
@@ -613,14 +656,14 @@ defmodule Wocky.Relations.RelationsTest do
       result = Relations.subscribe(new_user, ctx.bot)
 
       assert result == :ok
-      assert Relations.subscription(new_user, ctx.bot) == :subscribed
+      assert Relations.subscribed?(new_user, ctx.bot)
     end
 
     test "when a subscription already exists", ctx do
       result = Relations.subscribe(ctx.visitor, ctx.bot)
 
       assert result == :ok
-      assert Relations.subscription(ctx.visitor, ctx.bot) == :visiting
+      assert Relations.visiting?(ctx.visitor, ctx.bot)
     end
   end
 
@@ -631,7 +674,7 @@ defmodule Wocky.Relations.RelationsTest do
       result = Relations.unsubscribe(ctx.user, ctx.bot)
 
       assert result == :ok
-      refute Relations.subscription(ctx.user, ctx.bot)
+      refute Relations.subscribed?(ctx.user, ctx.bot)
     end
 
     test "when the bot owner is trying to unsubscribe", ctx do
@@ -651,28 +694,12 @@ defmodule Wocky.Relations.RelationsTest do
     end
   end
 
-  describe "delete_subscriptions_for_owned_bots/2" do
-    setup :create_subscription
-
-    test "should delete subscriptions to bots owned by the specified user",
-         ctx do
-      assert :ok == Relations.delete_subscriptions_for_owned_bots(ctx.owner, ctx.user)
-      refute Relations.subscription(ctx.user, ctx.bot)
-    end
-
-    test "should not delete subscriptions to bots owned by another user", ctx do
-      u = Factory.insert(:user)
-      assert :ok == Relations.delete_subscriptions_for_owned_bots(u, ctx.user)
-      assert Relations.subscription(ctx.user, ctx.bot) == :subscribed
-    end
-  end
-
   describe "visit/2" do
     setup :create_subscription
 
     test "should set the subscriber as a visitor", ctx do
       assert Relations.visit(ctx.user, ctx.bot) == :ok
-      assert Relations.subscription(ctx.user, ctx.bot) == :visiting
+      assert Relations.visiting?(ctx.user, ctx.bot)
     end
   end
 
@@ -681,8 +708,35 @@ defmodule Wocky.Relations.RelationsTest do
 
     test "should set the visitor as a subscriber", ctx do
       assert Relations.depart(ctx.visitor, ctx.bot) == :ok
-      assert Relations.subscription(ctx.visitor, ctx.bot) == :subscribed
+      refute Relations.visiting?(ctx.visitor, ctx.bot)
     end
+  end
+
+  describe "delete_subscriptions_for_owned_bots/2" do
+    setup :create_subscription
+
+    test "should delete subscriptions to bots owned by the specified user",
+         ctx do
+      assert :ok == Relations.delete_subscriptions_for_owned_bots(ctx.owner, ctx.user)
+      refute Relations.subscribed?(ctx.user, ctx.bot)
+    end
+
+    test "should not delete subscriptions to bots owned by another user", ctx do
+      u = Factory.insert(:user)
+      assert :ok == Relations.delete_subscriptions_for_owned_bots(u, ctx.user)
+      assert Relations.subscribed?(ctx.user, ctx.bot)
+    end
+  end
+
+  defp is_subscribed_sp(user, bot) do
+    {:ok, u} = Ecto.UUID.dump(user.id)
+    {:ok, b} = Ecto.UUID.dump(bot.id)
+
+    Repo
+    |> SQL.query!("SELECT is_subscribed($1, $2)", [u, b])
+    |> Map.get(:rows)
+    |> hd
+    |> hd
   end
 
   describe "is_subscribed/2 stored procedure" do
@@ -708,17 +762,6 @@ defmodule Wocky.Relations.RelationsTest do
     end
   end
 
-  defp is_subscribed_sp(user, bot) do
-    {:ok, u} = Ecto.UUID.dump(user.id)
-    {:ok, b} = Ecto.UUID.dump(bot.id)
-
-    Repo
-    |> SQL.query!("SELECT is_subscribed($1, $2)", [u, b])
-    |> Map.get(:rows)
-    |> hd
-    |> hd
-  end
-
   # -------------------------------------------------------------------
   # Invitations
 
@@ -734,7 +777,7 @@ defmodule Wocky.Relations.RelationsTest do
       assert {:ok, invitation} = Relations.invite(ctx.invitee, ctx.bot, ctx.user)
 
       assert invitation == Repo.get_by(Invitation, id: invitation.id)
-      assert invitation.accepted == nil
+      refute invitation.accepted
     end
 
     test "refuse invitation to non-owned bot", ctx do
@@ -778,54 +821,12 @@ defmodule Wocky.Relations.RelationsTest do
   describe "get_invitation/2 by id" do
     setup :setup_invitation
 
-    test "User can get their own invitation", ctx do
-      assert %Invitation{} = Relations.get_invitation(ctx.invitation.id, ctx.user)
-    end
-
     test "Invitee can get their own invitation", ctx do
       assert %Invitation{} = Relations.get_invitation(ctx.invitation.id, ctx.invitee)
     end
 
     test "Unrelated user cannot get the invitation", ctx do
       refute Relations.get_invitation(ctx.invitation.id, Factory.insert(:user))
-    end
-  end
-
-  describe "get_invitation/2 by bot id" do
-    setup :setup_invitation
-
-    test "User can get their own invitation", ctx do
-      assert %Invitation{} = Relations.get_invitation(ctx.bot, ctx.user)
-    end
-
-    test "Invitee can get their own invitation", ctx do
-      assert %Invitation{} = Relations.get_invitation(ctx.bot, ctx.invitee)
-    end
-
-    test "Unrelated user cannot get the invitation", ctx do
-      assert nil == Relations.get_invitation(ctx.bot, Factory.insert(:user))
-    end
-  end
-
-  describe "exists?/2 - true" do
-    setup :setup_invitation
-
-    test "exists by id", ctx do
-      assert Relations.exists?(ctx.invitation.id, ctx.user)
-    end
-
-    test "exists by bot", ctx do
-      assert Relations.exists?(ctx.bot, ctx.user)
-    end
-  end
-
-  describe "exists?/2 - false" do
-    test "does not exist by id", ctx do
-      refute Relations.exists?(1, ctx.user)
-    end
-
-    test "does not exist by bot", ctx do
-      refute Relations.exists?(ctx.bot, ctx.user)
     end
   end
 
@@ -840,12 +841,12 @@ defmodule Wocky.Relations.RelationsTest do
     end
 
     test "Invitee becomes subscribed if they accept", ctx do
-      assert Relations.subscription(ctx.invitee, ctx.bot) == nil
+      refute Relations.subscribed?(ctx.invitee, ctx.bot)
 
       assert {:ok, invitation} =
                Relations.respond(ctx.invitation, true, ctx.invitee)
 
-      assert Relations.subscription(ctx.invitee, ctx.bot) == :subscribed
+      assert Relations.subscribed?(ctx.invitee, ctx.bot)
     end
 
     test "Invitee can decline", ctx do
@@ -856,12 +857,12 @@ defmodule Wocky.Relations.RelationsTest do
     end
 
     test "Invitee does not become subscribed if they decline", ctx do
-      assert Relations.subscription(ctx.invitee, ctx.bot) == nil
+      refute Relations.subscribed?(ctx.invitee, ctx.bot)
 
       assert {:ok, invitation} =
                Relations.respond(ctx.invitation, false, ctx.invitee)
 
-      assert Relations.subscription(ctx.invitee, ctx.bot) == nil
+      refute Relations.subscribed?(ctx.invitee, ctx.bot)
     end
 
     test "Inviter cannot respond", ctx do

@@ -26,7 +26,7 @@ defmodule Wocky.Callbacks.BotSubscriptionTest do
     Relations.subscribe(user, bot)
     Bots.delete(bot)
 
-    refute_eventually(Relations.get_subscription(user, bot))
+    refute_eventually(Relations.subscribed?(user, bot))
 
     assert_eventually([] == :sys.get_state(pid).subscriptions)
   end

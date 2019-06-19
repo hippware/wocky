@@ -70,7 +70,7 @@ defmodule Wocky.LocationTest do
                  ctx.bot
                )
 
-      assert Relations.subscription(ctx.user, ctx.bot) == :visiting
+      assert Relations.visiting?(ctx.user, ctx.bot)
     end
   end
 

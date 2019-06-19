@@ -103,7 +103,7 @@ defmodule Wocky.Location.Handler do
   @impl true
   def init(user) do
     Logger.debug(fn -> "Swarm initializing worker with user #{user.id}" end)
-    subscriptions = Relations.get_subscriptions(user)
+    subscriptions = Relations.get_subscribed_bots(user)
     events = BotEvent.get_last_events(user.id)
 
     {:ok, %State{user: user, subscriptions: subscriptions, events: events},

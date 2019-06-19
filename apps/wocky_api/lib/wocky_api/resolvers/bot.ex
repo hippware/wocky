@@ -11,7 +11,6 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Wocky.Location.UserLocation
   alias Wocky.Relations
   alias Wocky.Relations.Invitation
-  alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.Waiter
   alias WockyAPI.Endpoint
@@ -52,7 +51,7 @@ defmodule WockyAPI.Resolvers.Bot do
     point_a = Utils.map_point(args[:point_a])
     point_b = Utils.map_point(args[:point_b])
 
-    case Relations.get_local_bots_cluster(
+    case Relations.get_local_bots_clustered(
            requestor,
            point_a,
            point_b,
@@ -151,9 +150,7 @@ defmodule WockyAPI.Resolvers.Bot do
        when not is_nil(l) do
     bot
     |> Bots.sub_setup_event()
-    |> Waiter.wait(5000, fn ->
-      Enum.member?(Relations.get_bot_relationships(user, bot), :subscribed)
-    end)
+    |> Waiter.wait(5000, fn -> Relations.subscribed?(user, bot) end)
 
     Location.set_user_location_for_bot(user, UserLocation.new(l), bot)
   end
@@ -247,7 +244,7 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def notify_visitor_subscription(bot, subscriber, entered, updated_at) do
-    to_notify = bot |> Relations.subscribers_query() |> Repo.all()
+    to_notify = Relations.get_subscribers(bot)
 
     action =
       case entered do
