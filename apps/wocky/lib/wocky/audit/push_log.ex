@@ -1,50 +1,27 @@
 defmodule Wocky.Audit.PushLog do
-  @moduledoc "Schema for push notification logs"
-
-  use Wocky.Repo.Schema
+  @moduledoc "Record for push notification logs"
 
   alias Wocky.Account.User
 
-  @primary_key {:id, :binary_id, autogenerate: true}
-  @foreign_key_type :binary_id
-  schema "push_logs" do
-    field :device, :string, null: false
-    field :token, :string, null: false
-    field :message_id, :string
-    field :payload, :string
-    field :response, :string, null: false
-    field :details, :string
-
-    timestamps(updated_at: false)
-
-    belongs_to :user, User
-  end
-
-  @type t :: %__MODULE__{
-          user_id: User.id(),
-          device: User.device(),
-          token: binary,
-          message_id: binary,
-          payload: binary,
-          response: binary,
-          details: binary
-        }
-
-  @insert_attrs [
+  defstruct [
     :user_id,
     :device,
     :token,
     :message_id,
     :payload,
     :response,
-    :details
+    :details,
+    :created_at
   ]
 
-  @doc false
-  def insert_changeset(attrs) do
-    %__MODULE__{}
-    |> cast(attrs, @insert_attrs)
-    |> validate_required(@insert_attrs -- [:message_id, :payload, :details])
-    |> foreign_key_constraint(:user_id)
-  end
+  @type t :: %__MODULE__{
+          user_id: User.id() | nil,
+          device: User.device() | nil,
+          token: binary | nil,
+          message_id: binary | nil,
+          payload: binary | nil,
+          response: binary | nil,
+          details: binary | nil,
+          created_at: DateTime.t() | nil
+        }
 end

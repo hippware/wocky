@@ -9,7 +9,6 @@ defmodule Wocky.Location.BotEvent do
   import EctoHomoiconicEnum, only: [defenum: 2]
 
   alias Wocky.Account.User
-  alias Wocky.Audit.LocationLog
   alias Wocky.Bot
   alias Wocky.Location.UserLocation
   alias Wocky.Repo
@@ -35,7 +34,6 @@ defmodule Wocky.Location.BotEvent do
 
     belongs_to :user, User
     belongs_to :bot, Bot
-    belongs_to :location, LocationLog, foreign_key: :location_id
   end
 
   @type event ::
@@ -52,7 +50,6 @@ defmodule Wocky.Location.BotEvent do
           user_id: User.id(),
           device: User.device(),
           bot_id: Bot.id(),
-          location_id: binary,
           event: event,
           occurred_at: DateTime.t()
         }
@@ -61,7 +58,6 @@ defmodule Wocky.Location.BotEvent do
     :user_id,
     :device,
     :bot_id,
-    :location_id,
     :event,
     :occurred_at
   ]
@@ -106,7 +102,6 @@ defmodule Wocky.Location.BotEvent do
       user_id: user.id,
       device: device,
       bot_id: bot.id,
-      location_id: loc && loc.id,
       event: event,
       created_at: DateTime.utc_now(),
       occurred_at: (loc && loc.captured_at) || DateTime.utc_now()
@@ -136,6 +131,5 @@ defmodule Wocky.Location.BotEvent do
     |> validate_required([:user_id, :device, :bot_id, :event])
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:bot_id)
-    |> foreign_key_constraint(:location_id)
   end
 end

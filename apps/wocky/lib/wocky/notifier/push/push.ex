@@ -11,6 +11,7 @@ defmodule Wocky.Notifier.Push do
   alias Pigeon.FCM.Notification, as: FCMNotification
   alias Wocky.Account.User
   alias Wocky.Audit
+  alias Wocky.Audit.PushLog
   alias Wocky.Notifier.Push.Backend.APNS
   alias Wocky.Notifier.Push.Backend.FCM
   alias Wocky.Notifier.Push.Backend.Sandbox
@@ -183,7 +184,7 @@ defmodule Wocky.Notifier.Push do
     resp = params.backend.get_response(notification)
     update_metric(resp)
 
-    _ = Audit.log_push(log_msg(notification, params), params.user)
+    Audit.log_push(log_msg(notification, params), params.user)
 
     maybe_handle_error(%{params | resp: resp})
   end
@@ -240,7 +241,7 @@ defmodule Wocky.Notifier.Push do
        }) do
     resp = backend.get_response(n)
 
-    %{
+    %PushLog{
       device: device,
       token: token,
       message_id: backend.get_id(n),
@@ -261,7 +262,7 @@ defmodule Wocky.Notifier.Push do
     # do that.
     # _ = Logger.error("PN Error: timeout expired")
 
-    fields = %{
+    log = %PushLog{
       device: device,
       token: token,
       message_id: nil,
@@ -270,7 +271,7 @@ defmodule Wocky.Notifier.Push do
       details: "Timeout waiting for response from Pigeon"
     }
 
-    _ = Audit.log_push(fields, user)
+    Audit.log_push(log, user)
 
     :ok
   end
@@ -281,7 +282,7 @@ defmodule Wocky.Notifier.Push do
          device: device,
          event: event
        }) do
-    fields = %{
+    log = %PushLog{
       device: device,
       token: token,
       message_id: nil,
@@ -291,7 +292,7 @@ defmodule Wocky.Notifier.Push do
         "Maximum number of #{@max_retries} retries sending push notification."
     }
 
-    _ = Audit.log_push(fields, user)
+    Audit.log_push(log, user)
 
     :ok
   end

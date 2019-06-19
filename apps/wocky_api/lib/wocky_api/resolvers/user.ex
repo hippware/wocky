@@ -5,8 +5,6 @@ defmodule WockyAPI.Resolvers.User do
   alias Absinthe.Subscription
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.Audit
-  alias Wocky.Audit.LocationLog
   alias Wocky.Location
   alias Wocky.Location.UserLocation
   alias Wocky.Notifier.Push
@@ -110,26 +108,6 @@ defmodule WockyAPI.Resolvers.User do
       desc: :updated_at,
       post_process: post_process
     )
-  end
-
-  def get_locations(user, args, %{context: %{current_user: user}}) do
-    user
-    |> Audit.get_locations_query(args[:device])
-    |> Utils.connection_from_query(user, args, order_by: [desc: :captured_at])
-  end
-
-  def get_location_events(user, args, %{context: %{current_user: user}}) do
-    user
-    |> Audit.get_location_events_query(args[:device])
-    |> Utils.connection_from_query(user, args, order_by: [desc: :occurred_at])
-  end
-
-  def get_location_events(%LocationLog{} = loc, args, %{
-        context: %{current_user: user}
-      }) do
-    user
-    |> Audit.get_location_events_query(loc)
-    |> Utils.connection_from_query(user, args, order_by: [desc: :occurred_at])
   end
 
   def get_user(_root, %{id: id}, %{context: %{current_user: %{id: id} = u}}) do

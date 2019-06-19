@@ -5,9 +5,6 @@ defmodule Wocky.Repo.Cleaner do
 
   alias Wocky.Account.InviteCode
   alias Wocky.Account.User
-  alias Wocky.Audit.LocationLog
-  alias Wocky.Audit.PushLog
-  alias Wocky.Audit.TrafficLog
   alias Wocky.Bot
   alias Wocky.Bot.Item
   alias Wocky.Location.BotEvent
@@ -20,19 +17,16 @@ defmodule Wocky.Repo.Cleaner do
   require Logger
 
   def clean_all do
-    {:ok, d1} = clean_traffic_logs()
-    {:ok, d2} = clean_notification_logs()
-    {:ok, d3} = clean_pending_users()
-    {:ok, d4} = clean_pending_bots()
-    {:ok, d5} = clean_pending_tros_files()
-    {:ok, d6} = clean_invalid_push_tokens()
-    {:ok, d7} = clean_expired_invite_codes()
-    {:ok, d8} = clean_dead_tros_links(true)
-    {:ok, d9} = clean_transient_users()
-    {:ok, d10} = clean_stale_locations()
-    {:ok, d11} = clean_stale_bot_events()
+    {:ok, d1} = clean_pending_users()
+    {:ok, d2} = clean_pending_bots()
+    {:ok, d3} = clean_pending_tros_files()
+    {:ok, d4} = clean_invalid_push_tokens()
+    {:ok, d5} = clean_expired_invite_codes()
+    {:ok, d6} = clean_dead_tros_links(true)
+    {:ok, d7} = clean_transient_users()
+    {:ok, d8} = clean_stale_bot_events()
 
-    {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8 + d9 + d10 + d11}
+    {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8}
   end
 
   def clean_pending_bots do
@@ -45,34 +39,6 @@ defmodule Wocky.Repo.Cleaner do
       |> Repo.delete_all(timeout: :infinity)
 
     Logger.info("Deleted #{deleted} pending bots created before #{expire_date}")
-
-    {:ok, deleted}
-  end
-
-  def clean_traffic_logs do
-    expire_date = Timestamp.shift(months: -1)
-
-    {deleted, nil} =
-      TrafficLog
-      |> where([t], t.created_at <= ^expire_date)
-      |> Repo.delete_all(timeout: :infinity)
-
-    Logger.info("Deleted #{deleted} traffic logs created before #{expire_date}")
-
-    {:ok, deleted}
-  end
-
-  def clean_notification_logs do
-    expire_date = Timestamp.shift(months: -1)
-
-    {deleted, nil} =
-      PushLog
-      |> where([n], n.created_at <= ^expire_date)
-      |> Repo.delete_all(timeout: :infinity)
-
-    Logger.info(
-      "Deleted #{deleted} push notification logs created before #{expire_date}"
-    )
 
     {:ok, deleted}
   end
@@ -277,19 +243,6 @@ defmodule Wocky.Repo.Cleaner do
 
         {:ok, deleted}
     end
-  end
-
-  def clean_stale_locations do
-    expire_date = Timestamp.shift(months: -6)
-
-    {deleted, nil} =
-      LocationLog
-      |> where([u], u.created_at <= ^expire_date)
-      |> Repo.delete_all(timeout: :infinity)
-
-    Logger.info("Deleted #{deleted} locations created before #{expire_date}")
-
-    {:ok, deleted}
   end
 
   def clean_stale_bot_events do

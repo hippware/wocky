@@ -574,7 +574,7 @@ defmodule Wocky.Location.GeoFenceTest do
   check_for_bot_event/3 with a user outside a bot perimeter - no debounce
   """ do
     setup %{user: user} do
-      loc = Factory.build(:location, %{user: user, device: @device})
+      loc = Factory.build(:location, %{user_id: user.id, device: @device})
       {:ok, outside_loc: loc}
     end
 
