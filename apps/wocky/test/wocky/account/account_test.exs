@@ -442,52 +442,35 @@ defmodule Wocky.Account.AccountTest do
     end
   end
 
-  defp setup_bot_relationships(ctx) do
-    other_user = Factory.insert(:user)
-    Roster.befriend(ctx.user, other_user)
-
-    owned_bot = Factory.insert(:bot, user: ctx.user)
-    pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)
-    invited_bot = Factory.insert(:bot, user: other_user)
-    subscribed_bot = Factory.insert(:bot, user: other_user)
-    unaffiliated_bot = Factory.insert(:bot, user: other_user)
-
-    Relations.invite(ctx.user, invited_bot, other_user)
-    Relations.subscribe(ctx.user, subscribed_bot)
-
-    {:ok,
-     other_user: other_user,
-     owned_bot: owned_bot,
-     pending_bot: pending_bot,
-     invited_bot: invited_bot,
-     subscribed_bot: subscribed_bot,
-     unaffiliated_bot: unaffiliated_bot}
-  end
-
   describe "searchable checks" do
-    setup :setup_bot_relationships
-
     setup ctx do
-      friend = Factory.insert(:user)
-      RosterHelper.make_friends(friend, ctx.user)
+      other_user = Factory.insert(:user)
+      Roster.befriend(ctx.user, other_user)
 
-      friends_private_bot = Factory.insert(:bot, user: friend)
-      friends_invited_private_bot = Factory.insert(:bot, user: friend)
+      owned_bot = Factory.insert(:bot, user: ctx.user)
+      pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)
+      invited_bot = Factory.insert(:bot, user: other_user)
+      subscribed_bot = Factory.insert(:bot, user: other_user)
+      unaffiliated_bot = Factory.insert(:bot, user: other_user)
 
-      Relations.invite(ctx.user, friends_invited_private_bot, friend)
+      Relations.invite(ctx.user, invited_bot, other_user)
+      Relations.subscribe(ctx.user, subscribed_bot)
 
       {:ok,
-       friends_private_bot: friends_private_bot,
-       friends_invited_private_bot: friends_invited_private_bot}
+       other_user: other_user,
+       owned_bot: owned_bot,
+       pending_bot: pending_bot,
+       invited_bot: invited_bot,
+       subscribed_bot: subscribed_bot,
+       unaffiliated_bot: unaffiliated_bot}
     end
 
     test "searchable stored procedure", ctx do
       assert is_searchable_sp(ctx.user, ctx.owned_bot)
       assert is_searchable_sp(ctx.user, ctx.subscribed_bot)
-      refute is_searchable_sp(ctx.user, ctx.friends_invited_private_bot)
+      assert is_searchable_sp(ctx.user, ctx.pending_bot)
       refute is_searchable_sp(ctx.user, ctx.invited_bot)
       refute is_searchable_sp(ctx.user, ctx.unaffiliated_bot)
-      refute is_searchable_sp(ctx.user, ctx.friends_private_bot)
     end
   end
 

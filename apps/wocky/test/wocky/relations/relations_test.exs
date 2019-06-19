@@ -529,7 +529,6 @@ defmodule Wocky.Relations.RelationsTest do
       Roster.befriend(ctx.user, other_user)
 
       owned_bot = Factory.insert(:bot, user: ctx.user)
-      pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)
       invited_bot = Factory.insert(:bot, user: other_user)
       subscribed_bot = Factory.insert(:bot, user: other_user)
       unaffiliated_bot = Factory.insert(:bot, user: other_user)
@@ -540,7 +539,6 @@ defmodule Wocky.Relations.RelationsTest do
       {:ok,
        other_user: other_user,
        owned_bot: owned_bot,
-       pending_bot: pending_bot,
        invited_bot: invited_bot,
        subscribed_bot: subscribed_bot,
        unaffiliated_bot: unaffiliated_bot}
