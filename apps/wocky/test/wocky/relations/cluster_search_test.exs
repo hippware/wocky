@@ -1,4 +1,4 @@
-defmodule Wocky.Bots.ClusterSearchTest do
+defmodule Wocky.Relations.ClusterSearchTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Bots.Bot
