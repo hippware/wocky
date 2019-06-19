@@ -1,4 +1,4 @@
-defmodule Wocky.LocationTest do
+defmodule Wocky.Location.LocationTest do
   use Wocky.DataCase, async: false
 
   alias Wocky.Bots
