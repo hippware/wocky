@@ -27,6 +27,9 @@ defmodule WockyAPI.Schema.MessageTypes do
     @desc "Direction of the message was sent with respect to the requesting user"
     field :direction, non_null(:message_direction)
 
+    @desc "Client-supplied metadata - opaque to server"
+    field :client_data, :string
+
     @desc "The time the messages was received by the server"
     field :created_at, non_null(:datetime)
   end

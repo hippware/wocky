@@ -10,15 +10,16 @@ defmodule Wocky.Messaging do
   alias Wocky.Repo
   alias Wocky.Roster
 
-  @spec send_message(User.t(), User.t(), binary, binary | nil) ::
+  @spec send_message(User.t(), User.t(), binary, binary | nil, binary | nil) ::
           {:ok, Message.t()} | {:error, any}
-  def send_message(recipient, sender, content, image_url \\ nil) do
+  def send_message(recipient, sender, content, image_url, client_data) do
     if can_send?(sender, recipient) do
       %{
         sender_id: sender.id,
         recipient_id: recipient.id,
         content: content,
-        image_url: image_url
+        image_url: image_url,
+        client_data: client_data
       }
       |> Message.changeset()
       |> Repo.insert(returning: true)

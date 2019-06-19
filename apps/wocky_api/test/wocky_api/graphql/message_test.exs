@@ -30,6 +30,7 @@ defmodule WockyAPI.GraphQL.MessageTest do
                 handle
               }
               content
+              client_data
             }
           }
         }
@@ -54,7 +55,9 @@ defmodule WockyAPI.GraphQL.MessageTest do
     test "should successfully retrieve all messages", %{
       user: user,
       user2: user2,
-      user3: user3
+      user3: user3,
+      messages: messages,
+      messages2: messages2
     } do
       result = run_query(@query, user)
 
@@ -80,6 +83,12 @@ defmodule WockyAPI.GraphQL.MessageTest do
              |> Enum.map(& &1["node"]["other_user"]["handle"])
              |> Enum.uniq()
              |> Enum.sort() == Enum.sort([user2.handle, user3.handle])
+
+      assert edges
+             |> Enum.map(& &1["node"]["client_data"])
+             |> Enum.uniq()
+             |> Enum.sort() ==
+               Enum.sort(Enum.map(messages ++ messages2, & &1.client_data))
     end
 
     test "should retrieve all messages for a given user", %{

@@ -60,7 +60,8 @@ defmodule WockyAPI.Resolvers.Message do
              recipient,
              user,
              args[:content],
-             args[:image_url]
+             args[:image_url],
+             args[:client_data]
            ) do
       {:ok, true}
     else
