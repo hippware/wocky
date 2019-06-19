@@ -53,12 +53,21 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
   defp topic, do: get_config(:topic)
 
   defp add_opts(notification, opts) do
-    opts[:background]
-    |> if do
-      Notification.put_content_available(notification)
-    else
-      Notification.put_badge(notification, 1)
-    end
+    notification
+    |> add_badge_or_content_avail(Keyword.get(opts, :background, false))
+    |> maybe_put(&Notification.put_sound/2, Keyword.get(opts, :sound))
     |> Notification.put_custom(Keyword.get(opts, :extra_fields, %{}))
   end
+
+  defp add_badge_or_content_avail(notification, false),
+    do: Notification.put_badge(notification, 1)
+
+  defp add_badge_or_content_avail(notification, true),
+    do: Notification.put_content_available(notification)
+
+  defp maybe_put(notification, _fun, nil),
+    do: notification
+
+  defp maybe_put(notification, fun, val),
+    do: fun.(notification, val)
 end
