@@ -60,6 +60,7 @@ defmodule WockyAPI.Schema.MessageTypes do
     field :recipient_id, non_null(:uuid)
     field :content, :string
     field :image_url, :string
+    field :client_data, :string
   end
 
   payload_object(:send_message_payload, :boolean)

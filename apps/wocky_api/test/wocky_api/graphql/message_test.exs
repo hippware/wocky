@@ -202,8 +202,12 @@ defmodule WockyAPI.GraphQL.MessageTest do
 
   describe "send message mutation" do
     @query """
-    mutation ($recipientId: UUID!, $content: String!) {
-      sendMessage (input: {recipientId: $recipientId, content: $content}) {
+    mutation ($recipientId: UUID!, $content: String!, $clientData: String!) {
+      sendMessage (input: {
+          recipientId: $recipientId,
+          content: $content,
+          clientData: $clientData
+        }) {
         result
       }
     }
@@ -214,14 +218,19 @@ defmodule WockyAPI.GraphQL.MessageTest do
       user2: user2
     } do
       text = Lorem.paragraph()
+      data = Lorem.paragraph()
       Roster.befriend(user, user2)
 
       result =
-        run_query(@query, user, %{"recipientId" => user2.id, "content" => text})
+        run_query(@query, user, %{
+          "recipientId" => user2.id,
+          "content" => text,
+          "clientData" => data
+        })
 
       refute has_errors(result)
 
-      assert [%Message{content: ^text}] =
+      assert [%Message{content: ^text, client_data: ^data}] =
                user2 |> Messaging.get_messages_query() |> Repo.all()
     end
   end
