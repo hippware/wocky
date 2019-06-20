@@ -715,7 +715,12 @@ defmodule Wocky.Relations.RelationsTest do
 
     test "should delete subscriptions to bots owned by the specified user",
          ctx do
-      assert :ok == Relations.delete_subscriptions_for_owned_bots(ctx.owner, ctx.user)
+      assert :ok ==
+               Relations.delete_subscriptions_for_owned_bots(
+                 ctx.owner,
+                 ctx.user
+               )
+
       refute Relations.subscribed?(ctx.user, ctx.bot)
     end
 
@@ -772,7 +777,8 @@ defmodule Wocky.Relations.RelationsTest do
     end
 
     test "should create an invitation", ctx do
-      assert {:ok, invitation} = Relations.invite(ctx.invitee, ctx.bot, ctx.user)
+      assert {:ok, invitation} =
+               Relations.invite(ctx.invitee, ctx.bot, ctx.user)
 
       assert invitation == Repo.get_by(Invitation, id: invitation.id)
       refute invitation.accepted
@@ -791,9 +797,11 @@ defmodule Wocky.Relations.RelationsTest do
     end
 
     test "subsequent invitations should overwrite existing ones", ctx do
-      assert {:ok, invitation} = Relations.invite(ctx.invitee, ctx.bot, ctx.user)
+      assert {:ok, invitation} =
+               Relations.invite(ctx.invitee, ctx.bot, ctx.user)
 
-      assert {:ok, invitation2} = Relations.invite(ctx.invitee, ctx.bot, ctx.user)
+      assert {:ok, invitation2} =
+               Relations.invite(ctx.invitee, ctx.bot, ctx.user)
 
       assert invitation.id == invitation2.id
 
@@ -820,7 +828,8 @@ defmodule Wocky.Relations.RelationsTest do
     setup :setup_invitation
 
     test "Invitee can get their own invitation", ctx do
-      assert %Invitation{} = Relations.get_invitation(ctx.invitation.id, ctx.invitee)
+      assert %Invitation{} =
+               Relations.get_invitation(ctx.invitation.id, ctx.invitee)
     end
 
     test "Unrelated user cannot get the invitation", ctx do

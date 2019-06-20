@@ -32,7 +32,8 @@ defmodule Wocky.Callbacks.BotInvitationTest do
 
   describe "sending an invitation" do
     test "should send a notification", ctx do
-      assert {:ok, invitation} = Relations.invite(ctx.invitee, ctx.bot, ctx.user)
+      assert {:ok, invitation} =
+               Relations.invite(ctx.invitee, ctx.bot, ctx.user)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 500, global: true)
       assert length(msgs) == 1
