@@ -10,6 +10,7 @@ defmodule Wocky.Audit do
   alias Wocky.Audit.PushLog
   alias Wocky.Audit.TrafficLog
   alias Wocky.Location.UserLocation
+  alias Wocky.Repo.ID
 
   # ===================================================================
   # Traffic logging
@@ -25,12 +26,21 @@ defmodule Wocky.Audit do
   # Location logging
 
   @doc "Write a location record to the database"
-  @spec log_location(UserLocation.t(), User.t(), Keyword.t()) :: :ok
+  @spec log_location(UserLocation.t(), User.t(), Keyword.t()) ::
+          {:ok, binary() | nil}
   def log_location(location, user, opts \\ []) do
     config = config(opts)
-    location = %UserLocation{location | user_id: user.id}
 
-    maybe_log(location, :location, user, config)
+    if should_log?(:location, user, config) do
+      id = ID.new()
+      location = %UserLocation{location | id: id, user_id: user.id}
+
+      _ = do_log(location, :location)
+
+      {:ok, id}
+    else
+      {:ok, nil}
+    end
   end
 
   # ===================================================================
@@ -64,10 +74,14 @@ defmodule Wocky.Audit do
 
   defp maybe_log(fields, type, user, config) do
     if should_log?(type, user, config) do
-      Logger.info(Poison.encode!(fields), class: :audit, audit_type: type)
+      do_log(fields, type)
     else
       :ok
     end
+  end
+
+  defp do_log(fields, type) do
+    Logger.info(Poison.encode!(fields), class: :audit, audit_type: type)
   end
 
   defp should_log?(mode, user, config) do

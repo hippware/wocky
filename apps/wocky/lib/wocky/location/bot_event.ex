@@ -29,6 +29,7 @@ defmodule Wocky.Location.BotEvent do
     field :device, :string
     field :event, EventType, null: false
     field :occurred_at, :utc_datetime_usec, null: false
+    field :location_id, :string
 
     timestamps(updated_at: false)
 
@@ -46,12 +47,13 @@ defmodule Wocky.Location.BotEvent do
           | :deactivate
 
   @type t :: %__MODULE__{
-          id: binary,
+          id: binary(),
           user_id: User.id(),
           device: User.device(),
           bot_id: Bot.id(),
-          event: event,
-          occurred_at: DateTime.t()
+          event: event(),
+          occurred_at: DateTime.t(),
+          location_id: binary()
         }
 
   @insert_fields [
@@ -59,7 +61,8 @@ defmodule Wocky.Location.BotEvent do
     :device,
     :bot_id,
     :event,
-    :occurred_at
+    :occurred_at,
+    :location_id
   ]
 
   @spec get_last_events(User.id()) :: map()
@@ -104,7 +107,8 @@ defmodule Wocky.Location.BotEvent do
       bot_id: bot.id,
       event: event,
       created_at: DateTime.utc_now(),
-      occurred_at: (loc && loc.captured_at) || DateTime.utc_now()
+      occurred_at: (loc && loc.captured_at) || DateTime.utc_now(),
+      location_id: loc && loc.id
     }
   end
 

@@ -42,7 +42,7 @@ defmodule Wocky.AuditTest do
 
       log =
         capture_log(fn ->
-          assert :ok = Audit.log_location(loc, user, log_location: true)
+          assert {:ok, _} = Audit.log_location(loc, user, log_location: true)
         end)
 
       assert log =~ "\"lat\":#{loc.lat}"
@@ -54,7 +54,7 @@ defmodule Wocky.AuditTest do
       loc = RepoFactory.build(:location, device: "test")
 
       assert capture_log(fn ->
-               :ok = Audit.log_location(loc, user, log_location: false)
+               {:ok, nil} = Audit.log_location(loc, user, log_location: false)
              end) == ""
     end
   end
