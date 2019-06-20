@@ -269,4 +269,96 @@ defmodule WockyAPI.GraphQL.MessageTest do
                user2 |> Messaging.get_messages_query() |> Repo.all()
     end
   end
+
+  describe "mark read mutation" do
+    @query """
+    mutation ($messageMarkReadInput: MessageMarkReadInput) {
+      messageMarkRead (input: $messageMarkReadInput) {
+        result {
+          id
+          successful
+          error
+        }
+
+      }
+    }
+    """
+
+    setup ctx do
+      unread = Factory.insert(:message, sender: ctx.user, recipient: ctx.user2)
+
+      read =
+        Factory.insert(:message,
+          sender: ctx.user,
+          recipient: ctx.user2,
+          read: true
+        )
+
+      {:ok, unread: unread, read: read}
+    end
+
+    test "should mark a message as read", ctx do
+      result =
+        run_query(@query, ctx.user2, %{
+          "messageMarkReadInput" => %{"messages" => [%{"id" => ctx.unread.id}]}
+        })
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "messageMarkRead" => %{
+                 "result" => [
+                   %{
+                     "error" => nil,
+                     "successful" => true,
+                     "id" => ctx.unread.id
+                   }
+                 ]
+               }
+             }
+
+      assert Repo.get(Message, ctx.unread.id).read
+    end
+
+    test "should refuse to mark a message not sent to the requesting user",
+         ctx do
+      result =
+        run_query(@query, ctx.user, %{
+          "messageMarkReadInput" => %{"messages" => [%{"id" => ctx.unread.id}]}
+        })
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "messageMarkRead" => %{
+                 "result" => [
+                   %{
+                     "error" => "Invalid message ID",
+                     "successful" => false,
+                     "id" => ctx.unread.id
+                   }
+                 ]
+               }
+             }
+
+      refute Repo.get(Message, ctx.unread.id).read
+    end
+
+    test "should work for multiple messages with different read flags", ctx do
+      result =
+        run_query(@query, ctx.user2, %{
+          "messageMarkReadInput" => %{
+            "messages" => [
+              %{"id" => ctx.unread.id},
+              %{"id" => ctx.read.id, "read" => false}
+            ]
+          }
+        })
+
+      refute has_errors(result)
+
+      assert Repo.get(Message, ctx.unread.id).read
+      refute Repo.get(Message, ctx.read.id).read
+    end
+  end
 end

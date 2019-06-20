@@ -12,19 +12,20 @@ defmodule Wocky.Messaging.Message do
     field :content, :string
     field :image_url, :string
     field :client_data, :string
+    field :read, :boolean
 
     belongs_to :sender, User
     belongs_to :recipient, User
 
-    timestamps(updated_at: false)
+    timestamps()
   end
 
   @type t :: %__MODULE__{}
 
-  @fields [:sender_id, :recipient_id, :content, :image_url, :client_data]
+  @fields [:sender_id, :recipient_id, :content, :image_url, :client_data, :read]
 
-  def changeset(params) do
-    %__MODULE__{}
+  def changeset(struct \\ %Message{}, params) do
+    struct
     |> cast(params, @fields)
     |> validate_required([:sender_id, :recipient_id])
     |> validate_required_inclusion([:content, :image_url])

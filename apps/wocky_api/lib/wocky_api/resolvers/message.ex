@@ -71,6 +71,30 @@ defmodule WockyAPI.Resolvers.Message do
     end
   end
 
+  def mark_read(_root, %{input: args}, %{context: %{current_user: user}}) do
+    results = Enum.map(args[:messages], &mark_read(&1, user))
+
+    {:ok, results}
+  end
+
+  defp mark_read(request, user) do
+    read =
+      case request[:read] do
+        nil -> true
+        r -> r
+      end
+
+    id = request[:id]
+
+    case Messaging.mark_read(id, user, read) do
+      :ok ->
+        %{id: id, successful: true}
+
+      {:error, :invalid_id} ->
+        %{id: id, successful: false, error: "Invalid message ID"}
+    end
+  end
+
   def get_conversations(user, args, _info) do
     user.id
     |> Messaging.get_conversations_query()
