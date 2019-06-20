@@ -5,7 +5,7 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-# 2019.6.17+r4d683a0
+
 
 * Update: honeybadger (PR #2588), phoenix (PR #2589), credo (PR #2585)
   * gen_stage (PR #2595), ecto_sql (PR #2596), bimap (PR #2600)
