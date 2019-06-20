@@ -4,7 +4,7 @@ defmodule WockyAPI.Schema do
   use Absinthe.Schema
   use Absinthe.Relay.Schema, :modern
 
-  alias Wocky.Dataloader
+  alias WockyAPI.Dataloader
   alias WockyAPI.Middleware.Auth
   alias WockyAPI.Middleware.Instrumenter
 

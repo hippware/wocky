@@ -1,4 +1,4 @@
-defmodule Wocky.Dataloader do
+defmodule WockyAPI.Dataloader do
   @moduledoc """
   Module to encapsulate Dataloader setup
   """
