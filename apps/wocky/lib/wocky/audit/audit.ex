@@ -28,6 +28,7 @@ defmodule Wocky.Audit do
   @spec log_location(UserLocation.t(), User.t(), Keyword.t()) :: :ok
   def log_location(location, user, opts \\ []) do
     config = config(opts)
+    location = %UserLocation{location | user_id: user.id}
 
     maybe_log(location, :location, user, config)
   end
