@@ -91,7 +91,8 @@ defmodule Wocky.Repo.Factory do
       sender: build(:user),
       recipient: build(:user),
       content: Lorem.paragraph(),
-      client_data: Lorem.paragraph()
+      client_data: Lorem.paragraph(),
+      read: false
     }
   end
 

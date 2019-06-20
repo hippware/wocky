@@ -28,6 +28,20 @@ defmodule Wocky.Messaging do
     end
   end
 
+  def mark_read(id, requestor, read \\ true) do
+    case id |> received_message_query(requestor) |> Repo.one() do
+      nil ->
+        {:error, :invalid_id}
+
+      msg ->
+        msg
+        |> Message.changeset(%{read: read})
+        |> Repo.update()
+
+        :ok
+    end
+  end
+
   defp can_send?(sender, recipient), do: Roster.friend?(sender, recipient)
 
   @doc "Query to get all messages to and from the given user"
@@ -52,5 +66,10 @@ defmodule Wocky.Messaging do
   def get_conversations_query(user_id) do
     Conversation
     |> where(user_id: ^user_id)
+  end
+
+  def received_message_query(id, requestor) do
+    Message
+    |> where([m], m.id == ^id and m.recipient_id == ^requestor.id)
   end
 end

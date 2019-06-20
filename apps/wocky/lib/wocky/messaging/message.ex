@@ -12,18 +12,19 @@ defmodule Wocky.Messaging.Message do
     field :content, :string
     field :image_url, :string
     field :client_data, :string
+    field :read, :boolean
 
     belongs_to :sender, User
     belongs_to :recipient, User
 
-    timestamps(updated_at: false)
+    timestamps()
   end
 
   @type t :: %Message{}
 
-  def changeset(params) do
-    %Message{}
-    |> cast(params, [:sender_id, :recipient_id, :content, :image_url])
+  def changeset(struct \\ %Message{}, params) do
+    struct
+    |> cast(params, [:sender_id, :recipient_id, :content, :image_url, :read])
     |> validate_required([:sender_id, :recipient_id])
     |> validate_required_inclusion([:content, :image_url])
     |> foreign_key_constraint(:sender_id)
