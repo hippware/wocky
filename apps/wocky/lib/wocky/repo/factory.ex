@@ -12,8 +12,6 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Name
   alias Faker.Phone.EnUs, as: Phone
   alias Faker.String
-  alias Wocky.Account.JWT.Client, as: ClientJWT
-  alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Account.User
   alias Wocky.GeoUtils
   alias Wocky.Location.BotEvent
@@ -167,18 +165,6 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def notification_factory do
-    %Notification{
-      user: build(:user),
-      other_user: build(:user),
-      bot: nil,
-      bot_item: nil,
-      bot_invitation: nil,
-      geofence_event: nil,
-      bot_invitation_accepted: nil
-    }
-  end
-
   def bot_invitation_notification_factory do
     inviter = build(:user)
     bot = build(:bot, user: inviter)
@@ -191,27 +177,6 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def bot_invitation_response_notification_factory do
-    %{
-      bot_invitation_notification_factory()
-      | type: :bot_invitation_response,
-        bot_invitation_accepted: true
-    }
-  end
-
-  def bot_item_notification_factory do
-    owner = build(:user)
-    bot = build(:bot, user: owner)
-
-    %Notification{
-      type: :bot_item,
-      user: owner,
-      other_user: build(:user),
-      bot: bot,
-      bot_item: build(:item)
-    }
-  end
-
   def geofence_event_notification_factory do
     %Notification{
       type: :geofence_event,
@@ -219,31 +184,6 @@ defmodule Wocky.Repo.Factory do
       other_user: build(:user),
       bot: build(:bot),
       geofence_event: :enter
-    }
-  end
-
-  def location_share_notification_factory do
-    %Notification{
-      type: :location_share,
-      user: build(:user),
-      other_user: build(:user),
-      expires_at: Timestamp.shift(days: 1)
-    }
-  end
-
-  def location_share_end_notification_factory do
-    %Notification{
-      type: :location_share_end,
-      user: build(:user),
-      other_user: build(:user)
-    }
-  end
-
-  def user_invitation_notification_factory do
-    %Notification{
-      type: :user_invitation,
-      user: build(:user),
-      other_user: build(:user)
     }
   end
 
@@ -263,17 +203,5 @@ defmodule Wocky.Repo.Factory do
   # functions provide, so we provide our own function for constructing them
   def handle do
     Base.encode32(:crypto.strong_rand_bytes(10))
-  end
-
-  def image_url(image), do: TROS.make_url(image.id)
-
-  def get_test_token(user) do
-    {:ok, token, _} = ClientJWT.encode_and_sign(user)
-    token
-  end
-
-  def get_test_location_token(user) do
-    {:ok, token, _} = ServerJWT.encode_and_sign(user)
-    token
   end
 end

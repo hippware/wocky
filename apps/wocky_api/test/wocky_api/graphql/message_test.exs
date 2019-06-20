@@ -9,6 +9,7 @@ defmodule WockyAPI.GraphQL.MessageTest do
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Roster
+  alias WockyAPI.Factory, as: APIFactory
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)
@@ -158,7 +159,7 @@ defmodule WockyAPI.GraphQL.MessageTest do
 
     test "get conversations", %{user: user, user2: user2} do
       image = Factory.insert(:tros_metadata, user: user)
-      tros_url = Factory.image_url(image)
+      tros_url = APIFactory.image_url(image)
 
       message =
         Factory.insert(

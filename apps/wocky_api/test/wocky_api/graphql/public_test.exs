@@ -4,13 +4,14 @@ defmodule WockyAPI.GraphQL.PublicTest do
   alias Wocky.Account
   alias Wocky.Relation
   alias Wocky.Repo.Factory
+  alias WockyAPI.Factory, as: APIFactory
 
   setup do
     users = [user, user2] = Factory.insert_list(2, :user)
 
     Enum.map(users, fn u ->
       image = Factory.insert(:tros_metadata, user: u)
-      Account.update(u, %{avatar: Factory.image_url(image)})
+      Account.update(u, %{avatar: APIFactory.image_url(image)})
     end)
 
     image = Factory.insert(:tros_metadata, user: user)
@@ -19,7 +20,7 @@ defmodule WockyAPI.GraphQL.PublicTest do
       Factory.insert(
         :bot,
         user: user,
-        image_url: Factory.image_url(image)
+        image_url: APIFactory.image_url(image)
       )
 
     bot2 = Factory.insert(:bot, user: user2)

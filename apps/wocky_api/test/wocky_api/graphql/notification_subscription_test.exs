@@ -10,6 +10,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster
+  alias WockyAPI.Factory, as: APIFactory
 
   setup_all :require_watcher
 
@@ -236,7 +237,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
   describe "notification deletion" do
     setup %{user: user} do
-      notification = Factory.insert(:bot_item_notification, user: user)
+      notification = APIFactory.insert(:bot_item_notification, user: user)
       assert_push "subscription:data", _push, 2000
 
       {:ok, notification: notification}

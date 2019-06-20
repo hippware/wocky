@@ -15,6 +15,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster
+  alias WockyAPI.Factory, as: APIFactory
 
   setup :common_setup
 
@@ -1523,7 +1524,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
     test "bot item with content and image", %{bot: bot, user: user} do
       image = Factory.insert(:tros_metadata, user: user)
-      tros_url = Factory.image_url(image)
+      tros_url = APIFactory.image_url(image)
       item = Factory.insert(:item, user: user, bot: bot, image_url: tros_url)
 
       result = run_query(@query, user, %{"id" => bot.id})
@@ -1919,7 +1920,8 @@ defmodule WockyAPI.GraphQL.BotTest do
     [user, user2, user3] = Factory.insert_list(3, :user)
 
     image = Factory.insert(:tros_metadata, user: user)
-    bot = Factory.insert(:bot, image_url: Factory.image_url(image), user: user)
+    image_url = APIFactory.image_url(image)
+    bot = Factory.insert(:bot, image_url: image_url, user: user)
     bot2 = Factory.insert(:bot, user: user2)
     Factory.insert(:subscription, bot: bot, user: user2)
     Factory.insert(:subscription, bot: bot2, user: user)

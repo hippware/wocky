@@ -4,6 +4,7 @@ defmodule WockyAPI.GraphQL.NotificationTest do
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo
   alias Wocky.Repo.Factory
+  alias WockyAPI.Factory, as: APIFactory
 
   setup do
     {:ok, user: Factory.insert(:user)}
@@ -20,7 +21,10 @@ defmodule WockyAPI.GraphQL.NotificationTest do
           :user_invitation_notification
         ]
         |> Enum.map(
-          &Factory.insert(&1, user: ctx.user, other_user: Factory.insert(:user))
+          &APIFactory.insert(&1,
+            user: ctx.user,
+            other_user: Factory.insert(:user)
+          )
         )
 
       {:ok, notifications: notifications}
@@ -188,7 +192,7 @@ defmodule WockyAPI.GraphQL.NotificationTest do
 
   describe "all fields" do
     setup ctx do
-      n = Factory.insert(:location_share_notification, user: ctx.user)
+      n = APIFactory.insert(:location_share_notification, user: ctx.user)
       {:ok, notification: n}
     end
 
@@ -242,8 +246,8 @@ defmodule WockyAPI.GraphQL.NotificationTest do
 
   describe "delete" do
     setup ctx do
-      n = Factory.insert(:geofence_event_notification, user: ctx.user)
-      n2 = Factory.insert(:geofence_event_notification)
+      n = APIFactory.insert(:geofence_event_notification, user: ctx.user)
+      n2 = APIFactory.insert(:geofence_event_notification)
       {:ok, id: n.id, id2: n2.id}
     end
 
