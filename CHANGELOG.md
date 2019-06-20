@@ -6,10 +6,13 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: honeybadger (PR #2588), phoenix (PR #2589), credo (PR #2585)
-  * gen_stage (PR #2595), ecto_sql (PR #2596)
+  * gen_stage (PR #2595), ecto_sql (PR #2596), bimap (PR #2600)
 * Add logging for audit fields (PR #2594)
 * Add deployed tag to deployed image (PR #2597)
 * Set correct region (PR #2598)
+* Play default tone for iOS push notifications of a new message (#2603)
+* Add a new text field to messages to store client data (#2604)
+* Remove audit db (PR #2601), Send audit logs to Loggly not SQL (#2602)
 
 
 # 2019.6.12+rcc76921
