@@ -61,6 +61,4 @@ defmodule Wocky.TROS.Store.Test do
       |> List.to_tuple()
     end)
   end
-
-  def clear_actions, do: :ets.delete_all_objects(__MODULE__)
 end
