@@ -202,8 +202,40 @@ defmodule WockyAPI.GraphQL.MessageTest do
 
   describe "send message mutation" do
     @query """
-    mutation ($recipientId: UUID!, $content: String!, $clientData: String!) {
+    mutation ($recipientId: UUID!, $content: String!) {
       sendMessage (input: {
+          recipientId: $recipientId,
+          content: $content
+        }) {
+        result
+      }
+    }
+    """
+
+    test "should send a message to the specified user", %{
+      user: user,
+      user2: user2
+    } do
+      text = Lorem.paragraph()
+      Roster.befriend(user, user2)
+
+      result =
+        run_query(@query, user, %{
+          "recipientId" => user2.id,
+          "content" => text
+        })
+
+      refute has_errors(result)
+
+      assert [%Message{content: ^text}] =
+               user2 |> Messaging.get_messages_query() |> Repo.all()
+    end
+  end
+
+  describe "messageSend mutation" do
+    @query """
+    mutation ($recipientId: UUID!, $content: String!, $clientData: String!) {
+      messageSend (input: {
           recipientId: $recipientId,
           content: $content,
           clientData: $clientData

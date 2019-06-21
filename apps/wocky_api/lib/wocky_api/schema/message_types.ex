@@ -56,18 +56,34 @@ defmodule WockyAPI.Schema.MessageTypes do
     value :outgoing
   end
 
+  # DEPRECATED
   input_object :send_message_input do
+    field :recipient_id, non_null(:uuid)
+    field :content, :string
+    field :image_url, :string
+  end
+
+  input_object :message_send_input do
     field :recipient_id, non_null(:uuid)
     field :content, :string
     field :image_url, :string
     field :client_data, :string
   end
 
+  # DEPRECATED
   payload_object(:send_message_payload, :boolean)
+  payload_object(:message_send_payload, :boolean)
 
   object :message_mutations do
     field :send_message, type: :send_message_payload do
+      deprecate "Use messageSend instead"
       arg :input, non_null(:send_message_input)
+      resolve &Message.send_message/3
+      changeset_mutation_middleware()
+    end
+
+    field :message_send, type: :message_send_payload do
+      arg :input, non_null(:message_send_input)
       resolve &Message.send_message/3
       changeset_mutation_middleware()
     end
