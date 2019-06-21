@@ -19,11 +19,13 @@ defmodule Wocky.Messaging.Message do
     timestamps(updated_at: false)
   end
 
-  @type t :: %Message{}
+  @type t :: %__MODULE__{}
+
+  @fields [:sender_id, :recipient_id, :content, :image_url, :client_data]
 
   def changeset(params) do
-    %Message{}
-    |> cast(params, [:sender_id, :recipient_id, :content, :image_url])
+    %__MODULE__{}
+    |> cast(params, @fields)
     |> validate_required([:sender_id, :recipient_id])
     |> validate_required_inclusion([:content, :image_url])
     |> foreign_key_constraint(:sender_id)

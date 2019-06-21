@@ -81,9 +81,10 @@ defmodule Wocky.MessagingTest do
 
     test "should send a message to a friend", %{user: u, friend: f} do
       text = Lorem.paragraph()
-      assert {:ok, _} = Messaging.send_message(f, u, text, nil, nil)
+      data = Lorem.paragraph()
+      assert {:ok, _} = Messaging.send_message(f, u, text, nil, data)
 
-      assert [%Message{content: ^text}] =
+      assert [%Message{content: ^text, client_data: ^data}] =
                f |> Messaging.get_messages_query(u) |> Repo.all()
     end
 
