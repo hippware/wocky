@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.6.21+r7a6804a
+
+* Fix naming on messageSend mutation; deprecate old (PR #2613)
+
+
 # 2019.6.21+r1ee3b2d
 
 * Extra location audit fields (#2609, PR #2611)
