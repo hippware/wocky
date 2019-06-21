@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.6.21+r1ee3b2d
+
+* Extra location audit fields (#2609, PR #2611)
+* Allow storing client data for messages (Rework #2604, PR #2610)
+
+
 # 2019.6.19+reb549c5
 
 * Update: honeybadger (PR #2588), phoenix (PR #2589), credo (PR #2585)
