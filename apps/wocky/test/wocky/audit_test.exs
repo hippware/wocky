@@ -38,11 +38,11 @@ defmodule Wocky.AuditTest do
 
   describe "log_location/3" do
     test "should add a location entry for the user", %{user: user} do
-      loc = RepoFactory.params_for(:location, device: "test", user_id: user.id)
+      loc = RepoFactory.build(:location, device: "test", user_id: user.id)
 
       log =
         capture_log(fn ->
-          assert :ok = Audit.log_location(loc, user, log_location: true)
+          assert {:ok, _} = Audit.log_location(loc, user, log_location: true)
         end)
 
       assert log =~ "\"lat\":#{loc.lat}"
@@ -51,10 +51,10 @@ defmodule Wocky.AuditTest do
     end
 
     test "should not log when :log_location is false", %{user: user} do
-      loc = RepoFactory.params_for(:location, device: "test")
+      loc = RepoFactory.build(:location, device: "test")
 
       assert capture_log(fn ->
-               :ok = Audit.log_location(loc, user, log_location: false)
+               {:ok, nil} = Audit.log_location(loc, user, log_location: false)
              end) == ""
     end
   end
