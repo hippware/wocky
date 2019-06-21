@@ -4,11 +4,11 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Absinthe.Subscription
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.Bots
-  alias Wocky.Bots.Bot
   alias Wocky.GeoUtils
   alias Wocky.Location
   alias Wocky.Location.UserLocation
+  alias Wocky.POI
+  alias Wocky.POI.Bot
   alias Wocky.Relation
   alias Wocky.Relation.Invitation
   alias Wocky.Repo.ID
@@ -122,14 +122,14 @@ defmodule WockyAPI.Resolvers.Bot do
            |> parse_lat_lon()
            |> Map.put(:id, ID.new())
            |> Map.put(:user_id, user.id)
-           |> Bots.insert(user),
+           |> POI.insert(user),
          {:ok, _} <- maybe_update_location(input, user, bot) do
       {:ok, bot}
     end
   end
 
   def create_bot(_root, %{}, %{context: %{current_user: user}}),
-    do: {:ok, Bots.preallocate(user)}
+    do: {:ok, POI.preallocate(user)}
 
   def update_bot(_root, %{input: input}, %{context: %{current_user: requestor}}) do
     case Relation.get_owned_bot(input[:id], requestor, true) do
@@ -139,7 +139,7 @@ defmodule WockyAPI.Resolvers.Bot do
       bot ->
         updates = parse_lat_lon(input[:values])
 
-        with {:ok, bot} <- Bots.update(bot, updates),
+        with {:ok, bot} <- POI.update(bot, updates),
              {:ok, _} <- maybe_update_location(input, requestor, bot) do
           {:ok, bot}
         end
@@ -149,7 +149,7 @@ defmodule WockyAPI.Resolvers.Bot do
   defp maybe_update_location(%{user_location: l}, user, bot)
        when not is_nil(l) do
     bot
-    |> Bots.sub_setup_event()
+    |> POI.sub_setup_event()
     |> Waiter.wait(5000, fn -> Relation.subscribed?(user, bot) end)
 
     Location.set_user_location_for_bot(user, UserLocation.new(l), bot)
@@ -165,7 +165,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
   def get_items(bot, args, _info) do
     bot
-    |> Bots.get_items_query()
+    |> POI.get_items_query()
     |> Utils.connection_from_query(bot, args)
   end
 
@@ -231,7 +231,7 @@ defmodule WockyAPI.Resolvers.Bot do
         not_found_error(bot_id)
 
       bot = %{user_id: ^user_id} ->
-        Bots.delete(bot)
+        POI.delete(bot)
         {:ok, true}
 
       _ ->
@@ -274,7 +274,7 @@ defmodule WockyAPI.Resolvers.Bot do
     image_url = args[:image_url]
 
     with %Bot{} = bot <- Relation.get_bot(args.bot_id, requestor),
-         {:ok, item} <- Bots.put_item(bot, id, content, image_url, requestor) do
+         {:ok, item} <- POI.put_item(bot, id, content, image_url, requestor) do
       {:ok, item}
     else
       nil -> not_found_error(args.bot_id)
@@ -285,7 +285,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
   def delete_item(_root, args, %{context: %{current_user: requestor}}) do
     with %Bot{} = bot <- Relation.get_bot(args[:input][:bot_id], requestor),
-         :ok <- Bots.delete_item(bot, args[:input][:id], requestor) do
+         :ok <- POI.delete_item(bot, args[:input][:id], requestor) do
       {:ok, true}
     else
       nil -> not_found_error(args[:input][:bot_id])

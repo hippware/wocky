@@ -6,10 +6,10 @@ defmodule Wocky.Callbacks.BotItemTest do
   alias Faker.Code
   alias Faker.Lorem
   alias Pigeon.APNS.Notification
-  alias Wocky.Bots
   alias Wocky.Callbacks.BotItem, as: Callback
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
+  alias Wocky.POI
   alias Wocky.Relation
   alias Wocky.Repo.Factory
   alias Wocky.Roster
@@ -35,7 +35,7 @@ defmodule Wocky.Callbacks.BotItemTest do
 
   describe "insert" do
     test "should trigger a notification", ctx do
-      {:ok, _} = Bots.put_item(ctx.bot, nil, Lorem.sentence(), nil, ctx.author)
+      {:ok, _} = POI.put_item(ctx.bot, nil, Lorem.sentence(), nil, ctx.author)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 500, global: true)
       assert length(msgs) == 1
@@ -52,7 +52,7 @@ defmodule Wocky.Callbacks.BotItemTest do
     end
 
     test "should not trigger a notification to the author", ctx do
-      {:ok, _} = Bots.put_item(ctx.bot, nil, Lorem.sentence(), nil, ctx.sub)
+      {:ok, _} = POI.put_item(ctx.bot, nil, Lorem.sentence(), nil, ctx.sub)
 
       assert no_more_push_notifications()
     end

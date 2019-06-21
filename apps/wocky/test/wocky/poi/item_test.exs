@@ -1,7 +1,7 @@
-defmodule Wocky.Bots.ItemTest do
+defmodule Wocky.POI.ItemTest do
   use Wocky.DataCase, async: true
 
-  alias Wocky.Bots.Item
+  alias Wocky.POI.Item
   alias Wocky.Repo.ID
 
   describe "validation" do

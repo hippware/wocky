@@ -3,9 +3,9 @@ defmodule Wocky.Relation.RelationTest do
 
   alias Ecto.Adapters.SQL
   alias Wocky.Account.User
-  alias Wocky.Bots
-  alias Wocky.Bots.Bot
   alias Wocky.GeoUtils
+  alias Wocky.POI
+  alias Wocky.POI.Bot
   alias Wocky.Relation
   alias Wocky.Relation.Invitation
   alias Wocky.Repo.Factory

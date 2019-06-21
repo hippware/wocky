@@ -1,8 +1,8 @@
 defmodule Wocky.Relation.ClusterSearchTest do
   use Wocky.DataCase, async: true
 
-  alias Wocky.Bots.Bot
   alias Wocky.GeoUtils
+  alias Wocky.POI.Bot
   alias Wocky.Relation
   alias Wocky.Relation.Cluster
   alias Wocky.Relation.ClusterSearch

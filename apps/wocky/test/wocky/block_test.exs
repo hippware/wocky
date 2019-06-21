@@ -2,7 +2,7 @@ defmodule Wocky.BlockTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Block
-  alias Wocky.Bots
+  alias Wocky.POI
   alias Wocky.Repo.Factory
 
   setup do
@@ -53,7 +53,7 @@ defmodule Wocky.BlockTest do
 
       query =
         ctx.bot.id
-        |> Bots.get_query()
+        |> POI.get_query()
         |> Block.object_visible_query(ctx.user2)
 
       assert is_nil(Repo.one(query))

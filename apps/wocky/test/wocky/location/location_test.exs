@@ -1,11 +1,11 @@
 defmodule Wocky.Location.LocationTest do
   use Wocky.DataCase, async: false
 
-  alias Wocky.Bots
   alias Wocky.Location
   alias Wocky.Location.BotEvent
   alias Wocky.Location.Share
   alias Wocky.Location.UserLocation
+  alias Wocky.POI
   alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -26,7 +26,7 @@ defmodule Wocky.Location.LocationTest do
       Roster.befriend(ctx.user, user2)
       Relation.subscribe(ctx.user, bot)
 
-      {:ok, bot: bot, lat: Bots.lat(bot), lon: Bots.lon(bot)}
+      {:ok, bot: bot, lat: POI.lat(bot), lon: POI.lon(bot)}
     end
 
     test "should initiate geofence processing", ctx do
@@ -53,8 +53,8 @@ defmodule Wocky.Location.LocationTest do
 
       location =
         UserLocation.new(%{
-          lat: Bots.lat(bot),
-          lon: Bots.lon(bot),
+          lat: POI.lat(bot),
+          lon: POI.lon(bot),
           accuracy: 10,
           device: "testing"
         })

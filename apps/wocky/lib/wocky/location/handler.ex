@@ -8,12 +8,12 @@ defmodule Wocky.Location.Handler do
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Audit
-  alias Wocky.Bots.Bot
   alias Wocky.Location.BotEvent
   alias Wocky.Location.GeoFence
   alias Wocky.Location.Supervisor
   alias Wocky.Location.UserLocation
   alias Wocky.Location.UserLocation.Current
+  alias Wocky.POI.Bot
   alias Wocky.Relation
 
   require Logger

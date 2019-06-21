@@ -4,10 +4,10 @@ defmodule Wocky.Location.GeoFence do
   use Wocky.Config
 
   alias Wocky.Account.User
-  alias Wocky.Bots
-  alias Wocky.Bots.Bot
   alias Wocky.Location.BotEvent
   alias Wocky.Location.UserLocation
+  alias Wocky.POI
+  alias Wocky.POI.Bot
   alias Wocky.Relation
   alias Wocky.Repo
 
@@ -114,7 +114,7 @@ defmodule Wocky.Location.GeoFence do
     event = Map.get(events, bot.id)
 
     bot
-    |> Bots.contains?(Map.from_struct(loc))
+    |> POI.contains?(Map.from_struct(loc))
     |> handle_intersection(user, bot, event, loc, config, acc)
   end
 
@@ -227,7 +227,7 @@ defmodule Wocky.Location.GeoFence do
   end
 
   defp too_far?(bot, loc, config) do
-    Bots.distance_from(bot, Map.from_struct(loc)) > config.max_exit_distance
+    POI.distance_from(bot, Map.from_struct(loc)) > config.max_exit_distance
   end
 
   defp debounce_complete?(_, _, %{debounce: false}, _), do: true

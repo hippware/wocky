@@ -3,11 +3,11 @@ defmodule Wocky.Callbacks.Bot do
   Callbacks for DB bot changes
   """
 
-  use DawdleDB.Handler, type: Wocky.Bots.Bot
+  use DawdleDB.Handler, type: Wocky.POI.Bot
 
-  alias Wocky.Bots
-  alias Wocky.Bots.Bot
   alias Wocky.Location
+  alias Wocky.POI
+  alias Wocky.POI.Bot
   alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Hydrator
@@ -18,7 +18,7 @@ defmodule Wocky.Callbacks.Bot do
       :ok = Relation.subscribe(user, rec)
 
       rec
-      |> Bots.sub_setup_event()
+      |> POI.sub_setup_event()
       |> Waiter.notify()
     end)
   end

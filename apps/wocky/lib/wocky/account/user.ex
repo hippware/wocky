@@ -5,8 +5,8 @@ defmodule Wocky.Account.User do
 
   alias Wocky.Account.Avatar
   alias Wocky.Account.InviteCode
-  alias Wocky.Bots.Bot
   alias Wocky.Notifier.Push.Token, as: PushToken
+  alias Wocky.POI.Bot
   alias Wocky.Presence
   alias Wocky.Relation.Invitation
   alias Wocky.Relation.Subscription

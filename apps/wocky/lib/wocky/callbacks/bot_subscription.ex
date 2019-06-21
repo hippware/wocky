@@ -5,8 +5,8 @@ defmodule Wocky.Callbacks.BotSubscription do
 
   use DawdleDB.Handler, type: Wocky.Relation.Subscription
 
-  alias Wocky.Bots.Bot
   alias Wocky.Location
+  alias Wocky.POI.Bot
   alias Wocky.Repo.Hydrator
 
   def handle_delete(new) do

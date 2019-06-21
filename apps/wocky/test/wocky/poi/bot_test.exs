@@ -1,10 +1,10 @@
-defmodule Wocky.Bots.BotTest do
+defmodule Wocky.POI.BotTest do
   use ExUnit.Case, async: true
 
   import Wocky.DataCase
 
-  alias Wocky.Bots.Bot
   alias Wocky.GeoUtils
+  alias Wocky.POI.Bot
   alias Wocky.Repo.ID
 
   describe "validations" do

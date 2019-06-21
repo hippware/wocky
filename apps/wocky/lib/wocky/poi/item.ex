@@ -1,4 +1,4 @@
-defmodule Wocky.Bots.Item do
+defmodule Wocky.POI.Item do
   @moduledoc "Represents an item published to a bot"
 
   use Wocky.Repo.Schema
@@ -13,7 +13,7 @@ defmodule Wocky.Bots.Item do
 
     timestamps()
 
-    belongs_to :bot, Wocky.Bots.Bot
+    belongs_to :bot, Wocky.POI.Bot
     belongs_to :user, Wocky.Account.User
   end
 

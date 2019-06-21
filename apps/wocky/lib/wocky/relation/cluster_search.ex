@@ -7,8 +7,8 @@ defmodule Wocky.Relation.ClusterSearch do
   alias Ecto.UUID
   alias Geo.Point
   alias Wocky.Account.User
-  alias Wocky.Bots.Bot
   alias Wocky.GeoUtils
+  alias Wocky.POI.Bot
   alias Wocky.Relation.Cluster
   alias Wocky.Repo
 

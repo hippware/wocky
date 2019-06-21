@@ -10,12 +10,12 @@ defmodule Wocky.Relation do
   alias Ecto.Queryable
   alias Wocky.Account.User
   alias Wocky.Block
-  alias Wocky.Bots
-  alias Wocky.Bots.Bot
   alias Wocky.Events.GeofenceEvent
   alias Wocky.GeoUtils
   alias Wocky.Location
   alias Wocky.Notifier
+  alias Wocky.POI
+  alias Wocky.POI.Bot
   alias Wocky.Relation.Cluster
   alias Wocky.Relation.ClusterSearch
   alias Wocky.Relation.Invitation

@@ -1,4 +1,4 @@
-defmodule Wocky.Bots.Bot do
+defmodule Wocky.POI.Bot do
   @moduledoc "Schema and API for working with Bots."
 
   use Wocky.Repo.Schema
@@ -6,7 +6,7 @@ defmodule Wocky.Bots.Bot do
   alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
   alias Wocky.Account.User
-  alias Wocky.Bots.Item
+  alias Wocky.POI.Item
   alias Wocky.Relation.Invitation
   alias Wocky.Relation.Subscription
 

@@ -1,5 +1,5 @@
-defmodule Wocky.Bots do
-  @moduledoc "Schema and API for working with Bots."
+defmodule Wocky.POI do
+  @moduledoc "Schema and API for working with points of interest."
 
   use Elixometer
 
@@ -10,8 +10,8 @@ defmodule Wocky.Bots do
   alias Geocalc.Point
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.Bots.Bot
-  alias Wocky.Bots.Item
+  alias Wocky.POI.Bot
+  alias Wocky.POI.Item
   alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.Waiter

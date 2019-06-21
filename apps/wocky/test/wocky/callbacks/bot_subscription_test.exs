@@ -1,9 +1,9 @@
 defmodule Wocky.Callbacks.BotSubscriptionTest do
   use Wocky.WatcherCase
 
-  alias Wocky.Bots
   alias Wocky.Callbacks.BotSubscription, as: Callback
   alias Wocky.Location.Handler
+  alias Wocky.POI
   alias Wocky.Relation
   alias Wocky.Repo.Factory
   alias Wocky.Roster
@@ -24,7 +24,7 @@ defmodule Wocky.Callbacks.BotSubscriptionTest do
     pid = Handler.get_handler(user)
 
     Relation.subscribe(user, bot)
-    Bots.delete(bot)
+    POI.delete(bot)
 
     refute_eventually(Relation.subscribed?(user, bot))
 

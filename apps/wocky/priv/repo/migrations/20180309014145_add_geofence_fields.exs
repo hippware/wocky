@@ -3,7 +3,7 @@ defmodule Wocky.Repo.Migrations.AddGeofenceFields do
 
   import Ecto.Query
 
-  alias Wocky.Bots.Bot
+  alias Wocky.POI.Bot
   alias Wocky.Repo
 
   def change do

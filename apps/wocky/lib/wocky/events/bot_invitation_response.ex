@@ -2,7 +2,7 @@ defmodule Wocky.Events.BotInvitationResponse do
   @moduledoc "Event for response to the notified user's invitation"
 
   alias Wocky.Account.User
-  alias Wocky.Bots.Bot
+  alias Wocky.POI.Bot
   alias Wocky.Relation.Invitation
 
   defstruct [

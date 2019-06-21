@@ -1,10 +1,10 @@
 defmodule Wocky.Callbacks.BotTest do
   use Wocky.WatcherCase
 
-  alias Wocky.Bots
   alias Wocky.Callbacks.Bot, as: Callback
   alias Wocky.GeoUtils
   alias Wocky.Location.Handler
+  alias Wocky.POI
   alias Wocky.Relation
   alias Wocky.Repo.Factory
   alias Wocky.Roster
@@ -26,12 +26,12 @@ defmodule Wocky.Callbacks.BotTest do
 
     Relation.subscribe(user, bot)
 
-    Bots.update(bot, %{location: GeoUtils.point(1.0, 2.0)})
+    POI.update(bot, %{location: GeoUtils.point(1.0, 2.0)})
 
     assert_eventually(
       (
         %{subscriptions: [bot]} = :sys.get_state(pid)
-        Bots.lat(bot) == 1.0 and Bots.lon(bot) == 2.0
+        POI.lat(bot) == 1.0 and POI.lon(bot) == 2.0
       )
     )
   end

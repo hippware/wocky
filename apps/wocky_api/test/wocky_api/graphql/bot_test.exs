@@ -4,10 +4,10 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Faker.Lorem
   alias Wocky.Account.User
   alias Wocky.Block
-  alias Wocky.Bots
-  alias Wocky.Bots.Bot
-  alias Wocky.Bots.Item
   alias Wocky.GeoUtils
+  alias Wocky.POI
+  alias Wocky.POI.Bot
+  alias Wocky.POI.Item
   alias Wocky.Relation
   alias Wocky.Relation.Invitation
   alias Wocky.Repo
@@ -645,7 +645,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                }
              }
 
-      assert Bots.get(bot.id) == nil
+      assert POI.get(bot.id) == nil
     end
 
     test "delete a non-owned bot", %{user: user, bot2: bot} do
@@ -653,7 +653,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       assert error_msg(result) == "Operation only permitted on owned bots"
 
-      refute Bots.get(bot.id) == nil
+      refute POI.get(bot.id) == nil
     end
 
     test "delete a non-existant bot", %{user: user} do
@@ -987,7 +987,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                }
              } = result.data
 
-      assert %Bot{pending: true, user_id: ^user_id} = Bots.get(id, true)
+      assert %Bot{pending: true, user_id: ^user_id} = POI.get(id, true)
     end
 
     @query """
@@ -1019,7 +1019,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                }
              } = result.data
 
-      assert ^bot = id |> Bots.get() |> add_bot_lat_lon() |> Map.take(fields)
+      assert ^bot = id |> POI.get() |> add_bot_lat_lon() |> Map.take(fields)
 
       assert Repo.get(User, user.id).bot_created
     end
@@ -1053,7 +1053,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                }
              } = result.data
 
-      bot = Bots.get(id)
+      bot = POI.get(id)
       assert [%{id: ^user_id}] = bot |> Relation.visitors_query() |> Repo.all()
     end
 
@@ -1089,11 +1089,11 @@ defmodule WockyAPI.GraphQL.BotTest do
                }
              }
 
-      assert new_title == Bots.get(bot.id).title
+      assert new_title == POI.get(bot.id).title
     end
 
     test "update pending bot", %{user: user} do
-      bot = Bots.preallocate(user)
+      bot = POI.preallocate(user)
 
       values =
         :bot
@@ -1119,7 +1119,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                }
              }
 
-      assert values["title"] == Bots.get(bot.id).title
+      assert values["title"] == POI.get(bot.id).title
     end
 
     test "update bot with location", %{user: %{id: user_id} = user, bot: bot} do
@@ -1132,8 +1132,8 @@ defmodule WockyAPI.GraphQL.BotTest do
           "id" => bot.id,
           "values" => %{"title" => new_title},
           "user_location" => %{
-            "lat" => Bots.lat(bot),
-            "lon" => Bots.lon(bot),
+            "lat" => POI.lat(bot),
+            "lon" => POI.lon(bot),
             "accuracy" => 1,
             "device" => Lorem.word()
           }
@@ -1150,7 +1150,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                }
              }
 
-      assert new_title == Bots.get(bot.id).title
+      assert new_title == POI.get(bot.id).title
       assert [%{id: ^user_id}] = bot |> Relation.visitors_query() |> Repo.all()
     end
   end
@@ -1209,8 +1209,8 @@ defmodule WockyAPI.GraphQL.BotTest do
           "id" => bot.id,
           "guest" => true,
           "user_location" => %{
-            "lat" => Bots.lat(bot),
-            "lon" => Bots.lon(bot),
+            "lat" => POI.lat(bot),
+            "lon" => POI.lon(bot),
             "accuracy" => 1,
             "device" => Lorem.word()
           }
@@ -1231,8 +1231,8 @@ defmodule WockyAPI.GraphQL.BotTest do
           "id" => bot.id,
           "guest" => true,
           "user_location" => %{
-            "lat" => Bots.lat(bot) + 5.0,
-            "lon" => Bots.lon(bot) + 5.0,
+            "lat" => POI.lat(bot) + 5.0,
+            "lon" => POI.lon(bot) + 5.0,
             "accuracy" => 1,
             "device" => Lorem.word()
           }
@@ -1253,8 +1253,8 @@ defmodule WockyAPI.GraphQL.BotTest do
           "id" => bot.id,
           "guest" => true,
           "user_location" => %{
-            "lat" => Bots.lat(bot),
-            "lon" => Bots.lon(bot),
+            "lat" => POI.lat(bot),
+            "lon" => POI.lon(bot),
             "accuracy" => -1,
             "device" => Lorem.word()
           }
@@ -1603,7 +1603,7 @@ defmodule WockyAPI.GraphQL.BotTest do
       assert %{"botItemPublish" => %{"result" => %{"id" => id}}} = result.data
 
       assert %Item{id: ^id, content: ^content, image_url: ^image_url} =
-               Bots.get_item(bot, id)
+               POI.get_item(bot, id)
     end
 
     test "update existing item", %{user: user, bot2: bot2, item: item} do
@@ -1620,7 +1620,7 @@ defmodule WockyAPI.GraphQL.BotTest do
         })
 
       refute has_errors(result)
-      assert %Item{content: ^content, id: ^id} = Bots.get_item(bot2, id)
+      assert %Item{content: ^content, id: ^id} = POI.get_item(bot2, id)
     end
 
     test "publish item with invalid bot id", %{user: user} do

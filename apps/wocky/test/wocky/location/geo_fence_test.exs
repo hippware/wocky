@@ -3,12 +3,12 @@ defmodule Wocky.Location.GeoFenceTest do
 
   alias Faker.Code
   alias Timex.Duration
-  alias Wocky.Bots
   alias Wocky.Location.BotEvent
   alias Wocky.Location.GeoFence
   alias Wocky.Location.UserLocation
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
+  alias Wocky.POI
   alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -53,8 +53,8 @@ defmodule Wocky.Location.GeoFenceTest do
       loc =
         UserLocation.new(%{
           user_id: user.id,
-          lat: Bots.lat(bot),
-          lon: Bots.lon(bot),
+          lat: POI.lat(bot),
+          lon: POI.lon(bot),
           accuracy: 10,
           is_moving: true,
           speed: 3,
@@ -93,8 +93,8 @@ defmodule Wocky.Location.GeoFenceTest do
       loc =
         UserLocation.new(%{
           user_id: user.id,
-          lat: Bots.lat(bot),
-          lon: Bots.lon(bot),
+          lat: POI.lat(bot),
+          lon: POI.lon(bot),
           accuracy: 10,
           is_moving: true,
           speed: 3,
@@ -273,8 +273,8 @@ defmodule Wocky.Location.GeoFenceTest do
       loc =
         UserLocation.new(%{
           user_id: user.id,
-          lat: Bots.lat(bot),
-          lon: Bots.lon(bot),
+          lat: POI.lat(bot),
+          lon: POI.lon(bot),
           accuracy: 10,
           device: @device
         })
@@ -393,8 +393,8 @@ defmodule Wocky.Location.GeoFenceTest do
       loc =
         UserLocation.new(%{
           user_id: user.id,
-          lat: Bots.lat(bot) + 0.0015,
-          lon: Bots.lon(bot),
+          lat: POI.lat(bot) + 0.0015,
+          lon: POI.lon(bot),
           accuracy: 10,
           is_moving: true,
           speed: 3,
@@ -464,7 +464,7 @@ defmodule Wocky.Location.GeoFenceTest do
       Relation.visit(ctx.user, ctx.bot, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
 
-      loc = %UserLocation{ctx.outside_loc | lat: Bots.lat(ctx.bot) + 0.0025}
+      loc = %UserLocation{ctx.outside_loc | lat: POI.lat(ctx.bot) + 0.0025}
       GeoFence.check_for_bot_events(loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
