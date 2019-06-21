@@ -141,11 +141,12 @@ defmodule WockyAPI.GraphQL.MessageTest do
               }
               content
               media {
-                tros_url
-                full_url
-                thumbnail_url
+                trosURL
+                fullURL
+                thumbnailURL
               }
               direction
+              clientData
             }
           }
         }
@@ -172,6 +173,7 @@ defmodule WockyAPI.GraphQL.MessageTest do
       user_id = user2.id
       first_name = Account.first_name(user2)
       content = message.content
+      client_data = message.client_data
 
       assert %{
                "currentUser" => %{
@@ -186,11 +188,12 @@ defmodule WockyAPI.GraphQL.MessageTest do
                          },
                          "content" => ^content,
                          "media" => %{
-                           "tros_url" => ^tros_url,
-                           "full_url" => "https://" <> _,
-                           "thumbnail_url" => "https://" <> _
+                           "trosURL" => ^tros_url,
+                           "fullURL" => "https://" <> _,
+                           "thumbnailURL" => "https://" <> _
                          },
-                         "direction" => "OUTGOING"
+                         "direction" => "OUTGOING",
+                         "clientData" => ^client_data
                        }
                      }
                    ]
