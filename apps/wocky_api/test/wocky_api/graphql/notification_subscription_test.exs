@@ -5,7 +5,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   import WockyAPI.ChannelHelper
 
   alias Wocky.Location
-  alias Wocky.Relations
+  alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
@@ -67,9 +67,9 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
     user2 = Factory.insert(:user)
     bot = Factory.insert(:bot, user: user)
-    Relations.subscribe(user2, bot)
+    Relation.subscribe(user2, bot)
 
-    assert_eventually(Relations.subscribed?(user, bot))
+    assert_eventually(Relation.subscribed?(user, bot))
 
     {:ok, user2: user2, bot: bot, ref: ref, subscription_id: subscription_id}
   end
@@ -100,7 +100,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     } do
       Roster.befriend(user, user2)
 
-      Relations.visit(user2, bot, true)
+      Relation.visit(user2, bot, true)
 
       assert_push "subscription:data", push, 2000
 
@@ -120,7 +120,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     } do
       Roster.befriend(user, user2)
 
-      Relations.depart(user2, bot, true)
+      Relation.depart(user2, bot, true)
 
       assert_push "subscription:data", push, 2000
 
@@ -139,7 +139,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     } do
       bot2 = Factory.insert(:bot, user: user2)
       Roster.befriend(user, user2)
-      {:ok, invitation} = Relations.invite(user, bot2, user2)
+      {:ok, invitation} = Relation.invite(user, bot2, user2)
 
       assert_push "subscription:data", push, 2000
 
@@ -160,7 +160,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       invitation =
         Factory.insert(:bot_invitation, user: user, invitee: user2, bot: bot)
 
-      Relations.respond(invitation, true, user2)
+      Relation.respond(invitation, true, user2)
 
       assert_push "subscription:data", push, 2000
 

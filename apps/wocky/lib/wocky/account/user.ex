@@ -8,8 +8,8 @@ defmodule Wocky.Account.User do
   alias Wocky.Bots.Bot
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.Presence
-  alias Wocky.Relations.Invitation
-  alias Wocky.Relations.Subscription
+  alias Wocky.Relation.Invitation
+  alias Wocky.Relation.Subscription
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
 

@@ -1,11 +1,11 @@
-defmodule Wocky.Relations.Subscription do
+defmodule Wocky.Relation.Subscription do
   @moduledoc "Represents a subscription relationship between a User and a Bot"
 
   use Wocky.Repo.Schema
 
   alias Ecto.Changeset
   alias Wocky.Account.User
-  alias Wocky.Bots.Bot
+  alias Wocky.POI.Bot
 
   @foreign_key_type :binary_id
   @primary_key false

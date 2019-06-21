@@ -2,7 +2,7 @@ defmodule WockyAPI.GraphQL.PublicTest do
   use WockyAPI.GraphQLCase, async: true
 
   alias Wocky.Account
-  alias Wocky.Relations
+  alias Wocky.Relation
   alias Wocky.Repo.Factory
 
   setup do
@@ -24,8 +24,8 @@ defmodule WockyAPI.GraphQL.PublicTest do
 
     bot2 = Factory.insert(:bot, user: user2)
     item = Factory.insert(:item, bot: bot, user: user2)
-    Relations.subscribe(user, bot)
-    Relations.subscribe(user2, bot)
+    Relation.subscribe(user, bot)
+    Relation.subscribe(user2, bot)
 
     {:ok, user: user, user2: user2, bot: bot, bot2: bot2, item: item}
   end

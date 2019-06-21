@@ -3,12 +3,12 @@ defmodule Wocky.Callbacks.BotInvitation do
   DB Callback handler for bot invitations
   """
 
-  use DawdleDB.Handler, type: Wocky.Relations.Invitation
+  use DawdleDB.Handler, type: Wocky.Relation.Invitation
 
   alias Wocky.Events.BotInvitation
   alias Wocky.Events.BotInvitationResponse
   alias Wocky.Notifier
-  alias Wocky.Relations.Invitation
+  alias Wocky.Relation.Invitation
   alias Wocky.Repo.Hydrator
 
   def handle_insert(new) do

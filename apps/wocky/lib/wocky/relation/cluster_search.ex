@@ -1,4 +1,4 @@
-defmodule Wocky.Relations.ClusterSearch do
+defmodule Wocky.Relation.ClusterSearch do
   @moduledoc """
   Handler module for conducting clustering location-based bot searches
   """
@@ -9,7 +9,7 @@ defmodule Wocky.Relations.ClusterSearch do
   alias Wocky.Account.User
   alias Wocky.Bots.Bot
   alias Wocky.GeoUtils
-  alias Wocky.Relations.Cluster
+  alias Wocky.Relation.Cluster
   alias Wocky.Repo
 
   @spec search(Point.t(), Point.t(), pos_integer, pos_integer, User.t()) :: [

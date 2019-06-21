@@ -8,7 +8,7 @@ defmodule Wocky.Location.GeoFence do
   alias Wocky.Bots.Bot
   alias Wocky.Location.BotEvent
   alias Wocky.Location.UserLocation
-  alias Wocky.Relations
+  alias Wocky.Relation
   alias Wocky.Repo
 
   require Logger
@@ -27,7 +27,7 @@ defmodule Wocky.Location.GeoFence do
 
     if inside?(last_event) do
       _ = BotEvent.insert_system(user, bot, :exit, reason)
-      Relations.depart(user, bot, config.enable_notifications)
+      Relation.depart(user, bot, config.enable_notifications)
     end
 
     :ok
@@ -67,7 +67,7 @@ defmodule Wocky.Location.GeoFence do
   # Use check_for_bot_events/4 instead.
   @doc false
   def check_for_bot_events(%UserLocation{} = loc, user) do
-    subs = Relations.get_subscribed_bots(user)
+    subs = Relation.get_subscribed_bots(user)
     events = BotEvent.get_last_events(user.id)
 
     check_for_bot_events(loc, user, subs, events)
@@ -264,16 +264,16 @@ defmodule Wocky.Location.GeoFence do
   end
 
   defp maybe_visit_bot(:enter, user, bot, notify),
-    do: Relations.visit(user, bot, notify)
+    do: Relation.visit(user, bot, notify)
 
   defp maybe_visit_bot(:reactivate, user, bot, notify),
-    do: Relations.visit(user, bot, notify)
+    do: Relation.visit(user, bot, notify)
 
   defp maybe_visit_bot(:exit, user, bot, notify),
-    do: Relations.depart(user, bot, notify)
+    do: Relation.depart(user, bot, notify)
 
   defp maybe_visit_bot(:timeout, user, bot, notify),
-    do: Relations.depart(user, bot, notify)
+    do: Relation.depart(user, bot, notify)
 
   defp maybe_visit_bot(_, _, _, _), do: :ok
 

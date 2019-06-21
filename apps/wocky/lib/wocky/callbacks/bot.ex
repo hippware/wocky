@@ -8,14 +8,14 @@ defmodule Wocky.Callbacks.Bot do
   alias Wocky.Bots
   alias Wocky.Bots.Bot
   alias Wocky.Location
-  alias Wocky.Relations
+  alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Hydrator
   alias Wocky.Waiter
 
   def handle_insert(new) do
     Hydrator.with_assocs(new, [:user], fn rec = %{user: user} ->
-      :ok = Relations.subscribe(user, rec)
+      :ok = Relation.subscribe(user, rec)
 
       rec
       |> Bots.sub_setup_event()

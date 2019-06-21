@@ -1,11 +1,11 @@
-defmodule Wocky.Relations.Invitation do
+defmodule Wocky.Relation.Invitation do
   @moduledoc "An invitation from a user to subscribe to a bot"
 
   use Wocky.Repo.Schema
 
   alias Ecto.Changeset
   alias Wocky.Account.User
-  alias Wocky.Bots.Bot
+  alias Wocky.POI.Bot
 
   @foreign_key_type :binary_id
   schema "bot_invitations" do

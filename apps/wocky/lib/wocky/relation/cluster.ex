@@ -1,4 +1,4 @@
-defmodule Wocky.Relations.Cluster do
+defmodule Wocky.Relation.Cluster do
   @moduledoc """
   Struct representing a group of bots around an area
   """

@@ -11,7 +11,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
   alias Wocky.Events.UserInvitation
   alias Wocky.Notifier
   alias Wocky.Notifier.InBand.Notification
-  alias Wocky.Relations.Invitation
+  alias Wocky.Relation.Invitation
   alias Wocky.Repo.Factory
 
   setup do

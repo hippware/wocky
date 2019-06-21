@@ -1,4 +1,4 @@
-defmodule Wocky.Relations do
+defmodule Wocky.Relation do
   @moduledoc """
   Code that defines and manipulates relationships between users and bots
   """
@@ -16,10 +16,10 @@ defmodule Wocky.Relations do
   alias Wocky.GeoUtils
   alias Wocky.Location
   alias Wocky.Notifier
-  alias Wocky.Relations.Cluster
-  alias Wocky.Relations.ClusterSearch
-  alias Wocky.Relations.Invitation
-  alias Wocky.Relations.Subscription
+  alias Wocky.Relation.Cluster
+  alias Wocky.Relation.ClusterSearch
+  alias Wocky.Relation.Invitation
+  alias Wocky.Relation.Subscription
   alias Wocky.Repo
   alias Wocky.Roster
 
@@ -44,7 +44,7 @@ defmodule Wocky.Relations do
   @spec get_bot_query(Bot.id(), User.t(), boolean()) :: Queryable.t()
   def get_bot_query(id, requestor, include_pending \\ false) do
     id
-    |> Bots.get_query(include_pending)
+    |> POI.get_query(include_pending)
     |> is_visible_query(requestor)
   end
 
@@ -52,7 +52,7 @@ defmodule Wocky.Relations do
   def get_owned_bot(id, %User{id: user_id}, include_pending \\ false) do
     Bot
     |> where(id: ^id, user_id: ^user_id)
-    |> Bots.maybe_filter_pending(not include_pending)
+    |> POI.maybe_filter_pending(not include_pending)
     |> Repo.one()
   end
 

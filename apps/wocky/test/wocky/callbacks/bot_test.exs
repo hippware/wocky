@@ -5,7 +5,7 @@ defmodule Wocky.Callbacks.BotTest do
   alias Wocky.Callbacks.Bot, as: Callback
   alias Wocky.GeoUtils
   alias Wocky.Location.Handler
-  alias Wocky.Relations
+  alias Wocky.Relation
   alias Wocky.Repo.Factory
   alias Wocky.Roster
 
@@ -24,7 +24,7 @@ defmodule Wocky.Callbacks.BotTest do
     # Make sure the handler is instantiated
     pid = Handler.get_handler(user)
 
-    Relations.subscribe(user, bot)
+    Relation.subscribe(user, bot)
 
     Bots.update(bot, %{location: GeoUtils.point(1.0, 2.0)})
 

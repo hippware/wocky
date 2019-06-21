@@ -1,11 +1,11 @@
-defmodule Wocky.Relations.ClusterSearchTest do
+defmodule Wocky.Relation.ClusterSearchTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Bots.Bot
   alias Wocky.GeoUtils
-  alias Wocky.Relations
-  alias Wocky.Relations.Cluster
-  alias Wocky.Relations.ClusterSearch
+  alias Wocky.Relation
+  alias Wocky.Relation.Cluster
+  alias Wocky.Relation.ClusterSearch
   alias Wocky.Repo.Factory
 
   @third 1.0 / 3.0
@@ -88,7 +88,7 @@ defmodule Wocky.Relations.ClusterSearchTest do
         Factory.insert(:bot, location: l, user: u)
       end)
 
-    Enum.each(b, &Relations.subscribe(u, &1))
+    Enum.each(b, &Relation.subscribe(u, &1))
 
     {:ok, user: u, bots: b}
   end

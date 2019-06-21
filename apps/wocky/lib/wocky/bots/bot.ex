@@ -7,8 +7,8 @@ defmodule Wocky.Bots.Bot do
   alias Ecto.Changeset
   alias Wocky.Account.User
   alias Wocky.Bots.Item
-  alias Wocky.Relations.Invitation
-  alias Wocky.Relations.Subscription
+  alias Wocky.Relation.Invitation
+  alias Wocky.Relation.Subscription
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: false}

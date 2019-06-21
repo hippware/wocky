@@ -24,8 +24,8 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Messaging.Message
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Notifier.Push.Token, as: PushToken
-  alias Wocky.Relations.Invitation, as: BotInvitation
-  alias Wocky.Relations.Subscription
+  alias Wocky.Relation.Invitation, as: BotInvitation
+  alias Wocky.Relation.Subscription
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster.Invitation, as: RosterInvitation

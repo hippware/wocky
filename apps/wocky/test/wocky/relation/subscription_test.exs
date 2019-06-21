@@ -1,7 +1,7 @@
-defmodule Wocky.Relations.SubscriptionTest do
+defmodule Wocky.Relation.SubscriptionTest do
   use Wocky.DataCase, async: true
 
-  alias Wocky.Relations.Subscription
+  alias Wocky.Relation.Subscription
   alias Wocky.Repo.ID
 
   defp valid_attrs, do: %{bot_id: ID.new(), user_id: ID.new()}

@@ -9,7 +9,7 @@ defmodule Wocky.Location.GeoFenceTest do
   alias Wocky.Location.UserLocation
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
-  alias Wocky.Relations
+  alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Roster
@@ -34,8 +34,8 @@ defmodule Wocky.Location.GeoFenceTest do
     bot_list = Factory.insert_list(3, :bot, user: owner)
     bot = hd(bot_list)
 
-    Relations.subscribe(user, bot)
-    Relations.subscribe(stranger, bot)
+    Relation.subscribe(user, bot)
+    Relation.subscribe(stranger, bot)
 
     {:ok, owner: owner, user: user, bot: bot, bot_list: bot_list}
   end
@@ -110,7 +110,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :transition_in
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -122,7 +122,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :transition_in
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -136,7 +136,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
@@ -151,7 +151,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
@@ -167,7 +167,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -183,7 +183,7 @@ defmodule Wocky.Location.GeoFenceTest do
       refute event.id == initial_event.id
       assert event.event == initial_event.event
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -197,7 +197,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -209,7 +209,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
@@ -222,20 +222,20 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :reactivate
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
 
     test "who has reactivated inside the bot perimeter", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :reactivate)
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -247,20 +247,20 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :transition_in
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
 
     test "who was already inside the bot perimeter", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -288,7 +288,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
@@ -301,7 +301,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
@@ -318,7 +318,7 @@ defmodule Wocky.Location.GeoFenceTest do
       refute event.id == initial_event.id
       assert event.event == initial_event.event
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -330,7 +330,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
@@ -343,20 +343,20 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :reactivate
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
 
     test "who has reactivated inside the bot perimeter", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :reactivate)
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -368,21 +368,21 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :enter
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
     end
 
     test "who was already inside the bot perimeter", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -410,26 +410,26 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event == nil
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
 
     test "who was inside the bot perimeter and is moving quickly", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :transition_out
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
 
     test "who was inside the bot perimeter and is moving slowly", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
 
       loc = %UserLocation{ctx.outside_loc | speed: 1}
@@ -438,14 +438,14 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
     end
 
     test "who was inside the bot perimeter and is not moving", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
 
       loc = %UserLocation{ctx.outside_loc | is_moving: false}
@@ -454,14 +454,14 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
     end
 
     test "who was inside the bot perimeter and is now far away", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
 
       loc = %UserLocation{ctx.outside_loc | lat: Bots.lat(ctx.bot) + 0.0025}
@@ -470,7 +470,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
@@ -486,13 +486,13 @@ defmodule Wocky.Location.GeoFenceTest do
       refute event.id == initial_event.id
       assert event.event == initial_event.event
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
 
     test "who was transitioning out of the bot perimeter", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
 
       initial_event =
         BotEvent.insert(ctx.user, @device, ctx.bot, :transition_out)
@@ -502,20 +502,20 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
 
     test "who has transitioned out of the bot perimeter", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       insert_offset_bot_event(ctx.user, ctx.bot, :transition_out, -80)
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
@@ -528,20 +528,20 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :deactivate
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
 
     test "who has reactivated inside the bot perimeter", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :reactivate)
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :transition_out
 
-      assert Relations.visiting?(ctx.user, ctx.bot)
+      assert Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -553,7 +553,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -565,7 +565,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -585,20 +585,20 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event == nil
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
 
     test "who was inside the bot perimeter", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
@@ -614,20 +614,20 @@ defmodule Wocky.Location.GeoFenceTest do
       refute event.id == initial_event.id
       assert event.event == initial_event.event
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
 
     test "who was transitioning out of the bot perimeter", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :transition_out)
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
@@ -640,20 +640,20 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :deactivate
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
 
     test "who has reactivated inside the bot perimeter", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :reactivate)
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1
@@ -666,7 +666,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -678,7 +678,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
       assert event.id == initial_event.id
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       assert Sandbox.list_notifications() == []
     end
@@ -686,7 +686,7 @@ defmodule Wocky.Location.GeoFenceTest do
 
   describe "exit_bot/3" do
     test "should exit the bot and send a notifiation", ctx do
-      Relations.visit(ctx.user, ctx.bot, false)
+      Relation.visit(ctx.user, ctx.bot, false)
       BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
 
       GeoFence.exit_bot(ctx.user, ctx.bot, "test")
@@ -694,7 +694,7 @@ defmodule Wocky.Location.GeoFenceTest do
       event = BotEvent.get_last_event_type(ctx.user.id, ctx.bot.id)
       assert event == :exit
 
-      refute Relations.visiting?(ctx.user, ctx.bot)
+      refute Relation.visiting?(ctx.user, ctx.bot)
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
       assert Enum.count(notifications) == 1

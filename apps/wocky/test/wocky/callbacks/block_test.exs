@@ -4,7 +4,7 @@ defmodule Wocky.Callbacks.BlockTest do
   alias Wocky.Block
   alias Wocky.Callbacks.Block, as: Callback
   alias Wocky.Notifier.InBand.Notification
-  alias Wocky.Relations.Invitation
+  alias Wocky.Relation.Invitation
   alias Wocky.Repo.Factory
 
   setup_all do
