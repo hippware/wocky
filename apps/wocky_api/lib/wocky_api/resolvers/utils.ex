@@ -4,9 +4,9 @@ defmodule WockyAPI.Resolvers.Utils do
   import Ecto.Query
 
   alias Absinthe.Relay.Connection
+  alias AbsintheErrorPayload.Payload
   alias Ecto.Changeset
   alias Geo.Point
-  alias Kronky.Payload
   alias Wocky.GeoUtils
   alias Wocky.Repo
 

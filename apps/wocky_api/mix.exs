@@ -50,6 +50,7 @@ defmodule WockyAPI.Mixfile do
       # are merged.
       {:absinthe,
        github: "hippware/absinthe", branch: "working", override: true},
+      {:absinthe_error_payload, "~> 1.0"},
       {:absinthe_phoenix,
        github: "hippware/absinthe_phoenix", branch: "working"},
       {:absinthe_relay, github: "hippware/absinthe_relay", branch: "working"},
@@ -62,7 +63,6 @@ defmodule WockyAPI.Mixfile do
       {:honeybadger, "~> 0.6"},
       {:httpoison, "~> 1.4"},
       {:jason, "~> 1.0"},
-      {:kronky, github: "mirego/kronky", branch: "master"},
       {:phoenix, "~> 1.4"},
       {:phoenix_ecto, "~> 4.0"},
       {:plug_cowboy, "~> 2.0"},

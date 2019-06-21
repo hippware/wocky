@@ -6,7 +6,7 @@ defmodule WockyAPI.Schema.UserTypes do
   use WockyAPI.Schema.Notation
 
   import Absinthe.Resolution.Helpers
-  import Kronky.Payload
+  import AbsintheErrorPayload.Payload
 
   alias Absinthe.Relay.Connection
   alias WockyAPI.Resolvers.Block
