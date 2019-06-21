@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.6.21+r21d76f0
+
+* Add clientData field to conversation view (PR #2615)
+
+
 # 2019.6.21+r7a6804a
 
 * Fix naming on messageSend mutation; deprecate old (PR #2613)
