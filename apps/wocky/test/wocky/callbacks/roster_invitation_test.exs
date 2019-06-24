@@ -40,7 +40,7 @@ defmodule Wocky.Callbacks.RosterInvitationTest do
                }
              } = hd(msgs)
 
-      assert message == "@#{ctx.user2.handle} invited you to be their friend"
+      assert message == "@#{ctx.user2.handle} wants to connect with you."
 
       assert_eventually(Repo.get_by(Notification, user_id: ctx.user1.id) != nil)
     end

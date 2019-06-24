@@ -7,6 +7,8 @@ defmodule Wocky.Roster do
 
   alias Ecto.Queryable
   alias Wocky.Account.User
+  alias Wocky.Events.UserInvitationResponse
+  alias Wocky.Notifier
   alias Wocky.Repo
   alias Wocky.Roster.Invitation
   alias Wocky.Roster.Item
@@ -98,11 +100,20 @@ defmodule Wocky.Roster do
     end
   end
 
-  @spec befriend(User.t(), User.t()) :: :ok
-  def befriend(a, b) do
-    {:ok, _} = Item.add(a, b)
-    {:ok, _} = Item.add(b, a)
-    Invitation.delete_pair(a, b)
+  @spec befriend(User.t(), User.t(), boolean) :: :ok
+  def befriend(user, contact, notify \\ true) do
+    {:ok, _} = Item.add(user, contact)
+    {:ok, _} = Item.add(contact, user)
+    Invitation.delete_pair(user, contact)
+
+    if notify do
+      %UserInvitationResponse{
+        from: user,
+        to: contact
+      }
+      |> Notifier.notify()
+    end
+
     :ok
   end
 

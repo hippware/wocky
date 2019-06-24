@@ -46,7 +46,7 @@ defmodule Wocky.Callbacks.BotItemTest do
                }
              } = hd(msgs)
 
-      assert message == "@#{ctx.author.handle} commented on #{ctx.bot.title}"
+      assert message == "@#{ctx.author.handle} commented on #{ctx.bot.title}."
 
       clear_expected_notifications(1)
     end

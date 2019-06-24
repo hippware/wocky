@@ -53,7 +53,7 @@ defmodule Wocky.Callbacks.MessageTest do
                }
              } = hd(msgs)
 
-      assert message == "@#{m.sender.handle} sent you an image!"
+      assert message == "@#{m.sender.handle} sent you an image."
     end
   end
 end

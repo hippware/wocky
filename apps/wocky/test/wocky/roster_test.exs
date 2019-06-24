@@ -1,8 +1,11 @@
 defmodule Wocky.RosterTest do
   use Wocky.DataCase, async: true
 
+  alias Faker.Code
   alias Faker.Name
   alias Wocky.Block
+  alias Wocky.Notifier.Push
+  alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Roster
@@ -226,6 +229,16 @@ defmodule Wocky.RosterTest do
       assert Roster.friend?(ctx.user, ctx.user2)
       assert Roster.get_item(ctx.user, ctx.user2).name == name
       assert Roster.get_item(ctx.user2, ctx.user).name == name2
+    end
+
+    test "should generate a push notification", ctx do
+      Sandbox.clear_notifications()
+      Push.enable(ctx.user2, "testing", Code.isbn13())
+
+      assert :ok = Roster.befriend(ctx.user, ctx.user2)
+
+      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
+      assert Enum.count(notifications) == 1
     end
 
     test "unfriend/2 when users are friends", ctx do

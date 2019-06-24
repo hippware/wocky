@@ -24,7 +24,7 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.UserInvitation do
   def recipient(%{to: to}), do: to
 
   def message(%{from: from} = _event) do
-    get_handle(from) <> " invited you to be their friend"
+    get_handle(from) <> " wants to connect with you."
   end
 
   def uri(%{from: from} = _event), do: make_uri(:invitations, from.id)

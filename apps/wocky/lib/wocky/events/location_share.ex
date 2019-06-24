@@ -16,6 +16,22 @@ defmodule Wocky.Events.LocationShare do
         }
 end
 
+defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.LocationShare do
+  import Wocky.Notifier.Push.Utils
+
+  def notify?(_), do: true
+
+  def recipient(%{to: to}), do: to
+
+  def message(%{from: from} = _event) do
+    get_handle(from) <> " is sharing location with you."
+  end
+
+  def uri(%{from: from} = _event), do: make_uri(:livelocation, from.id)
+
+  def opts(_), do: []
+end
+
 defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShare do
   def notify?(_), do: true
 
