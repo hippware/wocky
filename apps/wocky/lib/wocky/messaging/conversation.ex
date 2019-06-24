@@ -18,13 +18,14 @@ defmodule Wocky.Messaging.Conversation do
   schema "conversations" do
     field :content, :binary
     field :image_url, :binary
+    field :read, :boolean
     field :client_data, :binary
     field :direction, MessageDirection
 
     belongs_to :user, User
     belongs_to :other_user, User
 
-    timestamps(updated_at: false)
+    timestamps()
   end
 
   @type t :: %__MODULE__{
@@ -33,8 +34,10 @@ defmodule Wocky.Messaging.Conversation do
           other_user_id: User.id(),
           content: binary(),
           image_url: binary(),
+          read: boolean(),
           client_data: binary(),
           direction: MessageDirection,
-          created_at: DateTime.t()
+          created_at: DateTime.t(),
+          updated_at: DateTime.t()
         }
 end

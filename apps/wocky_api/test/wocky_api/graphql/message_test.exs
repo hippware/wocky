@@ -147,6 +147,8 @@ defmodule WockyAPI.GraphQL.MessageTest do
               }
               direction
               clientData
+              updatedAt
+              read
             }
           }
         }
@@ -193,7 +195,9 @@ defmodule WockyAPI.GraphQL.MessageTest do
                            "thumbnailURL" => "https://" <> _
                          },
                          "direction" => "OUTGOING",
-                         "clientData" => ^client_data
+                         "clientData" => ^client_data,
+                         "read" => false,
+                         "updatedAt" => _
                        }
                      }
                    ]
