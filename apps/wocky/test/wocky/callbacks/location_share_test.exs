@@ -16,8 +16,8 @@ defmodule Wocky.Callbacks.LocationShareTest do
   setup do
     [user, friend1, friend2] = Factory.insert_list(3, :user)
 
-    Roster.befriend(user, friend1)
-    Roster.befriend(user, friend2)
+    Roster.befriend(user, friend1, false)
+    Roster.befriend(user, friend2, false)
 
     {:ok, _} =
       Location.start_sharing_location(
