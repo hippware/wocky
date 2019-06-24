@@ -55,4 +55,5 @@ fi
 MANIFEST=$(aws ecr batch-get-image --region us-west-2 --repository-name hippware/wocky --image-ids imageTag=${REVISION} --query 'images[].imageManifest' --output text)
 aws ecr put-image --region us-west-2 --repository-name hippware/wocky --image-tag deployed-${wocky_env} --image-manifest "$MANIFEST"
 
+echo "Pod: ${pod}"
 kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete "${msg}"
