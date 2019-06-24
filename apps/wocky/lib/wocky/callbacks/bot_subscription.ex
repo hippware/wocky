@@ -3,10 +3,10 @@ defmodule Wocky.Callbacks.BotSubscription do
   Callbacks for DB bot changes
   """
 
-  use DawdleDB.Handler, type: Wocky.Bot.Subscription
+  use DawdleDB.Handler, type: Wocky.Relation.Subscription
 
-  alias Wocky.Bot
   alias Wocky.Location
+  alias Wocky.POI.Bot
   alias Wocky.Repo.Hydrator
 
   def handle_delete(new) do

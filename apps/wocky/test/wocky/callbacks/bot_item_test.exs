@@ -6,11 +6,11 @@ defmodule Wocky.Callbacks.BotItemTest do
   alias Faker.Code
   alias Faker.Lorem
   alias Pigeon.APNS.Notification
-  alias Wocky.Bot
-  alias Wocky.Bot.Item
   alias Wocky.Callbacks.BotItem, as: Callback
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
+  alias Wocky.POI
+  alias Wocky.Relation
   alias Wocky.Repo.Factory
   alias Wocky.Roster
 
@@ -23,8 +23,8 @@ defmodule Wocky.Callbacks.BotItemTest do
     bot = Factory.insert(:bot, user: user)
     Roster.befriend(user, author)
     Roster.befriend(user, sub)
-    Bot.subscribe(bot, author)
-    Bot.subscribe(bot, sub)
+    Relation.subscribe(author, bot)
+    Relation.subscribe(sub, bot)
 
     Sandbox.clear_notifications(global: true)
 
@@ -33,9 +33,9 @@ defmodule Wocky.Callbacks.BotItemTest do
     {:ok, user: user, author: author, sub: sub, bot: bot}
   end
 
-  describe "put/3" do
+  describe "insert" do
     test "should trigger a notification", ctx do
-      {:ok, _} = Item.put(nil, ctx.bot, ctx.author, Lorem.sentence(), nil)
+      {:ok, _} = POI.put_item(ctx.bot, nil, Lorem.sentence(), nil, ctx.author)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 500, global: true)
       assert length(msgs) == 1
@@ -52,7 +52,7 @@ defmodule Wocky.Callbacks.BotItemTest do
     end
 
     test "should not trigger a notification to the author", ctx do
-      {:ok, _} = Item.put(nil, ctx.bot, ctx.sub, Lorem.sentence(), nil)
+      {:ok, _} = POI.put_item(ctx.bot, nil, Lorem.sentence(), nil, ctx.sub)
 
       assert no_more_push_notifications()
     end

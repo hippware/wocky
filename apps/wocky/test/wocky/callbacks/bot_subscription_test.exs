@@ -1,10 +1,10 @@
 defmodule Wocky.Callbacks.BotSubscriptionTest do
   use Wocky.WatcherCase
 
-  alias Wocky.Bot
-  alias Wocky.Bot.Subscription
   alias Wocky.Callbacks.BotSubscription, as: Callback
   alias Wocky.Location.Handler
+  alias Wocky.POI
+  alias Wocky.Relation
   alias Wocky.Repo.Factory
   alias Wocky.Roster
 
@@ -23,10 +23,10 @@ defmodule Wocky.Callbacks.BotSubscriptionTest do
     # Make sure the handler is instantiated
     pid = Handler.get_handler(user)
 
-    Bot.subscribe(bot, user)
-    Bot.delete(bot)
+    Relation.subscribe(user, bot)
+    POI.delete(bot)
 
-    refute_eventually(Subscription.get(user, bot))
+    refute_eventually(Relation.subscribed?(user, bot))
 
     assert_eventually([] == :sys.get_state(pid).subscriptions)
   end

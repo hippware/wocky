@@ -4,8 +4,8 @@ defmodule WockyAPI.GraphQLHelper do
   """
 
   alias Wocky.Account.User
-  alias Wocky.Bot
   alias Wocky.GeoUtils
+  alias Wocky.POI.Bot
 
   def run_query(query, user \\ nil, variables \\ %{}) do
     Absinthe.run!(

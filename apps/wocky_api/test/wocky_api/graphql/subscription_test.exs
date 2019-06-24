@@ -3,10 +3,9 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
 
   import WockyAPI.ChannelHelper
 
-  alias Wocky.Bot
-  alias Wocky.Bot
-  alias Wocky.Bot.Subscription
   alias Wocky.GeoUtils
+  alias Wocky.Relation
+  alias Wocky.Relation.Subscription
   alias Wocky.Repo.Factory
   alias Wocky.Roster
 
@@ -17,7 +16,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       user2 = Factory.insert(:user)
       bot = Factory.insert(:bot)
       Roster.befriend(bot.user, user2)
-      Bot.subscribe(bot, user2)
+      Relation.subscribe(user2, bot)
 
       {:ok, user2: user2, bot: bot}
     end
@@ -47,7 +46,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       token: token
     } do
       Roster.befriend(bot.user, user)
-      Bot.subscribe(bot, user)
+      Relation.subscribe(user, bot)
 
       authenticate(user_id, token, socket)
 
@@ -77,13 +76,13 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
         }
       end
 
-      Bot.visit(bot, user2, false)
-      %Subscription{updated_at: t!} = Subscription.get(user2, bot)
+      Relation.visit(user2, bot, false)
+      %Subscription{updated_at: t!} = Relation.get_subscription(user2, bot)
       assert_push "subscription:data", push, 2000
       assert push == expected.(1, "ARRIVE", t!)
 
-      Bot.depart(bot, user2, false)
-      %Subscription{updated_at: t!} = Subscription.get(user2, bot)
+      Relation.depart(user2, bot, false)
+      %Subscription{updated_at: t!} = Relation.get_subscription(user2, bot)
       assert_push "subscription:data", push, 2000
       assert push == expected.(0, "DEPART", t!)
     end

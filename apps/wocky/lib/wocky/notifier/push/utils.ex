@@ -4,8 +4,8 @@ defmodule Wocky.Notifier.Push.Utils do
   """
 
   alias Wocky.Account.User
-  alias Wocky.Bot
   alias Wocky.Notifier.Push
+  alias Wocky.POI.Bot
 
   @message_limit 512
 

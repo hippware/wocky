@@ -5,7 +5,7 @@ defmodule Wocky.Events.BotItem do
   """
 
   alias Wocky.Account.User
-  alias Wocky.Bot.Item
+  alias Wocky.POI.Item
 
   defstruct [
     :to,

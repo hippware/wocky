@@ -1,11 +1,12 @@
-defmodule Wocky.LocationTest do
+defmodule Wocky.Location.LocationTest do
   use Wocky.DataCase, async: false
 
-  alias Wocky.Bot
   alias Wocky.Location
   alias Wocky.Location.BotEvent
   alias Wocky.Location.Share
   alias Wocky.Location.UserLocation
+  alias Wocky.POI
+  alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
@@ -23,9 +24,9 @@ defmodule Wocky.LocationTest do
       bot = Factory.insert(:bot, user: user2)
 
       Roster.befriend(ctx.user, user2)
-      Bot.subscribe(bot, ctx.user)
+      Relation.subscribe(ctx.user, bot)
 
-      {:ok, bot: bot, lat: Bot.lat(bot), lon: Bot.lon(bot)}
+      {:ok, bot: bot, lat: POI.lat(bot), lon: POI.lon(bot)}
     end
 
     test "should initiate geofence processing", ctx do
@@ -48,12 +49,12 @@ defmodule Wocky.LocationTest do
       bot = Factory.insert(:bot, user: user2)
 
       Roster.befriend(ctx.user, user2)
-      Bot.subscribe(bot, ctx.user)
+      Relation.subscribe(ctx.user, bot)
 
       location =
         UserLocation.new(%{
-          lat: Bot.lat(bot),
-          lon: Bot.lon(bot),
+          lat: POI.lat(bot),
+          lon: POI.lon(bot),
           accuracy: 10,
           device: "testing"
         })
@@ -69,7 +70,7 @@ defmodule Wocky.LocationTest do
                  ctx.bot
                )
 
-      assert Bot.subscription(ctx.bot, ctx.user) == :visiting
+      assert Relation.visiting?(ctx.user, ctx.bot)
     end
   end
 

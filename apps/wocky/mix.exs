@@ -136,7 +136,7 @@ defmodule Wocky.Mixfile do
       {:credo_filename_consistency, "~> 0.1",
        only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.6", only: :test},
-      {:ex_guard, "~> 1.1", only: :dev, runtime: false},
+      {:ex_unit_notifier, "~> 0.1", only: :test, runtime: false},
       {:meck, "~> 0.8", only: :test},
       {:mock, "~> 0.3", only: :test},
       {:reprise, "~> 0.5", only: :dev}

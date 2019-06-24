@@ -86,7 +86,11 @@ config :wocky,
 
   # User cleanup
   expire_transient_users_after_days:
-    {:system, :integer, "WOCKY_EXPIRE_TRANSIENT_USERS_AFTER_DAYS", nil}
+    {:system, :integer, "WOCKY_EXPIRE_TRANSIENT_USERS_AFTER_DAYS", nil},
+
+  # Bot search
+  max_local_bots_search_radius:
+    {:system, :integer, "WOCKY_MAX_LOCAL_BOTS_SEARCH_RADIUS", 50_000}
 
 config :wocky, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},

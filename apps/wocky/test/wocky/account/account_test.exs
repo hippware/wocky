@@ -9,8 +9,7 @@ defmodule Wocky.Account.AccountTest do
   alias Wocky.Account.InviteCode
   alias Wocky.Account.User
   alias Wocky.Block
-  alias Wocky.Bot
-  alias Wocky.Bot.Invitation
+  alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -443,79 +442,35 @@ defmodule Wocky.Account.AccountTest do
     end
   end
 
-  defp setup_bot_relationships(ctx) do
-    other_user = Factory.insert(:user)
-    Roster.befriend(ctx.user, other_user)
-
-    owned_bot = Factory.insert(:bot, user: ctx.user)
-    pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)
-    invited_bot = Factory.insert(:bot, user: other_user)
-    subscribed_bot = Factory.insert(:bot, user: other_user)
-    unaffiliated_bot = Factory.insert(:bot, user: other_user)
-
-    Invitation.put(ctx.user, invited_bot, other_user)
-    Bot.subscribe(subscribed_bot, ctx.user)
-
-    {:ok,
-     other_user: other_user,
-     owned_bot: owned_bot,
-     pending_bot: pending_bot,
-     invited_bot: invited_bot,
-     subscribed_bot: subscribed_bot,
-     unaffiliated_bot: unaffiliated_bot}
-  end
-
-  describe "bot relationships" do
-    setup :setup_bot_relationships
-
-    test "can_access?/2", ctx do
-      assert Account.can_access?(ctx.user, ctx.owned_bot)
-      assert Account.can_access?(ctx.user, ctx.invited_bot)
-      refute Account.can_access?(ctx.user, ctx.unaffiliated_bot)
-    end
-
-    test "get_subscriptions/1", ctx do
-      subscriptions = Account.get_subscriptions(ctx.user)
-
-      assert length(subscriptions) == 1
-      assert Enum.any?(subscriptions, &same_bot(&1, ctx.subscribed_bot))
-      refute Enum.any?(subscriptions, &same_bot(&1, ctx.owned_bot))
-      refute Enum.any?(subscriptions, &same_bot(&1, ctx.pending_bot))
-    end
-
-    test "get_owned_bots/1", ctx do
-      bots = Account.get_owned_bots(ctx.user)
-
-      assert length(bots) == 1
-      assert Enum.any?(bots, &same_bot(&1, ctx.owned_bot))
-      refute Enum.any?(bots, &same_bot(&1, ctx.pending_bot))
-    end
-  end
-
   describe "searchable checks" do
-    setup :setup_bot_relationships
-
     setup ctx do
-      friend = Factory.insert(:user)
-      RosterHelper.make_friends(friend, ctx.user)
+      other_user = Factory.insert(:user)
+      Roster.befriend(ctx.user, other_user)
 
-      friends_private_bot = Factory.insert(:bot, user: friend)
-      friends_invited_private_bot = Factory.insert(:bot, user: friend)
+      owned_bot = Factory.insert(:bot, user: ctx.user)
+      pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)
+      invited_bot = Factory.insert(:bot, user: other_user)
+      subscribed_bot = Factory.insert(:bot, user: other_user)
+      unaffiliated_bot = Factory.insert(:bot, user: other_user)
 
-      Invitation.put(ctx.user, friends_invited_private_bot, friend)
+      Relation.invite(ctx.user, invited_bot, other_user)
+      Relation.subscribe(ctx.user, subscribed_bot)
 
       {:ok,
-       friends_private_bot: friends_private_bot,
-       friends_invited_private_bot: friends_invited_private_bot}
+       other_user: other_user,
+       owned_bot: owned_bot,
+       pending_bot: pending_bot,
+       invited_bot: invited_bot,
+       subscribed_bot: subscribed_bot,
+       unaffiliated_bot: unaffiliated_bot}
     end
 
     test "searchable stored procedure", ctx do
       assert is_searchable_sp(ctx.user, ctx.owned_bot)
       assert is_searchable_sp(ctx.user, ctx.subscribed_bot)
-      refute is_searchable_sp(ctx.user, ctx.friends_invited_private_bot)
+      assert is_searchable_sp(ctx.user, ctx.pending_bot)
       refute is_searchable_sp(ctx.user, ctx.invited_bot)
       refute is_searchable_sp(ctx.user, ctx.unaffiliated_bot)
-      refute is_searchable_sp(ctx.user, ctx.friends_private_bot)
     end
   end
 
@@ -611,8 +566,6 @@ defmodule Wocky.Account.AccountTest do
       assert Repo.get(User, user.id).bot_created
     end
   end
-
-  defp same_bot(bot1, bot2), do: bot1.id == bot2.id
 
   defp is_searchable_sp(user, bot),
     do: run_stored_proc(user, bot, "is_searchable")

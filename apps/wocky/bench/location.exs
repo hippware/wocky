@@ -1,5 +1,5 @@
 alias Faker.Util
-alias Wocky.Bot
+alias Wocky.POI
 alias Wocky.Location
 alias Wocky.Repo.Factory
 
@@ -16,7 +16,7 @@ c10 = Util.cycle_start(b10)
 c100 = Util.cycle_start(b100)
 c1000 = Util.cycle_start(b1000)
 
-mk_loc = fn b -> Factory.build(:location, lat: Bot.lat(b), lon: Bot.lon(b)) end
+mk_loc = fn b -> Factory.build(:location, lat: POI.lat(b), lon: POI.lon(b)) end
 
 Benchee.run(
   %{

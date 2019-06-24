@@ -5,11 +5,11 @@ defmodule Wocky.Account.User do
 
   alias Wocky.Account.Avatar
   alias Wocky.Account.InviteCode
-  alias Wocky.Bot
-  alias Wocky.Bot.Invitation
-  alias Wocky.Bot.Subscription
   alias Wocky.Notifier.Push.Token, as: PushToken
+  alias Wocky.POI.Bot
   alias Wocky.Presence
+  alias Wocky.Relation.Invitation
+  alias Wocky.Relation.Subscription
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
 
@@ -70,9 +70,6 @@ defmodule Wocky.Account.User do
   @type phone_number :: binary
   @type handle :: binary
   @type role :: binary
-
-  @type bot_relationship ::
-          :owned | :invited | :subscribed | :visitor | :visible
 
   @type t :: %User{
           id: id,

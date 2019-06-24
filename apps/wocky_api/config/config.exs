@@ -10,8 +10,6 @@ config :wocky_api,
   namespace: WockyAPI,
   ecto_repos: [Wocky.Repo],
   max_graphql_complexity: 8000,
-  max_local_bots_search_radius:
-    {:system, :integer, "WOCKY_MAX_LOCAL_BOTS_SEARCH_RADIUS", 50_000},
   allow_factory_insert:
     {:system, :boolean, "WOCKY_ENABLE_FACTORY_INSERT", false}
 

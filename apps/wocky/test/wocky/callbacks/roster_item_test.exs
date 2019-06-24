@@ -1,10 +1,9 @@
 defmodule Wocky.Callbacks.RosterItemTest do
   use Wocky.WatcherCase
 
-  alias Wocky.Bot
-  alias Wocky.Bot.Invitation
   alias Wocky.Callbacks.RosterItem, as: Callback
   alias Wocky.Location
+  alias Wocky.Relation
   alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster
@@ -28,23 +27,23 @@ defmodule Wocky.Callbacks.RosterItemTest do
 
   describe "unfriend cleanup" do
     test "bots should no longer be subscribed", ctx do
-      Bot.subscribe(ctx.user_bot, ctx.contact)
-      Bot.subscribe(ctx.contact_bot, ctx.user)
+      Relation.subscribe(ctx.contact, ctx.user_bot)
+      Relation.subscribe(ctx.user, ctx.contact_bot)
 
       Roster.unfriend(ctx.user, ctx.contact)
 
-      refute_eventually(Bot.subscription(ctx.user_bot, ctx.contact))
-      refute_eventually(Bot.subscription(ctx.contact_bot, ctx.user))
+      refute_eventually(Relation.subscribed?(ctx.contact, ctx.user_bot))
+      refute_eventually(Relation.subscribed?(ctx.user, ctx.contact_bot))
     end
 
     test "bot invitations should be removed", ctx do
-      Invitation.put(ctx.contact, ctx.user_bot, ctx.user)
-      Invitation.put(ctx.user, ctx.contact_bot, ctx.contact)
+      Relation.invite(ctx.contact, ctx.user_bot, ctx.user)
+      Relation.invite(ctx.user, ctx.contact_bot, ctx.contact)
 
       Roster.unfriend(ctx.user, ctx.contact)
 
-      refute_eventually(Invitation.get(ctx.user_bot, ctx.contact))
-      refute_eventually(Invitation.get(ctx.contact_bot, ctx.user))
+      refute_eventually(Relation.invited?(ctx.contact, ctx.user_bot))
+      refute_eventually(Relation.invited?(ctx.user, ctx.contact_bot))
     end
 
     test "locations shares should be canceled", ctx do

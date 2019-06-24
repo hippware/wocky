@@ -2,8 +2,8 @@ defmodule Wocky.Events.BotInvitation do
   @moduledoc "New invitation sent to the notified user"
 
   alias Wocky.Account.User
-  alias Wocky.Bot
-  alias Wocky.Bot.Invitation
+  alias Wocky.POI.Bot
+  alias Wocky.Relation.Invitation
 
   defstruct [
     :to,

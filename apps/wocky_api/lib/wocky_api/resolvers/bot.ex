@@ -4,21 +4,17 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Absinthe.Subscription
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.Bot
-  alias Wocky.Bot.Cluster
-  alias Wocky.Bot.ClusterSearch
-  alias Wocky.Bot.Invitation
-  alias Wocky.Bot.Item
   alias Wocky.GeoUtils
   alias Wocky.Location
   alias Wocky.Location.UserLocation
-  alias Wocky.Repo
+  alias Wocky.POI
+  alias Wocky.POI.Bot
+  alias Wocky.Relation
+  alias Wocky.Relation.Invitation
   alias Wocky.Repo.ID
   alias Wocky.Waiter
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
-
-  import Ecto.Query
 
   @max_local_bots 50
   @default_local_bots 15
@@ -26,7 +22,7 @@ defmodule WockyAPI.Resolvers.Bot do
   def get_bot(_root, args, %{context: context}) do
     case Map.get(context, :current_user) do
       nil -> {:ok, nil}
-      user -> {:ok, Bot.get_bot(args[:id], user)}
+      user -> {:ok, Relation.get_bot(args[:id], user)}
     end
   end
 
@@ -40,19 +36,14 @@ defmodule WockyAPI.Resolvers.Bot do
   def get_local_bots(_root, args, %{context: %{current_user: requestor}}) do
     point_a = Utils.map_point(args[:point_a])
     point_b = Utils.map_point(args[:point_b])
+    limit = args[:limit] || @default_local_bots
 
-    with :ok <- check_area(point_a, point_b) do
-      limit = args[:limit] || @default_local_bots
+    case Relation.get_local_bots(requestor, point_a, point_b, limit) do
+      {:ok, bots} ->
+        {:ok, %{bots: bots, area_too_large: false}}
 
-      bots =
-        requestor
-        |> Bot.by_relationship_query(:subscribed, requestor)
-        |> Bot.filter_by_location(point_a, point_b)
-        |> limit(^limit)
-        |> order_by(desc: :created_at)
-        |> Repo.all()
-
-      {:ok, %{bots: bots, area_too_large: false}}
+      {:error, :area_too_large} ->
+        {:ok, %{bots: [], area_too_large: true}}
     end
   end
 
@@ -60,23 +51,18 @@ defmodule WockyAPI.Resolvers.Bot do
     point_a = Utils.map_point(args[:point_a])
     point_b = Utils.map_point(args[:point_b])
 
-    with :ok <- check_area(point_a, point_b) do
-      results =
-        ClusterSearch.search(
-          point_a,
-          point_b,
-          args[:lat_divs],
-          args[:lon_divs],
-          requestor
-        )
+    case Relation.get_local_bots_clustered(
+           requestor,
+           point_a,
+           point_b,
+           args[:lat_divs],
+           args[:lon_divs]
+         ) do
+      {:ok, bots, clusters} ->
+        {:ok, %{bots: bots, clusters: clusters, area_too_large: false}}
 
-      {bots, clusters} =
-        Enum.split_with(results, fn
-          %Bot{} -> true
-          %Cluster{} -> false
-        end)
-
-      {:ok, %{bots: bots, clusters: clusters, area_too_large: false}}
+      {:error, :area_too_large} ->
+        {:ok, %{bots: [], clusters: [], area_too_large: true}}
     end
   end
 
@@ -86,13 +72,13 @@ defmodule WockyAPI.Resolvers.Bot do
 
   defp do_get_bots(user, requestor, %{id: id} = args) do
     id
-    |> Bot.get_bot_query(requestor)
+    |> Relation.get_bot_query(requestor)
     |> Utils.connection_from_query(user, args)
   end
 
   defp do_get_bots(user, requestor, %{relationship: relationship} = args) do
     user
-    |> Bot.by_relationship_query(relationship, requestor)
+    |> Relation.by_relationship_query(relationship, requestor)
     |> Utils.connection_from_query(user, args)
   end
 
@@ -105,7 +91,7 @@ defmodule WockyAPI.Resolvers.Bot do
         _args,
         _info
       ) do
-    {:ok, Account.get_bot_relationships(user, bot)}
+    {:ok, Relation.get_bot_relationships(user, bot)}
   end
 
   def get_bot_relationships(
@@ -113,7 +99,7 @@ defmodule WockyAPI.Resolvers.Bot do
         _args,
         _info
       ) do
-    {:ok, Account.get_bot_relationships(user, bot)}
+    {:ok, Relation.get_bot_relationships(user, bot)}
   end
 
   def get_lat(%{location: l}, _args, _info) do
@@ -126,7 +112,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
   def get_active_bots(_root, args, %{context: %{current_user: user}}) do
     user
-    |> Bot.active_bots_query()
+    |> Relation.active_bots_query()
     |> Utils.connection_from_query(user, args)
   end
 
@@ -136,24 +122,24 @@ defmodule WockyAPI.Resolvers.Bot do
            |> parse_lat_lon()
            |> Map.put(:id, ID.new())
            |> Map.put(:user_id, user.id)
-           |> Bot.insert(user),
+           |> POI.insert(user),
          {:ok, _} <- maybe_update_location(input, user, bot) do
       {:ok, bot}
     end
   end
 
   def create_bot(_root, %{}, %{context: %{current_user: user}}),
-    do: {:ok, Bot.preallocate(user)}
+    do: {:ok, POI.preallocate(user)}
 
   def update_bot(_root, %{input: input}, %{context: %{current_user: requestor}}) do
-    case Bot.get_owned_bot(input[:id], requestor, true) do
+    case Relation.get_owned_bot(input[:id], requestor, true) do
       nil ->
         not_found_error(input[:id])
 
       bot ->
         updates = parse_lat_lon(input[:values])
 
-        with {:ok, bot} <- Bot.update(bot, updates),
+        with {:ok, bot} <- POI.update(bot, updates),
              {:ok, _} <- maybe_update_location(input, requestor, bot) do
           {:ok, bot}
         end
@@ -163,10 +149,8 @@ defmodule WockyAPI.Resolvers.Bot do
   defp maybe_update_location(%{user_location: l}, user, bot)
        when not is_nil(l) do
     bot
-    |> Bot.sub_setup_event()
-    |> Waiter.wait(5000, fn ->
-      Enum.member?(Account.get_bot_relationships(user, bot), :subscribed)
-    end)
+    |> POI.sub_setup_event()
+    |> Waiter.wait(5000, fn -> Relation.subscribed?(user, bot) end)
 
     Location.set_user_location_for_bot(user, UserLocation.new(l), bot)
   end
@@ -181,7 +165,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
   def get_items(bot, args, _info) do
     bot
-    |> Item.items_query()
+    |> POI.get_items_query()
     |> Utils.connection_from_query(bot, args)
   end
 
@@ -191,15 +175,15 @@ defmodule WockyAPI.Resolvers.Bot do
 
   def get_subscribers(bot, %{id: id} = args, _info) do
     bot
-    |> Bot.subscriber_query(id)
+    |> Relation.subscriber_query(id)
     |> Utils.connection_from_query(bot, args)
   end
 
   def get_subscribers(bot, %{type: type} = args, _info) do
     subscribers_query =
       case type do
-        :subscriber -> Bot.subscribers_query(bot)
-        :visitor -> Bot.visitors_query(bot)
+        :subscriber -> Relation.subscribers_query(bot)
+        :visitor -> Relation.visitors_query(bot)
       end
 
     subscribers_query
@@ -211,12 +195,12 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def subscribe(_root, %{input: input}, %{context: %{current_user: requestor}}) do
-    case Bot.get_bot(input[:id], requestor) do
+    case Relation.get_bot(input[:id], requestor) do
       nil ->
         not_found_error(input[:id])
 
       bot ->
-        with :ok <- Bot.subscribe(bot, requestor),
+        with :ok <- Relation.subscribe(requestor, bot),
              {:ok, _} <- maybe_update_location(input, requestor, bot) do
           {:ok, true}
         else
@@ -229,12 +213,12 @@ defmodule WockyAPI.Resolvers.Bot do
   def unsubscribe(_root, %{input: %{id: bot_id}}, %{
         context: %{current_user: requestor}
       }) do
-    case Bot.get_bot(bot_id, requestor) do
+    case Relation.get_bot(bot_id, requestor) do
       nil ->
         not_found_error(bot_id)
 
       bot ->
-        :ok = Bot.unsubscribe(bot, requestor)
+        :ok = Relation.unsubscribe(requestor, bot)
         {:ok, true}
     end
   end
@@ -242,12 +226,12 @@ defmodule WockyAPI.Resolvers.Bot do
   def delete(_root, %{input: %{id: bot_id}}, %{
         context: %{current_user: %{id: user_id} = requestor}
       }) do
-    case Bot.get_bot(bot_id, requestor) do
+    case Relation.get_bot(bot_id, requestor) do
       nil ->
         not_found_error(bot_id)
 
       bot = %{user_id: ^user_id} ->
-        Bot.delete(bot)
+        POI.delete(bot)
         {:ok, true}
 
       _ ->
@@ -260,7 +244,7 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def notify_visitor_subscription(bot, subscriber, entered, updated_at) do
-    to_notify = bot |> Bot.subscribers_query() |> Repo.all()
+    to_notify = Relation.get_subscribers(bot)
 
     action =
       case entered do
@@ -285,9 +269,12 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def publish_item(_root, %{input: args}, %{context: %{current_user: requestor}}) do
-    with %Bot{} = bot <- Bot.get_bot(args.bot_id, requestor),
-         {:ok, item} <-
-           Item.put(args[:id], bot, requestor, args[:content], args[:image_url]) do
+    id = args[:id]
+    content = args[:content]
+    image_url = args[:image_url]
+
+    with %Bot{} = bot <- Relation.get_bot(args.bot_id, requestor),
+         {:ok, item} <- POI.put_item(bot, id, content, image_url, requestor) do
       {:ok, item}
     else
       nil -> not_found_error(args.bot_id)
@@ -297,8 +284,8 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def delete_item(_root, args, %{context: %{current_user: requestor}}) do
-    with %Bot{} = bot <- Bot.get_bot(args[:input][:bot_id], requestor),
-         :ok <- Item.delete(args[:input][:id], bot, requestor) do
+    with %Bot{} = bot <- Relation.get_bot(args[:input][:bot_id], requestor),
+         :ok <- POI.delete_item(bot, args[:input][:id], requestor) do
       {:ok, true}
     else
       nil -> not_found_error(args[:input][:bot_id])
@@ -309,7 +296,7 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def invite(_root, args, %{context: %{current_user: requestor}}) do
-    case Bot.get_owned_bot(args[:input][:bot_id], requestor) do
+    case Relation.get_owned_bot(args[:input][:bot_id], requestor) do
       nil ->
         {:error, "Invalid bot"}
 
@@ -320,7 +307,7 @@ defmodule WockyAPI.Resolvers.Bot do
 
   defp do_invite(invitee, bot, requestor) do
     with %User{} = invitee <- Account.get_user(invitee, requestor),
-         {:ok, invitation} <- Invitation.put(invitee, bot, requestor) do
+         {:ok, invitation} <- Relation.invite(invitee, bot, requestor) do
       invitation
     else
       nil -> {:error, "Invalid user"}
@@ -334,8 +321,8 @@ defmodule WockyAPI.Resolvers.Bot do
         %{input: %{invitation_id: id, accept: accept?} = input},
         %{context: %{current_user: requestor}}
       ) do
-    with %Invitation{} = invitation <- Invitation.get(id, requestor),
-         {:ok, result} <- Invitation.respond(invitation, accept?, requestor),
+    with %Invitation{} = invitation <- Relation.get_invitation(id, requestor),
+         {:ok, result} <- Relation.respond(invitation, accept?, requestor),
          {:ok, _} <- maybe_update_location(input, requestor, result.bot) do
       {:ok, true}
     else
@@ -345,23 +332,11 @@ defmodule WockyAPI.Resolvers.Bot do
     end
   end
 
-  defp check_area(point_a, point_b) do
-    diagonal =
-      Geocalc.distance_between(point_a.coordinates, point_b.coordinates)
-
-    if diagonal > max_local_bots_search_radius() do
-      {:ok, %{bots: [], clusters: [], area_too_large: true}}
-    else
-      :ok
-    end
-  end
-
   def default_local_bots, do: @default_local_bots
 
   def max_local_bots, do: @max_local_bots
 
-  def max_local_bots_search_radius,
-    do: Confex.get_env(:wocky_api, :max_local_bots_search_radius)
+  defdelegate max_local_bots_search_radius, to: Relation
 
   defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
   defp not_owned_error, do: {:error, "Operation only permitted on owned bots"}
