@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.6.24+r58c0260
+
+* Refactor bots and relations (#2607)
+* Push notifications: User invite, acceptance, location share (#2614)
+
+
 # 2019.6.21+r21d76f0
 
 * Add clientData field to conversation view (PR #2615)
