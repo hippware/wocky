@@ -15,7 +15,6 @@ defmodule Wocky.Notifier.Push.EventsTest do
   @test_handle "test_handle"
   @test_title "test_title"
   @test_body "test body"
-  @test_server "localhost"
 
   setup do
     u = Factory.build(:user, handle: @test_handle)
@@ -42,7 +41,6 @@ defmodule Wocky.Notifier.Push.EventsTest do
     test "returns an appropriate URI", %{user: u, bot: b} do
       uri = Event.uri(%GeofenceEvent{from: u, bot: b, event: :exit})
       assert uri =~ "/bot"
-      assert uri =~ "/#{@test_server}"
       assert uri =~ "/#{b.id}"
       assert uri =~ "/visitors"
     end
@@ -71,7 +69,6 @@ defmodule Wocky.Notifier.Push.EventsTest do
     test "returns an appropriate URI", %{user: u, sender: sender} do
       uri = Event.uri(%NewMessage{to: u, from: sender})
       assert uri =~ "/conversation"
-      assert uri =~ "/#{@test_server}"
       assert uri =~ "/#{sender.id}"
     end
   end
@@ -124,7 +121,6 @@ defmodule Wocky.Notifier.Push.EventsTest do
     test "returns an appropriate URI", %{user: u, bot: b} do
       uri = Event.uri(%BotInvitation{from: u, bot: b})
       assert uri =~ "/bot"
-      assert uri =~ "/#{@test_server}"
       assert uri =~ "/#{b.id}"
     end
   end
