@@ -44,12 +44,9 @@ defmodule Wocky.Application do
           {Phoenix.PubSub.Redis, :start_link,
            [
              :presence,
-             [
-               host: redis_config[:host],
-               port: redis_config[:port],
-               pool_size: 1,
-               node_name: redis_node()
-             ]
+             redis_config
+             |> Enum.into([])
+             |> Keyword.merge(pool_size: 1, node_name: redis_node())
            ]}
       },
       {LocationSupervisor, []},
