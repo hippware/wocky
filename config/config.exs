@@ -39,8 +39,11 @@ config :lager, :error_logger_redirect, false
 config :lager, :error_logger_whitelist, [Logger.ErrorHandler]
 # Stop lager writing a crash log
 config :lager, :crash_log, false
-# Use LagerLogger as lager's only handler.
-config :lager, :handlers, [{LagerLogger, [level: :info]}]
+# Configure the lager console backend
+config :lager,
+  handlers: [
+    lager_console_backend: [level: :info]
+  ]
 
 # Exometer uses Hut as a logging abstraction
 config :hut, :level, :info

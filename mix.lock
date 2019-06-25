@@ -93,7 +93,6 @@
   "kadabra": {:hex, :kadabra, "0.4.4", "29d7f4c231d44a59d99b550fa75489a80a572140b3316809f326bf608bce33d8", [:mix], [{:hpack, "~> 0.2.3", [hex: :hpack_erl, repo: "hexpm", optional: false]}], "hexpm"},
   "kronky": {:git, "https://github.com/mirego/kronky.git", "cfc786bd87c1968d4186407fb8683f2bee3457c2", [branch: "master"]},
   "lager": {:hex, :lager, "3.6.7", "2fbf823944caa0fc10df5ec13f3f047524a249bb32f0d801b7900c9610264286", [:rebar3], [{:goldrush, "0.1.9", [hex: :goldrush, repo: "hexpm", optional: false]}], "hexpm"},
-  "lager_logger": {:hex, :lager_logger, "1.0.5", "2b58be52fe1e0fb82656180fc54e45618aa2dc619090b00e6d3fb4707c6a1fe5", [:mix], [{:lager, ">= 2.1.0", [hex: :lager, repo: "hexpm", optional: false]}], "hexpm"},
   "libring": {:hex, :libring, "1.4.0", "41246ba2f3fbc76b3971f6bce83119dfec1eee17e977a48d8a9cfaaf58c2a8d6", [:mix], [], "hexpm"},
   "meck": {:hex, :meck, "0.8.13", "ffedb39f99b0b99703b8601c6f17c7f76313ee12de6b646e671e3188401f7866", [:rebar3], [], "hexpm"},
   "metrics": {:hex, :metrics, "1.0.1", "25f094dea2cda98213cecc3aeff09e940299d950904393b2a29d191c346a8486", [:rebar3], [], "hexpm"},
