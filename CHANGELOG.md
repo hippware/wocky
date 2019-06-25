@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.6.25+r9d7d6bb
+
+* Remove '@server' component from push notification deeplinks (#2624)
+
+
 # 2019.6.24+r58c0260
 
 * Refactor bots and relations (#2607)
