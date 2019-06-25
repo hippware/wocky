@@ -33,12 +33,12 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.GeofenceEvent do
 
   def message(%{from: from, bot: bot, event: event}) do
     case event do
-      :enter -> "#{get_handle(from)} is at #{get_title(bot)}."
-      :exit -> "#{get_handle(from)} left #{get_title(bot)}."
+      :enter -> "#{get_handle(from)} is at #{get_title(bot)}"
+      :exit -> "#{get_handle(from)} left #{get_title(bot)}"
     end
   end
 
-  def uri(%{bot: bot}), do: make_uri(:bot, bot.id, true, "visitors")
+  def uri(%{bot: bot}), do: make_uri(:bot, bot.id, "visitors")
 
   def opts(_), do: []
 end

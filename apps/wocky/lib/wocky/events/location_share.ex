@@ -24,7 +24,7 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.LocationShare do
   def recipient(%{to: to}), do: to
 
   def message(%{from: from} = _event) do
-    get_handle(from) <> " is sharing location with you."
+    get_handle(from) <> " is sharing their location with you"
   end
 
   def uri(%{from: from} = _event), do: make_uri(:livelocation, from.id)

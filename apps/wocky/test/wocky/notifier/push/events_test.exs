@@ -15,7 +15,6 @@ defmodule Wocky.Notifier.Push.EventsTest do
   @test_handle "test_handle"
   @test_title "test_title"
   @test_body "test body"
-  @test_server "localhost"
 
   setup do
     u = Factory.build(:user, handle: @test_handle)
@@ -42,7 +41,6 @@ defmodule Wocky.Notifier.Push.EventsTest do
     test "returns an appropriate URI", %{user: u, bot: b} do
       uri = Event.uri(%GeofenceEvent{from: u, bot: b, event: :exit})
       assert uri =~ "/bot"
-      assert uri =~ "/#{@test_server}"
       assert uri =~ "/#{b.id}"
       assert uri =~ "/visitors"
     end
@@ -59,7 +57,7 @@ defmodule Wocky.Notifier.Push.EventsTest do
     end
 
     test "assumes sending an image when there is no body" do
-      assert Event.message(%NewMessage{}) =~ "sent you an image."
+      assert Event.message(%NewMessage{}) =~ "sent you an image"
     end
 
     test "returns an appropriate message", %{user: u} do
@@ -71,7 +69,6 @@ defmodule Wocky.Notifier.Push.EventsTest do
     test "returns an appropriate URI", %{user: u, sender: sender} do
       uri = Event.uri(%NewMessage{to: u, from: sender})
       assert uri =~ "/conversation"
-      assert uri =~ "/#{@test_server}"
       assert uri =~ "/#{sender.id}"
     end
   end
@@ -124,7 +121,6 @@ defmodule Wocky.Notifier.Push.EventsTest do
     test "returns an appropriate URI", %{user: u, bot: b} do
       uri = Event.uri(%BotInvitation{from: u, bot: b})
       assert uri =~ "/bot"
-      assert uri =~ "/#{@test_server}"
       assert uri =~ "/#{b.id}"
     end
   end
@@ -137,7 +133,7 @@ defmodule Wocky.Notifier.Push.EventsTest do
     test "returns an appropriate message", %{sharer: s, target: t} do
       msg = Event.message(%LocationShare{to: t, from: s})
       assert msg =~ @test_handle
-      assert msg =~ "is sharing location with you"
+      assert msg =~ "is sharing their location with you"
     end
 
     test "returns an appropriate uri", %{sharer: s, target: t} do
