@@ -9,7 +9,7 @@ defmodule WockyAPI.Schema do
   alias WockyAPI.Middleware.Instrumenter
 
   import_types Absinthe.Type.Custom
-  import_types Kronky.ValidationMessageTypes
+  import_types AbsintheErrorPayload.ValidationMessageTypes
   import_types WockyAPI.Schema.AuthTypes
   import_types WockyAPI.Schema.BlockTypes
   import_types WockyAPI.Schema.BotTypes

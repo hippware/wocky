@@ -5,7 +5,7 @@ defmodule WockyAPI.Schema.BlockTypes do
 
   use WockyAPI.Schema.Notation
 
-  import Kronky.Payload
+  import AbsintheErrorPayload.Payload
 
   alias WockyAPI.Resolvers.Block
   alias WockyAPI.Resolvers.Media

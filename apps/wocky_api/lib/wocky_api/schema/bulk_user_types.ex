@@ -5,7 +5,7 @@ defmodule WockyAPI.Schema.BulkUserTypes do
 
   use WockyAPI.Schema.Notation
 
-  import Kronky.Payload
+  import AbsintheErrorPayload.Payload
 
   alias WockyAPI.Resolvers.BulkUser
 

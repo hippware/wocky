@@ -5,7 +5,7 @@ defmodule WockyAPI.Schema.MediaTypes do
 
   use WockyAPI.Schema.Notation
 
-  import Kronky.Payload
+  import AbsintheErrorPayload.Payload
 
   alias WockyAPI.Resolvers.Media
 
