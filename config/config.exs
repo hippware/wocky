@@ -50,27 +50,6 @@ config :hut, :level, :info
 
 config :honeybadger, use_logger: true
 
-# Configure release generation
-config :distillery,
-  no_warn_missing: [
-    :distillery,
-    :exactor,
-    :dialyxir,
-    :edown,
-    :escalus,
-    :exref,
-    :fun_chain,
-    :ok,
-    :hamcrest,
-    :meck,
-    :mix_ct,
-    :mix_elvis,
-    :mustache,
-    :parse_trans,
-    :proper,
-    :elixir_make
-  ]
-
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{Mix.env()}.exs"
