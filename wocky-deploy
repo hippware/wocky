@@ -45,7 +45,8 @@ kubernetes-deploy "${namespace}" "${context}" \
 pod=$(kubectl get pods \
   -n "${namespace}" \
   -l 'app=wocky' \
-  -o jsonpath='{.items[0].metadata.name}')
+  -o jsonpath="{range .items[?(@.status.phase == 'Running')]}{.metadata.name}{' '}{end}" \
+  | cut -f1 -d ' ')
 
 if [ "${CI_COMMIT_MESSAGE}" != "" ]; then
   msg="Last commit: ${CI_COMMIT_MESSAGE}"
