@@ -6,6 +6,8 @@ defmodule Wocky.TROS.TROSTest do
   alias Wocky.Repo.ID
   alias Wocky.TROS
 
+  @url_re ~r/https?:\/\/.*/
+
   describe "parse_url/1" do
     assert {:error, _} = TROS.parse_url("bogus")
     assert {:error, _} = TROS.parse_url("tros:bogus")
@@ -40,6 +42,10 @@ defmodule Wocky.TROS.TROSTest do
     assert Enum.member?(variants, "file")
   end
 
+  test "file_ready_event/1" do
+    assert TROS.file_ready_event("testing") =~ "testing"
+  end
+
   describe "database interactions" do
     setup do
       user = Factory.insert(:user)
@@ -61,6 +67,12 @@ defmodule Wocky.TROS.TROSTest do
     test "make_upload_response/5", ctx do
       assert {:ok, {_, _}} =
                TROS.make_upload_response(ctx.user, ID.new(), 100, "all", [])
+    end
+
+    test "get_download_urls/2", ctx do
+      assert [url] = TROS.get_download_urls(ctx.md, [:full])
+      assert url =~ @url_re
+      assert url =~ ctx.id
     end
   end
 end
