@@ -27,11 +27,28 @@ defmodule WockyAPI.Schema.MessageTypes do
     @desc "Direction of the message was sent with respect to the requesting user"
     field :direction, non_null(:message_direction)
 
+    @desc "Whether the recipient has marked the message as read"
+    field :read, non_null(:boolean)
+
     @desc "Client-supplied metadata - opaque to server"
     field :client_data, :string
 
     @desc "The time the messages was received by the server"
     field :created_at, non_null(:datetime)
+
+    @desc "The time the messages was last updated"
+    field :updated_at, non_null(:datetime)
+  end
+
+  object :message_mark_read_result do
+    @desc "ID of message being marked"
+    field :id, non_null(:integer)
+
+    @desc "Result of marking"
+    field :successful, non_null(:boolean)
+
+    @desc "Any error that occurred"
+    field :error, :string
   end
 
   connection :messages, node_type: :message do
@@ -58,8 +75,13 @@ defmodule WockyAPI.Schema.MessageTypes do
 
   # DEPRECATED
   input_object :send_message_input do
+    @desc "Message recipient"
     field :recipient_id, non_null(:uuid)
+
+    @desc "Textual content of the message"
     field :content, :string
+
+    @desc "TROS URL of any attached media"
     field :image_url, :string
   end
 
@@ -70,11 +92,26 @@ defmodule WockyAPI.Schema.MessageTypes do
     field :client_data, :string
   end
 
+  input_object :message_mark_read_input do
+    @desc "List of messages to mark as read"
+    field :messages, non_null(list_of(:message_mark_read))
+  end
+
+  input_object(:message_mark_read) do
+    @desc "ID of message to mark"
+    field :id, non_null(:integer)
+
+    @desc "Whether the message is marked as read or unread (default: true)"
+    field :read, :boolean
+  end
+
   # DEPRECATED
   payload_object(:send_message_payload, :boolean)
   payload_object(:message_send_payload, :boolean)
+  payload_object(:message_mark_read_payload, list_of(:message_mark_read_result))
 
   object :message_mutations do
+    @desc "Send a message to another user"
     field :send_message, type: :send_message_payload do
       deprecate "Use messageSend instead"
       arg :input, non_null(:send_message_input)
@@ -82,9 +119,17 @@ defmodule WockyAPI.Schema.MessageTypes do
       changeset_mutation_middleware()
     end
 
+    @desc "Send a message to another user"
     field :message_send, type: :message_send_payload do
       arg :input, non_null(:message_send_input)
       resolve &Message.send_message/3
+      changeset_mutation_middleware()
+    end
+
+    @desc "Mark a message's read status"
+    field :message_mark_read, type: :message_mark_read_payload do
+      arg :input, non_null(:message_mark_read_input)
+      resolve &Message.mark_read/3
       changeset_mutation_middleware()
     end
   end

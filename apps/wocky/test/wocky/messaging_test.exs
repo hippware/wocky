@@ -84,7 +84,7 @@ defmodule Wocky.MessagingTest do
       data = Lorem.paragraph()
       assert {:ok, _} = Messaging.send_message(f, u, text, nil, data)
 
-      assert [%Message{content: ^text, client_data: ^data}] =
+      assert [%Message{content: ^text, client_data: ^data, read: false}] =
                f |> Messaging.get_messages_query(u) |> Repo.all()
     end
 
@@ -139,6 +139,37 @@ defmodule Wocky.MessagingTest do
     end
   end
 
+  describe "mark_read/3" do
+    setup do
+      [user1, user2] = Factory.insert_list(2, :user)
+      unread = Factory.insert(:message, sender: user1, recipient: user2)
+
+      read =
+        Factory.insert(:message, sender: user1, recipient: user2, read: true)
+
+      {:ok, user1: user1, user2: user2, unread: unread, read: read}
+    end
+
+    test "should mark a message as read", %{user2: user, unread: msg} do
+      refute Repo.get(Message, msg.id).read
+      assert :ok == Messaging.mark_read(msg.id, user)
+      assert Repo.get(Message, msg.id).read
+    end
+
+    test "should be able to un-mark a message", %{user2: user, read: msg} do
+      assert Repo.get(Message, msg.id).read
+      assert :ok == Messaging.mark_read(msg.id, user, false)
+      refute Repo.get(Message, msg.id).read
+    end
+
+    test "should fail for a message not sent to the requesting user", %{
+      user1: user,
+      read: msg
+    } do
+      assert {:error, :invalid_id} == Messaging.mark_read(msg.id, user)
+    end
+  end
+
   defp assert_match(a, b) do
     fields = [:id, :user_id, :other_id, :message, :direction]
     assert Map.take(a, fields) == Map.take(b, fields)
@@ -174,6 +205,6 @@ defmodule Wocky.MessagingTest do
   defp normalise_messages(messages) do
     messages
     |> Enum.map(&Repo.preload(&1, [:sender, :recipient]))
-    |> Enum.map(&Map.drop(&1, [:__meta__]))
+    |> Enum.map(&Map.drop(&1, [:__meta__, :updated_at]))
   end
 end
