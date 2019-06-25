@@ -51,7 +51,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       authenticate(user_id, token, socket)
 
       ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
       expected = fn count, action, updated_at ->
         %{
@@ -121,7 +121,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       """
 
       ref! = push_doc(socket, sub)
-      assert_reply ref!, :ok, %{subscriptionId: _subscription_id}, 1000
+      assert_reply ref!, :ok, %{subscriptionId: _subscription_id}, 150
 
       mut = """
       mutation ($input: UserLocationUpdateInput!) {
@@ -144,9 +144,9 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       }
 
       ref! = push_doc(socket, mut, variables: location_input)
-      assert_reply ref!, :ok, _, 1000
+      assert_reply ref!, :ok, _, 150
       ref! = push_doc(socket, mut, variables: location_input)
-      assert_reply ref!, :ok, _, 1000
+      assert_reply ref!, :ok, _, 150
 
       assert_subscription_update _data
     end
@@ -179,7 +179,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       authenticate(user.id, token, socket)
 
       ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
       Roster.befriend(user, user2)
 
@@ -206,7 +206,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       authenticate(user.id, token, socket)
 
       ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
       Roster.befriend(user, user2)
       assert_relationship_notification("FRIEND", user2, subscription_id)
@@ -226,7 +226,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
                      }
                    ]
                  },
-                 1000
+                 150
   end
 
   defp assert_relationship_notification(relationship, user, subscription_id) do

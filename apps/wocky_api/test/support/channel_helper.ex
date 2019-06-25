@@ -31,7 +31,7 @@ defmodule WockyAPI.ChannelHelper do
                  %{
                    data: %{"authenticate" => %{"user" => %{"id" => ^user_id}}}
                  },
-                 1000
+                 150
 
     ref
   end

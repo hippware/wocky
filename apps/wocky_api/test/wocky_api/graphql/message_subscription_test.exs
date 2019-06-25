@@ -22,7 +22,7 @@ defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
       authenticate(user_id, token, socket)
 
       ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
       {:ok, subscription_id: subscription_id}
     end
 

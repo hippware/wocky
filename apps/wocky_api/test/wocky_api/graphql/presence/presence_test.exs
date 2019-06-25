@@ -64,13 +64,13 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
       ref! =
         push_doc(ctx.socket, @set_status, variables: %{"status" => "ONLINE"})
 
-      assert_reply ref!, :ok, reply, 1000
+      assert_reply ref!, :ok, _, 150
       assert_eventually(Presence.get(ctx.user, ctx.friend).status == :online)
 
       ref! =
         push_doc(ctx.socket, @set_status, variables: %{"status" => "OFFLINE"})
 
-      assert_reply ref!, :ok, reply, 1000
+      assert_reply ref!, :ok, _, 150
       assert_eventually(Presence.get(ctx.user, ctx.friend).status == :offline)
     end
   end
@@ -91,7 +91,7 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
     setup ctx do
       authenticate(ctx.user.id, ctx.token, ctx.socket)
       ref = push_doc(ctx.socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: _subscription_id}, 150
 
       {:ok, ref: ref}
     end
@@ -211,7 +211,7 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
 
       authenticate(ctx.user.id, ctx.token, ctx.socket)
       ref = push_doc(ctx.socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: _subscription_id}, 150
 
       assert_presence_notification(ctx.friend.id, :online)
 

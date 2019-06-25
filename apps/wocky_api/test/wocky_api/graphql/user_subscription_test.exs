@@ -50,7 +50,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
       Roster.befriend(friend, user)
 
       ref = push_doc(socket, @query)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
       {:ok,
        friend: friend, stranger: stranger, subscription_id: subscription_id}
@@ -123,7 +123,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
 
     test "updating location sends a message", %{socket: socket, friend: friend} do
       ref = push_doc(socket, @query)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
       now = DateTime.utc_now()
       captured_at = now |> DateTime.to_iso8601()
