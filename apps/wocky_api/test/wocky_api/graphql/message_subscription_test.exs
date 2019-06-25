@@ -31,23 +31,23 @@ defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
       subscription_id: subscription_id
     } do
       m = Factory.insert(:message, recipient: user)
+      sender_id = m.sender.id
+      content = m.content
 
-      assert_push "subscription:data", push, 1000
-
-      assert %{
-               result: %{
-                 data: %{
-                   "messages" => %{
-                     "other_user" => %{
-                       "id" => m.sender.id
-                     },
-                     "content" => m.content,
-                     "direction" => "INCOMING"
-                   }
-                 }
-               },
-               subscriptionId: subscription_id
-             } == push
+      assert_subscription_update %{
+        result: %{
+          data: %{
+            "messages" => %{
+              "other_user" => %{
+                "id" => ^sender_id
+              },
+              "content" => ^content,
+              "direction" => "INCOMING"
+            }
+          }
+        },
+        subscriptionId: ^subscription_id
+      }
     end
 
     test "should not notify the sender when a new message is sent", %{
@@ -55,7 +55,7 @@ defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
     } do
       Factory.insert(:message, sender: user)
 
-      refute_push "subscription:data", _push, 500
+      refute_subscription_update _data
     end
   end
 end

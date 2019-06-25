@@ -13,6 +13,10 @@
   locals_without_parens: [
     execute: 1,
     defenum: 2,
+    assert_subscription_update: 1,
+    assert_subscription_update: 2,
+    refute_subscription_update: 1,
+    refute_subscription_update: 2,
 
     # Absinthe / Kronky
     payload_object: 2,

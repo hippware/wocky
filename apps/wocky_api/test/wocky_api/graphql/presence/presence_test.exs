@@ -97,15 +97,14 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
     end
 
     test "should give no initial notifications when nobody is online" do
-      refute_push "subscription:data", _push, 2000
+      refute_subscription_update _data, 10
     end
 
     test "should notify when a friend comes online", ctx do
       connect(ctx.friend)
       Presence.set_status(ctx.friend, :online)
 
-      assert_push "subscription:data", push, 2000
-      assert_presence_notification(push.result.data, ctx.friend.id, :online)
+      assert_presence_notification(ctx.friend.id, :online)
     end
 
     test """
@@ -118,61 +117,48 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
         Presence.set_status(ctx.friend, :online)
       end)
 
-      assert_push "subscription:data", push, 2000
-      assert_presence_notification(push.result.data, ctx.friend.id, :online)
-      refute_push "subscription:data", _push, 2000
+      assert_presence_notification(ctx.friend.id, :online)
+      refute_subscription_update _data, 10
     end
 
     test "should not notify when other users come online", ctx do
       connect(ctx.stranger)
       Presence.set_status(ctx.stranger, :online)
 
-      refute_push "subscription:data", _push, 2000
+      refute_subscription_update _data, 10
     end
 
     test "should notify when a friend goes offline via disconnect", ctx do
       {conn, _} = connect(ctx.friend)
       Presence.set_status(ctx.friend, :online)
 
-      assert_push "subscription:data", push, 2000
+      assert_subscription_update _data
 
       close_conn(conn)
 
-      assert_push "subscription:data", push, 2000
-
-      assert_presence_notification(
-        push.result.data,
-        ctx.friend.id,
-        :offline
-      )
+      assert_presence_notification(ctx.friend.id, :offline)
     end
 
     test "should notify when a friend goes offline via status setting", ctx do
       connect(ctx.friend)
       Presence.set_status(ctx.friend, :online)
 
-      assert_push "subscription:data", push, 2000
+      assert_subscription_update _data
 
       Presence.set_status(ctx.friend, :offline)
 
-      assert_push "subscription:data", push, 2000
-
-      assert_presence_notification(
-        push.result.data,
-        ctx.friend.id,
-        :offline
-      )
+      assert_presence_notification(ctx.friend.id, :offline)
     end
 
     test "should not notify when other users go offline via disconnect", ctx do
       {conn, _} = connect(ctx.stranger)
       Presence.set_status(ctx.stranger, :online)
 
-      refute_push "subscription:data", _push, 2000
+      refute_subscription_update _data, 10
 
       close_conn(conn)
 
-      refute_push "subscription:data", _push, 2000
+      refute_subscription_update _data, 10
     end
 
     test "should not notify when other users go offline via status setting",
@@ -180,11 +166,11 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
       connect(ctx.stranger)
       Presence.set_status(ctx.stranger, :online)
 
-      refute_push "subscription:data", _push, 2000
+      refute_subscription_update _data, 10
 
       Presence.set_status(ctx.stranger, :offline)
 
-      refute_push "subscription:data", _push, 2000
+      refute_subscription_update _data, 10
     end
 
     test """
@@ -201,7 +187,7 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
           end
         )
 
-      assert_push "subscription:data", push, 2000
+      assert_subscription_update _data
 
       Enum.each(
         0..3,
@@ -210,12 +196,11 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
         end
       )
 
-      refute_push "subscription:data", _push, 2000
+      refute_subscription_update _data, 10
 
       close_conn(Enum.at(conns, 4))
-      assert_push "subscription:data", push, 2000
 
-      assert_presence_notification(push.result.data, ctx.friend.id, :offline)
+      assert_presence_notification(ctx.friend.id, :offline)
     end
   end
 
@@ -228,8 +213,7 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
       ref = push_doc(ctx.socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
 
-      assert_push "subscription:data", push, 2000
-      assert_presence_notification(push.result.data, ctx.friend.id, :online)
+      assert_presence_notification(ctx.friend.id, :online)
 
       {:ok, ref: ref, conn: conn}
     end
@@ -237,9 +221,7 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
     test "connected contact disconnects", ctx do
       close_conn(ctx.conn)
 
-      assert_push "subscription:data", push, 2000
-
-      assert_presence_notification(push.result.data, ctx.friend.id, :offline)
+      assert_presence_notification(ctx.friend.id, :offline)
     end
   end
 
@@ -266,18 +248,22 @@ defmodule WockyAPI.GraphQL.Presence.PresenceTest do
   defp includes_user(list, user),
     do: Enum.any?(list, &(&1.id == user.id))
 
-  defp assert_presence_notification(data, user_id, type) do
+  defp assert_presence_notification(user_id, type) do
     expected_status = type |> to_string() |> String.upcase()
 
-    assert %{
-             "presence" => %{
-               "id" => ^user_id,
-               "presence_status" => ^expected_status,
-               "presence" => %{
-                 "status" => ^expected_status,
-                 "updated_at" => _
-               }
-             }
-           } = data
+    assert_subscription_update %{
+      result: %{
+        data: %{
+          "presence" => %{
+            "id" => ^user_id,
+            "presence_status" => ^expected_status,
+            "presence" => %{
+              "status" => ^expected_status,
+              "updated_at" => _
+            }
+          }
+        }
+      }
+    }
   end
 end
