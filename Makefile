@@ -58,7 +58,7 @@ kubeval: ## Run kubeval on all Kubernetes manifests
 	@docker run -it --rm -v "${PWD}/k8s":/k8s garethr/kubeval k8s/*/*.yml*
 
 release: ## Build the release tarball
-	MIX_ENV=prod mix release --warnings-as-errors --name $(RELEASE_NAME)
+	MIX_ENV=prod mix distillery.release --warnings-as-errors --name $(RELEASE_NAME)
 	cp _build/prod/rel/$(RELEASE_NAME)/releases/$(VERSION)/$(RELEASE_NAME).tar.gz /artifacts
 
 build: ## Build the release Docker image
