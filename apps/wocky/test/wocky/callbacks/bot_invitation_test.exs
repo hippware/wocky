@@ -44,7 +44,7 @@ defmodule Wocky.Callbacks.BotInvitationTest do
              } = hd(msgs)
 
       assert message ==
-               "@#{ctx.user.handle} invited you to follow #{ctx.bot.title}."
+               "@#{ctx.user.handle} invited you to follow #{ctx.bot.title}"
 
       assert clear_expected_notifications(1)
     end
@@ -90,7 +90,7 @@ defmodule Wocky.Callbacks.BotInvitationTest do
       assert message ==
                "@#{ctx.invitee.handle} accepted your invitation to #{
                  ctx.bot.title
-               }."
+               }"
 
       clear_expected_notifications(1)
     end

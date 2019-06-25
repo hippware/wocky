@@ -30,7 +30,7 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.BotItem do
   def recipient(%{to: to}), do: to
 
   def message(%{from: from, item: item}) do
-    get_handle(from) <> " commented on " <> get_title(item.bot) <> "."
+    get_handle(from) <> " commented on " <> get_title(item.bot)
   end
 
   def uri(%{item: item}), do: make_uri(:bot, item.bot.id)

@@ -31,7 +31,7 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.NewMessage do
 
   def message(%{from: from, content: content}) do
     if blank?(content) do
-      get_handle(from) <> " sent you an image."
+      get_handle(from) <> " sent you an image"
     else
       "From: #{get_handle(from)}\n#{content}"
     end

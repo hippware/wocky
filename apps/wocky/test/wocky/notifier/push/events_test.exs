@@ -59,7 +59,7 @@ defmodule Wocky.Notifier.Push.EventsTest do
     end
 
     test "assumes sending an image when there is no body" do
-      assert Event.message(%NewMessage{}) =~ "sent you an image."
+      assert Event.message(%NewMessage{}) =~ "sent you an image"
     end
 
     test "returns an appropriate message", %{user: u} do
@@ -137,7 +137,7 @@ defmodule Wocky.Notifier.Push.EventsTest do
     test "returns an appropriate message", %{sharer: s, target: t} do
       msg = Event.message(%LocationShare{to: t, from: s})
       assert msg =~ @test_handle
-      assert msg =~ "is sharing location with you"
+      assert msg =~ "is sharing their location with you"
     end
 
     test "returns an appropriate uri", %{sharer: s, target: t} do
