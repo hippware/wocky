@@ -39,34 +39,16 @@ config :lager, :error_logger_redirect, false
 config :lager, :error_logger_whitelist, [Logger.ErrorHandler]
 # Stop lager writing a crash log
 config :lager, :crash_log, false
-# Use LagerLogger as lager's only handler.
-config :lager, :handlers, [{LagerLogger, [level: :info]}]
+# Configure the lager console backend
+config :lager,
+  handlers: [
+    lager_console_backend: [level: :info]
+  ]
 
 # Exometer uses Hut as a logging abstraction
 config :hut, :level, :info
 
 config :honeybadger, use_logger: true
-
-# Configure release generation
-config :distillery,
-  no_warn_missing: [
-    :distillery,
-    :exactor,
-    :dialyxir,
-    :edown,
-    :escalus,
-    :exref,
-    :fun_chain,
-    :ok,
-    :hamcrest,
-    :meck,
-    :mix_ct,
-    :mix_elvis,
-    :mustache,
-    :parse_trans,
-    :proper,
-    :elixir_make
-  ]
 
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
