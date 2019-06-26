@@ -5,6 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* SSL redis (PR #2625)
+* Only use Running pods for post-deploy (PR #2626)
+* Replace Kronky with AbsintheErrorPayload (PR #2618)
+* Implement isRead field for messages and an API to mark as read (#2608)
+* Update: distillery (PR #2627)
+* Remove lager_logger (PR #2629)
+
+
 # 2019.6.25+r9d7d6bb
 
 * Remove '@server' component from push notification deeplinks (#2624)
