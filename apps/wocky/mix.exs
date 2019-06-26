@@ -112,8 +112,7 @@ defmodule Wocky.Mixfile do
       {:peerage, "~> 1.0"},
       {:phoenix_pubsub, "~> 1.0"},
       {:phoenix_pubsub_redis, "~> 2.1.5"},
-      # TODO: Back to upstream once Confex changes are merged
-      {:pigeon, github: "hippware/pigeon", branch: "working"},
+      {:pigeon, "~> 1.3"},
       {:plug, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:postgrex, ">= 0.0.0"},

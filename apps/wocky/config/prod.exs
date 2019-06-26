@@ -9,14 +9,14 @@ config :wocky,
 
 config :wocky, Wocky.Location.GeoFence, visit_timeout_enabled: false
 
-config :dawdle, backend: Dawdle.Backend.SQS
-
-config :pigeon, :apns,
-  apns_default: %{
+config :wocky, :pigeon,
+  apns: [
     cert: {:wocky, "certs/${WOCKY_INST}.crt"},
     key: {:wocky, "certs/${WOCKY_INST}.key"},
     mode: :prod
-  }
+  ]
+
+config :dawdle, backend: Dawdle.Backend.SQS
 
 config :exometer_core,
   report: [reporters: [{:exometer_report_prometheus, [:enable_httpd]}]]

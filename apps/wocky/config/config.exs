@@ -117,6 +117,16 @@ config :wocky, :redlock,
     ]
   ]
 
+config :wocky, :pigeon,
+  apns: [
+    cert: {:wocky, "certs/testing.crt"},
+    key: {:wocky, "certs/testing.key"},
+    mode: :dev
+  ],
+  fcm: [
+    key: {:system, :string, "WOCKY_FCM_KEY", ""}
+  ]
+
 config :wocky, Wocky.Audit,
   log_traffic: {:system, :boolean, "WOCKY_AUDIT_LOG_TRAFFIC", true},
   log_locations: {:system, :boolean, "WOCKY_AUDIT_LOG_LOCATIONS", true},
@@ -186,19 +196,12 @@ config :ex_aws,
     :instance_role
   ]
 
-config :pigeon, :debug_log, true
-
-config :pigeon, :apns,
-  apns_default: %{
-    cert: {:wocky, "certs/testing.crt"},
-    key: {:wocky, "certs/testing.key"},
-    mode: :dev
-  }
-
-config :pigeon, :fcm,
-  fcm_default: %{
-    key: {:system, :string, "WOCKY_FCM_KEY", ""}
-  }
+config :pigeon,
+  debug_log: true,
+  workers: [
+    {Wocky.PigeonConfig, :apns_config},
+    {Wocky.PigeonConfig, :fcm_config}
+  ]
 
 config :ex_twilio,
   account_sid: {:system, "TWILIO_ACCOUNT_SID"},
