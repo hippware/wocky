@@ -42,11 +42,15 @@ kubernetes-deploy "${namespace}" "${context}" \
   --bindings=@${OUTPUT_BINDINGS} \
   "$@"
 
+# Select the most recent wocky pod to ensure we don't pick an old,
+# terminating one
 pod=$(kubectl get pods \
   -n "${namespace}" \
   -l 'app=wocky' \
-  -o jsonpath="{range .items[?(@.status.phase == 'Running')]}{.metadata.name}{' '}{end}" \
-  | cut -f1 -d ' ')
+  -o jsonpath="{range .items[*]}{.metadata.creationTimestamp} {.metadata.name}{'\n'}{end}" \
+  | sort -n \
+  | tail -n 1 \
+  | cut -f2 -d ' ')
 
 if [ "${CI_COMMIT_MESSAGE}" != "" ]; then
   msg="Last commit: ${CI_COMMIT_MESSAGE}"
