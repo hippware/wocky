@@ -64,11 +64,11 @@ defmodule Wocky.Mixfile do
     [
       {:bamboo, "~> 1.0"},
       {:benchee, "~> 1.0", only: :dev},
-      {:bimap, "~> 1.0"},
       {:bcrypt_elixir, "~> 2.0"},
+      {:bimap, "~> 1.0"},
       {:confex, "~> 3.4"},
-      {:dawdle_db, "~> 0.5"},
       {:dataloader, "~> 1.0.0"},
+      {:dawdle_db, "~> 0.5"},
       {:ecto_homoiconic_enum,
        github: "hippware/ecto_homoiconic_enum", branch: "master"},
       {:ecto_sql, "~> 3.0"},
@@ -129,12 +129,13 @@ defmodule Wocky.Mixfile do
       {:swarm, "~> 3.0"},
       {:sweet_xml, "~> 0.6"},
       {:timex, "~> 3.1"},
+      # Non-prod
       {:bypass, "~> 1.0", only: :test, runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:credo_filename_consistency, "~> 0.1",
        only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.6", only: :test},
       {:ex_unit_notifier, "~> 0.1", only: :test, runtime: false},
+      {:excoveralls, "~> 0.6", only: :test},
       {:meck, "~> 0.8", only: :test},
       {:mock, "~> 0.3", only: :test},
       {:reprise, "~> 0.5", only: :dev}
