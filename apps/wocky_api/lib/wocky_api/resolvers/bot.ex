@@ -19,11 +19,8 @@ defmodule WockyAPI.Resolvers.Bot do
   @max_local_bots 50
   @default_local_bots 15
 
-  def get_bot(_root, args, %{context: context}) do
-    case Map.get(context, :current_user) do
-      nil -> {:ok, nil}
-      user -> {:ok, Relation.get_bot(args[:id], user)}
-    end
+  def get_bot(_root, args, %{context: %{current_user: requestor}}) do
+    {:ok, Relation.get_bot(args[:id], requestor)}
   end
 
   def get_bots(%User{} = user, args, %{context: %{current_user: requestor}}) do

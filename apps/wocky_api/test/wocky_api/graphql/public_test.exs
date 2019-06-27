@@ -31,6 +31,51 @@ defmodule WockyAPI.GraphQL.PublicTest do
   end
 
   @query """
+  query IntrospectionQuery {
+      __schema {
+        queryType { name }
+      }
+  }
+  """
+  test "simple schema" do
+    Application.put_env(:wocky, :go, true)
+    result = run_query(@query)
+
+    refute has_errors(result)
+    assert result.data["__schema"] != nil
+  end
+
+  @query """
+  query ($id: String) {
+    bot (id: $id) {
+      id
+    }
+  }
+  """
+  test "simple bot", %{bot: %{id: bot_id}} do
+    Application.put_env(:wocky, :go, true)
+    result = run_query(@query, nil, %{"id" => bot_id})
+
+    assert has_errors(result)
+    assert error_msg(result) =~ "requires an authenticated user"
+  end
+
+  @query """
+  query ($id: String) {
+    user (id: $id) {
+      id
+    }
+  }
+  """
+  test "simple user", %{user: %{id: user_id}} do
+    Application.put_env(:wocky, :go, true)
+    result = run_query(@query, nil, %{"id" => user_id})
+
+    assert has_errors(result)
+    assert error_msg(result) =~ "requires an authenticated user"
+  end
+
+  @query """
   query ($id: String) {
     bot (id: $id) {
       id
