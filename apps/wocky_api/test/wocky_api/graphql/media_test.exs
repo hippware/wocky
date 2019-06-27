@@ -149,10 +149,7 @@ defmodule WockyAPI.GraphQL.MediaTest do
          it should return URLs when the file becomes ready in the timeout preiod
          """,
          ctx do
-      parent = self()
-
       Task.start(fn ->
-        Ecto.Adapters.SQL.Sandbox.allow(Repo, parent, self())
         Process.sleep(500)
         ctx.metadata |> Metadata.changeset(%{ready: true}) |> Repo.update!()
       end)

@@ -426,12 +426,6 @@ defmodule WockyAPI.GraphQL.UserTest do
     }
     """
 
-    setup do
-      # Location updates are handled in separate processes for serialisation
-      # so we need to share the sandbox
-      Ecto.Adapters.SQL.Sandbox.mode(Repo, {:shared, self()})
-    end
-
     test "set location", %{user: user} do
       lat = :rand.uniform() * 89.0
       lon = :rand.uniform() * 179.0
