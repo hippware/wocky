@@ -3,20 +3,6 @@ defmodule WockyAPI.Middleware.Auth do
   Helper functions for implementing scope-based authorization using
   `WockyAPI.Schema.Notation`'s `scope` macro.
   """
-  @schema_fields [
-    :__schema,
-    :__type,
-    :__enumvalue,
-    :__directive,
-    :__inputvalue,
-    :__field
-  ]
-
-  def middleware(middleware, _field, %{identifier: object})
-      when object in @schema_fields do
-    scope_middleware(middleware, :public)
-  end
-
   def middleware(middleware, %{__private__: field}, %{__private__: obj}) do
     scope =
       case obj[:meta][:scope] do
