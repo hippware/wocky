@@ -2,7 +2,6 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
   import Eventually
-  import WockyAPI.ChannelHelper
 
   alias Wocky.Location
   alias Wocky.Relation

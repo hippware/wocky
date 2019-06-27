@@ -2,7 +2,6 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
   import Eventually
-  import WockyAPI.ChannelHelper
   import WockyAPI.GraphQLHelper
 
   alias Wocky.Account

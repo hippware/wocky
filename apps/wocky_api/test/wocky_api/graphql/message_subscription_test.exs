@@ -1,8 +1,6 @@
 defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
-  import WockyAPI.ChannelHelper
-
   alias Wocky.Repo.Factory
 
   setup_all do

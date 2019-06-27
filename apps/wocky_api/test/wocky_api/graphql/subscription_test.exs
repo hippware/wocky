@@ -1,8 +1,6 @@
 defmodule WockyAPI.GraphQL.SubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
-  import WockyAPI.ChannelHelper
-
   alias Wocky.GeoUtils
   alias Wocky.Relation
   alias Wocky.Relation.Subscription

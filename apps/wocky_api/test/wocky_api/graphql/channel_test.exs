@@ -1,7 +1,6 @@
 defmodule WockyAPI.GraphQL.ChannelTest do
   use WockyAPI.SubscriptionCase, async: false
 
-  import WockyAPI.ChannelHelper
   import WockyAPI.GraphQLHelper
 
   alias Ecto.Adapters.SQL.Sandbox
