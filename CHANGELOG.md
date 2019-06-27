@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.6.26+redac896
+
 * SSL redis (PR #2625)
 * Only use Running pods for post-deploy (PR #2626)
 * Replace Kronky with AbsintheErrorPayload (PR #2618)
