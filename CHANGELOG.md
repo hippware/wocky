@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Bump elixir version to 1.9 (PR #2630)
+* Another try at fixing deployment notification race (PR #2631)
+* Move back to upstream pigeon using callback-powered config (PR #2632)
+
+
 # 2019.6.26+redac896
 
 * SSL redis (PR #2625)
