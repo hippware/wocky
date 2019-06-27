@@ -19,10 +19,10 @@ defmodule WockyAPI.Schema.UserTypes do
   @desc "The main Wocky user interface"
   interface :user do
     @desc "The user's unique ID"
-    field :id, non_null(:uuid), do: scope(:public)
+    field :id, non_null(:uuid)
 
     @desc "The user's unique handle"
-    field :handle, :string, do: scope(:public)
+    field :handle, :string
 
     @desc "The user's avatar"
     field :media, :media do
@@ -47,10 +47,10 @@ defmodule WockyAPI.Schema.UserTypes do
     field :name, :string
 
     @desc "A freeform tagline for the user"
-    field :tagline, :string, do: scope(:public)
+    field :tagline, :string
 
     @desc "A list of roles assigned to the user"
-    field :roles, non_null(list_of(non_null(:string))), do: scope(:public)
+    field :roles, non_null(list_of(non_null(:string)))
 
     @desc "The user's hidden state"
     field :hidden, :hidden,
