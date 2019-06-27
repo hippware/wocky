@@ -1,5 +1,5 @@
 defmodule WockyAPI.GraphQL.BulkUserTest do
-  use WockyAPI.GraphQLCase, async: false
+  use WockyAPI.GraphQLCase, async: true
 
   import Mock
 

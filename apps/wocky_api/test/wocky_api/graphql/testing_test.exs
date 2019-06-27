@@ -1,5 +1,5 @@
 defmodule WockyAPI.GraphQL.TestingTest do
-  use WockyAPI.GraphQLCase, async: false
+  use WockyAPI.GraphQLCase, async: true
 
   alias Wocky.Account.User
   alias Wocky.Location.Share
