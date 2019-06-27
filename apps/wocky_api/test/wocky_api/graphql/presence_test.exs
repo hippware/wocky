@@ -3,17 +3,16 @@ defmodule WockyAPI.GraphQL.PresenceTest do
 
   import Eventually
 
-  alias Wocky.Account.User
   alias Wocky.Presence
   alias Wocky.Repo.Factory
   alias Wocky.Roster
 
   setup_all do
+    # Share database access with the Presence Manager process.
     Ecto.Adapters.SQL.Sandbox.mode(Wocky.Repo, :auto)
 
     on_exit(fn ->
-      Application.stop(:wocky_db_watcher)
-      Wocky.Repo.delete_all(User)
+      Wocky.Repo.delete_all(Wocky.Account.User)
     end)
   end
 
