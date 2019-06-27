@@ -51,11 +51,11 @@ defmodule WockyAPI.Mixfile do
       {:absinthe,
        github: "hippware/absinthe", branch: "working", override: true},
       {:absinthe_error_payload, "~> 1.0"},
+      {:absinthe_metrics, "~> 1.0.0"},
       {:absinthe_phoenix,
        github: "hippware/absinthe_phoenix", branch: "working"},
-      {:absinthe_relay, github: "hippware/absinthe_relay", branch: "working"},
-      {:absinthe_metrics, "~> 1.0.0"},
       {:absinthe_plug, "~> 1.5.0-alpha.0", override: true},
+      {:absinthe_relay, github: "hippware/absinthe_relay", branch: "working"},
       {:apollo_tracing, "~> 0.4.0"},
       {:cors_plug, "~> 2.0"},
       {:ecto_sql, "~> 3.0"},
@@ -65,14 +65,15 @@ defmodule WockyAPI.Mixfile do
       {:jason, "~> 1.0"},
       {:phoenix, "~> 1.4"},
       {:phoenix_ecto, "~> 4.0"},
-      {:plug_cowboy, "~> 2.0"},
       {:plug, "~> 1.7"},
+      {:plug_cowboy, "~> 2.0"},
       {:prometheus_ex, "~> 3.0", override: true},
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
+      # Non-prod
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.6", only: :test},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
+      {:excoveralls, "~> 0.6", only: :test},
       {:reprise, "~> 0.5", only: :dev}
     ]
   end
