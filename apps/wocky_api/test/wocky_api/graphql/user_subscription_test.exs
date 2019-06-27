@@ -12,7 +12,12 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster
 
-  setup_all :require_watcher
+  setup_all do
+    require_watcher()
+
+    WockyAPI.Callbacks.RosterItem.register()
+    WockyAPI.Callbacks.User.register()
+  end
 
   setup %{socket: socket, user: user, token: token} do
     authenticate(user.id, token, socket)

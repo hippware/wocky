@@ -957,9 +957,6 @@ defmodule WockyAPI.GraphQL.BotTest do
   end
 
   describe "bot mutations" do
-    setup :require_watcher
-    setup :common_setup
-
     @query """
     mutation {
       botCreate {
@@ -992,8 +989,8 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     @query """
-    mutation ($values: BotParams, $user_location: UserLocationUpdateInput) {
-      botCreate (input: {values: $values, user_location: $user_location}) {
+    mutation ($values: BotParams) {
+      botCreate (input: {values: $values}) {
         successful
         result {
           id
@@ -1025,44 +1022,9 @@ defmodule WockyAPI.GraphQL.BotTest do
       assert Repo.get(User, user.id).bot_created
     end
 
-    test "create bot with location", %{user: %{id: user_id} = user} do
-      bot_data =
-        :bot
-        |> Factory.build()
-        |> add_bot_lat_lon()
-        |> Map.take(bot_create_fields())
-
-      result =
-        run_query(@query, user, %{
-          "values" => stringify_keys(bot_data),
-          "user_location" => %{
-            "lat" => bot_data.lat,
-            "lon" => bot_data.lon,
-            "accuracy" => 1,
-            "device" => Lorem.word()
-          }
-        })
-
-      refute has_errors(result)
-
-      assert %{
-               "botCreate" => %{
-                 "successful" => true,
-                 "result" => %{
-                   "id" => id
-                 }
-               }
-             } = result.data
-
-      bot = POI.get(id)
-      assert [%{id: ^user_id}] = bot |> Relation.visitors_query() |> Repo.all()
-    end
-
     @query """
-    mutation ($id: UUID!, $values: BotParams!,
-              $user_location: UserLocationUpdateInput) {
-      botUpdate (input: {id: $id, values: $values,
-                 user_location: $user_location}) {
+    mutation ($id: UUID!, $values: BotParams!) {
+      botUpdate (input: {id: $id, values: $values}) {
         successful
         result {
           id
@@ -1122,7 +1084,71 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       assert values["title"] == POI.get(bot.id).title
     end
+  end
 
+  describe "bot mutations with location" do
+    setup do
+      require_watcher()
+      Wocky.Callbacks.Bot.register()
+    end
+
+    setup :common_setup
+
+    @query """
+    mutation ($values: BotParams, $user_location: UserLocationUpdateInput) {
+      botCreate (input: {values: $values, user_location: $user_location}) {
+        successful
+        result {
+          id
+        }
+      }
+    }
+    """
+    test "create bot with location", %{user: %{id: user_id} = user} do
+      bot_data =
+        :bot
+        |> Factory.build()
+        |> add_bot_lat_lon()
+        |> Map.take(bot_create_fields())
+
+      result =
+        run_query(@query, user, %{
+          "values" => stringify_keys(bot_data),
+          "user_location" => %{
+            "lat" => bot_data.lat,
+            "lon" => bot_data.lon,
+            "accuracy" => 1,
+            "device" => Lorem.word()
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "botCreate" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "id" => id
+                 }
+               }
+             } = result.data
+
+      bot = POI.get(id)
+      assert [%{id: ^user_id}] = Relation.get_visitors(bot)
+    end
+
+    @query """
+    mutation ($id: UUID!, $values: BotParams!,
+              $user_location: UserLocationUpdateInput) {
+      botUpdate (input: {id: $id, values: $values,
+                 user_location: $user_location}) {
+        successful
+        result {
+          id
+        }
+      }
+    }
+    """
     test "update bot with location", %{user: %{id: user_id} = user, bot: bot} do
       new_title = Lorem.sentence()
 
@@ -1152,7 +1178,7 @@ defmodule WockyAPI.GraphQL.BotTest do
              }
 
       assert new_title == POI.get(bot.id).title
-      assert [%{id: ^user_id}] = bot |> Relation.visitors_query() |> Repo.all()
+      assert [%{id: ^user_id}] = Relation.get_visitors(bot)
     end
   end
 

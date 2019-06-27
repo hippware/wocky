@@ -5,7 +5,10 @@ defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
 
   alias Wocky.Repo.Factory
 
-  setup_all :require_watcher
+  setup_all do
+    require_watcher()
+    WockyAPI.Callbacks.Message.register()
+  end
 
   describe "messages subscription" do
     @subscription """

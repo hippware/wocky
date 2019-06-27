@@ -106,9 +106,10 @@ defmodule WockyAPI.GraphQL.MediaTest do
   end
 
   describe "mediaUrls query" do
-    setup :require_watcher
-
     setup do
+      require_watcher()
+      Wocky.Callbacks.TROSMetadata.register()
+
       metadata = Factory.insert(:tros_metadata, ready: false)
       tros_url = TROS.make_url(metadata.id)
       user = Factory.insert(:user)

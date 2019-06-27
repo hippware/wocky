@@ -9,7 +9,11 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
   alias Wocky.Repo.Factory
   alias Wocky.Roster
 
-  setup_all :require_watcher
+  setup_all do
+    require_watcher()
+    WockyAPI.Callbacks.BotSubscription.register()
+    WockyAPI.Callbacks.RosterItem.register()
+  end
 
   describe "watch for visitor count change" do
     setup do

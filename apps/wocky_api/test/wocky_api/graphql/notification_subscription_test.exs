@@ -12,7 +12,12 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   alias Wocky.Roster
   alias WockyAPI.Factory, as: APIFactory
 
-  setup_all :require_watcher
+  setup_all do
+    require_watcher()
+
+    Wocky.Callbacks.register()
+    WockyAPI.Callbacks.register()
+  end
 
   @subscription """
   subscription {
