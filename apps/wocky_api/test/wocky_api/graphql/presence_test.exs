@@ -1,4 +1,4 @@
-defmodule WockyAPI.GraphQL.Presence.PresenceTest do
+defmodule WockyAPI.GraphQL.PresenceTest do
   use WockyAPI.SubscriptionCase, async: false
 
   import Eventually
