@@ -1,5 +1,5 @@
 defmodule WockyAPI.GraphQL.UserTest do
-  use WockyAPI.GraphQLCase, async: false
+  use WockyAPI.GraphQLCase, async: true
 
   alias Faker.Lorem
   alias Faker.Name
@@ -7,13 +7,11 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.Location
-  alias Wocky.Location.UserLocation
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Token
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Repo.Timestamp
   alias Wocky.Roster
 
   setup do
@@ -417,68 +415,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "location mutations" do
-    @query """
-    mutation ($input: UserLocationUpdateInput!) {
-      userLocationUpdate (input: $input) {
-        successful
-      }
-    }
-    """
-
-    test "set location", %{user: user} do
-      lat = :rand.uniform() * 89.0
-      lon = :rand.uniform() * 179.0
-      accuracy = :rand.uniform() * 10.0
-      device = Factory.device()
-
-      location_input = %{
-        "lat" => lat,
-        "lon" => lon,
-        "accuracy" => accuracy,
-        "device" => device,
-        "isFetch" => true
-      }
-
-      result = run_query(@query, user, %{"input" => location_input})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "userLocationUpdate" => %{
-                 "successful" => true
-               }
-             }
-
-      assert %UserLocation{
-               lat: ^lat,
-               lon: ^lon,
-               device: ^device,
-               accuracy: ^accuracy
-             } = Location.get_current_user_location(user)
-    end
-
-    test "invalid location", %{user: user} do
-      location_input = %{
-        "lat" => :rand.uniform() * 89.0,
-        "lon" => :rand.uniform() * 179.0,
-        "accuracy" => -1.0,
-        "device" => Factory.device()
-      }
-
-      result = run_query(@query, user, %{"input" => location_input})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "userLocationUpdate" => %{
-                 "successful" => false
-               }
-             }
-
-      refute Location.get_current_user_location(user)
-    end
-
+  describe "location token mutation" do
     @query """
     mutation {
       userLocationGetToken {
@@ -509,12 +446,6 @@ defmodule WockyAPI.GraphQL.UserTest do
       Roster.befriend(user, user2)
 
       :ok
-    end
-
-    defp sharing_expiry(days \\ 5) do
-      Timestamp.shift(days: days)
-      |> DateTime.truncate(:second)
-      |> Timestamp.to_string!()
     end
 
     @query """
@@ -642,43 +573,6 @@ defmodule WockyAPI.GraphQL.UserTest do
           "input" => %{
             "sharedWithId" => shared_with,
             "expiresAt" => expiry
-          }
-        })
-
-      refute has_errors(result)
-
-      assert %{
-               "userLocationLiveShare" => %{
-                 "successful" => true,
-                 "result" => %{
-                   "user" => %{"id" => ^sharer},
-                   "sharedWith" => %{"id" => ^shared_with},
-                   "expiresAt" => ^expiry
-                 }
-               }
-             } = result.data
-    end
-
-    test "start sharing location with current location", %{
-      user: user,
-      user2: user2
-    } do
-      sharer = user.id
-      shared_with = user2.id
-      expiry = sharing_expiry()
-      loc = Factory.build(:location)
-
-      result =
-        run_query(@query, user, %{
-          "input" => %{
-            "sharedWithId" => shared_with,
-            "expiresAt" => expiry,
-            "location" => %{
-              "lat" => loc.lat,
-              "lon" => loc.lon,
-              "accuracy" => loc.accuracy,
-              "device" => loc.device
-            }
           }
         })
 

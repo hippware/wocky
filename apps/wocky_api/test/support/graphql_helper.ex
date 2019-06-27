@@ -6,6 +6,7 @@ defmodule WockyAPI.GraphQLHelper do
   alias Wocky.Account.User
   alias Wocky.GeoUtils
   alias Wocky.POI.Bot
+  alias Wocky.Repo.Timestamp
 
   def run_query(query, user \\ nil, variables \\ %{}) do
     Absinthe.run!(
@@ -65,5 +66,11 @@ defmodule WockyAPI.GraphQLHelper do
   def add_bot_lat_lon(%Bot{location: location} = bot) do
     {lat, lon} = GeoUtils.get_lat_lon(location)
     bot |> Map.put(:lat, lat) |> Map.put(:lon, lon)
+  end
+
+  def sharing_expiry(days \\ 5) do
+    Timestamp.shift(days: days)
+    |> DateTime.truncate(:second)
+    |> Timestamp.to_string!()
   end
 end

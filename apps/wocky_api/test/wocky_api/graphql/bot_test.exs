@@ -1,5 +1,5 @@
 defmodule WockyAPI.GraphQL.BotTest do
-  use WockyAPI.GraphQLCase, async: false
+  use WockyAPI.GraphQLCase, async: true
 
   alias Faker.Lorem
   alias Wocky.Account.User
@@ -17,7 +17,18 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Wocky.Roster
   alias WockyAPI.Factory, as: APIFactory
 
-  setup :common_setup
+  setup do
+    [user, user2, user3] = Factory.insert_list(3, :user)
+
+    image = Factory.insert(:tros_metadata, user: user)
+    image_url = APIFactory.image_url(image)
+    bot = Factory.insert(:bot, image_url: image_url, user: user)
+    bot2 = Factory.insert(:bot, user: user2)
+    Factory.insert(:subscription, bot: bot, user: user2)
+    Factory.insert(:subscription, bot: bot2, user: user)
+
+    {:ok, user: user, user2: user2, user3: user3, bot: bot, bot2: bot2}
+  end
 
   describe "basic bot queries" do
     test "get a single bot", %{user: user, bot: bot} do
@@ -1086,108 +1097,10 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
   end
 
-  describe "bot mutations with location" do
-    setup do
-      require_watcher()
-      Wocky.Callbacks.Bot.register()
-    end
-
-    setup :common_setup
-
-    @query """
-    mutation ($values: BotParams, $user_location: UserLocationUpdateInput) {
-      botCreate (input: {values: $values, user_location: $user_location}) {
-        successful
-        result {
-          id
-        }
-      }
-    }
-    """
-    test "create bot with location", %{user: %{id: user_id} = user} do
-      bot_data =
-        :bot
-        |> Factory.build()
-        |> add_bot_lat_lon()
-        |> Map.take(bot_create_fields())
-
-      result =
-        run_query(@query, user, %{
-          "values" => stringify_keys(bot_data),
-          "user_location" => %{
-            "lat" => bot_data.lat,
-            "lon" => bot_data.lon,
-            "accuracy" => 1,
-            "device" => Lorem.word()
-          }
-        })
-
-      refute has_errors(result)
-
-      assert %{
-               "botCreate" => %{
-                 "successful" => true,
-                 "result" => %{
-                   "id" => id
-                 }
-               }
-             } = result.data
-
-      bot = POI.get(id)
-      assert [%{id: ^user_id}] = Relation.get_visitors(bot)
-    end
-
-    @query """
-    mutation ($id: UUID!, $values: BotParams!,
-              $user_location: UserLocationUpdateInput) {
-      botUpdate (input: {id: $id, values: $values,
-                 user_location: $user_location}) {
-        successful
-        result {
-          id
-        }
-      }
-    }
-    """
-    test "update bot with location", %{user: %{id: user_id} = user, bot: bot} do
-      new_title = Lorem.sentence()
-
-      assert [] = bot |> Relation.visitors_query() |> Repo.all()
-
-      result =
-        run_query(@query, user, %{
-          "id" => bot.id,
-          "values" => %{"title" => new_title},
-          "user_location" => %{
-            "lat" => POI.lat(bot),
-            "lon" => POI.lon(bot),
-            "accuracy" => 1,
-            "device" => Lorem.word()
-          }
-        })
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "botUpdate" => %{
-                 "successful" => true,
-                 "result" => %{
-                   "id" => bot.id
-                 }
-               }
-             }
-
-      assert new_title == POI.get(bot.id).title
-      assert [%{id: ^user_id}] = Relation.get_visitors(bot)
-    end
-  end
-
   describe "bot subscriptions" do
     @query """
-    mutation ($id: UUID!, $guest: Boolean,
-              $user_location: UserLocationUpdateInput) {
-      botSubscribe (input:
-        {id: $id, guest: $guest, user_location: $user_location}) {
+    mutation ($id: UUID!, $guest: Boolean) {
+      botSubscribe (input: {id: $id, guest: $guest}) {
         result
         messages  {
           field
@@ -1228,76 +1141,6 @@ defmodule WockyAPI.GraphQL.BotTest do
       assert error_count(result) == 1
       assert error_msg(result) =~ "Bot not found"
       assert result.data == %{"botSubscribe" => nil}
-    end
-
-    test "subscribe with location inside bot", %{user: user, unsubbed_bot: bot} do
-      result =
-        run_query(@query, user, %{
-          "id" => bot.id,
-          "guest" => true,
-          "user_location" => %{
-            "lat" => POI.lat(bot),
-            "lon" => POI.lon(bot),
-            "accuracy" => 1,
-            "device" => Lorem.word()
-          }
-        })
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "botSubscribe" => %{"result" => true, "messages" => []}
-             }
-
-      assert Relation.visiting?(user, bot)
-    end
-
-    test "subscribe with location outside bot", %{user: user, unsubbed_bot: bot} do
-      result =
-        run_query(@query, user, %{
-          "id" => bot.id,
-          "guest" => true,
-          "user_location" => %{
-            "lat" => POI.lat(bot) + 5.0,
-            "lon" => POI.lon(bot) + 5.0,
-            "accuracy" => 1,
-            "device" => Lorem.word()
-          }
-        })
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "botSubscribe" => %{"result" => true, "messages" => []}
-             }
-
-      assert Relation.subscribed?(user, bot)
-    end
-
-    test "subscribe with invalid location", %{user: user, unsubbed_bot: bot} do
-      result =
-        run_query(@query, user, %{
-          "id" => bot.id,
-          "guest" => true,
-          "user_location" => %{
-            "lat" => POI.lat(bot),
-            "lon" => POI.lon(bot),
-            "accuracy" => -1,
-            "device" => Lorem.word()
-          }
-        })
-
-      assert result.data == %{
-               "botSubscribe" => %{
-                 "result" => nil,
-                 "messages" => [
-                   %{
-                     "field" => "accuracy",
-                     "message" => "must be greater than or equal to 0"
-                   }
-                 ]
-               }
-             }
     end
 
     @query """
@@ -1887,30 +1730,6 @@ defmodule WockyAPI.GraphQL.BotTest do
       assert Relation.visible?(shared.user3, shared.bot)
     end
 
-    test "accepting with location", %{id: id} = shared do
-      {lat, lon} = GeoUtils.get_lat_lon(shared.bot.location)
-
-      result =
-        run_query(@query, shared.user3, %{
-          "input" => %{
-            "invitation_id" => to_string(id),
-            "accept" => true,
-            "user_location" => %{
-              "lat" => lat,
-              "lon" => lon,
-              "accuracy" => 1,
-              "device" => Lorem.word()
-            }
-          }
-        })
-
-      refute has_errors(result)
-
-      user_id = shared.user3.id
-
-      assert [%{id: ^user_id}] = Relation.get_visitors(shared.bot)
-    end
-
     test "declining", %{id: id} = shared do
       result =
         run_query(@query, shared.user3, %{
@@ -1940,19 +1759,6 @@ defmodule WockyAPI.GraphQL.BotTest do
 
       assert error_msg(result) =~ "Invalid invitation"
     end
-  end
-
-  defp common_setup(_) do
-    [user, user2, user3] = Factory.insert_list(3, :user)
-
-    image = Factory.insert(:tros_metadata, user: user)
-    image_url = APIFactory.image_url(image)
-    bot = Factory.insert(:bot, image_url: image_url, user: user)
-    bot2 = Factory.insert(:bot, user: user2)
-    Factory.insert(:subscription, bot: bot, user: user2)
-    Factory.insert(:subscription, bot: bot2, user: user)
-
-    {:ok, user: user, user2: user2, user3: user3, bot: bot, bot2: bot2}
   end
 
   defp point_arg(lat, lon), do: %{"lat" => lat, "lon" => lon}
