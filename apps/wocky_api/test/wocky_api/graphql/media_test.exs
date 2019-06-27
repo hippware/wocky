@@ -150,14 +150,14 @@ defmodule WockyAPI.GraphQL.MediaTest do
          """,
          ctx do
       Task.start(fn ->
-        Process.sleep(500)
+        Process.sleep(100)
         ctx.metadata |> Metadata.changeset(%{ready: true}) |> Repo.update!()
       end)
 
       result =
         run_query(@query, ctx.user, %{
           "tros_url" => ctx.tros_url,
-          "timeout" => 2000
+          "timeout" => 1000
         })
 
       refute has_errors(result)
