@@ -29,13 +29,6 @@ defmodule Wocky.Account do
   # ----------------------------------------------------------------------
   # Utilities
 
-  @doc "Returns true if the user is a Hippware employee"
-  @spec hippware?(User.t()) :: boolean
-  def hippware?(%User{email: email}),
-    do: email && String.ends_with?(email, "@hippware.com")
-
-  def hippware?(_), do: false
-
   def first_name(%User{name: name}),
     do: name |> split_name() |> elem(0)
 
