@@ -129,7 +129,7 @@ config :wocky, :pigeon,
 
 config :wocky, Wocky.Audit,
   log_traffic: {:system, :boolean, "WOCKY_AUDIT_LOG_TRAFFIC", true},
-  log_locations: {:system, :boolean, "WOCKY_AUDIT_LOG_LOCATIONS", true},
+  log_location: {:system, :boolean, "WOCKY_AUDIT_LOG_LOCATION", true},
   log_push: {:system, :boolean, "WOCKY_AUDIT_LOG_PUSH", true},
   log_push_payload: {:system, :boolean, "WOCKY_AUDIT_LOG_PUSH_PAYLOAD", true}
 
