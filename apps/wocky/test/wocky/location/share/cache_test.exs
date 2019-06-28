@@ -65,7 +65,7 @@ defmodule Wocky.Location.Share.CacheTest do
 
       assert [share.shared_with.id] == Cache.refresh(share.user.id)
 
-      assert_eventually([] == Cache.get(share.user.id))
+      assert_eventually([] == Cache.get(share.user.id), 2000)
     end
   end
 end
