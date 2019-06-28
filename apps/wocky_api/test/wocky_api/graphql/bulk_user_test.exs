@@ -1,7 +1,5 @@
 defmodule WockyAPI.GraphQL.BulkUserTest do
-  # Must be async because SMSSandbox is a singleton process and `set_result/1`
-  # affects all calls to it
-  use WockyAPI.GraphQLCase, async: false
+  use WockyAPI.GraphQLCase, async: true
 
   import Mock
 
@@ -15,6 +13,9 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
   alias Wocky.SMS.Sandbox, as: SMSSandbox
 
   setup do
+    DLSandbox.set_result(:ok)
+    SMSSandbox.set_result(:ok)
+
     [user | users] = Factory.insert_list(6, :user)
     phone_numbers = Enum.map(users, & &1.phone_number)
 
@@ -492,8 +493,6 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
   describe "failure of external dynamic link service" do
     setup do
       DLSandbox.set_result({:error, "Failed to generate link"})
-
-      on_exit(fn -> DLSandbox.set_result(:ok) end)
     end
 
     test "should report an error when link generation fails", ctx do
@@ -524,8 +523,6 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
   describe "failures of external SMS service" do
     setup do
       SMSSandbox.set_result({:error, "Failed to send SMS"})
-
-      on_exit(fn -> SMSSandbox.set_result(:ok) end)
     end
 
     test "should report an error when link generation fails", ctx do
