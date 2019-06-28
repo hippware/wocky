@@ -60,7 +60,7 @@ defmodule Wocky.Location.Share.CacheTest do
     test "should not return expired shares" do
       share =
         Factory.insert(:user_location_share,
-          expires_at: Timestamp.shift(seconds: 1)
+          expires_at: Timestamp.shift(seconds: 2)
         )
 
       assert [share.shared_with.id] == Cache.refresh(share.user.id)

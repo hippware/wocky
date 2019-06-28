@@ -1,5 +1,7 @@
 defmodule WockyAPI.GraphQL.BulkUserTest do
-  use WockyAPI.GraphQLCase, async: true
+  # Must be async because SMSSandbox is a singleton process and `set_result/1`
+  # affects all calls to it
+  use WockyAPI.GraphQLCase, async: false
 
   import Mock
 
