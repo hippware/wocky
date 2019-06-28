@@ -8,9 +8,7 @@ config :wocky,
 # Configure your database
 config :wocky, Wocky.Repo,
   database: "wocky_test",
-  pool: Ecto.Adapters.SQL.Sandbox,
-  # ms (30 minutes)
-  ownership_timeout: 1_800_000
+  pool: Ecto.Adapters.SQL.Sandbox
 
 config :wocky, Wocky.Audit,
   log_traffic: false,

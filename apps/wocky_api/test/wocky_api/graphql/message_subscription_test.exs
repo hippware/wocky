@@ -1,11 +1,12 @@
 defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
-  import WockyAPI.ChannelHelper
-
   alias Wocky.Repo.Factory
 
-  setup_all :require_watcher
+  setup_all do
+    require_watcher()
+    WockyAPI.Callbacks.Message.register()
+  end
 
   describe "messages subscription" do
     @subscription """
@@ -22,7 +23,7 @@ defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
       authenticate(user_id, token, socket)
 
       ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
       {:ok, subscription_id: subscription_id}
     end
 
@@ -31,23 +32,23 @@ defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
       subscription_id: subscription_id
     } do
       m = Factory.insert(:message, recipient: user)
+      sender_id = m.sender.id
+      content = m.content
 
-      assert_push "subscription:data", push, 1000
-
-      assert %{
-               result: %{
-                 data: %{
-                   "messages" => %{
-                     "other_user" => %{
-                       "id" => m.sender.id
-                     },
-                     "content" => m.content,
-                     "direction" => "INCOMING"
-                   }
-                 }
-               },
-               subscriptionId: subscription_id
-             } == push
+      assert_subscription_update %{
+        result: %{
+          data: %{
+            "messages" => %{
+              "other_user" => %{
+                "id" => ^sender_id
+              },
+              "content" => ^content,
+              "direction" => "INCOMING"
+            }
+          }
+        },
+        subscriptionId: ^subscription_id
+      }
     end
 
     test "should not notify the sender when a new message is sent", %{
@@ -55,7 +56,7 @@ defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
     } do
       Factory.insert(:message, sender: user)
 
-      refute_push "subscription:data", _push, 500
+      refute_subscription_update _data
     end
   end
 end

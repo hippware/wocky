@@ -1,7 +1,6 @@
 defmodule WockyAPI.GraphQL.ChannelTest do
   use WockyAPI.SubscriptionCase, async: false
 
-  import WockyAPI.ChannelHelper
   import WockyAPI.GraphQLHelper
 
   alias Ecto.Adapters.SQL.Sandbox
@@ -22,16 +21,18 @@ defmodule WockyAPI.GraphQL.ChannelTest do
       create = "mutation { botCreate { successful, result { id } } }"
 
       ref! = push_doc(socket, create)
-      assert_reply ref!, :ok, result, 1000
 
-      assert %{
-               "botCreate" => %{
-                 "successful" => true,
-                 "result" => %{
-                   "id" => id
-                 }
-               }
-             } = result.data
+      assert_reply ref!,
+                   :ok,
+                   %{
+                     data: %{
+                       "botCreate" => %{
+                         "successful" => true,
+                         "result" => %{"id" => id}
+                       }
+                     }
+                   },
+                   150
 
       update = """
       mutation ($id: UUID!, $values: BotParams!) {
@@ -58,20 +59,15 @@ defmodule WockyAPI.GraphQL.ChannelTest do
           }
         )
 
-      assert_reply ref!, :ok, _result, 1000
+      assert_reply ref!, :ok, _, 150
 
       query = "query ($id: UUID!) { bot (id: $id) { title } }"
 
       ref! = push_doc(socket, query, variables: %{"id" => id})
-      assert_reply ref!, :ok, result, 1000
 
       title = values[:title]
 
-      assert %{
-               "bot" => %{
-                 "title" => ^title
-               }
-             } = result.data
+      assert_reply ref!, :ok, %{data: %{"bot" => %{"title" => ^title}}}, 150
     end
   end
 
@@ -86,7 +82,7 @@ defmodule WockyAPI.GraphQL.ChannelTest do
       """
 
       ref! = push_doc(socket, update)
-      assert_reply ref!, :ok, result, 1000
+      assert_reply ref!, :ok, _, 150
     end
   end
 end

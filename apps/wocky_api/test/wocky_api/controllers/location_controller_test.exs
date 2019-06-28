@@ -4,6 +4,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
   alias Faker.Address
   alias Wocky.Location
   alias Wocky.Repo.Factory
+  alias WockyAPI.Factory, as: APIFactory
 
   @location %{
     coords: %{
@@ -43,7 +44,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
   setup %{conn: conn} do
     user = Factory.insert(:user, device: "testing")
-    token = Factory.get_test_location_token(user)
+    token = APIFactory.get_test_location_token(user)
 
     conn =
       conn

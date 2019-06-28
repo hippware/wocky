@@ -18,13 +18,10 @@ defmodule WockyAPI.WatcherHelper do
   in this mode. I have no idea why.
   """
   def require_watcher(_ \\ %{}) do
-    clear_all_handlers()
-    Wocky.Callbacks.register()
-    WockyAPI.Callbacks.register()
-
     start_watcher(Wocky.Repo)
 
     on_exit(fn ->
+      clear_all_handlers()
       Wocky.Repo.delete_all(Wocky.Account.User)
     end)
   end

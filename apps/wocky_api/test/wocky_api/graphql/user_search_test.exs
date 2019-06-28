@@ -1,5 +1,5 @@
 defmodule WockyAPI.GraphQL.UserSearchTest do
-  use WockyAPI.GraphQLCase, async: false
+  use WockyAPI.GraphQLCase, async: true
 
   alias Wocky.Repo.Factory
 

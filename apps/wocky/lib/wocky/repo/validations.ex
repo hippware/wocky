@@ -31,7 +31,4 @@ defmodule Wocky.Repo.Validations do
       end
     end)
   end
-
-  def validate_not_nil(changeset, field),
-    do: validate_not_nil(changeset, [field])
 end

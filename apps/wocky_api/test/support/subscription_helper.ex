@@ -1,4 +1,4 @@
-defmodule WockyAPI.ChannelHelper do
+defmodule WockyAPI.SubscriptionHelper do
   @moduledoc """
   Helper functions for graphql channel tests
   """
@@ -31,8 +31,26 @@ defmodule WockyAPI.ChannelHelper do
                  %{
                    data: %{"authenticate" => %{"user" => %{"id" => ^user_id}}}
                  },
-                 1000
+                 150
 
     ref
+  end
+
+  defmacro assert_subscription_update(pattern, timeout \\ 150) do
+    quote do
+      # NOTE I have left the timing code intact but commented out in
+      # case we need it again.
+
+      # start = DateTime.utc_now()
+      assert_push "subscription:data", unquote(pattern), unquote(timeout)
+      # time = DateTime.diff(DateTime.utc_now(), start, :millisecond)
+      # IO.puts("Subscription data received in #{time}ms")
+    end
+  end
+
+  defmacro refute_subscription_update(pattern, timeout \\ 150) do
+    quote do
+      refute_push "subscription:data", unquote(pattern), unquote(timeout)
+    end
   end
 end

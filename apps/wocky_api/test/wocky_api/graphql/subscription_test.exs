@@ -1,15 +1,17 @@
 defmodule WockyAPI.GraphQL.SubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
-  import WockyAPI.ChannelHelper
-
   alias Wocky.GeoUtils
   alias Wocky.Relation
   alias Wocky.Relation.Subscription
   alias Wocky.Repo.Factory
   alias Wocky.Roster
 
-  setup_all :require_watcher
+  setup_all do
+    require_watcher()
+    WockyAPI.Callbacks.BotSubscription.register()
+    WockyAPI.Callbacks.RosterItem.register()
+  end
 
   describe "watch for visitor count change" do
     setup do
@@ -51,7 +53,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       authenticate(user_id, token, socket)
 
       ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
       expected = fn count, action, updated_at ->
         %{
@@ -78,13 +80,13 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
 
       Relation.visit(user2, bot, false)
       %Subscription{updated_at: t!} = Relation.get_subscription(user2, bot)
-      assert_push "subscription:data", push, 2000
-      assert push == expected.(1, "ARRIVE", t!)
+      assert_subscription_update data
+      assert data == expected.(1, "ARRIVE", t!)
 
       Relation.depart(user2, bot, false)
       %Subscription{updated_at: t!} = Relation.get_subscription(user2, bot)
-      assert_push "subscription:data", push, 2000
-      assert push == expected.(0, "DEPART", t!)
+      assert_subscription_update data
+      assert data == expected.(0, "DEPART", t!)
     end
 
     test "unauthenticated user attempting subscription", %{socket: socket} do
@@ -121,7 +123,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       """
 
       ref! = push_doc(socket, sub)
-      assert_reply ref!, :ok, %{subscriptionId: _subscription_id}, 1000
+      assert_reply ref!, :ok, %{subscriptionId: _subscription_id}, 150
 
       mut = """
       mutation ($input: UserLocationUpdateInput!) {
@@ -144,11 +146,11 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       }
 
       ref! = push_doc(socket, mut, variables: location_input)
-      assert_reply ref!, :ok, _, 1000
+      assert_reply ref!, :ok, _, 150
       ref! = push_doc(socket, mut, variables: location_input)
-      assert_reply ref!, :ok, _, 1000
+      assert_reply ref!, :ok, _, 150
 
-      assert_push "subscription:data", _push, 2000
+      assert_subscription_update _data
     end
   end
 
@@ -179,24 +181,22 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       authenticate(user.id, token, socket)
 
       ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
       Roster.befriend(user, user2)
 
-      assert_push "subscription:data", push, 1000
-
-      assert %{
-               result: %{
-                 data: %{
-                   "contacts" => %{
-                     "relationship" => "FRIEND",
-                     "created_at" => _,
-                     "user" => %{"id" => ^user2_id}
-                   }
-                 }
-               },
-               subscriptionId: ^subscription_id
-             } = push
+      assert_subscription_update %{
+        result: %{
+          data: %{
+            "contacts" => %{
+              "relationship" => "FRIEND",
+              "created_at" => _,
+              "user" => %{"id" => ^user2_id}
+            }
+          }
+        },
+        subscriptionId: ^subscription_id
+      }
     end
 
     test "should notify when a contact type is changed", %{
@@ -208,7 +208,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       authenticate(user.id, token, socket)
 
       ref = push_doc(socket, @subscription)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
       Roster.befriend(user, user2)
       assert_relationship_notification("FRIEND", user2, subscription_id)
@@ -228,24 +228,23 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
                      }
                    ]
                  },
-                 1000
+                 150
   end
 
   defp assert_relationship_notification(relationship, user, subscription_id) do
-    assert_push "subscription:data", push, 1000
     id = user.id
 
-    assert %{
-             result: %{
-               data: %{
-                 "contacts" => %{
-                   "relationship" => ^relationship,
-                   "created_at" => _,
-                   "user" => %{"id" => ^id}
-                 }
-               }
-             },
-             subscriptionId: ^subscription_id
-           } = push
+    assert_subscription_update %{
+      result: %{
+        data: %{
+          "contacts" => %{
+            "relationship" => ^relationship,
+            "created_at" => _,
+            "user" => %{"id" => ^id}
+          }
+        }
+      },
+      subscriptionId: ^subscription_id
+    }
   end
 end

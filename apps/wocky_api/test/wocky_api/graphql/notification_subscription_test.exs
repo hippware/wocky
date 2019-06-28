@@ -2,7 +2,6 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
   import Eventually
-  import WockyAPI.ChannelHelper
 
   alias Wocky.Location
   alias Wocky.Relation
@@ -10,8 +9,14 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster
+  alias WockyAPI.Factory, as: APIFactory
 
-  setup_all :require_watcher
+  setup_all do
+    require_watcher()
+
+    Wocky.Callbacks.register()
+    WockyAPI.Callbacks.register()
+  end
 
   @subscription """
   subscription {
@@ -63,7 +68,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   setup %{user: user, socket: socket, token: token} do
     authenticate(user.id, token, socket)
     ref = push_doc(socket, @subscription)
-    assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+    assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
     user2 = Factory.insert(:user)
     bot = Factory.insert(:bot, user: user)
@@ -82,9 +87,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     } do
       item = Factory.insert(:item, user: user2, bot: bot)
 
-      assert_push "subscription:data", push, 2000
-
-      assert_notification_update(push, subscription_id, %{
+      assert_notification_update(subscription_id, %{
         "__typename" => "BotItemNotification",
         "bot" => %{"id" => bot.id},
         "bot_item" => %{"id" => item.id},
@@ -102,9 +105,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
       Relation.visit(user2, bot, true)
 
-      assert_push "subscription:data", push, 2000
-
-      assert_notification_update(push, subscription_id, %{
+      assert_notification_update(subscription_id, %{
         "__typename" => "GeofenceEventNotification",
         "bot" => %{"id" => bot.id},
         "user" => %{"id" => user2.id},
@@ -122,9 +123,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
       Relation.depart(user2, bot, true)
 
-      assert_push "subscription:data", push, 2000
-
-      assert_notification_update(push, subscription_id, %{
+      assert_notification_update(subscription_id, %{
         "__typename" => "GeofenceEventNotification",
         "bot" => %{"id" => bot.id},
         "user" => %{"id" => user2.id},
@@ -141,9 +140,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       Roster.befriend(user, user2)
       {:ok, invitation} = Relation.invite(user, bot2, user2)
 
-      assert_push "subscription:data", push, 2000
-
-      assert_notification_update(push, subscription_id, %{
+      assert_notification_update(subscription_id, %{
         "__typename" => "BotInvitationNotification",
         "invitation" => %{"id" => to_string(invitation.id)},
         "bot" => %{"id" => bot2.id},
@@ -162,9 +159,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
       Relation.respond(invitation, true, user2)
 
-      assert_push "subscription:data", push, 2000
-
-      assert_notification_update(push, subscription_id, %{
+      assert_notification_update(subscription_id, %{
         "__typename" => "BotInvitationResponseNotification",
         "invitation" => %{"id" => to_string(invitation.id)},
         "bot" => %{"id" => bot.id},
@@ -180,9 +175,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     } do
       Roster.invite(user2, user)
 
-      assert_push "subscription:data", push, 2000
-
-      assert_notification_update(push, subscription_id, %{
+      assert_notification_update(subscription_id, %{
         "__typename" => "UserInvitationNotification",
         "user" => %{"id" => user2.id}
       })
@@ -197,9 +190,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       Roster.befriend(user, user2)
       Location.start_sharing_location(user2, user, expires_at)
 
-      assert_push "subscription:data", push, 2000
-
-      assert_notification_update(push, subscription_id, %{
+      assert_notification_update(subscription_id, %{
         "__typename" => "LocationShareNotification",
         "user" => %{"id" => user2.id},
         "expiresAt" => Timestamp.to_string!(expires_at)
@@ -215,9 +206,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       Roster.befriend(user, user2)
       Location.start_sharing_location(user2, user, expires_at)
 
-      assert_push "subscription:data", push, 2000
-
-      assert_notification_update(push, subscription_id, %{
+      assert_notification_update(subscription_id, %{
         "__typename" => "LocationShareNotification",
         "user" => %{"id" => user2.id},
         "expiresAt" => Timestamp.to_string!(expires_at)
@@ -225,9 +214,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
       Location.stop_sharing_location(user2, user)
 
-      assert_push "subscription:data", push, 2000
-
-      assert_notification_update(push, subscription_id, %{
+      assert_notification_update(subscription_id, %{
         "__typename" => "LocationShareEndNotification",
         "user" => %{"id" => user2.id}
       })
@@ -236,8 +223,8 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
   describe "notification deletion" do
     setup %{user: user} do
-      notification = Factory.insert(:bot_item_notification, user: user)
-      assert_push "subscription:data", _push, 2000
+      notification = APIFactory.insert(:bot_item_notification, user: user)
+      assert_subscription_update _data
 
       {:ok, notification: notification}
     end
@@ -247,34 +234,35 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       subscription_id: subscription_id
     } do
       Repo.delete(notification)
-      assert_push "subscription:data", push, 2000
 
-      assert push == %{
-               result: %{
-                 data: %{
-                   "notifications" => %{
-                     "__typename" => "NotificationDeleted",
-                     "id" => to_string(notification.id)
-                   }
-                 }
-               },
-               subscriptionId: subscription_id
-             }
+      id_str = to_string(notification.id)
+
+      assert_subscription_update %{
+        result: %{
+          data: %{
+            "notifications" => %{
+              "__typename" => "NotificationDeleted",
+              "id" => ^id_str
+            }
+          }
+        },
+        subscriptionId: ^subscription_id
+      }
     end
   end
 
-  defp assert_notification_update(push, subscription_id, data) do
-    assert %{
-             result: %{
-               data: %{
-                 "notifications" => %{
-                   "__typename" => "Notification",
-                   "createdAt" => _,
-                   "data" => ^data
-                 }
-               }
-             },
-             subscriptionId: ^subscription_id
-           } = push
+  defp assert_notification_update(subscription_id, data) do
+    assert_subscription_update %{
+      result: %{
+        data: %{
+          "notifications" => %{
+            "__typename" => "Notification",
+            "createdAt" => _,
+            "data" => ^data
+          }
+        }
+      },
+      subscriptionId: ^subscription_id
+    }
   end
 end

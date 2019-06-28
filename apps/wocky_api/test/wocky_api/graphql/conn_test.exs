@@ -7,10 +7,11 @@ defmodule WockyAPI.GraphQL.ConnTest do
   use WockyAPI.ConnCase, async: true
 
   alias Wocky.Repo.Factory
+  alias WockyAPI.Factory, as: APIFactory
 
   setup do
     user = Factory.insert(:user)
-    token = Factory.get_test_token(user)
+    token = APIFactory.get_test_token(user)
     conn = put_req_header(build_conn(), "authentication", "Bearer #{token}")
 
     {:ok, conn: conn}

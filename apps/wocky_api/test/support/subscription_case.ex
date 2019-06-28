@@ -7,21 +7,22 @@ defmodule WockyAPI.SubscriptionCase do
 
   using do
     quote do
-      use WockyAPI.ChannelCase
-      use Absinthe.Phoenix.SubscriptionTest, schema: WockyAPI.Schema
+      # Import conveniences for testing with channels
+      use Phoenix.ChannelTest
 
+      import Absinthe.Phoenix.SubscriptionTest
+      import WockyAPI.SubscriptionHelper
       import WockyAPI.WatcherHelper
-      import unquote(__MODULE__)
+
+      # The default endpoint for testing
+      @endpoint WockyAPI.Endpoint
 
       setup do
         user = Wocky.Repo.Factory.insert(:user)
-        token = Wocky.Repo.Factory.get_test_token(user)
+        token = WockyAPI.Factory.get_test_token(user)
 
-        {:ok, socket!} =
-          Phoenix.ChannelTest.connect(WockyAPI.Channels.UserSocket, %{})
-
-        {:ok, socket!} =
-          Absinthe.Phoenix.SubscriptionTest.join_absinthe(socket!)
+        {:ok, socket!} = connect(WockyAPI.Channels.UserSocket, %{})
+        {:ok, socket!} = join_absinthe(socket!)
 
         {:ok, socket: socket!, user: user, token: token}
       end

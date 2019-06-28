@@ -106,9 +106,10 @@ defmodule WockyAPI.GraphQL.MediaTest do
   end
 
   describe "mediaUrls query" do
-    setup :require_watcher
-
     setup do
+      require_watcher()
+      Wocky.Callbacks.TROSMetadata.register()
+
       metadata = Factory.insert(:tros_metadata, ready: false)
       tros_url = TROS.make_url(metadata.id)
       user = Factory.insert(:user)
@@ -148,18 +149,15 @@ defmodule WockyAPI.GraphQL.MediaTest do
          it should return URLs when the file becomes ready in the timeout preiod
          """,
          ctx do
-      parent = self()
-
       Task.start(fn ->
-        Ecto.Adapters.SQL.Sandbox.allow(Repo, parent, self())
-        Process.sleep(500)
+        Process.sleep(100)
         ctx.metadata |> Metadata.changeset(%{ready: true}) |> Repo.update!()
       end)
 
       result =
         run_query(@query, ctx.user, %{
           "tros_url" => ctx.tros_url,
-          "timeout" => 2000
+          "timeout" => 1000
         })
 
       refute has_errors(result)

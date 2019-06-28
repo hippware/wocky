@@ -2,7 +2,6 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
   import Eventually
-  import WockyAPI.ChannelHelper
   import WockyAPI.GraphQLHelper
 
   alias Wocky.Account
@@ -12,7 +11,12 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster
 
-  setup_all :require_watcher
+  setup_all do
+    require_watcher()
+
+    WockyAPI.Callbacks.RosterItem.register()
+    WockyAPI.Callbacks.User.register()
+  end
 
   setup %{socket: socket, user: user, token: token} do
     authenticate(user.id, token, socket)
@@ -50,7 +54,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
       Roster.befriend(friend, user)
 
       ref = push_doc(socket, @query)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
       {:ok,
        friend: friend, stranger: stranger, subscription_id: subscription_id}
@@ -60,35 +64,34 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
       friend: friend,
       subscription_id: subscription_id
     } do
+      friend_id = friend.id
       new_handle = Factory.handle()
       Account.update(friend, %{handle: new_handle})
 
-      assert_push "subscription:data", push, 2000
-
-      assert push == %{
-               result: %{
-                 data: %{
-                   "friends" => %{
-                     "handle" => new_handle,
-                     "id" => friend.id,
-                     "presence_status" => "OFFLINE"
-                   }
-                 }
-               },
-               subscriptionId: subscription_id
-             }
+      assert_subscription_update %{
+        result: %{
+          data: %{
+            "friends" => %{
+              "handle" => ^new_handle,
+              "id" => ^friend_id,
+              "presence_status" => "OFFLINE"
+            }
+          }
+        },
+        subscriptionId: ^subscription_id
+      }
     end
 
     test "updating a stranger sends no message", %{stranger: stranger} do
       Account.update(stranger, %{handle: Factory.handle()})
 
-      refute_push "subscription:data", _push, 500
+      refute_subscription_update _data
     end
 
     test "updating ourself sends no message", %{user: user} do
       Account.update(user, %{handle: Factory.handle()})
 
-      refute_push "subscription:data", _push, 500
+      refute_subscription_update _data
     end
   end
 
@@ -124,36 +127,34 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
 
     test "updating location sends a message", %{socket: socket, friend: friend} do
       ref = push_doc(socket, @query)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
       now = DateTime.utc_now()
       captured_at = now |> DateTime.to_iso8601()
       location = Factory.build(:location, captured_at: now)
       {:ok, loc} = Location.set_user_location(friend, location)
 
-      assert_push "subscription:data", push, 2000
-
       id = friend.id
       accuracy = loc.accuracy
 
-      assert %{
-               result: %{
-                 data: %{
-                   "sharedLocations" => %{
-                     "user" => %{
-                       "id" => ^id
-                     },
-                     "location" => %{
-                       "lat" => lat,
-                       "lon" => lon,
-                       "accuracy" => ^accuracy,
-                       "capturedAt" => ^captured_at
-                     }
-                   }
-                 }
-               },
-               subscriptionId: ^subscription_id
-             } = push
+      assert_subscription_update %{
+        result: %{
+          data: %{
+            "sharedLocations" => %{
+              "user" => %{
+                "id" => ^id
+              },
+              "location" => %{
+                "lat" => lat,
+                "lon" => lon,
+                "accuracy" => ^accuracy,
+                "capturedAt" => ^captured_at
+              }
+            }
+          }
+        },
+        subscriptionId: ^subscription_id
+      }
 
       assert Float.round(lat, 8) == Float.round(loc.lat, 8)
       assert Float.round(lon, 8) == Float.round(loc.lon, 8)
@@ -166,31 +167,29 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
       {:ok, loc} = Location.set_user_location(friend, location)
 
       ref = push_doc(socket, @query)
-      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 1000
-
-      assert_push "subscription:data", push, 2000
+      assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
       id = friend.id
       accuracy = loc.accuracy
 
-      assert %{
-               result: %{
-                 data: %{
-                   "sharedLocations" => %{
-                     "user" => %{
-                       "id" => ^id
-                     },
-                     "location" => %{
-                       "lat" => lat,
-                       "lon" => lon,
-                       "accuracy" => ^accuracy,
-                       "capturedAt" => ^captured_at
-                     }
-                   }
-                 }
-               },
-               subscriptionId: ^subscription_id
-             } = push
+      assert_subscription_update %{
+        result: %{
+          data: %{
+            "sharedLocations" => %{
+              "user" => %{
+                "id" => ^id
+              },
+              "location" => %{
+                "lat" => lat,
+                "lon" => lon,
+                "accuracy" => ^accuracy,
+                "capturedAt" => ^captured_at
+              }
+            }
+          }
+        },
+        subscriptionId: ^subscription_id
+      }
 
       assert Float.round(lat, 8) == Float.round(loc.lat, 8)
       assert Float.round(lon, 8) == Float.round(loc.lon, 8)

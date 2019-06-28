@@ -4,8 +4,10 @@ defmodule Wocky.Callbacks.BlockTest do
   alias Wocky.Block
   alias Wocky.Callbacks.Block, as: Callback
   alias Wocky.Notifier.InBand.Notification
+  alias Wocky.Relation
   alias Wocky.Relation.Invitation
   alias Wocky.Repo.Factory
+  alias Wocky.Roster
 
   setup_all do
     Callback.register()
@@ -54,6 +56,20 @@ defmodule Wocky.Callbacks.BlockTest do
     test "should delete notifications between the two users", ctx do
       refute_eventually(Repo.get(Notification, ctx.notification1.id))
       refute_eventually(Repo.get(Notification, ctx.notification2.id))
+    end
+  end
+
+  describe "block-triggered unsubscription" do
+    test "should unsubscribe users from others bot", ctx do
+      bot = Factory.insert(:bot, user: ctx.user1)
+      Roster.befriend(ctx.user1, ctx.user2)
+      Relation.subscribe(ctx.user2, bot)
+
+      assert_eventually(Relation.subscribed?(ctx.user2, bot))
+
+      Block.block(ctx.user1, ctx.user2)
+
+      refute_eventually(Relation.subscribed?(ctx.user2, bot))
     end
   end
 end

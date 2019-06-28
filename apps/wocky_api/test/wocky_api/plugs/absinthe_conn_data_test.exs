@@ -1,5 +1,5 @@
 defmodule WockyAPI.Plugs.AbsintheConnDataTest do
-  use WockyAPI.ConnCase
+  use WockyAPI.ConnCase, async: true
 
   import WockyAPI.Plugs.AbsintheConnData
 

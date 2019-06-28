@@ -1,8 +1,9 @@
 defmodule WockyAPI.GraphQL.AuthenticationTest do
-  use WockyAPI.GraphQLCase
+  use WockyAPI.GraphQLCase, async: true
 
   alias Faker.Lorem
   alias Wocky.Repo.Factory
+  alias WockyAPI.Factory, as: APIFactory
 
   @query """
   mutation ($token: String!) {
@@ -17,7 +18,7 @@ defmodule WockyAPI.GraphQL.AuthenticationTest do
   describe "GraphQL in-band JWT authentication" do
     setup do
       user = Factory.insert(:user)
-      jwt = Factory.get_test_token(user)
+      jwt = APIFactory.get_test_token(user)
       {:ok, user: user, jwt: jwt}
     end
 
