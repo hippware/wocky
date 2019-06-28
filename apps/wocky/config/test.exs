@@ -12,7 +12,7 @@ config :wocky, Wocky.Repo,
 
 config :wocky, Wocky.Audit,
   log_traffic: false,
-  log_locations: false,
+  log_location: false,
   log_push: false
 
 config :wocky, Wocky.Notifier.Push,
