@@ -38,12 +38,17 @@ defmodule Wocky.Location.Share.Cache do
       |> select([ls], {ls.shared_with_id, ls.expires_at})
       |> Repo.all()
 
-    {:ok, _} = Redix.command(Redix, ["SET", key(user_id), encode(values)])
+    put(user_id, values)
 
     Enum.map(values, fn {id, _} -> id end)
   end
 
   # Public for testing purposes
+  @doc false
+  def put(user_id, values),
+    do: {:ok, _} = Redix.command(Redix, ["SET", key(user_id), encode(values)])
+
+  @doc false
   def key(user_id), do: "location_shares:" <> user_id
 
   defp encode(values), do: :erlang.term_to_binary(values)
