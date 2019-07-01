@@ -1,8 +1,6 @@
 defmodule Wocky.Location.Share.CacheTest do
   use Wocky.DataCase, async: true
 
-  import Eventually
-
   alias Wocky.Location.Share.Cache
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -59,13 +57,13 @@ defmodule Wocky.Location.Share.CacheTest do
 
     test "should not return expired shares" do
       share =
-        Factory.insert(:user_location_share,
-          expires_at: Timestamp.shift(seconds: 1)
+        Factory.build(:user_location_share,
+          expires_at: Timestamp.shift(seconds: -1)
         )
 
-      assert [share.shared_with.id] == Cache.refresh(share.user.id)
+      Cache.put(share.user.id, [{share.shared_with.id, share.expires_at}])
 
-      assert_eventually([] == Cache.get(share.user.id))
+      assert [] == Cache.get(share.user.id)
     end
   end
 end
