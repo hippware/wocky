@@ -36,7 +36,7 @@
       command: make release
 - name: deploy
   type: serial
-  tag: ^master|next$
+  tag: ^master$
   steps:
   - name: wait_for_previous_builds
     service: waiter
@@ -56,11 +56,9 @@
     registry: https://773488857071.dkr.ecr.us-west-2.amazonaws.com
     dockercfg_service: aws-dockercfg
   - name: deploy_to_testing
-    tag: ^master$
     service: eks-deploy
     command: ./wocky-deploy testing
     dockercfg_service: aws-dockercfg
   - name: kick_circleci
-    tag: ^master$
     service: curl-ssl
     command: ./kick-circleci
