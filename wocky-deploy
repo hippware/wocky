@@ -34,7 +34,7 @@ OUTPUT_BINDINGS=/tmp/bindings.json
 
 aws s3 cp s3://hippware-terraform-state/cluster/terraform.tfstate ${CLUSTER_CONF}
 aws s3 cp s3://hippware-terraform-state/ssl/terraform.tfstate ${SSL_CONF}
-jq -s '[.[].modules[0].outputs] | add' ${CLUSTER_CONF} ${SSL_CONF} > ${OUTPUT_BINDINGS}
+jq -s '[.[].outputs] | add' ${CLUSTER_CONF} ${SSL_CONF} > ${OUTPUT_BINDINGS}
 
 kubernetes-deploy "${namespace}" "${context}" \
   --template-dir="${template_dir}" \
