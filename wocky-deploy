@@ -39,7 +39,8 @@ kubernetes-deploy "${namespace}" "${context}" \
   --bindings=@${output_bindings} \
   "$@"
 
-if [ $? -eq 0 ]; then
+result=$?
+if [ $result -eq 0 ]; then
   # Add a tag to mark the image as the current one deployed on the environment
   manifest=$(aws ecr batch-get-image \
     --region us-west-2 \
@@ -54,9 +55,9 @@ if [ $? -eq 0 ]; then
     --image-tag deployed-${wocky_env} \
     --image-manifest "${manifest}"
 
-  result="success"
+  status="success"
 else
-  result="failed"
+  status="failed"
 fi
 
 # Select the most recent wocky pod to ensure we don't pick an old,
@@ -69,4 +70,6 @@ pod=$(kubectl get pods \
   | tail -n 1 \
   | cut -f2 -d ' ')
 
-kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete "${result}" "${msg}"
+kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete "${status}" "${msg}"
+
+exit $result
