@@ -36,11 +36,35 @@ aws s3 cp s3://hippware-terraform-state/cluster/terraform.tfstate ${CLUSTER_CONF
 aws s3 cp s3://hippware-terraform-state/ssl/terraform.tfstate ${SSL_CONF}
 jq -s '[.[].outputs] | add' ${CLUSTER_CONF} ${SSL_CONF} > ${OUTPUT_BINDINGS}
 
+if [ "${CI_COMMIT_MESSAGE}" != "" ]; then
+  msg="Last commit: ${CI_COMMIT_MESSAGE}"
+fi
+
 kubernetes-deploy "${namespace}" "${context}" \
   --template-dir="${template_dir}" \
   --bindings=watcher_sha="${watcher_sha}" \
   --bindings=@${OUTPUT_BINDINGS} \
   "$@"
+
+if [ $? == 0 ]; then
+  # Add a tag to mark the image as the current one deployed on the environment
+  MANIFEST=$(aws ecr batch-get-image \
+    --region us-west-2 \
+    --repository-name hippware/wocky \
+    --image-ids imageTag=${REVISION} \
+    --query 'images[].imageManifest' \
+    --output text)
+
+  aws ecr put-image \
+    --region us-west-2 \
+    --repository-name hippware/wocky \
+    --image-tag deployed-${wocky_env} \
+    --image-manifest "${MANIFEST}"
+
+  result="success"
+else
+  result="failed"
+fi
 
 # Select the most recent wocky pod to ensure we don't pick an old,
 # terminating one
@@ -52,12 +76,4 @@ pod=$(kubectl get pods \
   | tail -n 1 \
   | cut -f2 -d ' ')
 
-if [ "${CI_COMMIT_MESSAGE}" != "" ]; then
-  msg="Last commit: ${CI_COMMIT_MESSAGE}"
-fi
-
-# Add a tag to mark the image as the current one deployed on the environment
-MANIFEST=$(aws ecr batch-get-image --region us-west-2 --repository-name hippware/wocky --image-ids imageTag=${REVISION} --query 'images[].imageManifest' --output text)
-aws ecr put-image --region us-west-2 --repository-name hippware/wocky --image-tag deployed-${wocky_env} --image-manifest "$MANIFEST"
-
-kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete "${msg}"
+kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete "${result}" "${msg}"
