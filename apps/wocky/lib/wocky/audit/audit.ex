@@ -84,9 +84,9 @@ defmodule Wocky.Audit do
   end
 
   defp should_log?(mode, user, config) do
-    FunWithFlags.Group.in?(user, :hippware)
-    || FunWithFlags.enabled?(mode, for: user)
-    || Map.get(config, config_key(mode))
+    FunWithFlags.Group.in?(user, :hippware) ||
+      FunWithFlags.enabled?(mode, for: user) ||
+      Map.get(config, config_key(mode))
   end
 
   defp config_key(mode), do: String.to_existing_atom("log_#{mode}")
