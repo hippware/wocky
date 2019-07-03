@@ -1,46 +1,64 @@
 #!/bin/sh
 
-wocky_env="${1}"
-shift
-
-REVISION="${1:-"${CI_COMMIT_ID}"}"
-shift
-
-if [ "${wocky_env}" = "" ] || [ "${REVISION}" = "" ]; then
+if [ "${1}" = "help" ]; then
   script=$(basename "${0}")
-  echo "Usage: ${script} <namespace> <revision> [extra_args]"
-  echo "  namespace - the Kubernetes namespace (required)"
-  echo "  revision - the revision for this deployment (required)"
+  echo "Usage: ${script} <environment> [extra_args]"
+  echo "  environment - the environment name (defaults to testing)"
   echo "  extra_args - if supplied, this is passed directly to kubernetes-deploy"
-  exit
+  exit 0
 fi
 
 if echo "${CI_COMMIT_MESSAGE}" | fgrep -qi "[skip deploy]"; then
   echo "Skipping deployment."
-  exit
+  exit 0
 fi
 
+if [ "${CI_COMMIT_MESSAGE}" != "" ]; then
+  msg="Last commit: ${CI_COMMIT_MESSAGE}"
+fi
+
+wocky_env="${1:-"testing"}"
 context="${CONTEXT:-"aws"}"
 namespace="wocky-${wocky_env}"
 template_dir="k8s/${wocky_env}"
 watcher_sha="$(cat DB_WATCHER_VERSION)"
+cluster_conf=/tmp/cluster.tfstate.json
+ssl_conf=/tmp/ssl.tfstate.json
+output_bindings=/tmp/bindings.json
 
-export REVISION
+export REVISION="${CI_COMMIT_ID:-"$(git rev-parse HEAD)"}"
 export KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 
-CLUSTER_CONF=/tmp/cluster.tfstate.json
-SSL_CONF=/tmp/ssl.tfstate.json
-OUTPUT_BINDINGS=/tmp/bindings.json
-
-aws s3 cp s3://hippware-terraform-state/cluster/terraform.tfstate ${CLUSTER_CONF}
-aws s3 cp s3://hippware-terraform-state/ssl/terraform.tfstate ${SSL_CONF}
-jq -s '[.[].outputs] | add' ${CLUSTER_CONF} ${SSL_CONF} > ${OUTPUT_BINDINGS}
+aws s3 cp s3://hippware-terraform-state/cluster/terraform.tfstate ${cluster_conf}
+aws s3 cp s3://hippware-terraform-state/ssl/terraform.tfstate ${ssl_conf}
+jq -s '[.[].outputs] | add' ${cluster_conf} ${ssl_conf} > ${output_bindings}
 
 kubernetes-deploy "${namespace}" "${context}" \
   --template-dir="${template_dir}" \
   --bindings=watcher_sha="${watcher_sha}" \
-  --bindings=@${OUTPUT_BINDINGS} \
+  --bindings=@${output_bindings} \
   "$@"
+
+result=$?
+if [ $result -eq 0 ]; then
+  # Add a tag to mark the image as the current one deployed on the environment
+  manifest=$(aws ecr batch-get-image \
+    --region us-west-2 \
+    --repository-name hippware/wocky \
+    --image-ids imageTag=${REVISION} \
+    --query 'images[].imageManifest' \
+    --output text)
+
+  aws ecr put-image \
+    --region us-west-2 \
+    --repository-name hippware/wocky \
+    --image-tag deployed-${wocky_env} \
+    --image-manifest "${manifest}"
+
+  status="success"
+else
+  status="failed"
+fi
 
 # Select the most recent wocky pod to ensure we don't pick an old,
 # terminating one
@@ -52,12 +70,6 @@ pod=$(kubectl get pods \
   | tail -n 1 \
   | cut -f2 -d ' ')
 
-if [ "${CI_COMMIT_MESSAGE}" != "" ]; then
-  msg="Last commit: ${CI_COMMIT_MESSAGE}"
-fi
+kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete "${status}" "${msg}"
 
-# Add a tag to mark the image as the current one deployed on the environment
-MANIFEST=$(aws ecr batch-get-image --region us-west-2 --repository-name hippware/wocky --image-ids imageTag=${REVISION} --query 'images[].imageManifest' --output text)
-aws ecr put-image --region us-west-2 --repository-name hippware/wocky --image-tag deployed-${wocky_env} --image-manifest "$MANIFEST"
-
-kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete "${msg}"
+exit $result

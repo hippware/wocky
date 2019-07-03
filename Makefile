@@ -82,7 +82,7 @@ push: ## Push the Docker image to ECR
 
 deploy: ## Deploy the image to the cluster
 	@docker run -it --rm -v "${PWD}/k8s":/k8s garethr/kubeval k8s/$(WOCKY_ENV)/*.yml*
-	@./wocky-deploy $(WOCKY_ENV) $(IMAGE_TAG)
+	@./wocky-deploy $(WOCKY_ENV)
 
 shipit: build push deploy ## Build, push and deploy the image
 
