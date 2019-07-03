@@ -9,13 +9,17 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Another try at fixing deployment notification race (PR #2631)
 * Move back to upstream pigeon using callback-powered config (PR #2632)
 * Update: ecto_sql (PR #2640), pigeon (PR #2639), plug_cowboy (PR #2641)
-  * timex (PR #2638, PR #2646), absinthe (PR #2636)
+  * timex (PR #2638, PR #2646), absinthe (PR #2636), distillery (PR #2653)
 * Remove unused (and non-functional) public scopes (PR #2635)
 * Enable auditing for specific users (#2576)
 * Improve test coverage and test organization (#2581)
 * Fix naming of location logging flag (PR #2645)
   * User location data points not logged to loggly (#2644)
 * Tweaks for test stability (PR #2643)
+* Update terraform state file handling to 0.12 format (PR #2650)
+* Update tzdata to fix crash (#2656, PR #2657)
+* Better error handling during deploy (PR #2658)
+  * Predeploy pod throwing errors (#2655)
 
 
 # 2019.6.26+redac896
