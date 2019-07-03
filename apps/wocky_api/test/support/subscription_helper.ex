@@ -26,12 +26,13 @@ defmodule WockyAPI.SubscriptionHelper do
         variables: %{input: %{token: token}}
       )
 
-    assert_reply ref,
-                 :ok,
-                 %{
-                   data: %{"authenticate" => %{"user" => %{"id" => ^user_id}}}
-                 },
-                 150
+    _ =
+      assert_reply ref,
+                   :ok,
+                   %{
+                     data: %{"authenticate" => %{"user" => %{"id" => ^user_id}}}
+                   },
+                   150
 
     ref
   end
