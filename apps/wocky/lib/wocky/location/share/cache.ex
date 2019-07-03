@@ -45,8 +45,10 @@ defmodule Wocky.Location.Share.Cache do
 
   # Public for testing purposes
   @doc false
-  def put(user_id, values),
-    do: {:ok, _} = Redix.command(Redix, ["SET", key(user_id), encode(values)])
+  def put(user_id, values) do
+    {:ok, _} = Redix.command(Redix, ["SET", key(user_id), encode(values)])
+    :ok
+  end
 
   @doc false
   def key(user_id), do: "location_shares:" <> user_id
