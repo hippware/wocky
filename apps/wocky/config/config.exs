@@ -216,4 +216,7 @@ config :fun_with_flags, :redis,
   password: {:system, :string, "REDIS_PASSWORD", nil},
   database: {:system, :integer, "REDIS_DB", 0}
 
+config :vaultex,
+  vault_addr: "http://vault-vault.vault:8200"
+
 import_config "#{Mix.env()}.exs"
