@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.7.3+r34a12a7
+
 * Bump elixir version to 1.9 (PR #2630)
 * Another try at fixing deployment notification race (PR #2631)
 * Move back to upstream pigeon using callback-powered config (PR #2632)
@@ -20,6 +22,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Update tzdata to fix crash (#2656, PR #2657)
 * Better error handling during deploy (PR #2658)
   * Predeploy pod throwing errors (#2655)
+* Fix dialyzer warnings (PR #2659)
 
 
 # 2019.6.26+redac896
