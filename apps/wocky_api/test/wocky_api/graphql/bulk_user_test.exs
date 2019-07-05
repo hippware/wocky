@@ -264,6 +264,64 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
       assert error_msg(result) =~ "Maximum bulk operation"
     end
 
+    test "duplicate numbers with different formats should succeed", ctx do
+      numbers = ["(580) 334-9474", "580-334-9474"]
+
+      result =
+        run_query(@query, ctx.user, %{
+          "phone_numbers" => numbers
+        })
+
+      refute has_errors(result)
+
+      e164 = "+15803349474"
+
+      expected =
+        numbers
+        |> Enum.map(
+          &%{
+            "e164_phone_number" => e164,
+            "phone_number" => &1,
+            "user" => nil,
+            "relationship" => nil
+          }
+        )
+        |> Enum.sort()
+
+      assert expected == Enum.sort(result.data["userBulkLookup"])
+    end
+
+    test "non-normalisable numbers should return empty results", ctx do
+      numbers = ["xxxxx", hd(ctx.phone_numbers)]
+      target = hd(ctx.users)
+
+      result =
+        run_query(@query, ctx.user, %{
+          "phone_numbers" => numbers
+        })
+
+      refute has_errors(result)
+
+      expected =
+        [
+          %{
+            "e164_phone_number" => target.phone_number,
+            "phone_number" => target.phone_number,
+            "user" => %{"id" => target.id},
+            "relationship" => "NONE"
+          },
+          %{
+            "phone_number" => "xxxxx",
+            "e164_phone_number" => nil,
+            "user" => nil,
+            "relationship" => nil
+          }
+        ]
+        |> Enum.sort()
+
+      assert expected == Enum.sort(result.data["userBulkLookup"])
+    end
+
     test "should not produce errors on multiple idential input", ctx do
       [n] = unused_numbers(ctx.phone_numbers, 1)
 
