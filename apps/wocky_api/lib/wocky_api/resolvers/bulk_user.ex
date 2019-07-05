@@ -2,7 +2,6 @@ defmodule WockyAPI.Resolvers.BulkUser do
   @moduledoc "GraphQL resolver for bulk user operations"
 
   alias Wocky.Account
-  alias Wocky.Account.User
   alias Wocky.PhoneNumber
   alias Wocky.Roster
   alias Wocky.Roster.BulkInvitation
@@ -14,18 +13,21 @@ defmodule WockyAPI.Resolvers.BulkUser do
 
     with :ok <- check_lookup_count(numbers),
          {:ok, cc} <- PhoneNumber.country_code(user.phone_number) do
-      unique_numbers = Enum.uniq(numbers)
-
-      prepared_numbers =
-        Enum.reduce(unique_numbers, %{}, &maybe_prepare_number(&1, cc, &2))
+      {prepared_numbers, failed_numbers} =
+        numbers
+        |> Enum.uniq()
+        |> Enum.reduce({%{}, []}, &maybe_prepare_number(&1, cc, &2))
 
       lookup_results =
         prepared_numbers
         |> Map.keys()
         |> Account.get_by_phone_number(user)
-        |> Enum.reduce(prepared_numbers, &merge_lookup_result(&1, &2, user))
-        |> Enum.map(&normalise_result/1)
-        |> add_failed_results(unique_numbers)
+        |> Enum.flat_map_reduce(
+          prepared_numbers,
+          &build_lookup_result(&1, &2, user)
+        )
+        |> merge_non_user_results()
+        |> merge_failed_results(failed_numbers)
 
       {:ok, lookup_results}
     end
@@ -43,43 +45,50 @@ defmodule WockyAPI.Resolvers.BulkUser do
     end
   end
 
-  defp maybe_prepare_number(number, country_code, acc) do
+  defp maybe_prepare_number(number, country_code, {acc, failed}) do
     case PhoneNumber.normalise(number, country_code) do
-      {:ok, n} -> acc |> Map.put(n, %{phone_number: number})
-      {:error, _} -> acc
+      {:ok, n} ->
+        {Map.update(acc, n, [number], &[number | &1]), failed}
+
+      {:error, _} ->
+        {acc, [number | failed]}
     end
   end
 
-  defp merge_lookup_result(
-         %User{phone_number: phone_number} = user,
-         prepared_numbers,
-         requestor
-       ) do
-    Map.put(
-      prepared_numbers,
-      phone_number,
-      prepared_numbers
-      |> Map.get(phone_number)
-      |> Map.put(:user, user)
-      |> Map.put(:relationship, Roster.relationship(requestor, user))
-    )
-  end
+  defp build_lookup_result(user, numbers, requestor) do
+    request_numbers = Map.get(numbers, user.phone_number)
+    relationship = Roster.relationship(requestor, user)
 
-  defp normalise_result({normalised_number, data}) do
-    %{
-      phone_number: data[:phone_number],
-      e164_phone_number: normalised_number,
-      user: data[:user],
-      relationship: data[:relationship]
+    {
+      Enum.map(
+        request_numbers,
+        &%{
+          phone_number: &1,
+          e164_phone_number: user.phone_number,
+          user: user,
+          relationship: relationship
+        }
+      ),
+      Map.delete(numbers, user.phone_number)
     }
   end
 
-  defp add_failed_results(lookup_results, input_numbers) do
-    successful_numbers = Enum.map(lookup_results, & &1.phone_number)
-    failed_numbers = input_numbers -- successful_numbers
+  defp merge_non_user_results({lookup_results, leftover_numbers}) do
+    leftover_numbers
+    |> Enum.flat_map(&build_non_user_result/1)
+    |> Enum.concat(lookup_results)
+  end
 
+  defp build_non_user_result({e164_phone_number, numbers}) do
+    Enum.map(
+      numbers,
+      &%{phone_number: &1, e164_phone_number: e164_phone_number}
+    )
+  end
+
+  defp merge_failed_results(results, failed_numbers) do
     failed_numbers
     |> Enum.map(&%{phone_number: &1})
-    |> Enum.concat(lookup_results)
+    |> Enum.concat(results)
   end
 end
