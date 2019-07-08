@@ -174,6 +174,7 @@ defmodule Wocky.Presence.Manager do
     {:ok, online_pid} = OnlineProc.start_link()
 
     Store.set_self_online(user.id, online_pid)
+    Presence.publish(user.id, user, :online)
 
     Repo.transaction(fn ->
       user
@@ -209,6 +210,7 @@ defmodule Wocky.Presence.Manager do
       ) do
     OnlineProc.go_offline(online_pid)
     Store.add_self(user.id)
+    Presence.publish(user.id, user, :offline)
     {:reply, :ok, %{s | online_pid: nil}}
   end
 
@@ -229,6 +231,8 @@ defmodule Wocky.Presence.Manager do
     case List.delete(mon_refs, ref) do
       [] ->
         Store.remove(s.user.id)
+        # No need to publish to ourselves here - by definition we can't have any
+        # live connections to receive the message on
         {:stop, :normal, s}
 
       new_refs ->
