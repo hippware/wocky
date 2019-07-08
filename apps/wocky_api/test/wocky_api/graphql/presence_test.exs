@@ -98,6 +98,17 @@ defmodule WockyAPI.GraphQL.PresenceTest do
       refute_subscription_update _data, 10
     end
 
+    test "should notify when the user themselves goes online and offline",
+         ctx do
+      Presence.set_status(ctx.user, :online)
+
+      assert_presence_notification(ctx.user.id, :online)
+
+      Presence.set_status(ctx.user, :offline)
+
+      assert_presence_notification(ctx.user.id, :offline)
+    end
+
     test "should notify when a friend comes online", ctx do
       connect(ctx.friend)
       Presence.set_status(ctx.friend, :online)
