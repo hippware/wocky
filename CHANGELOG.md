@@ -9,6 +9,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Update: phoenix (PR #2664)
 * `userBulkLookup` returning incorrect null result (#2668)
   * Rework bulk user operations to fix corner cases (PR #2667)
+* Presence subscription does not signal presence of self (#2666)
 
 
 # 2019.7.3+r34a12a7
