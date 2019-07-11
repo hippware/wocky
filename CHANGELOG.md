@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.7.8+rbb7609b
+
 * Add vaultex (PR #2662, PR #2665)
 * Update: phoenix (PR #2664)
 * `userBulkLookup` returning incorrect null result (#2668)
