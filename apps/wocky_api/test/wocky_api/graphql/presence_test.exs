@@ -75,7 +75,6 @@ defmodule WockyAPI.GraphQL.PresenceTest do
         push_doc(ctx.socket, @set_status, variables: %{"status" => "ONLINE"})
 
       assert_reply ref, :ok, _, 150
-      assert_eventually(Presence.get(ctx.user, ctx.friend).status == :online)
 
       result = run_query(@get_user_presence, ctx.user)
 
