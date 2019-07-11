@@ -153,6 +153,15 @@ defmodule Wocky.Presence.Manager do
   end
 
   def handle_call(
+        {:get_presence, user_id},
+        _from,
+        %{online_pid: online_pid, user: %User{id: user_id}} = s
+      ) do
+    status = if online_pid, do: :online, else: :offline
+    {:reply, Presence.make_presence(status), s}
+  end
+
+  def handle_call(
         {:get_presence, contact_id},
         _from,
         %{contact_refs: contact_refs} = s

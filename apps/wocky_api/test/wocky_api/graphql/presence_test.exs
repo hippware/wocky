@@ -2,6 +2,7 @@ defmodule WockyAPI.GraphQL.PresenceTest do
   use WockyAPI.SubscriptionCase, async: false
 
   import Eventually
+  import WockyAPI.GraphQLHelper
 
   alias Wocky.Presence
   alias Wocky.Repo.Factory
@@ -47,6 +48,17 @@ defmodule WockyAPI.GraphQL.PresenceTest do
     }
   }
   """
+
+  @get_user_presence """
+  query {
+    currentUser {
+      presenceStatus
+      presence {
+        status
+      }
+    }
+  }
+  """
   describe "set status" do
     setup ctx do
       authenticate(ctx.user.id, ctx.token, ctx.socket)
@@ -56,6 +68,27 @@ defmodule WockyAPI.GraphQL.PresenceTest do
 
     test "default state should be offline", ctx do
       assert %Presence{status: :offline} = Presence.get(ctx.user, ctx.friend)
+    end
+
+    test "setting online should set the user to online", ctx do
+      ref =
+        push_doc(ctx.socket, @set_status, variables: %{"status" => "ONLINE"})
+
+      assert_reply ref, :ok, _, 150
+      assert_eventually(Presence.get(ctx.user, ctx.friend).status == :online)
+
+      result = run_query(@get_user_presence, ctx.user)
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "currentUser" => %{
+                 "presenceStatus" => "ONLINE",
+                 "presence" => %{
+                   "status" => "ONLINE"
+                 }
+               }
+             }
     end
 
     test "setting online then offline should correctly change status", ctx do

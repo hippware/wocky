@@ -50,7 +50,17 @@ defmodule Wocky.PresenceTest do
     end
 
     test "can get presence on self", ctx do
+      {_, _} = connect(ctx.user)
       assert Presence.get(ctx.user, ctx.user).status == :offline
+
+      Presence.set_status(ctx.user, :online)
+      assert_eventually(Presence.get(ctx.user, ctx.user).status == :online)
+
+      # Set the user's presence to offline and wait for it to register.
+      # Doing this prevents a crash due to a db connection ownership error.
+      Presence.set_status(ctx.user, :offline)
+
+      assert_eventually(Presence.get(ctx.user, ctx.user).status == :offline)
     end
   end
 
