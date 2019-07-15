@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* LoadProfile of self contains presenceStatus:OFFLINE (#2670)
+
+
 # 2019.7.8+rbb7609b
 
 * Add vaultex (PR #2662, PR #2665)
