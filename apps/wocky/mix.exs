@@ -107,6 +107,7 @@ defmodule Wocky.Mixfile do
       {:guardian_firebase, "~> 0.2.1"},
       {:honeybadger, "~> 0.6"},
       {:kadabra, "~> 0.3"},
+      {:module_config, "~> 0.1.0", github: "hippware/module_config"},
       {:observer_cli, "~> 1.5"},
       # TODO: Move back to release when new release is built
       {:paginator, github: "duffelhq/paginator", branch: "master"},

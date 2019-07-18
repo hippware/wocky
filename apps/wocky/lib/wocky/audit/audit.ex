@@ -1,7 +1,7 @@
 defmodule Wocky.Audit do
   @moduledoc "Context for user audit logging"
 
-  use Wocky.Config
+  use ModuleConfig, otp_app: :wocky
 
   require Logger
 

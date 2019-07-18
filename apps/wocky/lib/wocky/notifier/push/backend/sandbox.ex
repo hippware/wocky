@@ -9,7 +9,7 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
   """
 
   use GenServer
-  use Wocky.Config
+  use ModuleConfig, otp_app: :wocky
 
   alias Pigeon.APNS.Notification
   alias Wocky.Notifier.Push.Backend.APNS

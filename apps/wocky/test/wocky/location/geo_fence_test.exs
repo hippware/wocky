@@ -65,11 +65,11 @@ defmodule Wocky.Location.GeoFenceTest do
     end
 
     test "location with insufficient accuracy", ctx do
-      config = Confex.get_env(:wocky, Wocky.Location.GeoFence)
+      threshold = GeoFence.get_config(:max_accuracy_threshold)
 
       loc = %UserLocation{
         ctx.inside_loc
-        | accuracy: config[:max_accuracy_threshold] + 10
+        | accuracy: threshold + 10
       }
 
       GeoFence.check_for_bot_events(loc, ctx.user)
