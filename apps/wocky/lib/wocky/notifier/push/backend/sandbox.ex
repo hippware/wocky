@@ -110,18 +110,17 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
-  @doc false
+  @impl true
   def init(_args) do
     {:ok, %{}}
   end
 
-  @doc false
+  @impl true
   def handle_call({:record_notification, n, pid}, _from, state) do
     notifications = [n | Map.get(state, pid, [])]
     {:reply, :ok, Map.put(state, pid, notifications)}
   end
 
-  @doc false
   def handle_call({:list_notifications, pid, global}, _from, state) do
     notifications =
       if global do
@@ -133,7 +132,6 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
     {:reply, notifications, state}
   end
 
-  @doc false
   def handle_call({:clear_notifications, pid, global}, _from, state) do
     if global do
       {:reply, :ok, %{}}

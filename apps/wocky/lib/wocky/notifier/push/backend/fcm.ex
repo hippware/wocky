@@ -13,6 +13,7 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
   alias Wocky.Notifier.Push.Event
   alias Wocky.Notifier.Push.Utils
 
+  @impl true
   def push(params) do
     _ =
       params.event
@@ -53,6 +54,7 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
     Notification.new(token, %{}, data)
   end
 
+  @impl true
   def get_response(%Notification{status: :success, response: response}),
     do: get_response(response)
 
@@ -61,15 +63,19 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
   def get_response([{:update, _regids}]), do: :success
   def get_response([{response, _regid}]), do: response
 
+  @impl true
   def get_id(%Notification{message_id: id}), do: id
 
+  @impl true
   def get_payload(%Notification{payload: payload}), do: payload
 
+  @impl true
   def handle_error(:not_registered), do: :invalidate_token
   def handle_error(:invalid_registration), do: :invalidate_token
   def handle_error(:missing_registration), do: :invalidate_token
   def handle_error(_), do: :retry
 
+  @impl true
   def error_msg(resp), do: inspect(resp)
 
   defp package, do: get_config(:package)

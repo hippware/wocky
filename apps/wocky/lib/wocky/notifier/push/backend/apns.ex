@@ -15,6 +15,7 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
 
   require Logger
 
+  @impl true
   def push(params) do
     _ =
       params.event
@@ -36,18 +37,23 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
     |> add_opts(opts)
   end
 
+  @impl true
   def get_response(%Notification{response: response}), do: response
 
+  @impl true
   def get_id(%Notification{id: id}), do: id
 
+  @impl true
   def get_payload(%Notification{payload: payload}), do: payload
 
+  @impl true
   def handle_error(:bad_device_token), do: :invalidate_token
 
   def handle_error(:unregistered), do: :invalidate_token
 
   def handle_error(_), do: :retry
 
+  @impl true
   def error_msg(resp), do: Error.msg(resp)
 
   defp topic, do: get_config(:topic)
