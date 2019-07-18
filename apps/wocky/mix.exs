@@ -69,6 +69,7 @@ defmodule Wocky.Mixfile do
       {:confex, "~> 3.4"},
       {:configparser_ex, "~> 4.0", only: [:dev, :test]},
       {:dataloader, "~> 1.0.0"},
+      {:dawdle, github: "hippware/dawdle", branch: "20-direct-delivery", override: true},
       {:dawdle_db, "~> 0.5"},
       {:ecto_enum, "~> 1.3"},
       {:ecto_homoiconic_enum,
