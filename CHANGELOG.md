@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: credo (PR #2677)
+
+
+# 2019.7.12+rbc1a11b
+
 * LoadProfile of self contains presenceStatus:OFFLINE (#2670)
 
 
