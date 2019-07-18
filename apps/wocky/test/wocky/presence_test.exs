@@ -113,45 +113,55 @@ defmodule Wocky.PresenceTest do
 
     test "should publish an online state when a user sets themselves online",
          ctx do
-      assert_eventually {ctx.requestor.id, :online, ctx.user.id} ==
-                          get_presence_result()
+      assert_eventually(
+        {ctx.requestor.id, :online, ctx.user.id} ==
+          get_presence_result()
+      )
     end
 
     test "should not publish again when user sets their state online again",
          ctx do
-      assert_eventually {ctx.requestor.id, :online, ctx.user.id} ==
-                          get_presence_result()
+      assert_eventually(
+        {ctx.requestor.id, :online, ctx.user.id} ==
+          get_presence_result()
+      )
 
       Presence.set_status(ctx.requestor, :online)
 
-      refute_eventually get_presence_result()
+      refute_eventually(get_presence_result())
     end
 
     test "should publish an offline state when a user sets themselves offline",
          ctx do
       Presence.set_status(ctx.requestor, :offline)
 
-      assert_eventually {ctx.requestor.id, :offline, ctx.user.id} ==
-                          get_presence_result()
+      assert_eventually(
+        {ctx.requestor.id, :offline, ctx.user.id} ==
+          get_presence_result()
+      )
     end
 
     test "should not publish again if the user sets themselves offline twice",
          ctx do
       Presence.set_status(ctx.requestor, :offline)
 
-      assert_eventually {ctx.requestor.id, :offline, ctx.user.id} ==
-                          get_presence_result()
+      assert_eventually(
+        {ctx.requestor.id, :offline, ctx.user.id} ==
+          get_presence_result()
+      )
 
       Presence.set_status(ctx.requestor, :offline)
 
-      refute_eventually get_presence_result()
+      refute_eventually(get_presence_result())
     end
 
     test "should publish an offline state when a user disconnects", ctx do
       close_conn(ctx.conn_pid)
 
-      assert_eventually {ctx.requestor.id, :offline, ctx.user.id} ==
-                          get_presence_result()
+      assert_eventually(
+        {ctx.requestor.id, :offline, ctx.user.id} ==
+          get_presence_result()
+      )
     end
   end
 
