@@ -5,7 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: credo (PR #2677)
+* Update: credo (PR #2677), geo (PR #2682)
+* Add a checkpoint migration (#2678)
+* Add '@impl' attributes to functions that implement callbacks (#2683)
 
 
 # 2019.7.12+rbc1a11b
