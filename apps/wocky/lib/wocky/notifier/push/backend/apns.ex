@@ -5,7 +5,7 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
 
   @behaviour Wocky.Notifier.Push.Backend
 
-  use Wocky.Config
+  use ModuleConfig, otp_app: :wocky
 
   alias Pigeon.APNS
   alias Pigeon.APNS.Error

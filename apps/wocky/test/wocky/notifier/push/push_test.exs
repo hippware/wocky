@@ -19,7 +19,7 @@ defmodule Wocky.Notifier.Push.PushTest do
   setup do
     Sandbox.clear_notifications()
 
-    original_timeout = Confex.get_env(:wocky, Wocky.Notifier.Push)[:timeout]
+    original_timeout = Push.get_config(:timeout)
     set_timeout(200)
 
     user = Factory.insert(:user, device: "testing")
@@ -35,12 +35,7 @@ defmodule Wocky.Notifier.Push.PushTest do
   end
 
   defp set_timeout(timeout) do
-    config =
-      :wocky
-      |> Application.get_env(Wocky.Notifier.Push)
-      |> Keyword.replace!(:timeout, timeout)
-
-    Application.put_env(:wocky, Wocky.Notifier.Push, config)
+    Push.put_config(:timeout, timeout)
   end
 
   defp get_user_token(user, device) do

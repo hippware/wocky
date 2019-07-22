@@ -1,7 +1,7 @@
 defmodule Wocky.Location.GeoFence do
   @moduledoc false
 
-  use Wocky.Config
+  use ModuleConfig, otp_app: :wocky
 
   alias Wocky.Account.User
   alias Wocky.Location.BotEvent

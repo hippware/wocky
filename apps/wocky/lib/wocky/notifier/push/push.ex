@@ -3,7 +3,7 @@ defmodule Wocky.Notifier.Push do
   The Push context. Single interface for push notifications.
   """
   use Elixometer
-  use Wocky.Config
+  use ModuleConfig, otp_app: :wocky
 
   import Ecto.Query, warn: false
 
