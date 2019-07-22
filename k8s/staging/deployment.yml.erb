@@ -17,6 +17,8 @@ spec:
       labels:
         app: wocky
         env: staging
+      annotations:
+        iam.amazonaws.com/role: <%= wocky_app_role_arn['value'] %>
     spec:
       affinity:
         podAntiAffinity:
