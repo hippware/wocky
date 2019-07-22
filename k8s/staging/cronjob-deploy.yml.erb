@@ -17,6 +17,8 @@ spec:
             app: wocky-deploy
             mod: deploy
             env: staging
+          annotations:
+            iam.amazonaws.com/role: <%= wocky_deploy_role_arn['value'] %>
         spec:
           restartPolicy: Never
           containers:
