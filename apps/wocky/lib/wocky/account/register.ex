@@ -47,8 +47,8 @@ defmodule Wocky.Account.Register do
     query =
       from u in User,
         where:
-          u.phone_number == ^phone_number or
-            (u.external_id == ^external_id and u.provider == ^provider)
+          (u.external_id == ^external_id and u.provider == ^provider) or
+            u.phone_number == ^phone_number
 
     Repo.one(query)
   end
