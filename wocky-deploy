@@ -24,6 +24,7 @@ template_dir="k8s/${wocky_env}"
 watcher_sha="$(cat DB_WATCHER_VERSION)"
 cluster_conf=/tmp/cluster.tfstate.json
 ssl_conf=/tmp/ssl.tfstate.json
+wocky_conf=/tmp/wocky.tfstate.json
 output_bindings=/tmp/bindings.json
 
 export REVISION="${CI_COMMIT_ID:-"$(git rev-parse HEAD)"}"
@@ -31,7 +32,8 @@ export KUBECONFIG="${KUBECONFIG:-"${HOME}/.kube/config"}"
 
 aws s3 cp s3://hippware-terraform-state/cluster/terraform.tfstate ${cluster_conf}
 aws s3 cp s3://hippware-terraform-state/ssl/terraform.tfstate ${ssl_conf}
-jq -s '[.[].outputs] | add' ${cluster_conf} ${ssl_conf} > ${output_bindings}
+aws s3 cp s3://hippware-terraform-state/wocky-${wocky_env}/terraform.tfstate ${wocky_conf}
+jq -s '[.[].outputs] | add' ${cluster_conf} ${ssl_conf} ${wocky_conf} > ${output_bindings}
 
 kubernetes-deploy "${namespace}" "${context}" \
   --template-dir="${template_dir}" \

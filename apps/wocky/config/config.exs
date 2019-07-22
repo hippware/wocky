@@ -15,8 +15,8 @@ config :wocky,
   tros_s3_bucket: {:system, "WOCKY_TROS_S3_BUCKET", "wocky-tros-test"},
   tros_s3_region: {:system, "WOCKY_S3_REGION", "us-west-2"},
   tros_s3_server: {:system, "WOCKY_S3_SERVER", "s3.amazonaws.com"},
-  tros_s3_access_key_id: {:system, "AWS_ACCESS_KEY_ID"},
-  tros_s3_secret_key: {:system, "AWS_SECRET_ACCESS_KEY"},
+  tros_s3_access_key_id: :instance_role,
+  tros_s3_secret_key: :instance_role,
 
   # Deployment notifications
   slack_token: {:system, :string, "SLACK_TOKEN"},
@@ -185,16 +185,8 @@ config :dawdle_db,
 config :email_checker, validations: [EmailChecker.Check.Format]
 
 config :ex_aws,
-  access_key_id: [
-    {:system, "AWS_ACCESS_KEY_ID"},
-    {:awscli, "default", 30},
-    :instance_role
-  ],
-  secret_access_key: [
-    {:system, "AWS_SECRET_ACCESS_KEY"},
-    {:awscli, "default", 30},
-    :instance_role
-  ]
+  access_key_id: :instance_role,
+  secret_access_key: :instance_role
 
 config :pigeon,
   debug_log: true,
