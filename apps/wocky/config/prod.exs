@@ -25,3 +25,7 @@ config :elixometer,
   reporter: :exometer_report_prometheus,
   metric_prefix: "wocky",
   env: "${WOCKY_INST}"
+
+config :ex_aws,
+  access_key_id: :instance_role,
+  secret_access_key: :instance_role

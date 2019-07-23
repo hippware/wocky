@@ -67,6 +67,7 @@ defmodule Wocky.Mixfile do
       {:bcrypt_elixir, "~> 2.0"},
       {:bimap, "~> 1.0"},
       {:confex, "~> 3.4"},
+      {:configparser_ex, "~> 4.0", only: [:dev, :test]},
       {:dataloader, "~> 1.0.0"},
       {:dawdle_db, "~> 0.5"},
       {:ecto_homoiconic_enum,

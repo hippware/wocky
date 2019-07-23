@@ -21,6 +21,10 @@ config :wocky, Wocky.Notifier.Push,
 
 config :wocky, Wocky.Notifier.Push.Backend.Sandbox, reflect: true
 
+config :ex_aws,
+  access_key_id: "test_id",
+  secret_access_key: "test_key"
+
 config :guardian_firebase,
   load_keys_on_startup: false,
   local_keys: [

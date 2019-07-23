@@ -117,10 +117,6 @@ defmodule Wocky.TROS.Store.S3 do
 
   def s3_server, do: get_opt(:tros_s3_server)
 
-  def access_key_id, do: get_opt(:tros_s3_access_key_id)
-
-  def secret_key, do: get_opt(:tros_s3_secret_key)
-
   def region, do: get_opt(:tros_s3_region, "us-east-1")
 
   defp get_opt(opt, default \\ nil), do: Confex.get_env(:wocky, opt, default)
@@ -140,11 +136,7 @@ defmodule Wocky.TROS.Store.S3 do
   defp make_config do
     config_opts =
       Keyword.merge(
-        [
-          access_key_id: access_key_id(),
-          secret_access_key: secret_key(),
-          region: region()
-        ],
+        [region: region()],
         maybe_override_host()
       )
 
