@@ -71,7 +71,7 @@ defmodule Wocky.Account.RegisterTest do
 
     test "finding user by external id", %{user: u} do
       assert {:ok, user} = Register.find(u.provider, u.external_id, "foo")
-      assert user.phone_number == u.phone_number
+      assert user.phone_number == "foo"
     end
 
     test "finding user by phone number", %{user: u} do
@@ -103,17 +103,19 @@ defmodule Wocky.Account.RegisterTest do
     end
 
     test "when a user with the same provider/ID exists", %{user: user} do
+      phone_number = Factory.phone_number()
+
       assert {:ok, {%User{} = new_user, false}} =
                Register.find_or_create(
                  user.provider,
                  user.external_id,
-                 Factory.phone_number()
+                 phone_number
                )
 
       assert new_user.id == user.id
       assert new_user.provider == user.provider
       assert new_user.external_id == user.external_id
-      assert new_user.phone_number == user.phone_number
+      assert new_user.phone_number == phone_number
     end
 
     test "when a user with the same phone number exists", %{user: user} do

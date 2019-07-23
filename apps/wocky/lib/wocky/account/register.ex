@@ -3,6 +3,7 @@ defmodule Wocky.Account.Register do
   use Elixometer
 
   import Ecto.Changeset
+  import Ecto.Query, only: [from: 2]
 
   alias Wocky.Account
   alias Wocky.Account.User
@@ -42,26 +43,30 @@ defmodule Wocky.Account.Register do
     end
   end
 
+  defp find_by_phone_or_external_id(phone_number, external_id, provider) do
+    query =
+      from u in User,
+        where:
+          (u.external_id == ^external_id and u.provider == ^provider) or
+            u.phone_number == ^phone_number
+
+    Repo.one(query)
+  end
+
   @spec find(binary | atom, binary, binary) :: {:ok, User.t()} | {:error, any}
   def find(provider, external_id, phone_number) do
     provider = to_string(provider)
 
-    case Repo.get_by(User, external_id: external_id, provider: provider) do
+    case find_by_phone_or_external_id(phone_number, external_id, provider) do
       nil ->
-        case Repo.get_by(User, phone_number: phone_number) do
-          nil ->
-            {:error, :not_found}
+        {:error, :not_found}
 
-          orig_user ->
-            Account.update(orig_user, %{
-              provider: provider,
-              external_id: external_id,
-              phone_number: phone_number
-            })
-        end
-
-      user ->
-        {:ok, user}
+      orig_user ->
+        Account.update(orig_user, %{
+          provider: provider,
+          external_id: external_id,
+          phone_number: phone_number
+        })
     end
   end
 

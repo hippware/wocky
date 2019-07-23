@@ -93,6 +93,7 @@ defmodule Wocky.Account.User do
     :handle,
     :image_url,
     :name,
+    :phone_number,
     :email,
     :tagline,
     :roles,
@@ -111,6 +112,7 @@ defmodule Wocky.Account.User do
   def changeset(user, params) do
     user
     |> cast(params, @update_fields)
+    |> validate_required(:phone_number)
     |> validate_change(:email, &validate_email/2)
     |> validate_length(:handle, min: @min_handle_len, max: @max_handle_len)
     |> validate_change(:handle, &validate_handle/2)
