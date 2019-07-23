@@ -16,7 +16,7 @@ spec:
             app: db-dumper
             env: staging
           annotations:
-            iam.amazonaws.com/role: <%= wocky_app_role_arn['value'] %>
+            iam.amazonaws.com/role: <%= db_dumper_role_arn['value'] %>
         spec:
           restartPolicy: Never
           containers:
