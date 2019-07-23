@@ -5,9 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: credo (PR #2677), geo (PR #2682)
+* Update: credo (PR #2677), geo (PR #2682), prometheus_phoenix (PR #2687)
 * Add a checkpoint migration (#2678)
 * Add '@impl' attributes to functions that implement callbacks (#2683)
+* Use ModuleConfig (#2681)
+* Use instance roles+kube2iam to manage permissions (PR #2689)
+* More IAM role work (PR #2691)
 
 
 # 2019.7.12+rbc1a11b
