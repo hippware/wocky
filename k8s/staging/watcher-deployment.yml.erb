@@ -16,6 +16,8 @@ spec:
       labels:
         app: wocky_db_watcher
         env: staging
+      annotations:
+        iam.amazonaws.com/role: <%= wocky_app_role_arn['value'] %>
     spec:
       containers:
         - name: wocky
