@@ -74,7 +74,7 @@
   "fun_with_flags": {:git, "https://github.com/hippware/fun_with_flags.git", "305872b317dc17cdac7f3f809980f7e82bbab7ed", [branch: "confex"]},
   "gen_stage": {:hex, :gen_stage, "0.14.2", "6a2a578a510c5bfca8a45e6b27552f613b41cf584b58210f017088d3d17d0b14", [:mix], [], "hexpm"},
   "gen_state_machine": {:hex, :gen_state_machine, "2.0.5", "9ac15ec6e66acac994cc442dcc2c6f9796cf380ec4b08267223014be1c728a95", [:mix], [], "hexpm"},
-  "geo": {:git, "https://github.com/bryanjos/geo.git", "acdffaf7b641698e44d36d04871316d78b263d89", [branch: "master"]},
+  "geo": {:git, "https://github.com/bryanjos/geo.git", "07e04b767f894a17be4e3782521c9a7f3d600d1c", [branch: "master"]},
   "geo_postgis": {:hex, :geo_postgis, "3.1.0", "d06c8fa5fd140a52a5c9dab4ad6623a696dd7d99dd791bb361d3f94942442ff9", [:mix], [{:geo, "~> 3.1", [hex: :geo, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: true]}, {:poison, "~> 2.2 or ~> 3.0 or ~> 4.0", [hex: :poison, repo: "hexpm", optional: true]}, {:postgrex, "~> 0.14", [hex: :postgrex, repo: "hexpm", optional: false]}], "hexpm"},
   "geocalc": {:hex, :geocalc, "0.7.2", "71ced3516f50bdf8e0a3fce6d3169972a9127070d2117d7080bf17e3ae3450d8", [:mix], [], "hexpm"},
   "gettext": {:hex, :gettext, "0.17.0", "abe21542c831887a2b16f4c94556db9c421ab301aee417b7c4fbde7fbdbe01ec", [:mix], [], "hexpm"},
