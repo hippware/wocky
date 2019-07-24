@@ -11,7 +11,9 @@ config :wocky_api,
   ecto_repos: [Wocky.Repo],
   max_graphql_complexity: 8000,
   allow_factory_insert:
-    {:system, :boolean, "WOCKY_ENABLE_FACTORY_INSERT", false}
+    {:system, :boolean, "WOCKY_ENABLE_FACTORY_INSERT", false},
+  enable_location_request_trigger:
+    {:system, :boolean, "WOCKY_ENABLE_LOCATION_REQUEST_TRIGGER", false}
 
 config :wocky_api, :generators,
   context_app: :wocky,

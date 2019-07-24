@@ -5,8 +5,10 @@ defmodule WockyAPI.Resolvers.User do
   alias Absinthe.Subscription
   alias Wocky.Account
   alias Wocky.Account.User
+  alias Wocky.Events.LocationRequest
   alias Wocky.Location
   alias Wocky.Location.UserLocation
+  alias Wocky.Notifier
   alias Wocky.Notifier.Push
   alias Wocky.Repo
   alias Wocky.Roster
@@ -204,6 +206,24 @@ defmodule WockyAPI.Resolvers.User do
     user
     |> Location.get_location_sharers_query()
     |> Utils.connection_from_query(user, args)
+  end
+
+  def trigger_location_request(_root, %{input: %{user_id: user_id}}, _info) do
+    if Confex.get_env(:wocky_api, :enable_location_request_trigger) do
+      # Trigger the silent push notification
+      user = Account.get_user(user_id)
+
+      if user do
+        event = %LocationRequest{to: user}
+        Notifier.notify(event)
+
+        {:ok, true}
+      else
+        {:ok, false}
+      end
+    else
+      {:ok, false}
+    end
   end
 
   def notification_subscription_topic(user_id),

@@ -8,6 +8,7 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Wocky.Block
   alias Wocky.Location
   alias Wocky.Notifier.Push
+  alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Notifier.Push.Token
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -673,6 +674,32 @@ defmodule WockyAPI.GraphQL.UserTest do
                  "result" => true
                }
              } = result.data
+    end
+
+    @query """
+    mutation ($userId: String!) {
+      userLocationRequestTrigger(input: {userId: $userId}) {
+        result
+      }
+    }
+    """
+
+    test "trigger location share request", %{user: user} do
+      Sandbox.clear_notifications()
+
+      Push.enable(user, "testing", Faker.Code.isbn13())
+      result = run_query(@query, user, %{"userId" => user.id})
+
+      refute has_errors(result)
+
+      assert %{
+               "userLocationRequestTrigger" => %{
+                 "result" => true
+               }
+             } == result.data
+
+      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
+      assert Enum.count(notifications) == 1
     end
   end
 
