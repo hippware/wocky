@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* IAM Auth fixes (#2697, PR #2698)
+* Update: credo (PR #2696), wocky_db_watcher (PR #2699)
+* Replace credo_filename_consistency with credo_naming (PR #2700)
+
+
 # 2019.7.22+r7529339
 
 * Update: credo (PR #2677), geo (PR #2682), prometheus_phoenix (PR #2687)
