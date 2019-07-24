@@ -770,6 +770,14 @@ defmodule WockyAPI.Schema.UserTypes do
 
   payload_object(:user_location_cancel_share_payload, :boolean)
 
+  payload_object(:user_location_request_trigger_payload, :boolean)
+
+  @desc "Parameters for triggering a location update request"
+  input_object :user_location_request_trigger_input do
+    @desc "The user to trigger the location update request"
+    field :user_id, non_null(:string)
+  end
+
   object :location_mutations do
     @desc "Update a user's current location"
     field :user_location_update, type: :user_location_update_payload do
@@ -801,6 +809,14 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_location_cancel_all_shares,
       type: :user_location_cancel_share_payload do
       resolve &User.cancel_all_location_shares/3
+      changeset_mutation_middleware()
+    end
+
+    @desc "Trigger a silent push notification request the user's location"
+    field :user_location_request_trigger,
+      type: :user_location_request_trigger_payload do
+      arg :input, non_null(:user_location_request_trigger_input)
+      resolve &User.trigger_location_request/3
       changeset_mutation_middleware()
     end
   end
