@@ -167,7 +167,7 @@
         #
         # Custom checks can be created using `mix credo.gen.check`.
         #
-        {CredoFilenameConsistency.Check.Consistency.FilenameConsistency,
+        {CredoNaming.Check.Consistency.ModuleFilename,
          [
            excluded_paths: [
              "apps/wocky/mix.exs",
