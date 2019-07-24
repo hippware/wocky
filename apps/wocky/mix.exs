@@ -100,8 +100,6 @@ defmodule Wocky.Mixfile do
        github: "scripbox/firebase-admin-ex", branch: "master"},
       {:fun_with_flags, github: "hippware/fun_with_flags", branch: "confex"},
       {:gen_stage, "~> 0.12"},
-      # TODO: Move back to release when new release is built
-      {:geo, github: "bryanjos/geo", branch: "master", override: true},
       {:geo_postgis, "~> 3.0"},
       {:geocalc, "~> 0.5"},
       {:guardian, "~> 1.0"},
