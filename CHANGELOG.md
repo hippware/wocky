@@ -5,9 +5,16 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: geo_postgis (PR #2702)
+* Create an endpoint to trigger silent push notification (#2692)
+
+
+# 2019.7.24+ra2df676
+
 * IAM Auth fixes (#2697, PR #2698)
 * Update: credo (PR #2696), wocky_db_watcher (PR #2699)
 * Replace credo_filename_consistency with credo_naming (PR #2700)
+* Add separate IAM support for db dumper (PR #2694)
 
 
 # 2019.7.22+r7529339
