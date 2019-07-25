@@ -24,14 +24,17 @@ defmodule WockyAPI.Resolvers.Media do
     with {:ok, file_id} <- TROS.parse_url(tros_url),
          :ok <- maybe_wait(wait?, file_id, timeout),
          {:ok, %Metadata{} = metadata} <- TROS.get_metadata(file_id) do
-      [full_url, thumbnail_url] =
-        TROS.get_download_urls(metadata, [:full, :thumbnail])
+      urls =
+        metadata
+        |> TROS.get_download_urls()
+        |> Map.delete(:original)
 
       {:ok,
        %{
          tros_url: tros_url,
-         full_url: full_url,
-         thumbnail_url: thumbnail_url
+         full_url: urls[:full],
+         thumbnail_url: urls[:thumbnail],
+         urls: Enum.map(urls, &make_url/1)
        }}
     else
       :timeout ->
@@ -41,6 +44,8 @@ defmodule WockyAPI.Resolvers.Media do
         {:ok, %{tros_url: tros_url}}
     end
   end
+
+  defp make_url({type, url}), do: %{type: type, url: url}
 
   def upload(_root, %{input: args}, %{context: %{current_user: user}}) do
     metadata = %{content_type: args[:mime_type], name: args[:filename]}

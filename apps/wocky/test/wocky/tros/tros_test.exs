@@ -30,15 +30,17 @@ defmodule Wocky.TROS.TROSTest do
   test "get_base_id/1" do
     assert TROS.get_base_id("file-original") == "file"
     assert TROS.get_base_id("file-thumbnail") == "file"
+    assert TROS.get_base_id("file-aspect_thumbnail") == "file"
     assert TROS.get_base_id("file") == "file"
   end
 
   test "variants/1" do
     variants = TROS.variants("file")
 
-    assert length(variants) == 3
-    assert Enum.member?(variants, "file-thumbnail")
+    assert length(variants) == 4
     assert Enum.member?(variants, "file-original")
+    assert Enum.member?(variants, "file-thumbnail")
+    assert Enum.member?(variants, "file-aspect_thumbnail")
     assert Enum.member?(variants, "file")
   end
 
@@ -70,9 +72,14 @@ defmodule Wocky.TROS.TROSTest do
     end
 
     test "get_download_urls/2", ctx do
-      assert [url] = TROS.get_download_urls(ctx.md, [:full])
-      assert url =~ @url_re
-      assert url =~ ctx.id
+      urls = TROS.get_download_urls(ctx.md)
+      Enum.each(ctx.md.available_formats,
+        fn f ->
+          assert urls[f] =~ @url_re
+          assert urls[f] =~ ctx.id
+        end
+      )
+      assert Enum.count(urls) == Enum.count(ctx.md.available_formats)
     end
   end
 end

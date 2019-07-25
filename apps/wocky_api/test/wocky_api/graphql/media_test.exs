@@ -185,5 +185,43 @@ defmodule WockyAPI.GraphQL.MediaTest do
       assert has_errors(result)
       assert error_msg(result) =~ "Timeout"
     end
+
+    @query """
+    query ($tros_url: String!, $timeout: Int) {
+      media_urls (tros_url: $tros_url, timeout: $timeout) {
+        urls {
+          type
+          url
+        }
+      }
+    }
+    """
+    test "it should return all available urls for an image", ctx do
+      ctx.metadata |> Metadata.changeset(%{ready: true}) |> Repo.update()
+
+      result =
+        run_query(@query, ctx.user, %{
+          "tros_url" => ctx.tros_url,
+          "timeout" => 0
+        })
+
+      refute has_errors(result)
+
+      assert %{
+        "media_urls" => %{
+          "urls" => urls
+        }
+      } = result.data
+
+      ["FULL", "THUMBNAIL"]
+      |> Enum.each(
+        fn f ->
+          assert Enum.any?(urls, fn %{"type" => format} -> format == f end)
+        end
+      )
+
+      assert Enum.count(urls) == 2
+      assert Enum.all?(urls, fn %{"url" => url} -> url =~ "https://localhost" end)
+    end
   end
 end
