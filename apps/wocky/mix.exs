@@ -70,6 +70,8 @@ defmodule Wocky.Mixfile do
       {:configparser_ex, "~> 4.0", only: [:dev, :test]},
       {:dataloader, "~> 1.0.0"},
       {:dawdle_db, "~> 0.5"},
+      # TODO: Back to upstream when typespec code is merged
+      {:ecto_enum, github: "hippware/ecto_enum", branch: "add-typespec"},
       {:ecto_homoiconic_enum,
        github: "hippware/ecto_homoiconic_enum", branch: "master"},
       {:ecto_sql, "~> 3.0"},

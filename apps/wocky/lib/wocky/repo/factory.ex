@@ -99,7 +99,8 @@ defmodule Wocky.Repo.Factory do
       id: ID.new(),
       user: build(:user),
       access: Lorem.sentence(),
-      ready: true
+      ready: true,
+      available_formats: [:full, :original, :thumbnail]
     }
   end
 

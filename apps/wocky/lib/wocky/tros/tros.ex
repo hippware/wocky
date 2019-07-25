@@ -11,19 +11,20 @@ defmodule Wocky.TROS do
   alias Wocky.Repo.ID
   alias Wocky.TROS.Metadata
 
-  @type owner :: binary
-  @type file_id :: binary
-  @type file_name :: binary
-  @type url :: binary
-  @type metadata :: map
-  @type file_type :: :full | :original | :thumbnail
+  @type owner :: binary()
+  @type file_id :: binary()
+  @type file_name :: binary()
+  @type url :: binary()
+  @type metadata :: map()
+  @type file_type :: Metadata.FileTypeEnum.t()
 
   @callback delete(file_id) :: :ok
   @callback make_upload_response(User.t(), file_id, integer, metadata) ::
               {list, list}
-  @callback get_download_url(metadata, file_name) :: url
+  @callback get_download_url(metadata, file_name) :: url()
 
   @thumbnail_suffix "-thumbnail"
+  @aspect_thumbnail_suffix "-aspect_thumbnail"
   @original_suffix "-original"
 
   @file_ready_event_prefix "tros-file-ready-"
@@ -44,11 +45,11 @@ defmodule Wocky.TROS do
 
   def parse_url(_), do: {:error, :invalid_url}
 
-  @spec make_url(User.t(), file_id) :: url
+  @spec make_url(User.t(), file_id) :: url()
   def make_url(owner, file_id),
     do: file_id |> make_jid(owner.id) |> url_from_jid()
 
-  @spec make_url(file_id) :: url
+  @spec make_url(file_id) :: url()
   def make_url(file_id), do: file_id |> make_jid("") |> url_from_jid()
 
   defp make_jid(file_id, owner_id),
@@ -58,14 +59,16 @@ defmodule Wocky.TROS do
 
   @spec get_base_id(file_name) :: file_id
   def get_base_id(file_name) do
-    file_name
-    |> String.replace_suffix(@thumbnail_suffix, "")
-    |> String.replace_suffix(@original_suffix, "")
+    [@thumbnail_suffix, @aspect_thumbnail_suffix, @original_suffix]
+    |> Enum.reduce(file_name, &String.replace_suffix(&2, &1, ""))
   end
 
   @spec variants(file_id) :: [binary]
   def variants(file_id) do
-    Enum.map([:full, :thumbnail, :original], &full_name(file_id, &1))
+    Enum.map(
+      [:full, :thumbnail, :aspect_thumbnail, :original],
+      &full_name(file_id, &1)
+    )
   end
 
   # ----------------------------------------------------------------------
@@ -145,18 +148,23 @@ defmodule Wocky.TROS do
     |> Repo.insert()
   end
 
-  @spec get_download_urls(Metadata.t(), [file_type]) :: [url]
-  def get_download_urls(metadata, types) do
-    Enum.map(
-      types,
-      &backend().get_download_url(metadata, full_name(metadata.id, &1))
+  @spec get_download_urls(Metadata.t()) :: %{optional(file_type()) => url()}
+  def get_download_urls(metadata) do
+    metadata.available_formats
+    |> Enum.map(
+      &{&1, backend().get_download_url(metadata, full_name(metadata.id, &1))}
     )
+    |> Enum.into(%{})
   end
 
   def file_ready_event(file_id), do: @file_ready_event_prefix <> file_id
 
   defp full_name(file_id, :full), do: file_id
   defp full_name(file_id, :thumbnail), do: file_id <> @thumbnail_suffix
+
+  defp full_name(file_id, :aspect_thumbnail),
+    do: file_id <> @aspect_thumbnail_suffix
+
   defp full_name(file_id, :original), do: file_id <> @original_suffix
 
   defp backend, do: Confex.get_env(:wocky, :tros_backend)

@@ -15,10 +15,43 @@ defmodule WockyAPI.Schema.MediaTypes do
     field :tros_url, :string
 
     @desc "The S3 URL for the full object (valid for 10 minutes)"
-    field :full_url, :string
+    field :full_url, :string, deprecate: "Please use the 'urls' list"
 
     @desc "The S3 URL for the thumbnail object (valid for 10 minutes)"
-    field :thumbnail_url, :string
+    field :thumbnail_url, :string, deprecate: "Please use the 'urls' list"
+
+    @desc """
+    A list of URLs for this image in different formats. If a format does not
+    appear in the list, the image is not available in that format.
+    """
+    field :urls, non_null(list_of(non_null(:media_url)))
+  end
+
+  @desc "Formats in which media can be downloaded"
+  enum :media_format do
+    @desc """
+    The full size image, uncropped, up to 1920x1920 depending on the original's
+    size
+    """
+    value :full
+
+    @desc "A thumbnail of the image, cropped to a 360x360 square"
+    value :thumbnail
+
+    @desc """
+    An uncropped thumbnail of the image with the aspect ratio maintained.
+    Maximum large dimension of 360 pixels.
+    """
+    value :aspect_thumbnail
+  end
+
+  @desc "A URL for an image in a particular format"
+  object :media_url do
+    @desc "The type of image available at this URL"
+    field :type, non_null(:media_format)
+
+    @desc "The URL of the image in the specified format"
+    field :url, non_null(:string)
   end
 
   input_object :media_upload_params do
