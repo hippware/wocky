@@ -9,7 +9,12 @@ defmodule Wocky.TROS.Metadata do
 
   alias Wocky.Account.User
 
-  defenum FileTypeEnum, :file_type, [:full, :original, :thumbnail, :aspect_thumbnail]
+  defenum(FileTypeEnum, :file_type, [
+    :full,
+    :original,
+    :thumbnail,
+    :aspect_thumbnail
+  ])
 
   @primary_key false
   @foreign_key_type :binary_id

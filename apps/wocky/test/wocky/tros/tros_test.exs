@@ -73,12 +73,15 @@ defmodule Wocky.TROS.TROSTest do
 
     test "get_download_urls/2", ctx do
       urls = TROS.get_download_urls(ctx.md)
-      Enum.each(ctx.md.available_formats,
+
+      Enum.each(
+        ctx.md.available_formats,
         fn f ->
           assert urls[f] =~ @url_re
           assert urls[f] =~ ctx.id
         end
       )
+
       assert Enum.count(urls) == Enum.count(ctx.md.available_formats)
     end
   end

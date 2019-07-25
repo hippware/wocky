@@ -208,20 +208,21 @@ defmodule WockyAPI.GraphQL.MediaTest do
       refute has_errors(result)
 
       assert %{
-        "media_urls" => %{
-          "urls" => urls
-        }
-      } = result.data
+               "media_urls" => %{
+                 "urls" => urls
+               }
+             } = result.data
 
       ["FULL", "THUMBNAIL"]
-      |> Enum.each(
-        fn f ->
-          assert Enum.any?(urls, fn %{"type" => format} -> format == f end)
-        end
-      )
+      |> Enum.each(fn f ->
+        assert Enum.any?(urls, fn %{"type" => format} -> format == f end)
+      end)
 
       assert Enum.count(urls) == 2
-      assert Enum.all?(urls, fn %{"url" => url} -> url =~ "https://localhost" end)
+
+      assert Enum.all?(urls, fn %{"url" => url} ->
+               url =~ "https://localhost"
+             end)
     end
   end
 end

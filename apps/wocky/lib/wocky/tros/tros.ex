@@ -65,7 +65,10 @@ defmodule Wocky.TROS do
 
   @spec variants(file_id) :: [binary]
   def variants(file_id) do
-    Enum.map([:full, :thumbnail, :aspect_thumbnail, :original], &full_name(file_id, &1))
+    Enum.map(
+      [:full, :thumbnail, :aspect_thumbnail, :original],
+      &full_name(file_id, &1)
+    )
   end
 
   # ----------------------------------------------------------------------
@@ -148,7 +151,9 @@ defmodule Wocky.TROS do
   @spec get_download_urls(Metadata.t()) :: %{optional(file_type()) => url()}
   def get_download_urls(metadata) do
     metadata.available_formats
-    |> Enum.map(&{&1, backend().get_download_url(metadata, full_name(metadata.id, &1))})
+    |> Enum.map(
+      &{&1, backend().get_download_url(metadata, full_name(metadata.id, &1))}
+    )
     |> Enum.into(%{})
   end
 
@@ -156,7 +161,10 @@ defmodule Wocky.TROS do
 
   defp full_name(file_id, :full), do: file_id
   defp full_name(file_id, :thumbnail), do: file_id <> @thumbnail_suffix
-  defp full_name(file_id, :aspect_thumbnail), do: file_id <> @aspect_thumbnail_suffix
+
+  defp full_name(file_id, :aspect_thumbnail),
+    do: file_id <> @aspect_thumbnail_suffix
+
   defp full_name(file_id, :original), do: file_id <> @original_suffix
 
   defp backend, do: Confex.get_env(:wocky, :tros_backend)
