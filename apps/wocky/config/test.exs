@@ -3,7 +3,9 @@ use Mix.Config
 config :wocky,
   firebase_load_on_startup: false,
   enable_recurring_tasks: false,
-  bot_report_channel: "report-testing"
+  bot_report_channel: "report-testing",
+  start_watcher: false
+
 
 # Configure your database
 config :wocky, Wocky.Repo,
