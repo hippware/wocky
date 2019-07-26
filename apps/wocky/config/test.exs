@@ -6,7 +6,6 @@ config :wocky,
   bot_report_channel: "report-testing",
   start_watcher: false
 
-
 # Configure your database
 config :wocky, Wocky.Repo,
   database: "wocky_test",
