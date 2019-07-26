@@ -7,6 +7,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Update: geo_postgis (PR #2702)
 * Create an endpoint to trigger silent push notification (#2692)
+* Image files saved with thumbnail in original aspect ratio (#2701)
 
 
 # 2019.7.24+ra2df676
