@@ -9,12 +9,10 @@ defmodule Wocky.Application do
   """
   use Application
 
-  alias DawdleDB.Watcher.Supervisor, as: Watcher
   alias Wocky.Location.Supervisor, as: LocationSupervisor
   alias Wocky.Notifier.Email.Mailer
   alias Wocky.Notifier.Push.Backend.Sandbox, as: PushSandbox
   alias Wocky.Presence.Supervisor, as: PresenceSupervisor
-  alias Wocky.SwarmSupContainer
   alias Wocky.Tasks.Recurring
 
   require Logger
@@ -68,17 +66,8 @@ defmodule Wocky.Application do
     {:ok, _} = Recurring.start()
 
     if Confex.get_env(:wocky, :start_watcher, true) do
-      {:ok, _} =
-        Swarm.whereis_or_register_name(
-          WockyDBWatcher,
-          SwarmSupContainer,
-          :start_link,
-          [Watcher, :start_link, []],
-          5000
-        )
+      :ok = DawdleDB.start_watcher(Wocky.Repo)
     end
-
-    Dawdle.start_pollers()
 
     sup
   end
