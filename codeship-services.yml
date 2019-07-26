@@ -64,7 +64,6 @@ eks-deploy:
   volumes:
     - k8s:/k8s
     - wocky-deploy:/wocky-deploy
-    - DB_WATCHER_VERSION:/DB_WATCHER_VERSION
 curl-ssl:
   image: governmentpaas/curl-ssl
   encrypted_env_file: codeship/circleci.env.encrypted

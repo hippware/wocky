@@ -21,7 +21,6 @@ wocky_env="${1:-"testing"}"
 context="${CONTEXT:-"aws"}"
 namespace="wocky-${wocky_env}"
 template_dir="k8s/${wocky_env}"
-watcher_sha="$(cat DB_WATCHER_VERSION)"
 cluster_conf=/tmp/cluster.tfstate.json
 ssl_conf=/tmp/ssl.tfstate.json
 wocky_conf=/tmp/wocky.tfstate.json
@@ -39,7 +38,6 @@ jq -s '[.[].outputs] | add' ${cluster_conf} ${ssl_conf} ${wocky_conf} ${db_dumpe
 
 kubernetes-deploy "${namespace}" "${context}" \
   --template-dir="${template_dir}" \
-  --bindings=watcher_sha="${watcher_sha}" \
   --bindings=@${output_bindings} \
   "$@"
 

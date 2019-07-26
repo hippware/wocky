@@ -5,7 +5,7 @@ use Mix.Config
 config :wocky,
   ecto_repos: [Wocky.Repo],
   db_only_mode: false,
-  start_watcher: {:system, :boolean, "WOCKY_START_WATCHER", false},
+  start_watcher: {:system, :boolean, "WOCKY_START_WATCHER", true},
 
   # Deployment notifications
   deploy_notify_channels: ["#dev-deployments"],
@@ -179,6 +179,14 @@ config :wocky, Wocky.Notifier.Email.Mailer,
 
 config :dawdle_db,
   channel: "wocky_db_watcher_notify"
+
+config :dawdle_db, :db,
+  database: {:system, :string, "WOCKY_DB_NAME", "wocky_dev"},
+  username: {:system, :string, "WOCKY_DB_USER", "postgres"},
+  password: {:system, :string, "WOCKY_DB_PASSWORD", "password"},
+  hostname: {:system, :string, "WOCKY_DB_HOST", "localhost"},
+  port: {:system, :integer, "WOCKY_DB_PORT", 5432},
+  pool_size: {:system, :integer, "WOCKY_DB_POOL_SIZE", 15}
 
 config :email_checker, validations: [EmailChecker.Check.Format]
 
