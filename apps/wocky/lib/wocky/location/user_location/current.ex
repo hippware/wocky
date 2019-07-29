@@ -23,8 +23,9 @@ defmodule Wocky.Location.UserLocation.Current do
         to_string(@expire_secs)
       ])
 
-    %LocationChangedEvent{location: loc, user: user}
-    |> Dawdle.signal(direct: true)
+    _ =
+      %LocationChangedEvent{location: loc, user: user}
+      |> Dawdle.signal(direct: true)
 
     :ok
   end
