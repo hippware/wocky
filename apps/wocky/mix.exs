@@ -70,7 +70,7 @@ defmodule Wocky.Mixfile do
       {:configparser_ex, "~> 4.0", only: [:dev, :test]},
       {:dataloader, "~> 1.0.0"},
       {:dawdle, "~> 0.6"},
-      {:dawdle_db, github: "hippware/dawdle_db", branch: "swarm-watcher"},
+      {:dawdle_db, github: "hippware/dawdle_db", branch: "master"},
       {:ecto_enum, "~> 1.3"},
       {:ecto_homoiconic_enum,
        github: "hippware/ecto_homoiconic_enum", branch: "master"},
