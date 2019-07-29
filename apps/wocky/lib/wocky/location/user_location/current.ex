@@ -4,18 +4,13 @@ defmodule Wocky.Location.UserLocation.Current do
   import Ecto.Query
 
   alias Wocky.Account.User
-  alias Wocky.CallbackManager
   alias Wocky.Location.Share
   alias Wocky.Location.UserLocation
+  alias Wocky.Location.UserLocation.LocationChangedEvent
   alias Wocky.Repo
-
-  @type callback() :: (User.t(), UserLocation.t() -> :ok)
 
   # Expire current location after 2 days
   @expire_secs 60 * 60 * 24 * 2
-
-  @spec register_callback(callback()) :: :ok
-  def register_callback(cb), do: CallbackManager.add(__MODULE__, cb)
 
   @spec set(User.t(), UserLocation.t()) :: :ok
   def set(user, loc) do
@@ -28,9 +23,8 @@ defmodule Wocky.Location.UserLocation.Current do
         to_string(@expire_secs)
       ])
 
-    __MODULE__
-    |> CallbackManager.get()
-    |> Enum.each(& &1.(user, loc))
+    %LocationChangedEvent{location: loc, user: user}
+    |> Dawdle.signal(direct: true)
 
     :ok
   end
