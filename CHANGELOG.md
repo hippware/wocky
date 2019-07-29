@@ -13,6 +13,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 # 2019.7.24+ra2df676
 
+* Update phone number if it changes in Firebase (#2674, PR #2676)
 * IAM Auth fixes (#2697, PR #2698)
 * Update: credo (PR #2696), wocky_db_watcher (PR #2699)
 * Replace credo_filename_consistency with credo_naming (PR #2700)
