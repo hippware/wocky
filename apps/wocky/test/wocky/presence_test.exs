@@ -4,9 +4,9 @@ defmodule Wocky.PresenceTest do
   import Eventually
 
   alias Wocky.Account.User
-  alias Wocky.CallbackManager
   alias Wocky.Presence
   alias Wocky.Presence.Manager
+  alias Wocky.Presence.PresenceEvent
   alias Wocky.Repo.Factory
   alias Wocky.Roster
 
@@ -75,15 +75,26 @@ defmodule Wocky.PresenceTest do
     end
   end
 
+  defmodule TestHandler do
+    @moduledoc false
+    use Dawdle.Handler, only: [PresenceEvent]
+
+    def handle_event(%{contact: u, recipient_id: c_id}) do
+      Agent.update(:presence_proxy, fn _ -> {u.id, u.presence.status, c_id} end)
+    end
+  end
+
+  defp get_presence_result do
+    result = Agent.get(:presence_proxy, & &1)
+    Agent.update(:presence_proxy, fn _ -> nil end)
+    result
+  end
+
   describe "publishing callback" do
     setup ctx do
-      self = self()
+      {:ok, _} = Agent.start_link(fn -> nil end, name: :presence_proxy)
 
-      original_callbacks = CallbackManager.get(Presence)
-
-      Presence.register_callback(fn u, c_id ->
-        send(self, {:presence, u, c_id})
-      end)
+      TestHandler.register()
 
       uid = ctx.user.id
 
@@ -94,7 +105,7 @@ defmodule Wocky.PresenceTest do
       Presence.set_status(ctx.requestor, :online)
 
       on_exit(fn ->
-        CallbackManager.set(Presence, original_callbacks)
+        TestHandler.unregister()
       end)
 
       {:ok, conn_pid: conn_pid}
@@ -102,71 +113,55 @@ defmodule Wocky.PresenceTest do
 
     test "should publish an online state when a user sets themselves online",
          ctx do
-      rid = ctx.requestor.id
-      uid = ctx.user.id
-
-      assert_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
-                      ^uid}
+      assert_eventually(
+        {ctx.requestor.id, :online, ctx.user.id} ==
+          get_presence_result()
+      )
     end
 
     test "should not publish again when user sets their state online again",
          ctx do
-      rid = ctx.requestor.id
-      uid = ctx.user.id
-
-      assert_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
-                      ^uid}
+      assert_eventually(
+        {ctx.requestor.id, :online, ctx.user.id} ==
+          get_presence_result()
+      )
 
       Presence.set_status(ctx.requestor, :online)
 
-      refute_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
-                      ^uid}
+      refute_eventually(get_presence_result())
     end
 
     test "should publish an offline state when a user sets themselves offline",
          ctx do
-      rid = ctx.requestor.id
-      uid = ctx.user.id
-
-      assert_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
-                      ^uid}
-
       Presence.set_status(ctx.requestor, :offline)
 
-      assert_receive {:presence, %User{id: ^rid, presence: %{status: :offline}},
-                      ^uid}
+      assert_eventually(
+        {ctx.requestor.id, :offline, ctx.user.id} ==
+          get_presence_result()
+      )
     end
 
     test "should not publish again if the user sets themselves offline twice",
          ctx do
-      rid = ctx.requestor.id
-      uid = ctx.user.id
+      Presence.set_status(ctx.requestor, :offline)
 
-      assert_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
-                      ^uid}
+      assert_eventually(
+        {ctx.requestor.id, :offline, ctx.user.id} ==
+          get_presence_result()
+      )
 
       Presence.set_status(ctx.requestor, :offline)
 
-      assert_receive {:presence, %User{id: ^rid, presence: %{status: :offline}},
-                      ^uid}
-
-      Presence.set_status(ctx.requestor, :offline)
-
-      refute_receive {:presence, %User{id: ^rid, presence: %{status: :offline}},
-                      ^uid}
+      refute_eventually(get_presence_result())
     end
 
     test "should publish an offline state when a user disconnects", ctx do
-      rid = ctx.requestor.id
-      uid = ctx.user.id
-
-      assert_receive {:presence, %User{id: ^rid, presence: %{status: :online}},
-                      ^uid}
-
       close_conn(ctx.conn_pid)
 
-      assert_receive {:presence, %User{id: ^rid, presence: %{status: :offline}},
-                      ^uid}
+      assert_eventually(
+        {ctx.requestor.id, :offline, ctx.user.id} ==
+          get_presence_result()
+      )
     end
   end
 
