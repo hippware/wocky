@@ -3,6 +3,8 @@ defmodule WockyAPI.Application do
 
   use Application
 
+  alias Wocky.Location.UserLocation.Current, as: CurrentLocation
+  alias Wocky.Presence
   alias WockyAPI.Callbacks
   alias WockyAPI.Endpoint
   alias WockyAPI.Middleware.Instrumenter, as: AbsintheInstrumenter
@@ -27,6 +29,12 @@ defmodule WockyAPI.Application do
     opts = [strategy: :one_for_one, name: WockyAPI.Supervisor]
 
     Callbacks.register()
+
+    Presence.register_callback(&WockyAPI.Resolvers.Presence.publish_presence/2)
+
+    CurrentLocation.register_callback(
+      &WockyAPI.Resolvers.User.notify_location/2
+    )
 
     Supervisor.start_link(children, opts)
   end
