@@ -14,7 +14,6 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   setup_all do
     require_watcher()
 
-    WockyAPI.Callbacks.LocationChanged.register()
     WockyAPI.Callbacks.RosterItem.register()
     WockyAPI.Callbacks.User.register()
   end

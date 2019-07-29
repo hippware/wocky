@@ -5,8 +5,8 @@ defmodule Wocky.Presence do
 
   alias Wocky.Account
   alias Wocky.Account.User
+  alias Wocky.CallbackManager
   alias Wocky.Presence.Manager
-  alias Wocky.Presence.PresenceEvent
 
   defstruct [
     :status,
@@ -19,6 +19,12 @@ defmodule Wocky.Presence do
         }
 
   @type status() :: :offline | :online
+
+  @type callback() :: (User.t(), User.id() -> :ok)
+
+  @spec register_callback(callback()) :: :ok
+  def register_callback(callback),
+    do: CallbackManager.add(__MODULE__, callback)
 
   @doc """
   Mark a user online and return a list of their currently-online followees
@@ -52,8 +58,9 @@ defmodule Wocky.Presence do
   def publish(recipient_id, contact, status) do
     full_contact = add_presence(contact, status)
 
-    %PresenceEvent{contact: full_contact, recipient_id: recipient_id}
-    |> Dawdle.signal(direct: true)
+    __MODULE__
+    |> CallbackManager.get()
+    |> Enum.each(& &1.(full_contact, recipient_id))
   end
 
   @spec add_presence(User.t(), status()) :: User.t()
