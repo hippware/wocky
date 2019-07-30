@@ -182,7 +182,7 @@ config :wocky, Wocky.Notifier.Email.Mailer,
   api_key: {:system, :string, "MANDRILL_API_KEY", ""}
 
 config :wocky, Wocky.ConfexVaultAdapter,
-  use_vault: false
+  use_vault: false,
   vault_prefix: {:system, :string, "WOCKY_VAULT_PREFIX", ""}
 
 config :dawdle, start_pollers: true
