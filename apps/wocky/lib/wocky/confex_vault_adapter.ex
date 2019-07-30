@@ -21,7 +21,7 @@ defmodule Wocky.ConfexVaultAdapter do
   end
 
   defp get_vault_value(key) do
-    base_path = "secret/wocky-" <> Confex.get_env(:wocky, :wocky_env) <> "/"
+    base_path = get_config(:vault_prefix)
     case Vaultex.read(base_path <> key, :aws_iam, {nil, nil}) do
       {:ok, %{"value" => value}} -> {:ok, value}
       _ -> :error

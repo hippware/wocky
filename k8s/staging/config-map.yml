@@ -30,6 +30,7 @@ data:
   WOCKY_SMS_BACKEND: Wocky.SMS.Twilio
   TWILIO_ACCOUNT_SID: ACbfbd3863ab87b6d00d37de65e99dacd1
   WOCKY_ENABLE_LOCATION_REQUEST_TRIGGER: "true"
+  WOCKY_VAULT_PREFIX: "secret/wocky-staging/"
   HONEYBADGER_ENV: staging
   REPLACE_OS_VARS: "true"
   BAMBOO_ADAPTER: Bamboo.MandrillAdapter
