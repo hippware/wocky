@@ -775,7 +775,7 @@ defmodule WockyAPI.Schema.UserTypes do
   @desc "Parameters for triggering a location update request"
   input_object :user_location_request_trigger_input do
     @desc "The user to trigger the location update request"
-    field :user_id, non_null(:string)
+    field :user_id, non_null(:uuid)
   end
 
   object :location_mutations do
