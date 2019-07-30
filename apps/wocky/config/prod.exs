@@ -18,6 +18,9 @@ config :wocky, :pigeon,
 
 config :dawdle, backend: Dawdle.Backend.SQS
 
+config :wocky, Wocky.ConfexVaultAdapter,
+  use_vault: true
+
 config :exometer_core,
   report: [reporters: [{:exometer_report_prometheus, [:enable_httpd]}]]
 

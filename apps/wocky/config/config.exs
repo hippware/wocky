@@ -88,7 +88,11 @@ config :wocky,
 
   # Bot search
   max_local_bots_search_radius:
-    {:system, :integer, "WOCKY_MAX_LOCAL_BOTS_SEARCH_RADIUS", 50_000}
+    {:system, :integer, "WOCKY_MAX_LOCAL_BOTS_SEARCH_RADIUS", 50_000},
+
+
+  # Unused value to test the Vault adapter - can be safely deleted
+  vault_value: {{:via, Wocky.ConfexVaultAdapter}, "test-secret-value"}
 
 config :wocky, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},
@@ -176,6 +180,9 @@ config :wocky, Wocky.Repo,
 config :wocky, Wocky.Notifier.Email.Mailer,
   adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.TestAdapter},
   api_key: {:system, :string, "MANDRILL_API_KEY", ""}
+
+config :wocky, Wocky.ConfexVaultAdapter,
+  use_vault: false
 
 config :dawdle, start_pollers: true
 
