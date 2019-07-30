@@ -9,6 +9,7 @@ defmodule Wocky.Audit.PushLog do
     :token,
     :message_id,
     :payload,
+    :payload_string,
     :response,
     :details,
     :created_at
@@ -17,11 +18,12 @@ defmodule Wocky.Audit.PushLog do
   @type t :: %__MODULE__{
           user_id: User.id() | nil,
           device: User.device() | nil,
-          token: binary | nil,
-          message_id: binary | nil,
-          payload: binary | nil,
-          response: binary | nil,
-          details: binary | nil,
+          token: binary() | nil,
+          message_id: binary() | nil,
+          payload: map() | nil,
+          payload_string: binary() | nil,
+          response: binary() | nil,
+          details: binary() | nil,
           created_at: DateTime.t() | nil
         }
 end
