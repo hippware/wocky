@@ -5,7 +5,7 @@ use Mix.Config
 config :wocky,
   ecto_repos: [Wocky.Repo],
   db_only_mode: false,
-  start_watcher: {:system, :boolean, "WOCKY_START_WATCHER", false},
+  start_watcher: {:system, :boolean, "WOCKY_START_WATCHER", true},
 
   # Deployment notifications
   deploy_notify_channels: ["#dev-deployments"],
@@ -177,8 +177,9 @@ config :wocky, Wocky.Notifier.Email.Mailer,
   adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.TestAdapter},
   api_key: {:system, :string, "MANDRILL_API_KEY", ""}
 
-config :dawdle_db,
-  channel: "wocky_db_watcher_notify"
+config :dawdle, start_pollers: true
+
+config :dawdle_db, channel: "wocky_db_watcher_notify"
 
 config :email_checker, validations: [EmailChecker.Check.Format]
 

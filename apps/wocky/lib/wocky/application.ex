@@ -9,7 +9,6 @@ defmodule Wocky.Application do
   """
   use Application
 
-  alias DawdleDB.Watcher.Supervisor, as: Watcher
   alias Wocky.Location.Supervisor, as: LocationSupervisor
   alias Wocky.Notifier.Email.Mailer
   alias Wocky.Notifier.Push.Backend.Sandbox, as: PushSandbox
@@ -53,7 +52,7 @@ defmodule Wocky.Application do
       {PushSandbox, []}
     ]
 
-    sup = {:ok, pid} = start_supervisor(children)
+    sup = start_supervisor(children)
 
     # Set up prometheus_ecto
     :ok =
@@ -66,10 +65,9 @@ defmodule Wocky.Application do
 
     {:ok, _} = Recurring.start()
 
-    Dawdle.start_pollers()
-
-    Confex.get_env(:wocky, :start_watcher, false)
-    |> maybe_start_watcher(pid)
+    if Confex.get_env(:wocky, :start_watcher, true) do
+      :ok = DawdleDB.start_watcher(Wocky.Repo)
+    end
 
     sup
   end
@@ -86,13 +84,6 @@ defmodule Wocky.Application do
       strategy: :one_for_one,
       name: Wocky.Supervisor
     )
-  end
-
-  defp maybe_start_watcher(false, _), do: :ok
-
-  defp maybe_start_watcher(true, sup) do
-    {:ok, _} = Supervisor.start_child(sup, {Watcher, Wocky.Repo.config()})
-    :ok
   end
 
   defp redis_config do
