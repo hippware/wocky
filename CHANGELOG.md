@@ -5,10 +5,16 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: geo_postgis (PR #2702)
+* Integrate the DB Watcher into Wocky (#2708, PR #2716)
+
+
+# 2019.7.29+r091e038
+
+* Update: geo_postgis (PR #2702), plug (PR #2713), observer_cli (PR #2714)
 * Create an endpoint to trigger silent push notification (#2692)
 * Image files saved with thumbnail in original aspect ratio (#2701)
 * Move to upstream ecto_enum release (PR #2707)
+* Use direct dispatching feature of Dawdle (#2680, PR #2686, PR #2715)
 
 
 # 2019.7.24+ra2df676
