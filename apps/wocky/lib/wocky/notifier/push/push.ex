@@ -245,6 +245,7 @@ defmodule Wocky.Notifier.Push do
       device: device,
       token: token,
       message_id: backend.get_id(n),
+      payload_string: n |> backend.get_payload() |> Poison.encode!(),
       payload: backend.get_payload(n),
       response: to_string(resp),
       details: backend.error_msg(resp)
@@ -266,6 +267,7 @@ defmodule Wocky.Notifier.Push do
       device: device,
       token: token,
       message_id: nil,
+      payload_string: payload_string(event),
       payload: Event.message(event),
       response: "timeout",
       details: "Timeout waiting for response from Pigeon"
@@ -286,6 +288,7 @@ defmodule Wocky.Notifier.Push do
       device: device,
       token: token,
       message_id: nil,
+      payload_string: payload_string(event),
       payload: Event.message(event),
       response: "max retries reached",
       details:
@@ -296,4 +299,6 @@ defmodule Wocky.Notifier.Push do
 
     :ok
   end
+
+  defp payload_string(event), do: event |> Event.message() |> Poison.encode!()
 end
