@@ -88,17 +88,13 @@ config :wocky,
 
   # Bot search
   max_local_bots_search_radius:
-    {:system, :integer, "WOCKY_MAX_LOCAL_BOTS_SEARCH_RADIUS", 50_000},
-
-
-  # Unused value to test the Vault adapter - can be safely deleted
-  vault_value: {{:via, Wocky.ConfexVaultAdapter}, "test-secret-value"}
+    {:system, :integer, "WOCKY_MAX_LOCAL_BOTS_SEARCH_RADIUS", 50_000}
 
 config :wocky, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},
   port: {:system, :integer, "REDIS_PORT", 6379},
   ssl: {:system, :boolean, "REDIS_SSL", false},
-  password: {{:via, Wocky.ConfexVaultAdapter}, "redis-password", nil},
+  password: {:system, :string, "REDIS_PASSWORD", nil},
   database: {:system, :integer, "REDIS_DB", 0}
 
 config :wocky, :redlock,
@@ -114,7 +110,7 @@ config :wocky, :redlock,
       host: {:system, :string, "REDIS_HOST", "localhost"},
       port: {:system, :integer, "REDIS_PORT", 6379},
       ssl: {:system, :boolean, "REDIS_SSL", false},
-      auth: {{:via, Wocky.ConfexVaultAdapter}, "redis-password", nil},
+      auth: {:system, :string, "REDIS_PASSWORD", nil},
       database: {:system, :integer, "REDIS_DB", 0}
     ]
   ]
@@ -182,7 +178,6 @@ config :wocky, Wocky.Notifier.Email.Mailer,
   api_key: {:system, :string, "MANDRILL_API_KEY", ""}
 
 config :wocky, Wocky.ConfexVaultAdapter,
-  use_vault: false,
   vault_prefix: {:system, :string, "WOCKY_VAULT_PREFIX", ""}
 
 config :dawdle, start_pollers: true
@@ -218,7 +213,7 @@ config :fun_with_flags, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},
   port: {:system, :integer, "REDIS_PORT", 6379},
   ssl: {:system, :boolean, "REDIS_SSL", false},
-  password: {{:via, Wocky.ConfexVaultAdapter}, "redis-password", nil},
+  password: {:system, :string, "REDIS_PASSWORD", nil},
   database: {:system, :integer, "REDIS_DB", 0}
 
 config :vaultex,

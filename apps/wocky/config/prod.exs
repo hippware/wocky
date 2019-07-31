@@ -18,9 +18,6 @@ config :wocky, :pigeon,
 
 config :dawdle, backend: Dawdle.Backend.SQS
 
-config :wocky, Wocky.ConfexVaultAdapter,
-  use_vault: true
-
 config :exometer_core,
   report: [reporters: [{:exometer_report_prometheus, [:enable_httpd]}]]
 
@@ -32,3 +29,20 @@ config :elixometer,
 config :ex_aws,
   access_key_id: :instance_role,
   secret_access_key: :instance_role
+
+config :wocky, :redis,
+  password: {{:via, Wocky.ConfexVaultAdapter}, "redis-password", nil}
+
+config :wocky, :redlock,
+  servers: [
+    [
+      host: {:system, :string, "REDIS_HOST", "localhost"},
+      port: {:system, :integer, "REDIS_PORT", 6379},
+      ssl: {:system, :boolean, "REDIS_SSL", false},
+      auth: {{:via, Wocky.ConfexVaultAdapter}, "redis-password", nil},
+      database: {:system, :integer, "REDIS_DB", 0}
+    ]
+  ]
+
+config :fun_with_flags, :redis,
+  password: {{:via, Wocky.ConfexVaultAdapter}, "redis-password", nil}
