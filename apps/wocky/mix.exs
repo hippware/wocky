@@ -66,6 +66,7 @@ defmodule Wocky.Mixfile do
       {:benchee, "~> 1.0", only: :dev},
       {:bcrypt_elixir, "~> 2.0"},
       {:bimap, "~> 1.0"},
+      {:cachex, "~> 3.1"},
       {:confex, "~> 3.4"},
       {:configparser_ex, "~> 4.0", only: [:dev, :test]},
       {:dataloader, "~> 1.0.0"},

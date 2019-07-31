@@ -7,9 +7,21 @@ defmodule Wocky.ConfexVaultAdapter do
 
   use ModuleConfig, otp_app: :wocky
 
+  import Cachex.Spec
+
   alias Vaultex.Client, as: Vaultex
 
   @behaviour Confex.Adapter
+
+  def child_spec(_) do
+    %{
+      id: VaultCache,
+      start: {Cachex, :start_link, [
+        :vault_cache,
+        [expiration: expiration(default: :timer.hours(1), interval: nil)]
+      ]}
+    }
+  end
 
   @impl true
   def fetch_value(key) do
@@ -20,15 +32,18 @@ defmodule Wocky.ConfexVaultAdapter do
     end
   end
 
-  defp get_vault_value(key) do
+  defp get_vault_value(key),
+    do: Cachex.fetch(:vault_cache, key, &get_from_vault/1)
+
+  defp get_from_vault(key) do
     base_path = get_config(:vault_prefix)
     case Vaultex.read(base_path <> key, :aws_iam, {nil, nil}) do
-      {:ok, %{"value" => value}} -> {:ok, value}
-      _ -> :error
+      {:ok, %{"value" => value}} -> {:commit, {:ok, value}}
+      _ -> {:commit, :error}
     end
   end
 
-  def get_env_value(key) do
+  defp get_env_value(key) do
     case System.get_env("WOCKY_VAULT_" <> key) do
       nil -> :error
       value -> {:ok, value}

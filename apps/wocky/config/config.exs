@@ -218,7 +218,7 @@ config :fun_with_flags, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},
   port: {:system, :integer, "REDIS_PORT", 6379},
   ssl: {:system, :boolean, "REDIS_SSL", false},
-  password: {:system, :string, "REDIS_PASSWORD", nil},
+  password: {{:via, Wocky.ConfexVaultAdapter}, "redis-password", nil},
   database: {:system, :integer, "REDIS_DB", 0}
 
 config :vaultex,
