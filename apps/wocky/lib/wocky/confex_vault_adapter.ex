@@ -25,9 +25,11 @@ defmodule Wocky.ConfexVaultAdapter do
 
   @impl true
   def fetch_value(key) do
-    case Cachex.fetch(:vault_cache, key, &get_from_vault/1) do
-      {result, value} when result in [:ok, :commit, :ignore] -> value
-      _ -> :error
+    # If the cache is running, use it, otherwise just fetch the value directly -
+    # we can cache it next time if we need it again.
+    case Process.whereis(:vault_cache) do
+      nil -> get_from_vault(key)
+      _ -> get_from_cache(key)
     end
   end
 
@@ -35,8 +37,17 @@ defmodule Wocky.ConfexVaultAdapter do
     base_path = get_config(:vault_prefix)
 
     case Vaultex.read(base_path <> key, :aws_iam, {nil, nil}) do
-      {:ok, %{"value" => value}} -> {:commit, {:ok, value}}
-      _ -> {:commit, :error}
+      {:ok, %{"value" => value}} -> {:ok, value}
+      _ -> :error
     end
   end
+
+  defp get_from_cache(key) do
+    case Cachex.fetch(:vault_cache, key, &get_from_vault_for_cache/1) do
+      {result, value} when result in [:ok, :commit, :ignore] -> value
+      _ -> :error
+    end
+  end
+
+  defp get_from_vault_for_cache(key), do: {:commit, get_from_vault(key)}
 end
