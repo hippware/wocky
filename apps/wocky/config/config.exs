@@ -98,7 +98,7 @@ config :wocky, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},
   port: {:system, :integer, "REDIS_PORT", 6379},
   ssl: {:system, :boolean, "REDIS_SSL", false},
-  password: {:system, :string, "REDIS_PASSWORD", nil},
+  password: {{:via, Wocky.ConfexVaultAdapter}, "redis-password", nil},
   database: {:system, :integer, "REDIS_DB", 0}
 
 config :wocky, :redlock,
@@ -114,7 +114,7 @@ config :wocky, :redlock,
       host: {:system, :string, "REDIS_HOST", "localhost"},
       port: {:system, :integer, "REDIS_PORT", 6379},
       ssl: {:system, :boolean, "REDIS_SSL", false},
-      auth: {:system, :string, "REDIS_PASSWORD", nil},
+      auth: {{:via, Wocky.ConfexVaultAdapter}, "redis-password", nil},
       database: {:system, :integer, "REDIS_DB", 0}
     ]
   ]
