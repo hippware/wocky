@@ -40,7 +40,7 @@ defmodule Wocky.Mixfile do
       # Specify extra applications you'll use from Erlang/Elixir
       # Also include vaultex here to ensure it starts before any app that needs
       # to read secrets
-      extra_applications: [:logger, :runtime_tools, :inets, :vaultex],
+      extra_applications: [:logger, :runtime_tools, :inets],
       included_applications: [],
       mod: {Wocky.Application, []},
       env: [
