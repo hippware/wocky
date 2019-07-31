@@ -25,6 +25,8 @@ defmodule Wocky.ConfexVaultAdapter do
 
   @impl true
   def fetch_value(key) do
+    # Because this is a Confex adapater, it may be called by other apps before
+    # wocky has started. In that case the cache process won't yet be available.
     # If the cache is running, use it, otherwise just fetch the value directly -
     # we can cache it next time if we need it again.
     case Process.whereis(:vault_cache) do
