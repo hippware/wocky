@@ -13,10 +13,14 @@ defmodule Wocky.ConfexVaultAdapter do
 
   @behaviour Confex.Adapter
 
-  def start_link() do
-    Cachex.start_link(:vault_cache,
-      expiration: expiration(default: :timer.hours(1), interval: nil)
-    )
+  def child_spec(_) do
+    %{
+      id: VaultCache,
+      start: {Cachex, :start_link, [
+        :vault_cache,
+        [expiration: expiration(default: :timer.hours(1), interval: nil)]
+      ]}
+    }
   end
 
   @impl true
