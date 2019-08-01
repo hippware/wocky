@@ -60,6 +60,10 @@ defmodule Wocky.Audit do
     |> Map.take([:device, :token, :message_id, :response, :details])
     |> Map.put(:user_id, user.id)
     |> Map.put(:payload, maybe_extract_payload(fields.payload, user, config))
+    |> Map.put(
+      :payload_string,
+      maybe_extract_payload(fields.payload_string, user, config)
+    )
   end
 
   defp maybe_extract_payload(payload, user, config) do
