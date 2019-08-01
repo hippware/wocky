@@ -5,11 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.7.31+r4cb3a68
+
 * Integrate the DB Watcher into Wocky (#2708, PR #2716)
 * Tighten up argument type on location_request_trigger (PR #2718)
   * Ecto.Query.CastError: .../ecto/repo/queryable.ex:373: (#2717)
 * Add stringified payload to push log (PR #2719)
 * Confex vault adapter and configuration (PR #2720, PR #2721, PR #2724)
+  * and other PRs
 
 
 # 2019.7.29+r091e038
