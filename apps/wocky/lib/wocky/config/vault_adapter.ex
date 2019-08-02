@@ -20,8 +20,9 @@ defmodule Wocky.Config.VaultAdapter do
     case Vaultex.read(path, :aws_iam, {nil, nil}) do
       {:ok, %{"value" => value}} ->
         {:ok, value}
+
       error ->
-        Logger.error("Error fetching #{key}: #{inspect error}")
+        Logger.error("Error fetching #{key}: #{inspect(error)}")
         :error
     end
   end
