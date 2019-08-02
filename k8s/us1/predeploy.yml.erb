@@ -7,6 +7,8 @@ metadata:
   labels:
     app: wocky-predeploy
     env: us1
+  annotations:
+    iam.amazonaws.com/role: <%= wocky_app_role_arn['value'] %>
 spec:
   restartPolicy: Never
   containers:
