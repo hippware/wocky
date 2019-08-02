@@ -12,9 +12,13 @@ defmodule Wocky.Config.ConfexProvider do
 
   use Distillery.Releases.Config.Provider
 
+  require Logger
+
   alias Config.Reader
 
   def init([config_file]) do
+    Logger.info("fun_with_flags config A: #{inspect Application.get_all_env(:fun_with_flags)}")
+
     _ = Confex.resolve_env!(:ex_aws)
     _ = Confex.resolve_env!(:vaultex)
 
@@ -26,9 +30,13 @@ defmodule Wocky.Config.ConfexProvider do
 
     Enum.each(config, fn {app, config} -> put_config(app, config) end)
 
+    Logger.info("fun_with_flags config B: #{inspect Application.get_all_env(:fun_with_flags)}")
+
     config
     |> Keyword.keys()
     |> Enum.each(&Confex.resolve_env!(&1, persistent: true))
+
+    Logger.info("fun_with_flags config C: #{inspect Application.get_all_env(:fun_with_flags)}")
   end
 
   defp put_config(app, config) do
