@@ -75,6 +75,7 @@ defmodule Wocky.Mixfile do
       {:dataloader, "~> 1.0.0"},
       {:dawdle, "~> 0.6"},
       {:dawdle_db, github: "hippware/dawdle_db", branch: "master"},
+      {:distillery, "~> 2.0"},
       {:ecto_enum, "~> 1.3"},
       {:ecto_homoiconic_enum,
        github: "hippware/ecto_homoiconic_enum", branch: "master"},

@@ -15,10 +15,11 @@ defmodule Wocky.Config.ConfexProvider do
   alias Config.Reader
 
   def init([config_file]) do
-    Confex.resolve_env!(:ex_aws)
-    Confex.resolve_env!(:vaultex)
+    _ = Confex.resolve_env!(:ex_aws)
+    _ = Confex.resolve_env!(:vaultex)
 
-    Application.ensure_all_started(:vaultex)
+    {:ok, _} = Application.ensure_all_started(:ex_aws)
+    {:ok, _} = Application.ensure_all_started(:vaultex)
 
     {:ok, file} = Provider.expand_path(config_file)
     config = Reader.read!(file)
