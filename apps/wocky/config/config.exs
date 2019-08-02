@@ -17,7 +17,7 @@ config :wocky,
   tros_s3_server: {:system, "WOCKY_S3_SERVER", "s3.amazonaws.com"},
 
   # Deployment notifications
-  slack_token: {:system, :string, "SLACK_TOKEN", ""},
+  slack_token: {:system, :string, "SLACK_TOKEN"},
 
   # Authentication
   token_expiry_days: {:system, :integer, "WOCKY_TOKEN_EXPIRY_DAYS", 60},
@@ -177,7 +177,7 @@ config :wocky, Wocky.Notifier.Email.Mailer,
   adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.TestAdapter},
   api_key: {:system, :string, "MANDRILL_API_KEY", ""}
 
-config :wocky, Wocky.Config.VaultAdapter,
+config :wocky, Wocky.ConfexVaultAdapter,
   vault_prefix: {:system, :string, "WOCKY_VAULT_PREFIX", ""}
 
 config :dawdle, start_pollers: true
