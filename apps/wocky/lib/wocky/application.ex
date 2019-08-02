@@ -9,6 +9,7 @@ defmodule Wocky.Application do
   """
   use Application
 
+  alias Wocky.ConfexVaultAdapter
   alias Wocky.Location.Supervisor, as: LocationSupervisor
   alias Wocky.Notifier.Email.Mailer
   alias Wocky.Notifier.Push.Backend.Sandbox, as: PushSandbox
@@ -34,6 +35,7 @@ defmodule Wocky.Application do
     redis_config = redis_config()
 
     children = [
+      {ConfexVaultAdapter, []},
       {Redix, redis_config},
       {Redlock, Confex.get_env(:wocky, :redlock)},
       %{
