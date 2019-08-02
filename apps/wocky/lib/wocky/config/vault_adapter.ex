@@ -5,17 +5,24 @@ defmodule Wocky.Config.VaultAdapter do
 
   use ModuleConfig, otp_app: :wocky
 
+  require Logger
+
   alias Vaultex.Client, as: Vaultex
 
   @behaviour Confex.Adapter
 
   @impl true
   def fetch_value(key) do
-    base_path = get_config(:vault_prefix)
+    path = get_config(:vault_prefix) <> key
 
-    case Vaultex.read(base_path <> key, :aws_iam, {nil, nil}) do
-      {:ok, %{"value" => value}} -> {:ok, value}
-      _ -> :error
+    Logger.info("Fetching #{key} from #{path} in Vault")
+
+    case Vaultex.read(path, :aws_iam, {nil, nil}) do
+      {:ok, %{"value" => value}} ->
+        {:ok, value}
+      error ->
+        Logger.error("Error fetching #{key}: #{inspect error}")
+        :error
     end
   end
 end
