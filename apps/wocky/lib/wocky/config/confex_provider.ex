@@ -17,8 +17,6 @@ defmodule Wocky.Config.ConfexProvider do
   alias Config.Reader
 
   def init([config_file]) do
-    Logger.info("fun_with_flags config A: #{inspect Application.get_all_env(:fun_with_flags)}")
-
     _ = Confex.resolve_env!(:ex_aws)
     _ = Confex.resolve_env!(:vaultex)
 
@@ -27,6 +25,7 @@ defmodule Wocky.Config.ConfexProvider do
 
     {:ok, file} = Provider.expand_path(config_file)
     config = Reader.read!(file)
+    Logger.info("fun_with_flags config A: #{inspect Application.get_all_env(:fun_with_flags)}")
 
     Enum.each(config, fn {app, config} -> put_config(app, config) end)
 
