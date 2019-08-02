@@ -25,10 +25,7 @@ environment :prod do
   set cookie: :"%dmqKgt{[Wt.Np>}s|,y(F0y!4h`R)nBgsMoO<!=0)p/Sxuj=0o;z*=y`zF1`^o]"
 
   set config_providers: [
-    {Wocky.Config.ConfexProvider, ["${RELEASE_ROOT_DIR}/vault.exs"]}
-  ]
-  set overlays: [
-    {:copy, "config/vault.exs", "vault.exs"}
+    {Wocky.Config.ConfexProvider, []}
   ]
 end
 
