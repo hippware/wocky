@@ -26,6 +26,3 @@ spec:
               image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/eks-deploy:latest
               imagePullPolicy: Always
               args: ["./promote-build", "testing", "staging"]
-              envFrom:
-                - secretRef:
-                    name: wocky-deploy-secrets

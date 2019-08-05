@@ -18,8 +18,6 @@ spec:
       envFrom:
         - configMapRef:
             name: wocky-config
-        - secretRef:
-            name: wocky-secrets
       env:
         - name: KUBE_POD_IP
           valueFrom:
