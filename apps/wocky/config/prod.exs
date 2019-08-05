@@ -11,7 +11,7 @@ config :wocky,
   goth_private_key: {{:via, VaultAdapter}, "firebase-private-key"},
   slack_token: {{:via, VaultAdapter}, "slack-token"},
   client_jwt_signing_key: {{:via, VaultAdapter}, "client-jwt-signing-key"},
-  server_jwt_signing_key: {{:via, VaultAdapter}, "server-jwt-signging-key"}
+  server_jwt_signing_key: {{:via, VaultAdapter}, "server-jwt-signing-key"}
 
 config :wocky, Wocky.Repo, password: {{:via, VaultAdapter}, "db-password"}
 
