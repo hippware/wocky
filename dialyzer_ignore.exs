@@ -4,7 +4,6 @@
   {"lib/wocky/repo/instrumenter.ex", :unmatched_return, 3},
   {"lib/wocky_api/pipeline_instrumenter.ex", :unmatched_return, 3},
   {"lib/wocky_api/router.ex", :unmatched_return, 35},
-  {"test/support/channel_helper.ex", :unmatched_return, 29},
 
   # Logger.info ignores:
   {"lib/wocky/repo/cleaner.ex", :unmatched_return},
