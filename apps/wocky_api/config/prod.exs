@@ -1,5 +1,7 @@
 use Mix.Config
 
+alias Wocky.Config.VaultAdapter
+
 # For production, we often load configuration from external
 # sources, such as your system environment. For this reason,
 # you won't find the :http configuration below, but set inside
