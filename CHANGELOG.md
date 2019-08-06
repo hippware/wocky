@@ -5,7 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.8.6+r7e54138
+
 * Remove remaining ejson use from staging and us1 (PR #2753)
+* Fix permissions for deploy container (PR #2757)
+* Fix twilio default key value (PR #2758)
 
 
 # 2019.8.6+r560b2f3
