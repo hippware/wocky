@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Remove remaining ejson use from staging and us1 (PR #2753)
+
+
+# 2019.8.6+r560b2f3
+
 * Add line to actually log payload string (PR #2735)
 * Vault related configuration (various PRs)
 * Update: observer_cli (PR #2722), credo_naming (PR #2723, PR #2736)
