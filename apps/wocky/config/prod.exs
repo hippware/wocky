@@ -64,4 +64,4 @@ config :honeybadger,
   api_key: {{:via, VaultAdapter}, "honeybadger-api-key"}
 
 config :ex_twilio,
-  auth_token: {{:via, VaultAdapter}, "twilio-auth-token"}
+  auth_token: {{:via, VaultAdapter}, "twilio-auth-token", nil}
