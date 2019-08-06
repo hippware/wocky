@@ -5,9 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: observer_cli (PR #2722), credo_naming (PR #2723, PR #2736)
 * Add line to actually log payload string (PR #2735)
 * Vault related configuration (various PRs)
+* Update: observer_cli (PR #2722), credo_naming (PR #2723, PR #2736)
+  * bamboo (PR #2755), stringprep (PR #2754), DawdleDB (PR #2756)
 
 
 # 2019.7.31+r4cb3a68
