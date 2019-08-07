@@ -137,7 +137,8 @@ defmodule Wocky.PresenceTest do
 
       assert_eventually(
         {ctx.requestor.id, :offline, ctx.user.id} ==
-          get_presence_result()
+          get_presence_result(),
+        2000
       )
     end
 
@@ -147,7 +148,8 @@ defmodule Wocky.PresenceTest do
 
       assert_eventually(
         {ctx.requestor.id, :offline, ctx.user.id} ==
-          get_presence_result()
+          get_presence_result(),
+        2000
       )
 
       Presence.set_status(ctx.requestor, :offline)

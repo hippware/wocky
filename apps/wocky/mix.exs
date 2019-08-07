@@ -89,9 +89,6 @@ defmodule Wocky.Mixfile do
       {:ex_phone_number, "~> 0.1"},
       {:ex_twilio, "~> 0.7"},
       {:exconstructor, "~> 1.0"},
-      # TODO: This dependency is only used in one migration. We should remove
-      # it after checkpointing the database schema.
-      {:exml, github: "esl/exml", tag: "3.0.3", manager: :rebar3},
       {:exometer_core,
        github: "hippware/exometer_core", branch: "working", override: true},
       {:exometer_prometheus,
