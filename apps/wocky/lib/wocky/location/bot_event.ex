@@ -6,14 +6,14 @@ defmodule Wocky.Location.BotEvent do
   use Wocky.Repo.Schema
 
   import Ecto.Query
-  import EctoHomoiconicEnum, only: [defenum: 2]
+  import EctoEnum
 
   alias Wocky.Account.User
   alias Wocky.Location.UserLocation
   alias Wocky.POI.Bot
   alias Wocky.Repo
 
-  defenum EventType, [
+  defenum(EventTypeEnum, :event_type, [
     :enter,
     :exit,
     :transition_in,
@@ -21,13 +21,13 @@ defmodule Wocky.Location.BotEvent do
     :timeout,
     :deactivate,
     :reactivate
-  ]
+  ])
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: true}
   schema "user_bot_events" do
     field :device, :string
-    field :event, EventType, null: false
+    field :event, EventTypeEnum, null: false
     field :occurred_at, :utc_datetime_usec, null: false
     field :location_id, :string
 

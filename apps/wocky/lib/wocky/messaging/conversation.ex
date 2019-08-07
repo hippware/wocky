@@ -5,14 +5,14 @@ defmodule Wocky.Messaging.Conversation do
 
   use Wocky.Repo.Schema
 
-  import EctoHomoiconicEnum, only: [defenum: 2]
+  import EctoEnum
 
   alias Wocky.Account.User
 
-  defenum MessageDirection, [
+  defenum(MessageDirectionEnum, :message_direction, [
     :incoming,
     :outgoing
-  ]
+  ])
 
   @foreign_key_type :binary_id
   schema "conversations" do
@@ -20,7 +20,7 @@ defmodule Wocky.Messaging.Conversation do
     field :image_url, :binary
     field :read, :boolean
     field :client_data, :binary
-    field :direction, MessageDirection
+    field :direction, MessageDirectionEnum
 
     belongs_to :user, User
     belongs_to :other_user, User
@@ -36,7 +36,7 @@ defmodule Wocky.Messaging.Conversation do
           image_url: binary(),
           read: boolean(),
           client_data: binary(),
-          direction: MessageDirection,
+          direction: MessageDirectionEnum.t(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
         }

@@ -4,22 +4,22 @@ defmodule Wocky.Notifier.Push.Token do
   use Wocky.Repo.Schema
 
   import Ecto.Query
-  import EctoHomoiconicEnum, only: [defenum: 2]
+  import EctoEnum
 
   alias Wocky.Account.User
   alias Wocky.Repo
 
-  defenum PushServicePlatform, [
+  defenum(PushServicePlatformEnum, :push_service_platform, [
     :apns,
     :fcm
-  ]
+  ])
 
   @primary_key {:id, :binary_id, autogenerate: true}
   @foreign_key_type :binary_id
   schema "push_tokens" do
     field :device, :string, null: false
     field :token, :string, null: false
-    field :platform, PushServicePlatform, null: false, default: :apns
+    field :platform, PushServicePlatformEnum, null: false, default: :apns
     field :dev_mode, :boolean, null: false, default: false
     field :valid, :boolean, null: false, default: true
     field :enabled_at, :utc_datetime_usec
