@@ -12,6 +12,31 @@ defmodule Wocky.Audit do
   alias Wocky.Repo.ID
 
   # ===================================================================
+  # Audit management
+
+  @doc "Enable auditing for a user"
+  @spec enable_user_audit(User.t()) :: :ok
+  def enable_user_audit(user) do
+    {:ok, true} = FunWithFlags.enable(:traffic, for_actor: user)
+    {:ok, true} = FunWithFlags.enable(:location, for_actor: user)
+    {:ok, true} = FunWithFlags.enable(:push, for_actor: user)
+    {:ok, true} = FunWithFlags.enable(:push_payload, for_actor: user)
+
+    :ok
+  end
+
+  @doc "Enable auditing for a user"
+  @spec disable_user_audit(User.t()) :: :ok
+  def disable_user_audit(user) do
+    {:ok, false} = FunWithFlags.disable(:traffic, for_actor: user)
+    {:ok, false} = FunWithFlags.disable(:location, for_actor: user)
+    {:ok, false} = FunWithFlags.disable(:push, for_actor: user)
+    {:ok, false} = FunWithFlags.disable(:push_payload, for_actor: user)
+
+    :ok
+  end
+
+  # ===================================================================
   # Traffic logging
 
   @doc "Write a packet record to the database"
