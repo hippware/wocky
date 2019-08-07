@@ -51,7 +51,7 @@ defmodule Wocky.Notifier.Push do
           token: Token.token(),
           user: User.t(),
           device: User.device(),
-          platform: Token.PushServicePlatform.t(),
+          platform: Token.PushServicePlatformEnum.t(),
           event: Event.t(),
           backend: module(),
           on_response: on_response(),

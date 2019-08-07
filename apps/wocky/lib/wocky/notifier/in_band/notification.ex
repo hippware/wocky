@@ -3,7 +3,7 @@ defmodule Wocky.Notifier.InBand.Notification do
 
   use Wocky.Repo.Schema
 
-  import EctoHomoiconicEnum, only: [defenum: 2]
+  import EctoEnum
   import Ecto.Query
 
   alias Ecto.Queryable
@@ -11,9 +11,9 @@ defmodule Wocky.Notifier.InBand.Notification do
   alias Wocky.POI.Bot
   alias Wocky.Repo
 
-  defenum GeofenceEventType, [:enter, :exit]
+  defenum(GeofenceEventTypeEnum, :geofence_event_type, [:enter, :exit])
 
-  defenum NotificationType, [
+  defenum(NotificationTypeEnum, :notification_type, [
     :bot_invitation,
     :bot_invitation_response,
     :bot_item,
@@ -21,12 +21,12 @@ defmodule Wocky.Notifier.InBand.Notification do
     :location_share,
     :location_share_end,
     :user_invitation
-  ]
+  ])
 
   @foreign_key_type :binary_id
   schema "notifications" do
-    field :type, NotificationType, null: false
-    field :geofence_event, GeofenceEventType
+    field :type, NotificationTypeEnum, null: false
+    field :geofence_event, GeofenceEventTypeEnum
     field :bot_invitation_accepted, :boolean
     field :expires_at, :utc_datetime
 
@@ -56,7 +56,7 @@ defmodule Wocky.Notifier.InBand.Notification do
           User.t(),
           id() | nil,
           id() | nil,
-          [NotificationType.t()] | nil
+          [NotificationTypeEnum.t()] | nil
         ) :: Queryable.t()
   def user_query(user, before_id, after_id, types \\ nil) do
     Notification
