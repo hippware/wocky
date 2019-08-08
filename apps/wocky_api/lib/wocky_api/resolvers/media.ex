@@ -41,7 +41,11 @@ defmodule WockyAPI.Resolvers.Media do
         {:error, "Timeout waiting for file to become ready"}
 
       _ ->
-        {:ok, %{tros_url: tros_url}}
+        {:ok,
+         %{
+           tros_url: tros_url,
+           urls: []
+         }}
     end
   end
 
