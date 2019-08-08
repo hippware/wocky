@@ -34,7 +34,7 @@ defmodule WockyAPI.GraphQL.MediaTest do
       input = %{
         "filename" => Lorem.word(),
         "size" => :rand.uniform(1000),
-        "mimeType" => Lorem.word(),
+        "mimeType" => "image/png",
         "access" => Lorem.sentence()
       }
 
@@ -63,6 +63,19 @@ defmodule WockyAPI.GraphQL.MediaTest do
       assert error_msg(result) =~ ~r/In field "filename"/
       assert error_msg(result) =~ ~r/In field "mimeType"/
     end
+
+    test "request upload with invalid mime type", %{user: user} do
+      input = %{
+        "filename" => Lorem.word(),
+        "size" => 1000,
+        "mimeType" => "aspect"
+      }
+
+      result = run_query(@query, user, %{"input" => input})
+
+      assert error_msg(result) =~ ~r/Invalid MIME type/
+    end
+
   end
 
   describe "delete" do
