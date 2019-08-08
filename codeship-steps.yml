@@ -4,24 +4,12 @@
 - name: build_and_test
   type: parallel
   steps:
-  - name: run_lint
-    type: serial
-    service: wocky-build
-    steps:
-    - name: lint
-      command: make lint
-  - name: run_tests
-    type: serial
+  - name: check
     service: wocky-test
-    steps:
-    - name: unit_test
-      command: make unittest
+    command: make check
   - name: test_migration
-    type: serial
     service: wocky-migration-test
-    steps:
-    - name: migration_test
-      command: make migrationtest
+    command: make migrationtest
   - name: build_release
     type: serial
     steps:

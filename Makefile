@@ -20,11 +20,8 @@ help:
 ########################################################################
 ### Run tests in CI
 
-lint: ## Run Credo to lint the source code
-	mix credo --strict -a
-
-unittest: ## Run the unit tests locally
-	mix do ecto.setup, coveralls --umbrella
+check: ## Run mix check
+	mix check --except dialyzer
 
 migrationtest: undumpdb
 	mix ecto.migrate
