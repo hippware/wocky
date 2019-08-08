@@ -2,6 +2,7 @@ defmodule WockyAPI.GraphQL.MediaTest do
   use WockyAPI.GraphQLCase, async: false
 
   alias Faker.Lorem
+  alias Wocky.Account
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -223,6 +224,35 @@ defmodule WockyAPI.GraphQL.MediaTest do
       assert Enum.all?(urls, fn %{"url" => url} ->
                url =~ "https://localhost"
              end)
+    end
+
+    @query """
+    query {
+      currentUser {
+        media {
+          urls {
+            type
+            url
+          }
+        }
+      }
+    }
+    """
+
+    test "it should handle a user without an avatar set", ctx do
+      Account.update(ctx.user, %{image_url: nil})
+
+      result = run_query(@query, ctx.user)
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "currentUser" => %{
+                 "media" => %{
+                   "urls" => []
+                 }
+               }
+             }
     end
   end
 end
