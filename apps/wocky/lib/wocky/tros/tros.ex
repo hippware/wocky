@@ -29,6 +29,8 @@ defmodule Wocky.TROS do
 
   @file_ready_event_prefix "tros-file-ready-"
 
+  @valid_content_types ["image/png", "image/jpeg"]
+
   # ----------------------------------------------------------------------
   # Names and URLs
 
@@ -123,14 +125,18 @@ defmodule Wocky.TROS do
   @spec make_upload_response(User.t(), file_id, integer, binary, metadata) ::
           {:ok, {list, list}} | {:error, term}
   def make_upload_response(owner, file_id, size, access, meta) do
-    case put_metadata(file_id, owner.id, access) do
-      {:ok, _} ->
-        reference_url = make_url(owner, file_id)
+    with true <- meta.content_type in @valid_content_types,
+         {:ok, _} <- put_metadata(file_id, owner.id, access) do
+      reference_url = make_url(owner, file_id)
 
-        result =
-          backend().make_upload_response(reference_url, file_id, size, meta)
+      result =
+        backend().make_upload_response(reference_url, file_id, size, meta)
 
-        {:ok, result}
+      {:ok, result}
+    else
+      false ->
+        {:error,
+         "Invalid MIME type - must be one of #{inspect(@valid_content_types)}"}
 
       {:error, _} = error ->
         error

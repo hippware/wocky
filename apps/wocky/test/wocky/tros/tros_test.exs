@@ -66,9 +66,18 @@ defmodule Wocky.TROS.TROSTest do
       assert {:ok, _} = TROS.delete(ctx.id, ctx.user)
     end
 
-    test "make_upload_response/5", ctx do
+    test "make_upload_response/5 should work", ctx do
       assert {:ok, {_, _}} =
-               TROS.make_upload_response(ctx.user, ID.new(), 100, "all", [])
+               TROS.make_upload_response(ctx.user, ID.new(), 100, "all", %{
+                 content_type: "image/png"
+               })
+    end
+
+    test "make_upload_response/5 should reject invalid content type", ctx do
+      assert {:error, _} =
+               TROS.make_upload_response(ctx.user, ID.new(), 100, "all", %{
+                 content_type: "image/pong"
+               })
     end
 
     test "get_download_urls/2", ctx do
