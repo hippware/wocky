@@ -9,7 +9,8 @@ defmodule Wocky.Release.Mixfile do
       preferred_cli_env: [
         coveralls: :test,
         "coveralls.html": :test,
-        dialyzer: :test
+        dialyzer: :test,
+        check: :test
       ],
       dialyzer: [
         plt_add_apps: [:ex_unit],
@@ -31,9 +32,11 @@ defmodule Wocky.Release.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
+      {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0.0-rc.4", only: [:dev, :test], runtime: false},
-      {:excoveralls, "~> 0.8", only: [:dev, :test], runtime: false},
+      {:ex_check, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:ex_guard, "~> 1.1", only: [:dev, :test], runtime: false},
+      {:excoveralls, "~> 0.8", only: [:dev, :test], runtime: false},
       {:mix_test_watch, "~> 0.8", only: :dev, runtime: false}
     ]
   end
