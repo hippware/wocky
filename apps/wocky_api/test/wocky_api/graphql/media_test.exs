@@ -75,7 +75,6 @@ defmodule WockyAPI.GraphQL.MediaTest do
 
       assert error_msg(result) =~ ~r/Invalid MIME type/
     end
-
   end
 
   describe "delete" do
