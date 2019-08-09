@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.8.8+r61efeaf
+
 * Replace use of homoiconic enum with native PSQL enums (#2706, PR #2760)
 * Add functions for (en|dis)ableing audit for a user (PR #2761)
 * Remove unused migration utils module (PR #2762)
