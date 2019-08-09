@@ -103,7 +103,7 @@
   "mimerl": {:hex, :mimerl, "1.2.0", "67e2d3f571088d5cfd3e550c383094b47159f3eee8ffa08e64106cdf5e981be3", [:rebar3], [], "hexpm"},
   "mix_test_watch": {:hex, :mix_test_watch, "0.9.0", "c72132a6071261893518fa08e121e911c9358713f62794a90c95db59042af375", [:mix], [{:file_system, "~> 0.2.1 or ~> 0.3", [hex: :file_system, repo: "hexpm", optional: false]}], "hexpm"},
   "mock": {:hex, :mock, "0.3.3", "42a433794b1291a9cf1525c6d26b38e039e0d3a360732b5e467bfc77ef26c914", [:mix], [{:meck, "~> 0.8.13", [hex: :meck, repo: "hexpm", optional: false]}], "hexpm"},
-  "module_config": {:git, "https://github.com/hippware/module_config.git", "a260f3565d7a4edda6a123ac8f44dc5edc9e6ab3", []},
+  "module_config": {:hex, :module_config, "1.0.0", "73661dcb135136fdb4bd755df956872e8344a2774323a83c770c0f9616a9451c", [:mix], [{:confex, "~> 3.4", [hex: :confex, repo: "hexpm", optional: false]}], "hexpm"},
   "nimble_parsec": {:hex, :nimble_parsec, "0.5.0", "90e2eca3d0266e5c53f8fbe0079694740b9c91b6747f2b7e3c5d21966bba8300", [:mix], [], "hexpm"},
   "observer_cli": {:hex, :observer_cli, "1.5.2", "6e93437f74a99708068a32b767b02432d113896275421409e3018d989236a65a", [:mix, :rebar3], [{:recon, "~>2.5.0", [hex: :recon, repo: "hexpm", optional: false]}], "hexpm"},
   "p1_utils": {:hex, :p1_utils, "1.0.16", "05b5d4fb1f002d827b0d0d344eecdb4208b535bf95264d44f588affec644212b", [:rebar3], [], "hexpm"},
