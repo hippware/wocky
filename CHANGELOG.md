@@ -6,6 +6,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Add 'mix check' (PR #2765)
+* Move staging to SSL Redis server (PR #2766)
+* Update: absinthe (PR #2767)
 
 
 # 2019.8.8+r61efeaf
