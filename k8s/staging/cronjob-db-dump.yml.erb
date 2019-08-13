@@ -23,6 +23,11 @@ spec:
             - name: db-dumper
               image: hippware/db-dumper:latest
               imagePullPolicy: Always
+              securityContext:
+                capabilities:
+                  add:
+                    - "IPC_LOCK"
+                procMount: "Default"
               env:
                 - name: DB_NAME
                   valueFrom:
@@ -39,11 +44,6 @@ spec:
                     configMapKeyRef:
                       name: wocky-config
                       key: WOCKY_DB_USER
-                - name: DB_PASSWORD
-                  valueFrom:
-                    secretKeyRef:
-                      name: wocky-secrets
-                      key: WOCKY_DB_PASSWORD
                 - name: S3_BUCKET
                   value: wocky-db-dumps
                 - name: S3_PATH

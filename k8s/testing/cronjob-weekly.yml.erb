@@ -2,11 +2,11 @@ apiVersion: batch/v1beta1
 kind: CronJob
 metadata:
   name: wocky-weekly
-  namespace: wocky-staging
+  namespace: wocky-testing
   labels:
     app: wocky-cron
     mod: weekly
-    env: staging
+    env: testing
 spec:
   schedule: "0 0 * * 0"
   jobTemplate:
@@ -16,7 +16,7 @@ spec:
           labels:
             app: wocky-weekly
             mod: weekly
-            env: staging
+            env: testing
           annotations:
             iam.amazonaws.com/role: <%= wocky_app_role_arn['value'] %>
         spec:
