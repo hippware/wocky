@@ -31,13 +31,13 @@ defmodule Wocky.Location.HandlerTest do
     end
 
     test "should add a new bot subscription", %{bot: bot, pid: pid} do
-      assert %{subscriptions: [^bot]} = :sys.get_state(pid)
+      assert %{bot_subscriptions: [^bot]} = :sys.get_state(pid)
     end
 
     test "should remove a bot subscription", %{user: user, bot: bot, pid: pid} do
       Relation.unsubscribe(user, bot)
 
-      assert %{subscriptions: []} = :sys.get_state(pid)
+      assert %{bot_subscriptions: []} = :sys.get_state(pid)
     end
   end
 end

@@ -5,6 +5,7 @@ defmodule Wocky.Location do
 
   alias Ecto.Changeset
   alias Ecto.Queryable
+  alias Geocalc.Point
   alias Wocky.Account.User
   alias Wocky.Location.GeoFence
   alias Wocky.Location.Handler
@@ -18,9 +19,13 @@ defmodule Wocky.Location do
   # ----------------------------------------------------------------------
   # Subscription Cache Management
 
-  defdelegate add_subscription(user, bot), to: Handler
+  defdelegate add_bot_subscription(user, bot), to: Handler
 
-  defdelegate remove_subscription(user, bot), to: Handler
+  defdelegate remove_bot_subscription(user, bot), to: Handler
+
+  defdelegate add_proximity_subscription(user, sub), to: Handler
+
+  defdelegate remove_proximity_subscription(user, sub), to: Handler
 
   # ----------------------------------------------------------------------
   # User Location
@@ -147,4 +152,7 @@ defmodule Wocky.Location do
 
   @spec refresh_share_cache(User.id()) :: [User.id()]
   def refresh_share_cache(user_id), do: Cache.refresh(user_id)
+
+  @spec to_point(UserLocation.t()) :: Point.t()
+  def to_point(location), do: Map.take(location, [:lat, :lon])
 end

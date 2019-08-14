@@ -11,7 +11,7 @@ defmodule Wocky.Callbacks.BotSubscription do
 
   def handle_delete(new) do
     Hydrator.with_assocs(new, [:user], fn rec ->
-      Location.remove_subscription(
+      Location.remove_bot_subscription(
         rec.user,
         %Bot{id: rec.bot_id}
       )

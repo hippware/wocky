@@ -22,7 +22,7 @@ defmodule Wocky.Callbacks.LocationShare do
     Location.refresh_share_cache(new.user_id)
   end
 
-  def handle_update(_old, new) do
+  def handle_update(new, _old) do
     Location.refresh_share_cache(new.user_id)
   end
 

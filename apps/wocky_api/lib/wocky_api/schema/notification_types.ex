@@ -51,6 +51,9 @@ defmodule WockyAPI.Schema.NotificationTypes do
 
     @desc "UserInvitationNotification type"
     value :user_invitation_notification
+
+    @desc "UserProximityNotification type"
+    value :user_proximity_notification
   end
 
   union :notification_data do
@@ -61,7 +64,8 @@ defmodule WockyAPI.Schema.NotificationTypes do
       :geofence_event_notification,
       :location_share_notification,
       :location_share_end_notification,
-      :user_invitation_notification
+      :user_invitation_notification,
+      :user_proximity_notification
     ]
 
     resolve_type &Notification.resolve_type/2
@@ -164,6 +168,14 @@ defmodule WockyAPI.Schema.NotificationTypes do
   """
   object :user_invitation_notification do
     @desc "The user who sent the invitation"
+    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+  end
+
+  @desc """
+  A notification that a user is within range of a proximity notification
+  """
+  object :user_proximity_notification do
+    @desc "The user who is within range"
     field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
   end
 
