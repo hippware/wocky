@@ -22,12 +22,13 @@ config :wocky, Wocky.Notifier.Email.Mailer,
 
 config :wocky, :pigeon,
   apns: [
-    cert: {:wocky, "certs/${WOCKY_INST}.crt"},
-    key: {:wocky, "certs/${WOCKY_INST}.key"},
+    key: {{:via, VaultAdapter}, "apns-key", ""},
+    key_identifier: {:system, :string, "APNS_KEY_IDENTIFIER", "NBJ9A4785H"},
+    team_id: {:system, :string, "APNS_TEAM_ID", "W6M2PMRSBT"},
     mode: :prod
   ],
   fcm: [
-    key: {{:via, VaultAdapter}, "fcm-key"}
+    key: {{:via, VaultAdapter}, "fcm-key", ""}
   ]
 
 config :dawdle, backend: Dawdle.Backend.SQS

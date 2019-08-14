@@ -117,8 +117,9 @@ config :wocky, :redlock,
 
 config :wocky, :pigeon,
   apns: [
-    cert: {:wocky, "certs/testing.crt"},
-    key: {:wocky, "certs/testing.key"},
+    key: "",
+    key_identifier: "",
+    team_id: "",
     mode: :dev
   ],
   fcm: [
