@@ -3,6 +3,7 @@ defmodule Wocky.Location.UserLocation.Current do
 
   import Ecto.Query
 
+  alias Timex.Duration
   alias Wocky.Account.User
   alias Wocky.Location.Share
   alias Wocky.Location.UserLocation
@@ -10,7 +11,9 @@ defmodule Wocky.Location.UserLocation.Current do
   alias Wocky.Repo
 
   # Expire current location after 2 days
-  @expire_secs 60 * 60 * 24 * 2
+  @expire_secs Duration.from_days(2)
+               |> Duration.to_seconds(truncate: true)
+               |> to_string()
 
   @spec set(User.t(), UserLocation.t()) :: :ok
   def set(user, loc) do
@@ -20,7 +23,7 @@ defmodule Wocky.Location.UserLocation.Current do
         key(user.id),
         value(loc),
         "EX",
-        to_string(@expire_secs)
+        @expire_secs
       ])
 
     _ =
