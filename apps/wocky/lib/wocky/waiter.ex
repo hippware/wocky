@@ -10,6 +10,15 @@ defmodule Wocky.Waiter do
   and :ok will be returned. If the event is fired within the timeout, :ok
   is returned; otherwise :timeout is returned.
   """
+
+  alias Timex.Duration
+
+  # If a wait hasn't happened after a day then we can probably safely assume
+  # it isn't going to happen. Let the redis entry expire at that point.
+  @expire_secs Duration.from_days(1)
+               |> Duration.to_seconds(truncate: true)
+               |> to_string()
+
   @spec wait(event(), non_neg_integer | :infinity, (() -> boolean())) ::
           :ok | :timeout
   def wait(event, timeout, skip_callback) do
@@ -17,6 +26,7 @@ defmodule Wocky.Waiter do
     key = key(event)
     val = val(self(), ref)
     {:ok, _} = Redix.command(Redix, ["SADD", key, val])
+    {:ok, _} = Redix.command(Redix, ["EXPIRE", key, @expire_secs])
 
     result =
       case skip_callback.() do

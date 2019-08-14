@@ -3,23 +3,44 @@ defmodule Wocky.Presence.Store do
   Redis-based store for user_id -> [presence_pid] mappings
   """
 
+  alias Timex.Duration
   alias Wocky.Account.User
 
   @lock_timeout_secs 5
+
+  # Expire untouched records after two weeks - far longer than any TCP
+  # connection is likely to be up for.
+  @expire_secs Duration.from_weeks(2)
+               |> Duration.to_seconds(truncate: true)
+               |> to_string()
 
   @doc """
   Add the calling presence-tracking process to the records for a user
   """
   @spec add_self(User.id()) :: :ok
   def add_self(user_id) do
-    {:ok, _} = Redix.command(Redix, ["SET", key(user_id), value(self())])
+    {:ok, _} =
+      Redix.command(Redix, [
+        "SET",
+        key(user_id),
+        value(self()),
+        "EX",
+        @expire_secs
+      ])
+
     :ok
   end
 
   @spec set_self_online(User.id(), pid()) :: :ok
   def set_self_online(user_id, online_pid) do
     {:ok, _} =
-      Redix.command(Redix, ["SET", key(user_id), value(self(), online_pid)])
+      Redix.command(Redix, [
+        "SET",
+        key(user_id),
+        value(self(), online_pid),
+        "EX",
+        @expire_secs
+      ])
 
     :ok
   end

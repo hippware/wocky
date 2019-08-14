@@ -5,9 +5,16 @@ defmodule Wocky.Location.Share.Cache do
 
   import Ecto.Query
 
+  alias Timex.Duration
   alias Wocky.Account.User
   alias Wocky.Location.Share
   alias Wocky.Repo
+
+  # Let Redis expire an untouched cache after two weeks - cleans up any deleted
+  # users but shouldn't add any significant refresh overhead.
+  @expire_secs Duration.from_weeks(2)
+               |> Duration.to_seconds(truncate: true)
+               |> to_string()
 
   @spec get(User.id()) :: [User.id()]
   def get(user_id) do
@@ -46,7 +53,15 @@ defmodule Wocky.Location.Share.Cache do
   # Public for testing purposes
   @doc false
   def put(user_id, values) do
-    {:ok, _} = Redix.command(Redix, ["SET", key(user_id), encode(values)])
+    {:ok, _} =
+      Redix.command(Redix, [
+        "SET",
+        key(user_id),
+        encode(values),
+        "EX",
+        @expire_secs
+      ])
+
     :ok
   end
 
