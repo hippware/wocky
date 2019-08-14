@@ -5,9 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.8.13+rdf82a24
+
 * Add 'mix check' (PR #2765)
 * Move staging to SSL Redis server (PR #2766)
-* Update: absinthe (PR #2767)
+* Update: absinthe (PR #2767), ModuleConfig to version 1.0 (PR #2769)
+* Cronjob fixes (PR #2771)
 
 
 # 2019.8.8+r61efeaf
