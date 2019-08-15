@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.8.15+r8edd193
+
+* Add expiry to all redis records (#2774, PR #2775)
+* Use APNS keys instead of certificates (#2095, PR #2776, PR #2777)
+
+
 # 2019.8.13+rdf82a24
 
 * Add 'mix check' (PR #2765)
