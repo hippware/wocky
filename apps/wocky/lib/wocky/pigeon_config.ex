@@ -1,7 +1,7 @@
 defmodule Wocky.PigeonConfig do
   @moduledoc "Config callback module for Pigeon"
 
-  alias Pigeon.APNS.Config, as: APNS
+  alias Pigeon.APNS.JWTConfig, as: APNS
   alias Pigeon.FCM.Config, as: FCM
 
   def apns_config do
