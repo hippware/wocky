@@ -266,7 +266,7 @@ defmodule Wocky.Notifier.Push do
     log = %PushLog{
       device: device,
       token: token,
-      message_id: nil,
+      message_id: "",
       payload_string: payload_string(event),
       payload: Event.message(event),
       response: "timeout",
@@ -287,7 +287,7 @@ defmodule Wocky.Notifier.Push do
     log = %PushLog{
       device: device,
       token: token,
-      message_id: nil,
+      message_id: "",
       payload_string: payload_string(event),
       payload: Event.message(event),
       response: "max retries reached",
