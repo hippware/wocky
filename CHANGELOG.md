@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: apollo_tracing (PR #2779)
+* Add android sound params to FCM push notifications (#2778, PR #2780)
+
+
 # 2019.8.15+r8edd193
 
 * Add expiry to all redis records (#2774, PR #2775)
