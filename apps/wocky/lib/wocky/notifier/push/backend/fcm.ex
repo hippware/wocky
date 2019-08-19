@@ -36,16 +36,21 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
 
   # Foreground notification
   def build_notification(token, event, false) do
+    opts = Event.opts(event)
+    sound = Keyword.get(opts, :sound, "silence")
+
     event_msg =
       event
       |> Event.message()
       |> Utils.maybe_truncate_message()
 
-    Notification.new(
-      token,
-      %{"title" => "tinyrobot", "body" => event_msg},
-      %{"url" => Event.uri(event)}
-    )
+    body =
+      maybe_add_channel_id(
+        %{"title" => "tinyrobot", "body" => event_msg, "sound" => sound},
+        opts[:android_channel_id]
+      )
+
+    Notification.new(token, body, %{"url" => Event.uri(event)})
   end
 
   # Background notification
@@ -53,6 +58,11 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
     data = Event.opts(event)[:extra_fields] || %{}
     Notification.new(token, %{}, data)
   end
+
+  defp maybe_add_channel_id(body, nil), do: body
+
+  defp maybe_add_channel_id(body, channel_id),
+    do: Map.put(body, "android_channel_id", channel_id)
 
   @impl true
   def get_response(%Notification{status: :success, response: response}),

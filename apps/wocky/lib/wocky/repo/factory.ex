@@ -13,6 +13,14 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Phone.EnUs, as: Phone
   alias Faker.String
   alias Wocky.Account.User
+  alias Wocky.Events.BotInvitation, as: BotInvitationEvent
+  alias Wocky.Events.BotInvitationResponse
+  alias Wocky.Events.BotItem
+  alias Wocky.Events.GeofenceEvent
+  alias Wocky.Events.LocationShare
+  alias Wocky.Events.NewMessage
+  alias Wocky.Events.UserInvitation
+  alias Wocky.Events.UserInvitationResponse
   alias Wocky.GeoUtils
   alias Wocky.Location.BotEvent
   alias Wocky.Location.Share
@@ -185,6 +193,71 @@ defmodule Wocky.Repo.Factory do
       other_user: build(:user),
       bot: build(:bot),
       geofence_event: :enter
+    }
+  end
+
+  def bot_invitation_event_factory do
+    %BotInvitationEvent{
+      to: build(:user),
+      from: build(:user),
+      bot: build(:bot),
+      invitation: build(:bot_invitation)
+    }
+  end
+
+  def bot_invitation_response_event_factory do
+    %BotInvitationResponse{
+      to: build(:user),
+      from: build(:user),
+      bot: build(:bot),
+      invitation: build(:bot_invitation)
+    }
+  end
+
+  def bot_item_event_factory do
+    %BotItem{
+      to: build(:user),
+      from: build(:user),
+      item: build(:item)
+    }
+  end
+
+  def geofence_event_factory do
+    %GeofenceEvent{
+      to: build(:user),
+      from: build(:user),
+      bot: build(:bot),
+      event: :enter
+    }
+  end
+
+  def location_share_event_factory do
+    %LocationShare{
+      to: build(:user),
+      from: build(:user),
+      expires_at: DateTime.utc_now()
+    }
+  end
+
+  def new_message_event_factory do
+    %NewMessage{
+      to: build(:user),
+      from: build(:user),
+      content: "testing"
+    }
+  end
+
+  def user_invitation_event_factory do
+    %UserInvitation{
+      to: build(:user),
+      from: build(:user)
+    }
+  end
+
+  def user_invitation_response_event_factory do
+    %UserInvitationResponse{
+      to: build(:user),
+      from: build(:user)
     }
   end
 
