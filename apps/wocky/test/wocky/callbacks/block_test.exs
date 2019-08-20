@@ -3,6 +3,7 @@ defmodule Wocky.Callbacks.BlockTest do
 
   alias Wocky.Block
   alias Wocky.Callbacks.Block, as: Callback
+  alias Wocky.Location
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Relation
   alias Wocky.Relation.Invitation
@@ -39,13 +40,21 @@ defmodule Wocky.Callbacks.BlockTest do
           other_user: user1
         )
 
+      share1 =
+        Factory.insert(:user_location_share, user: user1, shared_with: user2)
+
+      share2 =
+        Factory.insert(:user_location_share, user: user2, shared_with: user1)
+
       Block.block(user1, user2)
 
       {:ok,
        invitation1: invitation1,
        invitation2: invitation2,
        notification1: notification1,
-       notification2: notification2}
+       notification2: notification2,
+       share1: share1,
+       share2: share2}
     end
 
     test "should delete invitations between the two users", ctx do
@@ -56,6 +65,11 @@ defmodule Wocky.Callbacks.BlockTest do
     test "should delete notifications between the two users", ctx do
       refute_eventually(Repo.get(Notification, ctx.notification1.id))
       refute_eventually(Repo.get(Notification, ctx.notification2.id))
+    end
+
+    test "should cancel any location sharing", ctx do
+      assert_eventually(Location.get_location_shares(ctx.user1) == [])
+      assert_eventually(Location.get_location_shares(ctx.user2) == [])
     end
   end
 

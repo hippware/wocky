@@ -6,6 +6,7 @@ defmodule Wocky.Callbacks.Block do
   use DawdleDB.Handler, type: Wocky.Block
 
   alias Wocky.Block
+  alias Wocky.Location
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.POI
   alias Wocky.Relation
@@ -16,17 +17,22 @@ defmodule Wocky.Callbacks.Block do
                                                          blocker: blocker,
                                                          blockee: blockee
                                                        } ->
-      # Delete content items on owned bots by blocker/blockee
-      delete_bot_references(blocker, blockee)
-      delete_bot_references(blockee, blocker)
+      Enum.each(
+        [{blocker, blockee}, {blockee, blocker}],
+        fn {a, b} ->
+          # Delete content items on owned bots by blocker/blockee
+          delete_bot_references(a, b)
 
-      # Delete invitations
-      Relation.delete_invitation(blocker, blockee)
-      Relation.delete_invitation(blockee, blocker)
+          # Delete invitations
+          Relation.delete_invitation(a, b)
 
-      # Delete notifications
-      Notification.delete(blocker, blockee)
-      Notification.delete(blockee, blocker)
+          # Delete notifications
+          Notification.delete(a, b)
+
+          # Delete live location shares
+          Location.stop_sharing_location(a, b)
+        end
+      )
 
       :ok
     end)
