@@ -6,9 +6,11 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: apollo_tracing (PR #2779), pigeon (PR #2784)
-  * ex_check (PR #2785), excoveralls (PR #2786)
+  * ex_check (PR #2785), excoveralls (PR #2786), credo (PR #2790)
 * Add android sound params to FCM push notifications (#2778, PR #2780)
 * Add bot and user indices to bot events table (PR #2782)
+* Mark all old/existing chat messages as read (#2783, PR #2787)
+* Remove location shares on block (PR #2789)
 
 
 # 2019.8.15+r8edd193
