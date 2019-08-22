@@ -27,7 +27,9 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       level: 0.78,
       is_charging: false
     },
-    timestamp: "2016-10-24T09:45:05.621Z"
+    timestamp: "2016-10-24T09:45:05.621Z",
+    extra_field: "extra_data",
+    extra_field_2: "extra_data_2"
   }
 
   defp packet(loc \\ @location, device \\ "testing"),
@@ -156,6 +158,15 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       invalid_attrs = packet([@location], nil)
       conn = post conn, location_path(conn, :create, user.id), invalid_attrs
       assert conn.status == 400
+    end
+
+    test "assigns extra fields", %{conn: conn, user: user} do
+      post conn, location_path(conn, :create, user.id), packet()
+
+      cur_loc = Location.get_current_user_location(user)
+      assert cur_loc.extra_fields["extra_field"] == "extra_data"
+      assert cur_loc.extra_fields["extra_field_2"] == "extra_data_2"
+      assert Enum.count(cur_loc.extra_fields) == 2
     end
   end
 end
