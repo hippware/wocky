@@ -5,8 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: credo (PR #2790)
+
+
+# 2019.8.20+re723d19
+
 * Update: apollo_tracing (PR #2779), pigeon (PR #2784)
-  * ex_check (PR #2785), excoveralls (PR #2786), credo (PR #2790)
+  * ex_check (PR #2785), excoveralls (PR #2786)
 * Add android sound params to FCM push notifications (#2778, PR #2780)
 * Add bot and user indices to bot events table (PR #2782)
 * Mark all old/existing chat messages as read (#2783, PR #2787)
