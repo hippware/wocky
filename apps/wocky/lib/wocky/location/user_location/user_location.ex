@@ -24,6 +24,7 @@ defmodule Wocky.Location.UserLocation do
     field :activity_confidence, :integer
     field :battery_level, :float
     field :battery_charging, :boolean
+    field :extra_fields, :map
     field :created_at, :utc_datetime_usec
   end
 
@@ -46,6 +47,7 @@ defmodule Wocky.Location.UserLocation do
           activity_confidence: integer | nil,
           battery_level: float | nil,
           battery_charging: boolean | nil,
+          extra_fields: map(),
           created_at: DateTime.t() | nil
         }
 

@@ -60,6 +60,7 @@ defmodule WockyAPI.Controllers.LocationController do
     |> UserLocation.new()
     |> maybe_add_activity(l["activity"])
     |> maybe_add_battery(l["battery"])
+    |> add_extra_fields(l)
   end
 
   defp maybe_add_activity(l, %{} = a) do
@@ -77,4 +78,19 @@ defmodule WockyAPI.Controllers.LocationController do
   end
 
   defp maybe_add_battery(l, _), do: l
+
+  defp add_extra_fields(l, input) do
+    extra_fields =
+      Map.drop(input, [
+        "coords",
+        "timestamp",
+        "uuid",
+        "odometer",
+        "is_moving",
+        "activity",
+        "battery"
+      ])
+
+    %UserLocation{l | extra_fields: extra_fields}
+  end
 end
