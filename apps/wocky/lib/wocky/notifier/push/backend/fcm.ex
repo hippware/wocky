@@ -32,6 +32,7 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
     token
     |> build_notification(event, background)
     |> Notification.put_restricted_package_name(package())
+    |> Notification.put_priority(Event.opts(event)[:priority])
   end
 
   # Foreground notification
