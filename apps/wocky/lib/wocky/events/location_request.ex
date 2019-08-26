@@ -27,6 +27,7 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.LocationRequest do
 
   def opts(_) do
     [
+      priority: :high,
       background: true,
       extra_fields: %{"location-request" => 1}
     ]

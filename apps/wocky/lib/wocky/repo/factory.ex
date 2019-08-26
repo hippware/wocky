@@ -17,6 +17,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Events.BotInvitationResponse
   alias Wocky.Events.BotItem
   alias Wocky.Events.GeofenceEvent
+  alias Wocky.Events.LocationRequest
   alias Wocky.Events.LocationShare
   alias Wocky.Events.NewMessage
   alias Wocky.Events.UserInvitation
@@ -228,6 +229,12 @@ defmodule Wocky.Repo.Factory do
       from: build(:user),
       bot: build(:bot),
       event: :enter
+    }
+  end
+
+  def location_request_event_factory do
+    %LocationRequest{
+      to: build(:user)
     }
   end
 

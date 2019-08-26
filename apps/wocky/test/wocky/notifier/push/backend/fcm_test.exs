@@ -61,6 +61,21 @@ defmodule Wocky.Notifier.Push.Backend.FCMTest do
     end
   end
 
+  describe "priority notifications" do
+    setup do
+      notification =
+        :location_request_event
+        |> Factory.build()
+        |> FCM.build_notification("token")
+
+      {:ok, notification: notification}
+    end
+
+    test "location share has a high priority", %{notification: notification} do
+      assert notification.priority == :high
+    end
+  end
+
   defp make_payload_data(event_name) do
     event = Factory.build(event_name)
     notification = FCM.build_notification(event, "token")

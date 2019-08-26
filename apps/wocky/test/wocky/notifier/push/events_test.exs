@@ -147,6 +147,7 @@ defmodule Wocky.Notifier.Push.EventsTest do
       opts = Event.opts(%LocationRequest{to: user})
       assert opts[:background]
       assert opts[:extra_fields] == %{"location-request" => 1}
+      assert opts[:priority] == :high
     end
   end
 end
