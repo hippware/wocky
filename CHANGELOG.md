@@ -6,6 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: credo (PR #2790)
+* Expose more RNBGL fields in the location audit (#2788)
 
 
 # 2019.8.20+re723d19
