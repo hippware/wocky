@@ -20,7 +20,8 @@ defmodule Wocky.Notifier.InBand.Notification do
     :geofence_event,
     :location_share,
     :location_share_end,
-    :user_invitation
+    :user_invitation,
+    :user_proximity
   ])
 
   @foreign_key_type :binary_id

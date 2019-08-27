@@ -30,7 +30,7 @@ defmodule Wocky.Callbacks.BotTest do
 
     assert_eventually(
       (
-        %{subscriptions: [bot]} = :sys.get_state(pid)
+        %{bot_subscriptions: [bot]} = :sys.get_state(pid)
         POI.lat(bot) == 1.0 and POI.lon(bot) == 2.0
       )
     )

@@ -56,6 +56,8 @@ defmodule Wocky.Location.BotEvent do
           location_id: binary()
         }
 
+  @type bot_event_map() :: %{required(Bot.id()) => t()}
+
   @insert_fields [
     :user_id,
     :device,
@@ -65,7 +67,7 @@ defmodule Wocky.Location.BotEvent do
     :location_id
   ]
 
-  @spec get_last_events(User.id()) :: map()
+  @spec get_last_events(User.id()) :: bot_event_map()
   def get_last_events(user_id) do
     BotEvent
     |> distinct(:bot_id)

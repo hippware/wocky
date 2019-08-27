@@ -13,8 +13,11 @@ defmodule Wocky.Location.Handler do
   alias Wocky.Location.Supervisor
   alias Wocky.Location.UserLocation
   alias Wocky.Location.UserLocation.Current
+  alias Wocky.Location.UserProximity
+  alias Wocky.Location.UserProximity.Subscription, as: ProximitySubscription
   alias Wocky.POI.Bot
   alias Wocky.Relation
+  alias Wocky.Repo
 
   require Logger
 
@@ -23,7 +26,21 @@ defmodule Wocky.Location.Handler do
   defmodule State do
     @moduledoc false
 
-    defstruct [:user, :subscriptions, :events]
+    @type t :: %__MODULE__{
+            user: User.t(),
+            bot_subscriptions: [Bot.t()],
+            events: BotEvent.bot_event_map(),
+            proximity_subscriptions: [ProximitySubscription.t()],
+            proximity_subscribers: [ProximitySubscription.t()]
+          }
+
+    defstruct [
+      :user,
+      :bot_subscriptions,
+      :events,
+      :proximity_subscriptions,
+      :proximity_subscribers
+    ]
   end
 
   @spec start_link(User.t() | User.id()) :: {:ok, pid()}
@@ -52,20 +69,48 @@ defmodule Wocky.Location.Handler do
     |> GenServer.call({:set_location_for_bot, location, bot})
   end
 
-  @spec add_subscription(User.t(), Bot.t()) :: :ok
-  def add_subscription(_user, %Bot{location: nil}), do: :ok
+  @spec add_bot_subscription(User.t(), Bot.t()) :: :ok
+  def add_bot_subscription(_user, %Bot{location: nil}), do: :ok
 
-  def add_subscription(user, bot) do
+  def add_bot_subscription(user, bot) do
     user
     |> get_handler_if_exists()
-    |> maybe_call({:add_subscription, bot})
+    |> maybe_call({:add_bot_subscription, bot})
   end
 
-  @spec remove_subscription(User.t(), Bot.t()) :: :ok
-  def remove_subscription(user, bot) do
+  @spec remove_bot_subscription(User.t(), Bot.t()) :: :ok
+  def remove_bot_subscription(user, bot) do
     user
     |> get_handler_if_exists()
-    |> maybe_call({:remove_subscription, bot})
+    |> maybe_call({:remove_bot_subscription, bot})
+  end
+
+  @spec set_proximity_location(User.t(), User.t(), UserLocation.t()) :: :ok
+  def set_proximity_location(user, source_user, location) do
+    user
+    |> get_handler()
+    |> GenServer.cast({:set_proximity_location, source_user, location})
+  end
+
+  @spec add_proximity_subscription(
+          User.t() | User.id(),
+          ProximitySubscription.t()
+        ) :: :ok
+  def add_proximity_subscription(user, subscription) do
+    user
+    |> get_handler_if_exists()
+    |> maybe_call({:add_proximity_subscription, subscription})
+  end
+
+  @spec remove_proximity_subscription(
+          User.t() | User.id(),
+          ProximitySubscription.t()
+        ) ::
+          :ok
+  def remove_proximity_subscription(user, subscription) do
+    user
+    |> get_handler_if_exists()
+    |> maybe_call({:remove_proximity_subscription, subscription})
   end
 
   # Always returns a handler, creating a new one if one does not already exist.
@@ -89,9 +134,12 @@ defmodule Wocky.Location.Handler do
   end
 
   # Gets a handler if one exists, otherwise returns nil
-  @spec get_handler_if_exists(User.t()) :: pid() | nil
-  def get_handler_if_exists(user) do
-    case Swarm.whereis_name(handler_name(user.id)) do
+  @spec get_handler_if_exists(User.t() | User.id()) :: pid() | nil
+  def get_handler_if_exists(%User{id: user_id}),
+    do: get_handler_if_exists(user_id)
+
+  def get_handler_if_exists(user_id) when is_binary(user_id) do
+    case Swarm.whereis_name(handler_name(user_id)) do
       :undefined -> nil
       pid -> pid
     end
@@ -103,27 +151,51 @@ defmodule Wocky.Location.Handler do
   @impl true
   def init(user) do
     Logger.debug(fn -> "Swarm initializing worker with user #{user.id}" end)
-    subscriptions = Relation.get_subscribed_bots(user)
+    bot_subscriptions = Relation.get_subscribed_bots(user)
     events = BotEvent.get_last_events(user.id)
+    proximity_subscriptions = UserProximity.get_subscriptions(user)
+    proximity_subscribers = UserProximity.get_subscribers(user)
 
-    {:ok, %State{user: user, subscriptions: subscriptions, events: events},
-     @timeout}
+    {:ok,
+     %State{
+       user: user,
+       bot_subscriptions: bot_subscriptions,
+       events: events,
+       proximity_subscriptions: proximity_subscriptions,
+       proximity_subscribers: proximity_subscribers
+     }, @timeout}
   end
 
   @impl true
   def handle_call(
         {:set_location, location, current?},
         _from,
-        %{user: user, subscriptions: subscriptions, events: events} = state
+        %{
+          user: user,
+          bot_subscriptions: bot_subscriptions,
+          events: events,
+          proximity_subscriptions: proximity_subscriptions,
+          proximity_subscribers: proximity_subscribers
+        } = state
       ) do
     Logger.debug(fn -> "Swarm set location with user #{user.id}" end)
 
     case prepare_location(user, location, current?) do
       {:ok, loc} = result ->
-        {:ok, _, new_events} =
-          GeoFence.check_for_bot_events(loc, user, subscriptions, events)
+        proximity_subscriptions =
+          UserProximity.check_targets(user, location, proximity_subscriptions)
 
-        {:reply, result, %{state | events: new_events}, @timeout}
+        UserProximity.notify_subscribers(user, location, proximity_subscribers)
+
+        {:ok, _, new_events} =
+          GeoFence.check_for_bot_events(loc, user, bot_subscriptions, events)
+
+        {:reply, result,
+         %{
+           state
+           | events: new_events,
+             proximity_subscriptions: proximity_subscriptions
+         }, @timeout}
 
       {:error, _} = error ->
         {:reply, error, state, @timeout}
@@ -149,14 +221,27 @@ defmodule Wocky.Location.Handler do
     end
   end
 
-  def handle_call({:add_subscription, bot}, _from, state) do
-    subs = do_remove_subscription(bot, state.subscriptions)
-    {:reply, :ok, %{state | subscriptions: [bot | subs]}}
+  def handle_call({:add_bot_subscription, bot}, _from, state) do
+    subs = do_remove_bot_subscription(bot, state.bot_subscriptions)
+    {:reply, :ok, %{state | bot_subscriptions: [bot | subs]}, @timeout}
   end
 
-  def handle_call({:remove_subscription, bot}, _from, state) do
-    subs = do_remove_subscription(bot, state.subscriptions)
-    {:reply, :ok, %{state | subscriptions: subs}}
+  def handle_call({:remove_bot_subscription, bot}, _from, state) do
+    subs = do_remove_bot_subscription(bot, state.bot_subscriptions)
+    {:reply, :ok, %{state | bot_subscriptions: subs}, @timeout}
+  end
+
+  def handle_call({:add_proximity_subscription, sub}, _from, state) do
+    field = proximity_field(sub, state.user.id)
+    ps = do_remove_proximity_subscription(sub, Map.get(state, field))
+    sub = Repo.preload(sub, [:user, :target])
+    {:reply, :ok, Map.put(state, field, [sub | ps]), @timeout}
+  end
+
+  def handle_call({:remove_proximity_subscription, sub}, _from, state) do
+    field = proximity_field(sub, state.user.id)
+    ps = do_remove_proximity_subscription(sub, Map.get(state, field))
+    {:reply, :ok, Map.put(state, field, ps), @timeout}
   end
 
   # called when a handoff has been initiated due to changes
@@ -171,14 +256,32 @@ defmodule Wocky.Location.Handler do
     {:reply, :restart, state}
   end
 
+  @impl true
+  def handle_cast(
+        {:set_proximity_location, %User{id: source_id}, source_location},
+        %{user: user, proximity_subscriptions: proximity_subscriptions} = state
+      ) do
+    proximity_subscriptions =
+      proximity_subscriptions
+      |> Enum.map(fn
+        %{target_id: ^source_id} = s ->
+          UserProximity.check_for_notify(user, source_location, s)
+
+        sub ->
+          sub
+      end)
+
+    {:noreply, %{state | proximity_subscriptions: proximity_subscriptions},
+     @timeout}
+  end
+
   # called when a network split is healed and the local process
   # should continue running, but a duplicate process on the other
   # side of the split is handing off its state to us. You can choose
   # to ignore the handoff state, or apply your own conflict resolution
   # strategy
-  @impl true
   def handle_cast({:swarm, :resolve_conflict, _state}, state) do
-    {:noreply, state}
+    {:noreply, state, @timeout}
   end
 
   # this message is sent when this process should die
@@ -194,9 +297,21 @@ defmodule Wocky.Location.Handler do
 
   defp handler_name(user_id), do: "location_handler_" <> user_id
 
-  defp do_remove_subscription(bot, subscriptions) do
-    Enum.reject(subscriptions, fn b -> b.id == bot.id end)
+  defp do_remove_bot_subscription(bot, bot_subscriptions) do
+    Enum.reject(bot_subscriptions, fn b -> b.id == bot.id end)
   end
+
+  defp do_remove_proximity_subscription(sub, proximity_subscriptions) do
+    Enum.reject(proximity_subscriptions, fn s ->
+      s.user_id == sub.user_id && s.target_id == sub.target_id
+    end)
+  end
+
+  defp proximity_field(%ProximitySubscription{user_id: user_id}, user_id),
+    do: :proximity_subscriptions
+
+  defp proximity_field(%ProximitySubscription{target_id: user_id}, user_id),
+    do: :proximity_subscribers
 
   defp prepare_location(user, location, current?) do
     with :ok <- UserLocation.validate(location) do
