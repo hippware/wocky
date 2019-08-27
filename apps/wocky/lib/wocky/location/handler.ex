@@ -3,7 +3,7 @@ defmodule Wocky.Location.Handler do
   This is the per-user location update handler process
   """
 
-  use GenServer
+  use GenServer, restart: :temporary
 
   alias Wocky.Account
   alias Wocky.Account.User
