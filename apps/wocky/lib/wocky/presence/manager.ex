@@ -15,7 +15,7 @@ defmodule Wocky.Presence.Manager do
               contact_refs: []
   end
 
-  use GenServer
+  use GenServer, restart: :temporary
 
   alias Phoenix.PubSub
   alias Wocky.Account

@@ -2,21 +2,19 @@ defmodule Wocky.Presence.Supervisor do
   @moduledoc """
   This is the supervisor for the presence manager processes
   """
-  use Supervisor
+  use DynamicSupervisor
 
   def start_link(args) do
-    Supervisor.start_link(__MODULE__, args, name: __MODULE__)
-  end
-
-  def init(_) do
-    children = [
-      worker(Wocky.Presence.Manager, [], restart: :temporary)
-    ]
-
-    supervise(children, strategy: :simple_one_for_one)
+    DynamicSupervisor.start_link(__MODULE__, args, name: __MODULE__)
   end
 
   def start_child(user) do
-    {:ok, _pid} = Supervisor.start_child(__MODULE__, [user])
+    spec = {Wocky.Presence.Manager, user}
+    {:ok, _pid} = DynamicSupervisor.start_child(__MODULE__, spec)
+  end
+
+  @impl true
+  def init(_) do
+    DynamicSupervisor.init(strategy: :one_for_one)
   end
 end

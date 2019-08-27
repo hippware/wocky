@@ -2,21 +2,19 @@ defmodule Wocky.Location.Supervisor do
   @moduledoc """
   This is the supervisor for the location update worker processes
   """
-  use Supervisor
+  use DynamicSupervisor
 
   def start_link(args) do
-    Supervisor.start_link(__MODULE__, args, name: __MODULE__)
-  end
-
-  def init(_) do
-    children = [
-      worker(Wocky.Location.Handler, [], restart: :temporary)
-    ]
-
-    supervise(children, strategy: :simple_one_for_one)
+    DynamicSupervisor.start_link(__MODULE__, args, name: __MODULE__)
   end
 
   def start_child(user) do
-    {:ok, _pid} = Supervisor.start_child(__MODULE__, [user])
+    spec = {Wocky.Location.Handler, user}
+    {:ok, _pid} = DynamicSupervisor.start_child(__MODULE__, spec)
+  end
+
+  @impl true
+  def init(_) do
+    DynamicSupervisor.init(strategy: :one_for_one)
   end
 end
