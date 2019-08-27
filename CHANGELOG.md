@@ -5,8 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: credo (PR #2790)
+* Update: credo (PR #2790), geo_postgis (PR #2795)
 * Expose more RNBGL fields in the location audit (#2788)
+* High priority for data-only push notification messages (#2793)
 
 
 # 2019.8.20+re723d19
