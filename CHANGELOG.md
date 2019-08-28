@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Upgrade to DynamicSupervisor (#2797)
+* Add backend support for user proximity (PR #2798)
+
+
 # 2019.8.27+r7cedac4
 
 * Update: credo (PR #2790), geo_postgis (PR #2795)
