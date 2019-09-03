@@ -137,9 +137,9 @@ defmodule Wocky.Relation.RelationTest do
     test "should return all subscribed bots", ctx do
       subscriptions = Relation.get_subscribed_bots(ctx.user)
 
-      assert length(subscriptions) == 1
+      assert length(subscriptions) == 2
       assert has_item(subscriptions, ctx.subscribed_bot)
-      refute has_item(subscriptions, ctx.owned_bot)
+      assert has_item(subscriptions, ctx.owned_bot)
       refute has_item(subscriptions, ctx.pending_bot)
     end
   end
@@ -465,9 +465,9 @@ defmodule Wocky.Relation.RelationTest do
     test "get_subscribers/1", %{bot: bot, user: user} do
       subscribers = Relation.get_subscribers(bot)
 
-      assert length(subscribers) == 1
+      assert length(subscribers) == 2
       assert %User{} = hd(subscribers)
-      refute Enum.member?(subscribers, user)
+      assert Enum.member?(subscribers, user)
     end
 
     test "get_subscriber/2", %{bot: bot, sub: sub} do
@@ -584,9 +584,10 @@ defmodule Wocky.Relation.RelationTest do
     test "get_bot_relationships/2", ctx do
       rels! = Relation.get_bot_relationships(ctx.user, ctx.owned_bot)
 
-      assert length(rels!) == 2
+      assert length(rels!) == 3
       assert Enum.member?(rels!, :visible)
       assert Enum.member?(rels!, :owned)
+      assert Enum.member?(rels!, :subscribed)
 
       rels! = Relation.get_bot_relationships(ctx.user, ctx.invited_bot)
 
@@ -606,7 +607,7 @@ defmodule Wocky.Relation.RelationTest do
   # Subsriptions
 
   def create_subscription(ctx) do
-    [user, visitor] = Factory.insert_list(2, :user)
+    [user, visitor, stranger] = Factory.insert_list(3, :user)
     Roster.befriend(ctx.user, user)
     Roster.befriend(ctx.user, visitor)
 
@@ -619,7 +620,7 @@ defmodule Wocky.Relation.RelationTest do
       visitor: true
     )
 
-    {:ok, owner: ctx.user, user: user, visitor: visitor}
+    {:ok, owner: ctx.user, user: user, visitor: visitor, stranger: stranger}
   end
 
   describe "get_subscription/2" do
@@ -640,7 +641,7 @@ defmodule Wocky.Relation.RelationTest do
     end
 
     test "should return nil when the user is not subscribed to the bot", ctx do
-      refute Relation.get_subscription(ctx.owner, ctx.bot)
+      refute Relation.get_subscription(ctx.stranger, ctx.bot)
     end
   end
 
@@ -761,7 +762,7 @@ defmodule Wocky.Relation.RelationTest do
 
     test "should return false when the user is not subscribed to the bot",
          ctx do
-      refute is_subscribed_sp(ctx.owner, ctx.bot)
+      refute is_subscribed_sp(ctx.stranger, ctx.bot)
     end
   end
 
