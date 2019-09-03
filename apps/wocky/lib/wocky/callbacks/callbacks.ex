@@ -3,7 +3,6 @@ defmodule Wocky.Callbacks do
   Initialisation for wocky DB watcher callbacks
   """
 
-  alias Wocky.Callbacks.Block
   alias Wocky.Callbacks.Bot
   alias Wocky.Callbacks.BotInvitation
   alias Wocky.Callbacks.BotItem
@@ -11,11 +10,9 @@ defmodule Wocky.Callbacks do
   alias Wocky.Callbacks.LocationShare
   alias Wocky.Callbacks.Message
   alias Wocky.Callbacks.RosterInvitation
-  alias Wocky.Callbacks.RosterItem
   alias Wocky.Callbacks.TROSMetadata
 
   @modules [
-    Block,
     Bot,
     BotInvitation,
     BotItem,
@@ -23,7 +20,6 @@ defmodule Wocky.Callbacks do
     LocationShare,
     Message,
     RosterInvitation,
-    RosterItem,
     TROSMetadata
   ]
 
