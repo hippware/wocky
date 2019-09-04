@@ -21,9 +21,7 @@ defmodule Wocky.Location do
 
   defdelegate refresh_bot_subscriptions(user), to: Handler
 
-  defdelegate add_proximity_subscription(user, sub), to: Handler
-
-  defdelegate remove_proximity_subscription(user, sub), to: Handler
+  defdelegate refresh_proximity_subscriptions(user), to: Handler
 
   # ----------------------------------------------------------------------
   # User Location
