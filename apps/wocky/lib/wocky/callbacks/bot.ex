@@ -14,7 +14,7 @@ defmodule Wocky.Callbacks.Bot do
     bot_with_subs = Repo.preload(bot, [:subscribers])
 
     for user <- bot_with_subs.subscribers do
-      Location.add_bot_subscription(user, bot)
+      Location.refresh_bot_subscriptions(user)
     end
   end
 

@@ -373,8 +373,6 @@ defmodule Wocky.Relation do
   @spec subscribe(User.t(), Bot.t()) :: :ok | {:error, :permission_denied}
   def subscribe(user, bot) do
     if Roster.self_or_friend?(user.id, bot.user_id) do
-      Location.add_bot_subscription(user, bot)
-
       %Subscription{}
       |> Subscription.changeset(%{user_id: user.id, bot_id: bot.id})
       |> Repo.insert!(
@@ -397,7 +395,6 @@ defmodule Wocky.Relation do
 
   def unsubscribe(user, bot) do
     Location.exit_bot(user, bot, "unsubscribe")
-    Location.remove_bot_subscription(user, bot)
 
     {count, _} =
       Subscription
