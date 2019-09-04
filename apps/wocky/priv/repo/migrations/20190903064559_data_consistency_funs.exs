@@ -117,20 +117,19 @@ defmodule Wocky.Repo.Migrations.DataConsistencyFuns do
   end
 
   def down do
+    execute "DROP TRIGGER bot_insert_trigger ON bots"
     execute "DROP FUNCTION bot_insert_trigger"
-    execute "DROP TRIGGER bot_insert_trigger"
 
+    execute "DROP TRIGGER roster_item_delete_trigger ON roster_items"
     execute "DROP FUNCTION roster_item_delete_trigger"
-    execute "DROP TRIGGER roster_item_delete_trigger"
 
-    execute "DROP FUNCTION block_isnert_trigger"
-    execute "DROP TRIGGER block_isnert_trigger"
+    execute "DROP TRIGGER block_insert_trigger ON blocks"
+    execute "DROP FUNCTION block_insert_trigger"
 
-    execute "DROP FUNCTION remove_all_relationships(uuid, uuid)"
-    execute "DROP FUNCTION block_user(uuid, uuid)"
+    execute "DROP FUNCTION remove_all_relationships(UUID, UUID)"
+    execute "DROP FUNCTION block_user(UUID, UUID)"
 
     Migration.update_notify("bots", :insert)
-    Migration.update_notify("roster_items", :delete)
     Migration.update_notify("blocks", :insert)
   end
 end
