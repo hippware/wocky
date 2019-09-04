@@ -17,7 +17,6 @@ defmodule Wocky.Location.Handler do
   alias Wocky.Location.UserProximity.Subscription, as: ProximitySubscription
   alias Wocky.POI.Bot
   alias Wocky.Relation
-  alias Wocky.Repo
 
   require Logger
 
@@ -69,20 +68,11 @@ defmodule Wocky.Location.Handler do
     |> GenServer.call({:set_location_for_bot, location, bot})
   end
 
-  @spec add_bot_subscription(User.t(), Bot.t()) :: :ok
-  def add_bot_subscription(_user, %Bot{location: nil}), do: :ok
-
-  def add_bot_subscription(user, bot) do
+  @spec refresh_bot_subscriptions(User.t()) :: :ok
+  def refresh_bot_subscriptions(user) do
     user
     |> get_handler_if_exists()
-    |> maybe_call({:add_bot_subscription, bot})
-  end
-
-  @spec remove_bot_subscription(User.t(), Bot.t()) :: :ok
-  def remove_bot_subscription(user, bot) do
-    user
-    |> get_handler_if_exists()
-    |> maybe_call({:remove_bot_subscription, bot})
+    |> maybe_call(:refresh_bot_subscriptions)
   end
 
   @spec set_proximity_location(User.t(), User.t(), UserLocation.t()) :: :ok
@@ -92,25 +82,11 @@ defmodule Wocky.Location.Handler do
     |> GenServer.cast({:set_proximity_location, source_user, location})
   end
 
-  @spec add_proximity_subscription(
-          User.t() | User.id(),
-          ProximitySubscription.t()
-        ) :: :ok
-  def add_proximity_subscription(user, subscription) do
+  @spec refresh_proximity_subscriptions(User.t() | User.id()) :: :ok
+  def refresh_proximity_subscriptions(user) do
     user
     |> get_handler_if_exists()
-    |> maybe_call({:add_proximity_subscription, subscription})
-  end
-
-  @spec remove_proximity_subscription(
-          User.t() | User.id(),
-          ProximitySubscription.t()
-        ) ::
-          :ok
-  def remove_proximity_subscription(user, subscription) do
-    user
-    |> get_handler_if_exists()
-    |> maybe_call({:remove_proximity_subscription, subscription})
+    |> maybe_call(:refresh_proximity_subscriptions)
   end
 
   # Always returns a handler, creating a new one if one does not already exist.
@@ -221,27 +197,21 @@ defmodule Wocky.Location.Handler do
     end
   end
 
-  def handle_call({:add_bot_subscription, bot}, _from, state) do
-    subs = do_remove_bot_subscription(bot, state.bot_subscriptions)
-    {:reply, :ok, %{state | bot_subscriptions: [bot | subs]}, @timeout}
+  def handle_call(:refresh_bot_subscriptions, _from, state) do
+    bot_subscriptions = Relation.get_subscribed_bots(state.user)
+    {:reply, :ok, %{state | bot_subscriptions: bot_subscriptions}, @timeout}
   end
 
-  def handle_call({:remove_bot_subscription, bot}, _from, state) do
-    subs = do_remove_bot_subscription(bot, state.bot_subscriptions)
-    {:reply, :ok, %{state | bot_subscriptions: subs}, @timeout}
-  end
+  def handle_call(:refresh_proximity_subscriptions, _from, state) do
+    proximity_subscriptions = UserProximity.get_subscriptions(state.user)
+    proximity_subscribers = UserProximity.get_subscribers(state.user)
 
-  def handle_call({:add_proximity_subscription, sub}, _from, state) do
-    field = proximity_field(sub, state.user.id)
-    ps = do_remove_proximity_subscription(sub, Map.get(state, field))
-    sub = Repo.preload(sub, [:user, :target])
-    {:reply, :ok, Map.put(state, field, [sub | ps]), @timeout}
-  end
-
-  def handle_call({:remove_proximity_subscription, sub}, _from, state) do
-    field = proximity_field(sub, state.user.id)
-    ps = do_remove_proximity_subscription(sub, Map.get(state, field))
-    {:reply, :ok, Map.put(state, field, ps), @timeout}
+    {:reply, :ok,
+     %{
+       state
+       | proximity_subscribers: proximity_subscribers,
+         proximity_subscriptions: proximity_subscriptions
+     }, @timeout}
   end
 
   # called when a handoff has been initiated due to changes
@@ -296,22 +266,6 @@ defmodule Wocky.Location.Handler do
   end
 
   defp handler_name(user_id), do: "location_handler_" <> user_id
-
-  defp do_remove_bot_subscription(bot, bot_subscriptions) do
-    Enum.reject(bot_subscriptions, fn b -> b.id == bot.id end)
-  end
-
-  defp do_remove_proximity_subscription(sub, proximity_subscriptions) do
-    Enum.reject(proximity_subscriptions, fn s ->
-      s.user_id == sub.user_id && s.target_id == sub.target_id
-    end)
-  end
-
-  defp proximity_field(%ProximitySubscription{user_id: user_id}, user_id),
-    do: :proximity_subscriptions
-
-  defp proximity_field(%ProximitySubscription{target_id: user_id}, user_id),
-    do: :proximity_subscribers
 
   defp prepare_location(user, location, current?) do
     with :ok <- UserLocation.validate(location) do

@@ -1,10 +1,17 @@
 defmodule Wocky.Location.HandlerTest do
-  use Wocky.DataCase, async: false
+  use Wocky.WatcherCase
 
+  import Eventually
+
+  alias Wocky.Callbacks.BotSubscription
   alias Wocky.Location.Handler
   alias Wocky.Relation
   alias Wocky.Repo.Factory
   alias Wocky.Roster
+
+  setup_all do
+    BotSubscription.register()
+  end
 
   describe "get_handler/1" do
     test "both versions should get the same handler" do
@@ -31,13 +38,18 @@ defmodule Wocky.Location.HandlerTest do
     end
 
     test "should add a new bot subscription", %{bot: bot, pid: pid} do
-      assert %{bot_subscriptions: [^bot]} = :sys.get_state(pid)
+      assert_eventually(
+        (
+          subs = :sys.get_state(pid).bot_subscriptions
+          Enum.all?(subs, &(&1.id == bot.id)) and length(subs) == 1
+        )
+      )
     end
 
     test "should remove a bot subscription", %{user: user, bot: bot, pid: pid} do
       Relation.unsubscribe(user, bot)
 
-      assert %{bot_subscriptions: []} = :sys.get_state(pid)
+      assert_eventually(%{bot_subscriptions: []} = :sys.get_state(pid))
     end
   end
 end

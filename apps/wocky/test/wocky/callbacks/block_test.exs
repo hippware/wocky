@@ -1,18 +1,15 @@
 defmodule Wocky.Callbacks.BlockTest do
-  use Wocky.WatcherCase
+  use Wocky.DataCase
+
+  import Eventually
 
   alias Wocky.Block
-  alias Wocky.Callbacks.Block, as: Callback
   alias Wocky.Location
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Relation
   alias Wocky.Relation.Invitation
   alias Wocky.Repo.Factory
   alias Wocky.Roster
-
-  setup_all do
-    Callback.register()
-  end
 
   setup do
     [u1, u2] = Factory.insert_list(2, :user)

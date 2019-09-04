@@ -104,7 +104,6 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
     } do
       :os.putenv('WOCKY_ENTER_DEBOUNCE_SECONDS', '0')
       bot = Factory.insert(:bot, user: user)
-      Factory.insert(:subscription, bot: bot, user: user)
 
       authenticate(user_id, token, socket)
 

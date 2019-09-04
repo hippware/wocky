@@ -37,7 +37,7 @@ defmodule WockyAPI.SubscriptionHelper do
     ref
   end
 
-  defmacro assert_subscription_update(pattern, timeout \\ 200) do
+  defmacro assert_subscription_update(pattern, timeout \\ 500) do
     quote do
       # NOTE I have left the timing code intact but commented out in
       # case we need it again.

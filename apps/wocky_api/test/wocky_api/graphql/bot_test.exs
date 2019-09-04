@@ -1209,7 +1209,7 @@ defmodule WockyAPI.GraphQL.BotTest do
                    "id" => user.id
                  },
                  "subscribers" => %{
-                   "totalCount" => 1,
+                   "totalCount" => 2,
                    "edges" => [
                      %{
                        "relationships" => ["SUBSCRIBED", "VISIBLE"],

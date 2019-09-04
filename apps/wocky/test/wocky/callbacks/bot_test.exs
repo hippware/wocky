@@ -1,7 +1,8 @@
 defmodule Wocky.Callbacks.BotTest do
   use Wocky.WatcherCase
 
-  alias Wocky.Callbacks.Bot, as: Callback
+  alias Wocky.Callbacks.Bot, as: BotCallback
+  alias Wocky.Callbacks.BotSubscription, as: SubCallback
   alias Wocky.GeoUtils
   alias Wocky.Location.Handler
   alias Wocky.POI
@@ -10,7 +11,8 @@ defmodule Wocky.Callbacks.BotTest do
   alias Wocky.Roster
 
   setup_all do
-    Callback.register()
+    BotCallback.register()
+    SubCallback.register()
   end
 
   test "should update the bot subscription cache" do
@@ -30,8 +32,11 @@ defmodule Wocky.Callbacks.BotTest do
 
     assert_eventually(
       (
-        %{bot_subscriptions: [bot]} = :sys.get_state(pid)
-        POI.lat(bot) == 1.0 and POI.lon(bot) == 2.0
+        subs = :sys.get_state(pid).bot_subscriptions
+
+        length(subs) == 1 and
+          POI.lat(hd(subs)) == 1.0 and
+          POI.lon(hd(subs)) == 2.0
       )
     )
   end

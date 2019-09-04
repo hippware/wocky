@@ -138,8 +138,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       assert Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who was outside the bot perimeter and is not moving", ctx do
@@ -153,8 +153,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       assert Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who was outside the bot perimeter and is not moving (stale)", ctx do
@@ -211,8 +211,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       assert Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who has timed out inside the bot permimeter", ctx do
@@ -290,8 +290,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       assert Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who was outside the bot perimeter", ctx do
@@ -303,8 +303,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       assert Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who was transitioning out of the bot perimeter", ctx do
@@ -332,8 +332,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       assert Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who has timed out inside the bot permimeter", ctx do
@@ -370,8 +370,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       assert Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who was already inside the bot perimeter", ctx do
@@ -440,8 +440,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       refute Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who was inside the bot perimeter and is not moving", ctx do
@@ -456,8 +456,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       refute Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who was inside the bot perimeter and is now far away", ctx do
@@ -472,8 +472,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       refute Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who was transitioning into the the bot perimeter", ctx do
@@ -517,8 +517,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       refute Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who has timed out inside the bot permimeter", ctx do
@@ -600,8 +600,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       refute Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who was transitioning into the the bot perimeter", ctx do
@@ -629,8 +629,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       refute Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who has timed out inside the bot permimeter", ctx do
@@ -655,8 +655,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       refute Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
 
     test "who has reactivated outside the bot perimeter", ctx do
@@ -696,8 +696,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
       refute Relation.visiting?(ctx.user, ctx.bot)
 
-      notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
-      assert Enum.count(notifications) == 1
+      notifications = Sandbox.wait_notifications(count: 2, timeout: 5000)
+      assert Enum.count(notifications) == 2
     end
   end
 end

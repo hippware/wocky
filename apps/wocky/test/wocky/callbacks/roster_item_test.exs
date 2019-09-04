@@ -1,16 +1,13 @@
 defmodule Wocky.Callbacks.RosterItemTest do
-  use Wocky.WatcherCase
+  use Wocky.DataCase
 
-  alias Wocky.Callbacks.RosterItem, as: Callback
+  import Eventually
+
   alias Wocky.Location
   alias Wocky.Relation
   alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster
-
-  setup_all do
-    Callback.register()
-  end
 
   setup do
     user = Factory.insert(:user)
