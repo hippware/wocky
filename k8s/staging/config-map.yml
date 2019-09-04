@@ -25,7 +25,7 @@ data:
   WOCKY_DB_NAME: wocky_staging
   WOCKY_DB_USER: wocky_staging
   WOCKY_EXPIRE_TRANSIENT_USERS_AFTER_DAYS: "1"
-  DAWDLE_SQS_MESSAGE_QUEUE: wocky-db-watcher-staging.fifo
+  DAWDLE_SQS_MESSAGE_QUEUE: wocky-dawdle-staging
   DAWDLE_SQS_DELAY_QUEUE: wocky-dawdle-staging
   WOCKY_SMS_BACKEND: Wocky.SMS.Twilio
   TWILIO_ACCOUNT_SID: ACbfbd3863ab87b6d00d37de65e99dacd1
