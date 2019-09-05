@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Data consistency funs (PR #2806)
+
+
+# 2019.9.2+r8f3daf8
+
 * Update: credo (PR #2805)
 
 
