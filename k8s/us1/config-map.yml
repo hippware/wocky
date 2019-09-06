@@ -21,8 +21,7 @@ data:
   WOCKY_DB_HOST: db.prod.tinyrobot.com
   WOCKY_DB_NAME: wocky_us1
   WOCKY_DB_USER: wocky_us1
-  DAWDLE_SQS_MESSAGE_QUEUE: wocky-db-watcher-us1.fifo
-  DAWDLE_SQS_DELAY_QUEUE: wocky-dawdle-us1
+  DAWDLE_SQS_QUEUE_URL: https://sqs.us-west-2.amazonaws.com/773488857071/wocky-dawdle-us1
   WOCKY_AUDIT_LOG_TRAFFIC: "false"
   WOCKY_AUDIT_LOG_LOCATION: "false"
   WOCKY_AUDIT_LOG_PUSH_PAYLOAD: "false"
