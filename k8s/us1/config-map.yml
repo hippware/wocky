@@ -31,5 +31,6 @@ data:
   HONEYBADGER_ENV: us1
   REPLACE_OS_VARS: "true"
   BAMBOO_ADAPTER: Bamboo.MandrillAdapter
-  REDIS_HOST: wocky-cache.byxmud.ng.0001.usw2.cache.amazonaws.com
+  REDIS_HOST: master.wocky-redis.byxmud.usw2.cache.amazonaws.com
   REDIS_DB: "1"
+  REDIS_SSL: "true"
