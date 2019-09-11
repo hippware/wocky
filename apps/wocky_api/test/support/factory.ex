@@ -72,6 +72,14 @@ defmodule WockyAPI.Factory do
     }
   end
 
+  def user_proximity_notification_factory do
+    %Notification{
+      type: :user_proximity,
+      user: RepoFactory.build(:user),
+      other_user: RepoFactory.build(:user)
+    }
+  end
+
   def image_url(image), do: TROS.make_url(image.id)
 
   def get_test_token(user) do

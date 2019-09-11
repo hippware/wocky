@@ -18,7 +18,8 @@ defmodule WockyAPI.GraphQL.NotificationTest do
           :geofence_event_notification,
           :bot_invitation_notification,
           :bot_invitation_response_notification,
-          :user_invitation_notification
+          :user_invitation_notification,
+          :user_proximity_notification
         ]
         |> Enum.map(
           &APIFactory.insert(&1,
@@ -49,7 +50,7 @@ defmodule WockyAPI.GraphQL.NotificationTest do
     }
     """
     test "get last three notifications", %{user: user} do
-      result = run_query(@query, user, %{"first" => 3})
+      result = run_query(@query, user, %{"first" => 4})
 
       refute has_errors(result)
 
@@ -57,6 +58,15 @@ defmodule WockyAPI.GraphQL.NotificationTest do
                data: %{
                  "notifications" => %{
                    "edges" => [
+                     %{
+                       "node" => %{
+                         "created_at" => _,
+                         "data" => %{
+                           "__typename" => "UserProximityNotification"
+                         },
+                         "id" => _
+                       }
+                     },
                      %{
                        "node" => %{
                          "created_at" => _,
