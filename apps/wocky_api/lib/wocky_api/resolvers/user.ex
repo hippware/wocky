@@ -1,6 +1,8 @@
 defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
+  use Elixometer
+
   alias Absinthe.Relay.Connection
   alias Absinthe.Subscription
   alias Wocky.Account
@@ -151,6 +153,7 @@ defmodule WockyAPI.Resolvers.User do
     location = UserLocation.new(i)
 
     with {:ok, _} <- Location.set_user_location(user, location) do
+      update_counter("foreground_location_uploads", 1)
       {:ok, true}
     end
   end

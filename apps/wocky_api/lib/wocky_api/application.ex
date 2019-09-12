@@ -18,6 +18,7 @@ defmodule WockyAPI.Application do
 
     # Define workers and child supervisors to be supervised
     children = [
+      WockyAPI.Metrics,
       # Start the endpoints when the application starts
       WockyAPI.Endpoint,
       {Absinthe.Subscription, WockyAPI.Endpoint},
