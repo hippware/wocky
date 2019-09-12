@@ -5,11 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.9.11+r8302726
+
 * Data consistency funs (PR #2806)
 * Move `us1` to SSL redis (PR #2809)
   * Move non-testing clusters to new redis server (#2171)
 * Update: phoenix (PR #2810), rexbug (PR #2811), ex_check (PR #2813)
 * Use a non-FIFO queue for Dawdle messages (PR #2807)
+* User proximity fix (PR #2815)
 
 
 # 2019.9.2+r8f3daf8
