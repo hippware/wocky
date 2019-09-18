@@ -29,5 +29,7 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.UserInvitationResponse do
 
   def uri(%{from: from} = _event), do: make_uri(:user, from.id)
 
+  def ignore_block?(_event), do: false
+
   def opts(_), do: []
 end

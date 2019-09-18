@@ -13,6 +13,9 @@ defprotocol Wocky.Notifier.Push.Event do
   @doc "Returns a URI identifying this specific event"
   def uri(event)
 
+  @doc "Indicates that the event should be sent even if there is a block between users"
+  def ignore_block?(event)
+
   @doc "Returns a keyword list of optional parameters"
   def opts(event)
 end
@@ -26,6 +29,8 @@ defimpl Wocky.Notifier.Push.Event, for: Any do
 
   def uri(_event), do: ""
 
+  def ignore_block?(_event), do: false
+
   def opts(_event), do: []
 end
 
@@ -37,6 +42,8 @@ defimpl Wocky.Notifier.Push.Event, for: BitString do
   def message(string), do: string
 
   def uri(_event), do: ""
+
+  def ignore_block?(_event), do: false
 
   def opts(_event), do: []
 end

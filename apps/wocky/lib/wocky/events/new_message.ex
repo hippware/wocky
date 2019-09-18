@@ -39,5 +39,7 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.NewMessage do
 
   def uri(%{from: from}), do: make_uri(:conversation, from.id)
 
+  def ignore_block?(_event), do: false
+
   def opts(_), do: [sound: "default", android_channel_id: "chat"]
 end
