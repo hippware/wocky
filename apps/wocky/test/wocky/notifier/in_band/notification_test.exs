@@ -8,6 +8,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
   alias Wocky.Events.GeofenceEvent
   alias Wocky.Events.LocationShare
   alias Wocky.Events.LocationShareEnd
+  alias Wocky.Events.LocationShareEndSelf
   alias Wocky.Events.UserInvitation
   alias Wocky.Notifier
   alias Wocky.Notifier.InBand.Notification
@@ -80,6 +81,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
       Notifier.notify(%LocationShare{
         to: ctx.user,
         from: ctx.user2,
+        share_id: 1,
         expires_at: DateTime.utc_now()
       })
 
@@ -90,10 +92,22 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     test "location share end", ctx do
       Notifier.notify(%LocationShareEnd{
         to: ctx.user,
-        from: ctx.user2
+        from: ctx.user2,
+        share_id: 1
       })
 
       assert %Notification{type: :location_share_end} =
+               Repo.get_by(Notification, user_id: ctx.user.id)
+    end
+
+    test "location share end self", ctx do
+      Notifier.notify(%LocationShareEndSelf{
+        to: ctx.user,
+        from: ctx.user2,
+        share_id: 1
+      })
+
+      assert %Notification{type: :location_share_end_self} =
                Repo.get_by(Notification, user_id: ctx.user.id)
     end
 

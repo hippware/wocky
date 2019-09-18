@@ -41,7 +41,10 @@ defmodule Wocky.Callbacks.LocationShareTest do
              } = Repo.get_by(Notification, user_id: ctx.friend1.id)
     end
 
-    test "ending a location share generates a notification", ctx do
+    test """
+         ending a location share generates a notification for the shared-to user
+         """,
+         ctx do
       assert_eventually(in_band_notification_count(ctx.friend1) == 1)
       %Notification{id: id} = Repo.get_by(Notification, user_id: ctx.friend1.id)
 
@@ -57,6 +60,24 @@ defmodule Wocky.Callbacks.LocationShareTest do
                  other_user_id: ^other_id
                }
              ] = ctx.friend1 |> Notification.user_query(nil, id) |> Repo.all()
+    end
+
+    test """
+         ending a location share generates a notification for the sharing user
+         """,
+         ctx do
+      Location.stop_sharing_location(ctx.user, ctx.friend1)
+
+      assert_eventually(in_band_notification_count(ctx.user) == 1)
+
+      other_id = ctx.friend1.id
+
+      assert [
+               %Notification{
+                 type: :location_share_end_self,
+                 other_user_id: ^other_id
+               }
+             ] = ctx.user |> Notification.user_query(nil, nil) |> Repo.all()
     end
   end
 
