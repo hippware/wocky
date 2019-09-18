@@ -202,8 +202,15 @@ defmodule WockyAPI.GraphQL.NotificationTest do
 
   describe "all fields" do
     setup ctx do
-      n = APIFactory.insert(:location_share_notification, user: ctx.user)
-      {:ok, notification: n}
+      share_id = Faker.random_between(0, 1_000_000)
+
+      n =
+        APIFactory.insert(:location_share_notification,
+          user: ctx.user,
+          share_id: share_id
+        )
+
+      {:ok, share_id: share_id, notification: n}
     end
 
     @query """
@@ -215,10 +222,11 @@ defmodule WockyAPI.GraphQL.NotificationTest do
             data {
               ... on LocationShareNotification {
                 user { id }
-                expires_at
+                shareId
+                expiresAt
               }
             }
-            created_at
+            createdAt
           }
         }
       }
@@ -231,6 +239,7 @@ defmodule WockyAPI.GraphQL.NotificationTest do
       refute has_errors(result)
 
       id = to_string(ctx.notification.id)
+      share_id = to_string(ctx.share_id)
       created_at = DateTime.to_iso8601(ctx.notification.created_at)
       expires_at = DateTime.to_iso8601(ctx.notification.expires_at)
       user_id = ctx.notification.other_user.id
@@ -240,10 +249,11 @@ defmodule WockyAPI.GraphQL.NotificationTest do
                  "edges" => [
                    %{
                      "node" => %{
-                       "created_at" => ^created_at,
+                       "createdAt" => ^created_at,
                        "data" => %{
-                         "expires_at" => ^expires_at,
-                         "user" => %{"id" => ^user_id}
+                         "expiresAt" => ^expires_at,
+                         "user" => %{"id" => ^user_id},
+                         "shareId" => ^share_id
                        },
                        "id" => ^id
                      }

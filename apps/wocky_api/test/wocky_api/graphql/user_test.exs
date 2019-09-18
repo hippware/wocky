@@ -473,7 +473,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       expiry = sharing_expiry()
 
       {:ok, share} = Location.start_sharing_location(user, user2, expiry)
-      id = share.id
+      id = to_string(share.id)
 
       result = run_query(@query, user, %{})
 
@@ -522,7 +522,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       expiry = sharing_expiry()
 
       {:ok, share} = Location.start_sharing_location(user, user2, expiry)
-      id = share.id
+      id = to_string(share.id)
 
       result = run_query(@query, user2, %{})
 
