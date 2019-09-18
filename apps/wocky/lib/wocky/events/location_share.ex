@@ -31,6 +31,8 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.LocationShare do
 
   def uri(%{from: from} = _event), do: make_uri(:livelocation, from.id)
 
+  def ignore_block?(_event), do: false
+
   def opts(_), do: []
 end
 
@@ -54,4 +56,6 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShare do
       share_id: event.share_id,
       user_id: event.to.id
     }
+
+  def ignore_block?(_event), do: false
 end

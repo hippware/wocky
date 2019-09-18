@@ -34,4 +34,6 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShareEnd do
       user_id: event.to.id,
       share_id: event.share_id
     }
+
+  def ignore_block?(_event), do: true
 end
