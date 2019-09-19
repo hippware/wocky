@@ -35,6 +35,8 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.BotInvitation do
 
   def uri(%{bot: bot}), do: make_uri(:bot, bot.id)
 
+  def ignore_block?(_event), do: false
+
   def opts(_), do: []
 end
 
@@ -58,4 +60,6 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.BotInvitation do
       other_user_id: event.from.id,
       user_id: event.to.id
     }
+
+  def ignore_block?(_event), do: false
 end

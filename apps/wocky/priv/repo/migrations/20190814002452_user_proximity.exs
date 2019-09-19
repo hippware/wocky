@@ -7,7 +7,7 @@ defmodule Wocky.Repo.Migrations.UserProximity do
 
   @disable_ddl_transaction true
 
-  def change do
+  def up do
     create table("user_proximity_subscriptions", primary_key: false) do
       add :user_id, references(:users, on_delete: :delete_all, type: :uuid), null: false, primary_key: true
       add :target_id, references(:users, on_delete: :delete_all, type: :uuid), null: false, primary_key: true
