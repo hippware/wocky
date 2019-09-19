@@ -27,10 +27,12 @@ defmodule WockyAPI.Metrics do
     GenServer.cast(__MODULE__, {:add_auth_connection, pid})
   end
 
+  @impl true
   def init(_) do
     {:ok, %State{ws_pids: MapSet.new(), auth_pids: MapSet.new()}}
   end
 
+  @impl true
   def handle_cast({:add_ws_connection, pid}, state) do
     update_counter("phoenix.websocket.connections", 1)
     Process.monitor(pid)
@@ -42,17 +44,22 @@ defmodule WockyAPI.Metrics do
     {:noreply, %{state | auth_pids: MapSet.put(state.auth_pids, pid)}}
   end
 
+  @impl true
   def handle_info({:DOWN, _, :process, pid, _}, state) do
     ws_pids =
       if MapSet.member?(state.ws_pids, pid) do
         update_counter("phoenix.websocket.connections", -1)
         MapSet.delete(state.ws_pids, pid)
+      else
+        state.ws_pids
       end
 
     auth_pids =
       if MapSet.member?(state.auth_pids, pid) do
         update_counter("phoenix.websocket.authenticated_connections", -1)
         MapSet.delete(state.auth_pids, pid)
+      else
+        state.auth_pids
       end
 
     {:noreply, %{state | ws_pids: ws_pids, auth_pids: auth_pids}}
