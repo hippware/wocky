@@ -11,6 +11,7 @@ defmodule WockyAPI.LoggingSocket do
 
       alias Phoenix.Socket
       alias WockyAPI.LoggingSocket
+      alias WockyAPI.Metrics
 
       @behaviour Phoenix.Socket
       @before_compile Phoenix.Socket
@@ -31,6 +32,8 @@ defmodule WockyAPI.LoggingSocket do
       def init(state) do
         with {:ok, {channels, socket}} <- Socket.__init__(state) do
           if socket.transport == :websocket do
+            Metrics.add_ws_connection(socket.transport_pid)
+
             absinthe_assigns =
               socket.assigns
               |> Map.get(:absinthe, %{})

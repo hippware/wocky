@@ -1,4 +1,5 @@
 defmodule WockyAPI.Controllers.LocationController do
+  use Elixometer
   use WockyAPI, :controller
 
   alias Wocky.Location
@@ -12,6 +13,8 @@ defmodule WockyAPI.Controllers.LocationController do
     locations = normalize_location(params["location"])
 
     if device do
+      update_counter("background_location_uploads", 1)
+
       _ = process_locations(user_id, device, locations)
 
       send_resp(conn, :created, "")
