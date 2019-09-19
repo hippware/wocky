@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.9.13+r03d6457
+
 * Update: ex_json_logger (PR #2816), prometheus_process_collector (PR #2818)
 
 
