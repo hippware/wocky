@@ -12,9 +12,6 @@ defprotocol Wocky.Notifier.InBand.Event do
 
   @doc "Transforms an event into a map for sending in a notification"
   def transform(event)
-
-  @doc "Indicates that the event should be sent even if there is a block between users"
-  def ignore_block?(event)
 end
 
 defimpl Wocky.Notifier.InBand.Event, for: Any do
@@ -25,6 +22,4 @@ defimpl Wocky.Notifier.InBand.Event, for: Any do
   def required_fields(_event), do: []
 
   def transform(_event), do: %{}
-
-  def ignore_block?(_event), do: false
 end

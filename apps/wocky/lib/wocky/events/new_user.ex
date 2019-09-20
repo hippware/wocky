@@ -29,6 +29,4 @@ defimpl Wocky.Notifier.Email.Event, for: Wocky.Events.NewUser do
 
     :ok
   end
-
-  def ignore_block?(_event), do: false
 end

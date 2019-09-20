@@ -16,7 +16,7 @@ defmodule Wocky.Notifier do
     for notifier <- @known_notifiers do
       type = Module.safe_concat(notifier, Event)
 
-      if type.notify?(event) && deliverable?(type, event) do
+      if type.notify?(event) && deliverable?(event) do
         notifier.notify(event)
       end
     end
@@ -24,9 +24,6 @@ defmodule Wocky.Notifier do
     :ok
   end
 
-  defp deliverable?(type, %{to: to, from: from} = event) do
-    type.ignore_block?(event) || !Block.blocked?(to.id, from.id)
-  end
-
-  defp deliverable?(_, _), do: true
+  defp deliverable?(%{to: to, from: from}), do: !Block.blocked?(to.id, from.id)
+  defp deliverable?(_), do: true
 end
