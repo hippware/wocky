@@ -6,7 +6,7 @@
   ## list of tools (see `mix check` docs for defaults)
   tools: [
     {:credo, "mix credo --strict -a"},
-    {:ex_unit, "mix coveralls --umbrella"}
+    {:ex_unit, "mix coveralls --umbrella", detect: []}
 
     ## curated tools may be disabled (e.g. the check for compilation warnings)
     # {:compiler, false},
