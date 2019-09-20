@@ -1,4 +1,4 @@
-FROM hippware/alpine-elixir-dev:1.9.0
+FROM hippware/alpine-elixir-dev:1.9.1
 
 ENV MIX_ENV=test
 
