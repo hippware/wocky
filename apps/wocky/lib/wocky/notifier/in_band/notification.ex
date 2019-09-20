@@ -20,7 +20,6 @@ defmodule Wocky.Notifier.InBand.Notification do
     :geofence_event,
     :location_share,
     :location_share_end,
-    :location_share_end_self,
     :user_invitation,
     :user_proximity
   ])
@@ -37,7 +36,6 @@ defmodule Wocky.Notifier.InBand.Notification do
     belongs_to :bot, Bot
     belongs_to :bot_item, Wocky.POI.Item
     belongs_to :bot_invitation, Wocky.Relation.Invitation, type: :integer
-    belongs_to :share, Wocky.Location.Share, type: :integer
 
     timestamps()
   end
@@ -114,7 +112,6 @@ defmodule Wocky.Notifier.InBand.Notification do
       :user_id,
       :other_user_id,
       :expires_at,
-      :share_id,
       :bot_id,
       :bot_item_id,
       :bot_invitation_id,

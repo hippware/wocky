@@ -49,9 +49,6 @@ defmodule WockyAPI.Schema.NotificationTypes do
     @desc "LocationShareEndNotification type"
     value :location_share_end_notification
 
-    @desc "LocationShareEndSelfNotification type"
-    value :location_share_end_self_notification
-
     @desc "UserInvitationNotification type"
     value :user_invitation_notification
 
@@ -67,7 +64,6 @@ defmodule WockyAPI.Schema.NotificationTypes do
       :geofence_event_notification,
       :location_share_notification,
       :location_share_end_notification,
-      :location_share_end_self_notification,
       :user_invitation_notification,
       :user_proximity_notification
     ]
@@ -154,9 +150,6 @@ defmodule WockyAPI.Schema.NotificationTypes do
     @desc "The user sharing their location"
     field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
 
-    @desc "The ID of this share"
-    field :share_id, :aint
-
     @desc "When the share is scheduled to automatically expire"
     field :expires_at, :datetime
   end
@@ -168,21 +161,6 @@ defmodule WockyAPI.Schema.NotificationTypes do
   object :location_share_end_notification do
     @desc "The user sharing their location"
     field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
-
-    @desc "The ID of the ending share"
-    field :share_id, :aint
-  end
-
-  @desc """
-  A notification that a user has stopped sharing their location with the
-  recipient
-  """
-  object :location_share_end_self_notification do
-    @desc "The user to whom the recipient was sharing their location"
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
-
-    @desc "The ID of the ending share"
-    field :share_id, :aint
   end
 
   @desc """

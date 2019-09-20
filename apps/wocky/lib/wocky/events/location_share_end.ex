@@ -5,14 +5,12 @@ defmodule Wocky.Events.LocationShareEnd do
 
   defstruct [
     :to,
-    :from,
-    :share_id
+    :from
   ]
 
   @type t :: %__MODULE__{
           to: User.t(),
-          from: User.t(),
-          share_id: non_neg_integer()
+          from: User.t()
         }
 end
 
@@ -24,14 +22,12 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShareEnd do
   def required_fields(_),
     do: [
       :other_user_id,
-      :user_id,
-      :share_id
+      :user_id
     ]
 
   def transform(event),
     do: %{
       other_user_id: event.from.id,
-      user_id: event.to.id,
-      share_id: event.share_id
+      user_id: event.to.id
     }
 end
