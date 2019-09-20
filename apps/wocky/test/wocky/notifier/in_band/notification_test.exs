@@ -8,7 +8,6 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
   alias Wocky.Events.GeofenceEvent
   alias Wocky.Events.LocationShare
   alias Wocky.Events.LocationShareEnd
-  alias Wocky.Events.LocationShareEndSelf
   alias Wocky.Events.UserInvitation
   alias Wocky.Notifier
   alias Wocky.Notifier.InBand.Notification
@@ -81,7 +80,6 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
       Notifier.notify(%LocationShare{
         to: ctx.user,
         from: ctx.user2,
-        share_id: 1,
         expires_at: DateTime.utc_now()
       })
 
@@ -92,22 +90,10 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     test "location share end", ctx do
       Notifier.notify(%LocationShareEnd{
         to: ctx.user,
-        from: ctx.user2,
-        share_id: 1
+        from: ctx.user2
       })
 
       assert %Notification{type: :location_share_end} =
-               Repo.get_by(Notification, user_id: ctx.user.id)
-    end
-
-    test "location share end self", ctx do
-      Notifier.notify(%LocationShareEndSelf{
-        to: ctx.user,
-        from: ctx.user2,
-        share_id: 1
-      })
-
-      assert %Notification{type: :location_share_end_self} =
                Repo.get_by(Notification, user_id: ctx.user.id)
     end
 
@@ -179,33 +165,19 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
       Notifier.notify(%LocationShare{
         to: ctx.user,
         from: ctx.user2,
-        share_id: 1,
         expires_at: DateTime.utc_now()
       })
 
       refute Repo.get_by(Notification, user_id: ctx.user.id)
     end
 
-    test "location_share_end should still appear in spite of block", ctx do
+    test "location_share_end", ctx do
       Notifier.notify(%LocationShareEnd{
         to: ctx.user,
-        from: ctx.user2,
-        share_id: 1
+        from: ctx.user2
       })
 
-      assert %Notification{type: :location_share_end} =
-               Repo.get_by(Notification, user_id: ctx.user.id)
-    end
-
-    test "location share end self should still appear in spite of block", ctx do
-      Notifier.notify(%LocationShareEndSelf{
-        to: ctx.user,
-        from: ctx.user2,
-        share_id: 1
-      })
-
-      assert %Notification{type: :location_share_end_self} =
-               Repo.get_by(Notification, user_id: ctx.user.id)
+      refute Repo.get_by(Notification, user_id: ctx.user.id)
     end
 
     test "user invitation", ctx do

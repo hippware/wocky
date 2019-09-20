@@ -11,7 +11,6 @@ defmodule WockyAPI.Resolvers.Notification do
     {:geofence_event, :geofence_event_notification},
     {:location_share, :location_share_notification},
     {:location_share_end, :location_share_end_notification},
-    {:location_share_end_self, :location_share_end_self_notification},
     {:user_invitation, :user_invitation_notification},
     {:user_proximity, :user_proximity_notification}
   ]

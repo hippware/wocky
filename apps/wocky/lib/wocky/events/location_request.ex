@@ -32,6 +32,4 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.LocationRequest do
       extra_fields: %{"location-request" => 1}
     ]
   end
-
-  def ignore_block?(_event), do: false
 end

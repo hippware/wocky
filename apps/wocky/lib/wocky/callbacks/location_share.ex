@@ -5,7 +5,6 @@ defmodule Wocky.Callbacks.LocationShare do
 
   alias Wocky.Events.LocationShare
   alias Wocky.Events.LocationShareEnd
-  alias Wocky.Events.LocationShareEndSelf
   alias Wocky.Location
   alias Wocky.Notifier
   alias Wocky.Repo.Hydrator
@@ -15,8 +14,7 @@ defmodule Wocky.Callbacks.LocationShare do
       %LocationShare{
         to: rec.shared_with,
         from: rec.user,
-        expires_at: rec.expires_at,
-        share_id: new.id
+        expires_at: rec.expires_at
       }
       |> Notifier.notify()
     end)
@@ -32,15 +30,7 @@ defmodule Wocky.Callbacks.LocationShare do
     Hydrator.with_assocs(old, [:user, :shared_with], fn rec ->
       %LocationShareEnd{
         to: rec.shared_with,
-        from: rec.user,
-        share_id: old.id
-      }
-      |> Notifier.notify()
-
-      %LocationShareEndSelf{
-        to: rec.user,
-        from: rec.shared_with,
-        share_id: old.id
+        from: rec.user
       }
       |> Notifier.notify()
     end)
