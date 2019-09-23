@@ -5,6 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: postgrex (PR #2823), Erlang 22.1/Elixir 1.9.1 (PR #2832)
+* Counters for active connections and location uploads (PR #2817, PR #2828)
+* 2821 loc share end self (PR #2824)
+  * Reverted (PR #2829)
+* Fix running ex_unit tests during `mix check` (PR #2830)
+
+
 # 2019.9.13+r03d6457
 
 * Update: ex_json_logger (PR #2816), prometheus_process_collector (PR #2818)
