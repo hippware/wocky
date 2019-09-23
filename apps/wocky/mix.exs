@@ -47,6 +47,7 @@ defmodule Wocky.Mixfile do
         wocky_env: {:system, "WOCKY_ENV", "dev"},
         wocky_inst: {:system, "WOCKY_INST", "local"},
         wocky_host: {:system, "WOCKY_HOST", "localhost"},
+        location_share_end_self: true,
         reserved_handles: [
           "root",
           "admin",

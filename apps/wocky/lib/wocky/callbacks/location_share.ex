@@ -37,12 +37,14 @@ defmodule Wocky.Callbacks.LocationShare do
       }
       |> Notifier.notify()
 
-      %LocationShareEndSelf{
-        to: rec.user,
-        from: rec.shared_with,
-        share_id: old.id
-      }
-      |> Notifier.notify()
+      if Confex.get_env(:wocky, :location_share_end_self) do
+        %LocationShareEndSelf{
+          to: rec.user,
+          from: rec.shared_with,
+          share_id: old.id
+        }
+        |> Notifier.notify()
+      end
     end)
 
     Location.refresh_share_cache(old.user_id)
