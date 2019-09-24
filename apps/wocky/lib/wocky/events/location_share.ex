@@ -6,12 +6,14 @@ defmodule Wocky.Events.LocationShare do
   defstruct [
     :to,
     :from,
+    :share_id,
     :expires_at
   ]
 
   @type t :: %__MODULE__{
           to: User.t(),
           from: User.t(),
+          share_id: non_neg_integer(),
           expires_at: DateTime.t()
         }
 end
@@ -29,6 +31,8 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.LocationShare do
 
   def uri(%{from: from} = _event), do: make_uri(:livelocation, from.id)
 
+  def ignore_block?(_event), do: false
+
   def opts(_), do: []
 end
 
@@ -41,6 +45,7 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShare do
     do: [
       :expires_at,
       :other_user_id,
+      :share_id,
       :user_id
     ]
 
@@ -48,6 +53,9 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShare do
     do: %{
       expires_at: event.expires_at,
       other_user_id: event.from.id,
+      share_id: event.share_id,
       user_id: event.to.id
     }
+
+  def ignore_block?(_event), do: false
 end

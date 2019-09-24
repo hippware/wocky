@@ -4,6 +4,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   import Eventually
 
   alias Wocky.Location
+  alias Wocky.Location.Share
   alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -48,9 +49,15 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
           }
           ... on LocationShareNotification {
             user { id }
+            shareId
             expiresAt
           }
           ... on LocationShareEndNotification {
+            shareId
+            user { id }
+          }
+          ... on LocationShareEndSelfNotification {
+            shareId
             user { id }
           }
           ... on UserInvitationNotification {
@@ -188,35 +195,62 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     } do
       expires_at = Timestamp.shift(days: 1) |> DateTime.truncate(:second)
       Roster.befriend(user, user2)
-      Location.start_sharing_location(user2, user, expires_at)
+
+      {:ok, %Share{id: id}} =
+        Location.start_sharing_location(user2, user, expires_at)
 
       assert_notification_update(subscription_id, %{
         "__typename" => "LocationShareNotification",
         "user" => %{"id" => user2.id},
-        "expiresAt" => Timestamp.to_string!(expires_at)
+        "expiresAt" => Timestamp.to_string!(expires_at),
+        "shareId" => to_string(id)
       })
     end
 
-    test "user stops sharing their location", %{
+    test "other user stops sharing their location", %{
       user: user,
       user2: user2,
       subscription_id: subscription_id
     } do
       expires_at = Timestamp.shift(days: 1) |> DateTime.truncate(:second)
       Roster.befriend(user, user2)
-      Location.start_sharing_location(user2, user, expires_at)
+
+      {:ok, %Share{id: id}} =
+        Location.start_sharing_location(user2, user, expires_at)
 
       assert_notification_update(subscription_id, %{
         "__typename" => "LocationShareNotification",
         "user" => %{"id" => user2.id},
-        "expiresAt" => Timestamp.to_string!(expires_at)
+        "expiresAt" => Timestamp.to_string!(expires_at),
+        "shareId" => to_string(id)
       })
 
       Location.stop_sharing_location(user2, user)
 
       assert_notification_update(subscription_id, %{
         "__typename" => "LocationShareEndNotification",
-        "user" => %{"id" => user2.id}
+        "user" => %{"id" => user2.id},
+        "shareId" => to_string(id)
+      })
+    end
+
+    test "user stops sharing their own location", %{
+      user: user,
+      user2: user2,
+      subscription_id: subscription_id
+    } do
+      expires_at = Timestamp.shift(days: 1) |> DateTime.truncate(:second)
+      Roster.befriend(user, user2)
+
+      {:ok, %Share{id: id}} =
+        Location.start_sharing_location(user, user2, expires_at)
+
+      Location.stop_sharing_location(user, user2)
+
+      assert_notification_update(subscription_id, %{
+        "__typename" => "LocationShareEndSelfNotification",
+        "user" => %{"id" => user2.id},
+        "shareId" => to_string(id)
       })
     end
   end

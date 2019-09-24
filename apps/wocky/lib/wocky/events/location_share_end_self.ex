@@ -1,5 +1,7 @@
-defmodule Wocky.Events.LocationShareEnd do
-  @moduledoc "A user has stopped sharing their location to the recipient"
+defmodule Wocky.Events.LocationShareEndSelf do
+  @moduledoc """
+  The recipient has stopped sharing their location with the specified user
+  """
 
   alias Wocky.Account.User
 
@@ -16,10 +18,10 @@ defmodule Wocky.Events.LocationShareEnd do
         }
 end
 
-defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShareEnd do
+defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShareEndSelf do
   def notify?(_), do: true
 
-  def event_type(_), do: :location_share_end
+  def event_type(_), do: :location_share_end_self
 
   def required_fields(_),
     do: [
