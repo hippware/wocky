@@ -68,8 +68,10 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
   defp add_badge_or_content_avail(notification, false),
     do: Notification.put_badge(notification, 1)
 
-  defp add_badge_or_content_avail(notification, true),
-    do: Notification.put_content_available(notification)
+  defp add_badge_or_content_avail(notification, true) do
+    %Notification{notification | priority: 5, push_type: "background"}
+    |> Notification.put_content_available()
+  end
 
   defp maybe_put(notification, _fun, nil),
     do: notification
