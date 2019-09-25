@@ -71,7 +71,7 @@ defmodule Wocky.Mixfile do
       {:idna, "6.0.0", override: true},
       {:mimerl, "1.2.0", override: true},
       {:certifi, "2.5.1", override: true},
-      {:metrics, "1.0.1", override: true},
+      {:metrics, "2.5.0", override: true},
       {:ssl_verify_fun, "1.1.5", override: true},
       # END TODO
       {:bamboo, "~> 1.0"},
