@@ -6,10 +6,16 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: postgrex (PR #2823), Erlang 22.1/Elixir 1.9.1 (PR #2832)
+  * dialyxir (PR #2838)
 * Counters for active connections and location uploads (PR #2817, PR #2828)
 * 2821 loc share end self (PR #2824)
   * Reverted (PR #2829)
 * Fix running ex_unit tests during `mix check` (PR #2830)
+* Pull in SSL fix for Hackney on Erlang 22.1 (PR #2841)
+* Update push notifications for iOS 13 (PR #2840)
+* location_share_end discussion (#2821, PR #2831)
+  * Implement location_share_end_self notification (disabled).
+  * Allow location share end notifications to bypass user blocks.
 
 
 # 2019.9.13+r03d6457
