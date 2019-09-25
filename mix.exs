@@ -32,15 +32,6 @@ defmodule Wocky.Release.Mixfile do
   # and cannot be accessed from applications inside the apps folder
   defp deps do
     [
-      # TODO: Remove the following lines when the hackney SSL fix is
-      # published to Hex
-      {:hackney, github: "benoitc/hackney", branch: "master", override: true},
-      {:idna, "6.0.0", override: true},
-      {:mimerl, "1.2.0", override: true},
-      {:certifi, "2.5.1", override: true},
-      {:metrics, "1.0.1", override: true},
-      {:ssl_verify_fun, "1.1.5", override: true},
-      # END TODO
       {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0.0-rc.4", only: [:dev, :test], runtime: false},
       {:ex_check, ">= 0.0.0", only: [:dev, :test], runtime: false},
