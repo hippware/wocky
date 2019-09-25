@@ -65,15 +65,6 @@ defmodule Wocky.Mixfile do
 
   defp deps do
     [
-      # TODO: Remove the following lines when the hackney SSL fix is
-      # published to Hex
-      {:hackney, github: "benoitc/hackney", branch: "master", override: true},
-      {:idna, "6.0.0", override: true},
-      {:mimerl, "1.2.0", override: true},
-      {:certifi, "2.5.1", override: true},
-      {:metrics, "1.0.1", override: true},
-      {:ssl_verify_fun, "1.1.5", override: true},
-      # END TODO
       {:bamboo, "~> 1.0"},
       {:benchee, "~> 1.0", only: :dev},
       {:bcrypt_elixir, "~> 2.0"},
