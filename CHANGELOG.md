@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: hackney (PR #2843)
+
+
+# 2019.9.24+rf69ad87
+
 * Update: postgrex (PR #2823), Erlang 22.1/Elixir 1.9.1 (PR #2832)
   * dialyxir (PR #2838)
 * Counters for active connections and location uploads (PR #2817, PR #2828)
