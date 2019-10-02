@@ -5,7 +5,7 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: hackney (PR #2843)
+* Update: hackney (PR #2843), httpoison (PR #2844)
 
 
 # 2019.9.24+rf69ad87
