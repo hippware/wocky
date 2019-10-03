@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.10.1+r4c83ac3
+
 * Update: hackney (PR #2843), httpoison (PR #2844)
 
 
