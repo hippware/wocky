@@ -6,6 +6,7 @@ defmodule WockyAPI.Schema.AuthTypes do
   use WockyAPI.Schema.Notation
 
   alias WockyAPI.LoggingSocket
+  alias WockyAPI.Metrics
   alias WockyAPI.Resolvers.Auth
 
   @desc "Authenticate a user to the GraphQL interface"
@@ -29,8 +30,10 @@ defmodule WockyAPI.Schema.AuthTypes do
         with %{value: %{user: user, device: device}} <- res do
           transport_pid = res.context[:transport_pid]
 
-          if transport_pid,
-            do: LoggingSocket.set_user_info(transport_pid, user, device)
+          if transport_pid do
+            LoggingSocket.set_user_info(transport_pid, user, device)
+            Metrics.add_auth_connection(transport_pid)
+          end
 
           %{res | context: Map.put(res.context, :current_user, user)}
         end
