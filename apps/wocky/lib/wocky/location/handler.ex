@@ -27,19 +27,19 @@ defmodule Wocky.Location.Handler do
 
     @type t :: %__MODULE__{
             user: User.t(),
-            bot_subscriptions: [Bot.t()],
             events: BotEvent.bot_event_map(),
+            watcher_count: integer(),
+            bot_subscriptions: [Bot.t()],
             proximity_subscriptions: [ProximitySubscription.t()],
             proximity_subscribers: [ProximitySubscription.t()]
           }
 
-    defstruct [
-      :user,
-      :bot_subscriptions,
-      :events,
-      :proximity_subscriptions,
-      :proximity_subscribers
-    ]
+    defstruct user: nil,
+              events: %{},
+              watcher_count: 0,
+              bot_subscriptions: [],
+              proximity_subscriptions: [],
+              proximity_subscribers: []
   end
 
   @spec start_link(User.t() | User.id()) :: {:ok, pid()}
@@ -87,6 +87,27 @@ defmodule Wocky.Location.Handler do
     user
     |> get_handler_if_exists()
     |> maybe_call(:refresh_proximity_subscriptions)
+  end
+
+  @spec inc_watcher_count(User.t() | User.id()) :: :ok
+  def inc_watcher_count(user) do
+    user
+    |> get_handler()
+    |> GenServer.cast(:inc_watcher_count)
+  end
+
+  @spec dec_watcher_count(User.t() | User.id()) :: :ok
+  def dec_watcher_count(user) do
+    user
+    |> get_handler()
+    |> GenServer.cast(:dec_watcher_count)
+  end
+
+  @spec get_watcher_count(User.t() | User.id()) :: integer()
+  def get_watcher_count(user) do
+    user
+    |> get_handler()
+    |> GenServer.call(:get_watcher_count)
   end
 
   # Always returns a handler, creating a new one if one does not already exist.
@@ -214,6 +235,10 @@ defmodule Wocky.Location.Handler do
      }, @timeout}
   end
 
+  def handle_call(:get_watcher_count, _from, %{watcher_count: count} = state) do
+    {:reply, count, state, @timeout}
+  end
+
   # called when a handoff has been initiated due to changes
   # in cluster topology, valid response values are:
   #
@@ -243,6 +268,18 @@ defmodule Wocky.Location.Handler do
 
     {:noreply, %{state | proximity_subscriptions: proximity_subscriptions},
      @timeout}
+  end
+
+  def handle_cast(:inc_watcher_count, %{watcher_count: count} = state) do
+    {:noreply, %{state | watcher_count: count + 1}, @timeout}
+  end
+
+  def handle_cast(:dec_watcher_count, %{watcher_count: 0} = state) do
+    {:noreply, state, @timeout}
+  end
+
+  def handle_cast(:dec_watcher_count, %{watcher_count: count} = state) do
+    {:noreply, %{state | watcher_count: count - 1}, @timeout}
   end
 
   # called when a network split is healed and the local process
