@@ -12,22 +12,51 @@ defmodule Wocky.Callbacks.BotSubscriptionTest do
     Callback.register()
   end
 
-  test "should update the bot subscription cache" do
-    owner = Factory.insert(:user)
-    user = Factory.insert(:user)
+  describe "bot subscription hooks" do
+    setup do
+      owner = Factory.insert(:user)
+      user = Factory.insert(:user)
 
-    bot = Factory.insert(:bot, user: owner)
+      bot = Factory.insert(:bot, user: owner)
 
-    Roster.befriend(owner, user)
+      Roster.befriend(owner, user)
 
-    # Make sure the handler is instantiated
-    pid = Handler.get_handler(user)
+      pid = Handler.get_handler(user)
 
-    Relation.subscribe(user, bot)
-    POI.delete(bot)
+      Relation.subscribe(user, bot)
 
-    refute_eventually(Relation.subscribed?(user, bot))
+      {:ok, pid: pid, user: user, bot: bot}
+    end
 
-    assert_eventually([] == :sys.get_state(pid).bot_subscriptions)
+    test "should add a new bot subscription", %{bot: bot, pid: pid} do
+      assert_eventually(
+        (
+          subs = :sys.get_state(pid).bot_subscriptions
+          Enum.all?(subs, &(&1.id == bot.id)) and length(subs) == 1
+        )
+      )
+    end
+
+    test "should remove a bot subscription on unsubscribe", %{
+      user: user,
+      bot: bot,
+      pid: pid
+    } do
+      Relation.unsubscribe(user, bot)
+
+      assert_eventually(%{bot_subscriptions: []} = :sys.get_state(pid))
+    end
+
+    test "should remove a bot subscription on bot delete", %{
+      user: user,
+      bot: bot,
+      pid: pid
+    } do
+      POI.delete(bot)
+
+      refute_eventually(Relation.subscribed?(user, bot))
+
+      assert_eventually(%{bot_subscriptions: []} = :sys.get_state(pid))
+    end
   end
 end
