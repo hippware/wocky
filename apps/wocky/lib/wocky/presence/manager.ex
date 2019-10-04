@@ -240,8 +240,9 @@ defmodule Wocky.Presence.Manager do
     case List.delete(mon_refs, ref) do
       [] ->
         Store.remove(s.user.id)
-        # No need to publish to ourselves here - by definition we can't have any
-        # live connections to receive the message on
+        # By definition we can't have any live connections to receive the
+        # message on, but this event is used in other places.
+        Presence.publish(s.user.id, s.user, :offline)
         {:stop, :normal, s}
 
       new_refs ->
