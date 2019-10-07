@@ -1,5 +1,5 @@
 defmodule Wocky.Callbacks.PresenceTest do
-  use Wocky.WatcherCase
+  use Wocky.WatcherCase, async: false
 
   import Eventually
 
@@ -29,16 +29,21 @@ defmodule Wocky.Callbacks.PresenceTest do
     {:ok, sharer: sharer, shared_with: shared_with}
   end
 
+  defp get_watcher_count(user) do
+    %{watchers: count} = Location.get_watched_status(user)
+    count
+  end
+
   test "should increment watcher count when a user comes online", ctx do
     Presence.publish(ctx.shared_with.id, ctx.shared_with, :online)
 
-    assert_eventually(Location.get_watcher_count(ctx.sharer) == 1)
+    assert_eventually(get_watcher_count(ctx.sharer) == 1)
   end
 
   test "should decrement watcher count when a user goes offline", ctx do
     Location.inc_watcher_count(ctx.sharer)
     Presence.publish(ctx.shared_with.id, ctx.shared_with, :offline)
 
-    assert_eventually(Location.get_watcher_count(ctx.sharer) == 0)
+    assert_eventually(get_watcher_count(ctx.sharer) == 0)
   end
 end

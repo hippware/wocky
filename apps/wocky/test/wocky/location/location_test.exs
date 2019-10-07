@@ -228,23 +228,23 @@ defmodule Wocky.Location.LocationTest do
 
   describe "watcher count" do
     test "should increment and decrement the watcher count", %{user: user} do
-      assert Location.get_watcher_count(user) == 0
+      assert %{watchers: 0} = Location.get_watched_status(user)
 
       :ok = Location.inc_watcher_count(user)
 
-      assert Location.get_watcher_count(user) == 1
+      assert %{watchers: 1} = Location.get_watched_status(user)
 
       :ok = Location.inc_watcher_count(user)
 
-      assert Location.get_watcher_count(user) == 2
+      assert %{watchers: 2} = Location.get_watched_status(user)
 
       :ok = Location.dec_watcher_count(user)
 
-      assert Location.get_watcher_count(user) == 1
+      assert %{watchers: 1} = Location.get_watched_status(user)
 
       :ok = Location.dec_watcher_count(user)
 
-      assert Location.get_watcher_count(user) == 0
+      assert %{watchers: 0} = Location.get_watched_status(user)
     end
   end
 end

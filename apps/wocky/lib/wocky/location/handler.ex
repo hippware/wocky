@@ -21,6 +21,7 @@ defmodule Wocky.Location.Handler do
   require Logger
 
   @timeout :timer.hours(1)
+  @watcher_debounce_secs 5 * 60
 
   defmodule State do
     @moduledoc false
@@ -28,7 +29,8 @@ defmodule Wocky.Location.Handler do
     @type t :: %__MODULE__{
             user: User.t(),
             events: BotEvent.bot_event_map(),
-            watcher_count: integer(),
+            watcher_count: non_neg_integer(),
+            watched_status_changed_at: DateTime.t() | nil,
             bot_subscriptions: [Bot.t()],
             proximity_subscriptions: [ProximitySubscription.t()],
             proximity_subscribers: [ProximitySubscription.t()]
@@ -37,10 +39,17 @@ defmodule Wocky.Location.Handler do
     defstruct user: nil,
               events: %{},
               watcher_count: 0,
+              watched_status_changed_at: nil,
               bot_subscriptions: [],
               proximity_subscriptions: [],
               proximity_subscribers: []
   end
+
+  @type watched_status :: %{
+          watched: boolean(),
+          watchers: non_neg_integer(),
+          changed_at: DateTime.t() | nil
+        }
 
   @spec start_link(User.t() | User.id()) :: {:ok, pid()}
 
@@ -103,11 +112,11 @@ defmodule Wocky.Location.Handler do
     |> GenServer.cast(:dec_watcher_count)
   end
 
-  @spec get_watcher_count(User.t() | User.id()) :: integer()
-  def get_watcher_count(user) do
+  @spec get_watched_status(User.t() | User.id()) :: watched_status()
+  def get_watched_status(user) do
     user
     |> get_handler()
-    |> GenServer.call(:get_watcher_count)
+    |> GenServer.call(:get_watched_status)
   end
 
   # Always returns a handler, creating a new one if one does not already exist.
@@ -235,8 +244,15 @@ defmodule Wocky.Location.Handler do
      }, @timeout}
   end
 
-  def handle_call(:get_watcher_count, _from, %{watcher_count: count} = state) do
-    {:reply, count, state, @timeout}
+  def handle_call(
+        :get_watched_status,
+        _from,
+        %{watched_status_changed_at: changed_at, watcher_count: count} = state
+      ) do
+    watched = !watchers_expired?(count, changed_at)
+    result = %{watchers: count, changed_at: changed_at, watched: watched}
+
+    {:reply, result, state, @timeout}
   end
 
   # called when a handoff has been initiated due to changes
@@ -270,6 +286,12 @@ defmodule Wocky.Location.Handler do
      @timeout}
   end
 
+  def handle_cast(:inc_watcher_count, %{watcher_count: 0} = state) do
+    {:noreply,
+     %{state | watcher_count: 1, watched_status_changed_at: DateTime.utc_now()},
+     @timeout}
+  end
+
   def handle_cast(:inc_watcher_count, %{watcher_count: count} = state) do
     {:noreply, %{state | watcher_count: count + 1}, @timeout}
   end
@@ -279,7 +301,18 @@ defmodule Wocky.Location.Handler do
   end
 
   def handle_cast(:dec_watcher_count, %{watcher_count: count} = state) do
-    {:noreply, %{state | watcher_count: count - 1}, @timeout}
+    new_count = count - 1
+
+    changed_at =
+      if count == 0 do
+        DateTime.utc_now()
+      else
+        state.watched_status_changed_at
+      end
+
+    {:noreply,
+     %{state | watcher_count: new_count, watched_status_changed_at: changed_at},
+     @timeout}
   end
 
   # called when a network split is healed and the local process
@@ -301,6 +334,12 @@ defmodule Wocky.Location.Handler do
     Logger.debug(fn -> "Swarm worker for user #{user.id} idle timeout" end)
     {:stop, :shutdown, state}
   end
+
+  defp watchers_expired?(0, changed_at) do
+    Timex.diff(Timex.now(), changed_at, :seconds) >= @watcher_debounce_secs
+  end
+
+  defp watchers_expired?(_count, _changed_at), do: false
 
   defp handler_name(user_id), do: "location_handler_" <> user_id
 

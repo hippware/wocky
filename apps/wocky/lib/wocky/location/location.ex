@@ -155,8 +155,8 @@ defmodule Wocky.Location do
   @spec dec_watcher_count(User.t() | User.id()) :: :ok
   defdelegate dec_watcher_count(user), to: Handler
 
-  @spec get_watcher_count(User.t() | User.id()) :: integer()
-  defdelegate get_watcher_count(user), to: Handler
+  @spec get_watched_status(User.t() | User.id()) :: Handler.watched_status()
+  defdelegate get_watched_status(user), to: Handler
 
   @spec to_point(UserLocation.t()) :: Point.t()
   def to_point(location), do: Map.take(location, [:lat, :lon])

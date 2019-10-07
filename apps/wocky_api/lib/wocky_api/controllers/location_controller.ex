@@ -24,8 +24,9 @@ defmodule WockyAPI.Controllers.LocationController do
   end
 
   defp make_response_body(user_id) do
-    watchers = Location.get_watcher_count(user_id)
-    Poison.encode!(%{watched: watchers > 0})
+    user_id
+    |> Location.get_watched_status()
+    |> Poison.encode!()
   end
 
   defp normalize_location(locations) when is_list(locations), do: locations
