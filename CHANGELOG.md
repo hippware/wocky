@@ -5,7 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: faker (PR #2847), httpoison (PR #2846)
+* Update: faker (PR #2847), httpoison (PR #2846), honeybadger (PR #2854)
+* Fix selection of pid for authenticated websocket (PR #2848)
 
 
 # 2019.10.1+r4c83ac3
