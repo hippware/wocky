@@ -2,6 +2,7 @@ defmodule WockyAPI.GraphQL.PresenceTest do
   use WockyAPI.SubscriptionCase, async: false
 
   import Eventually
+  import Wocky.Presence.TestHelper
   import WockyAPI.GraphQLHelper
 
   alias Wocky.Presence
@@ -178,7 +179,7 @@ defmodule WockyAPI.GraphQL.PresenceTest do
 
       assert_subscription_update _data
 
-      close_conn(conn)
+      disconnect(conn)
 
       assert_presence_notification(ctx.friend.id, :offline)
     end
@@ -200,7 +201,7 @@ defmodule WockyAPI.GraphQL.PresenceTest do
 
       refute_subscription_update _data, 10
 
-      close_conn(conn)
+      disconnect(conn)
 
       refute_subscription_update _data, 10
     end
@@ -236,13 +237,13 @@ defmodule WockyAPI.GraphQL.PresenceTest do
       Enum.each(
         0..3,
         fn i ->
-          close_conn(Enum.at(conns, i))
+          disconnect(Enum.at(conns, i))
         end
       )
 
       refute_subscription_update _data, 10
 
-      close_conn(Enum.at(conns, 4))
+      disconnect(Enum.at(conns, 4))
 
       assert_presence_notification(ctx.friend.id, :offline)
     end
@@ -263,31 +264,11 @@ defmodule WockyAPI.GraphQL.PresenceTest do
     end
 
     test "connected contact disconnects", ctx do
-      close_conn(ctx.conn)
+      disconnect(ctx.conn)
 
       assert_presence_notification(ctx.friend.id, :offline)
     end
   end
-
-  defp connect(user) do
-    self = self()
-
-    conn_pid =
-      spawn_link(fn ->
-        users = Presence.connect(user)
-        send(self, {:connected, users})
-
-        receive do
-          :exit -> :ok
-        end
-      end)
-
-    receive do
-      {:connected, users} -> {conn_pid, users}
-    end
-  end
-
-  defp close_conn(pid), do: send(pid, :exit)
 
   defp includes_user(list, user),
     do: Enum.any?(list, &(&1.id == user.id))

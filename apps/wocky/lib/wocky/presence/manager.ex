@@ -21,6 +21,7 @@ defmodule Wocky.Presence.Manager do
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Presence
+  alias Wocky.Presence.ConnectionEvent
   alias Wocky.Presence.OnlineProc
   alias Wocky.Presence.Store
   alias Wocky.Presence.Supervisor
@@ -43,6 +44,7 @@ defmodule Wocky.Presence.Manager do
 
   def start_link(user), do: GenServer.start_link(__MODULE__, user)
 
+  @impl true
   def init(user) do
     _ = PubSub.subscribe(:presence, pubsub_topic(user))
     Store.add_self(user.id)
@@ -99,6 +101,7 @@ defmodule Wocky.Presence.Manager do
     :exit, _ -> Presence.make_presence(:offline)
   end
 
+  @impl true
   def handle_info({:DOWN, ref, :process, _, _}, s) do
     cond do
       Enum.member?(s.mon_refs, ref) ->
@@ -143,8 +146,12 @@ defmodule Wocky.Presence.Manager do
     {:noreply, s}
   end
 
+  @impl true
   def handle_call({:register_sock, sock_pid}, _from, %{mon_refs: mon_refs} = s) do
     ref = Process.monitor(sock_pid)
+
+    if mon_refs == [], do: signal_connection(s.user, :connected)
+
     {:reply, :ok, %{s | mon_refs: [ref | mon_refs]}}
   end
 
@@ -240,14 +247,22 @@ defmodule Wocky.Presence.Manager do
     case List.delete(mon_refs, ref) do
       [] ->
         Store.remove(s.user.id)
-        # By definition we can't have any live connections to receive the
-        # message on, but this event is used in other places.
-        Presence.publish(s.user.id, s.user, :offline)
+        signal_connection(s.user, :disconnected)
+        # No need to publish to ourselves here - by definition we can't have any
+        # live connections to receive the message on
         {:stop, :normal, s}
 
       new_refs ->
         {:noreply, %{s | mon_refs: new_refs}}
     end
+  end
+
+  defp signal_connection(user, status) do
+    _ =
+      %ConnectionEvent{user: user, status: status}
+      |> Dawdle.signal(direct: true)
+
+    :ok
   end
 
   defp delete_contact_presence(ref, %{contact_refs: contact_refs} = s) do

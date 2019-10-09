@@ -1,11 +1,11 @@
-defmodule Wocky.Callbacks.PresenceTest do
+defmodule Wocky.Callbacks.ConnectionTest do
   use Wocky.WatcherCase, async: false
 
   import Eventually
+  import Wocky.Presence.TestHelper
 
-  alias Wocky.Callbacks.Presence, as: Callback
+  alias Wocky.Callbacks.Connection, as: Callback
   alias Wocky.Location
-  alias Wocky.Presence
   alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
   alias Wocky.Roster
@@ -29,21 +29,24 @@ defmodule Wocky.Callbacks.PresenceTest do
     {:ok, sharer: sharer, shared_with: shared_with}
   end
 
-  defp get_watcher_count(user) do
-    %{watchers: count} = Location.get_watched_status(user)
-    count
-  end
-
-  test "should increment watcher count when a user comes online", ctx do
-    Presence.publish(ctx.shared_with.id, ctx.shared_with, :online)
+  test "should increment watcher count when a user connects", ctx do
+    {_, _} = connect(ctx.shared_with)
 
     assert_eventually(get_watcher_count(ctx.sharer) == 1)
   end
 
-  test "should decrement watcher count when a user goes offline", ctx do
-    Location.inc_watcher_count(ctx.sharer)
-    Presence.publish(ctx.shared_with.id, ctx.shared_with, :offline)
+  test "should decrement watcher count when a user disconnects", ctx do
+    {pid, _} = connect(ctx.shared_with)
+
+    assert_eventually(get_watcher_count(ctx.sharer) == 1)
+
+    disconnect(pid)
 
     assert_eventually(get_watcher_count(ctx.sharer) == 0)
+  end
+
+  defp get_watcher_count(user) do
+    %{watchers: count} = Location.get_watched_status(user)
+    count
   end
 end

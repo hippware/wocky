@@ -21,7 +21,7 @@ defmodule Wocky.Presence do
   @type status() :: :offline | :online
 
   @doc """
-  Mark a user online and return a list of their currently-online followees
+  Mark a user connected and return a list of their currently-online followees
   """
   @spec connect(User.t()) :: [User.t()]
   def connect(user) do
