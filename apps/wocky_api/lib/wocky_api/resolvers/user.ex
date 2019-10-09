@@ -154,7 +154,7 @@ defmodule WockyAPI.Resolvers.User do
 
     with {:ok, _} <- Location.set_user_location(user, location) do
       update_counter("foreground_location_uploads", 1)
-      {:ok, true}
+      {:ok, Location.get_watched_status(user)}
     end
   end
 

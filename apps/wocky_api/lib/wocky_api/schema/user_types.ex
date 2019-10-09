@@ -719,7 +719,19 @@ defmodule WockyAPI.Schema.UserTypes do
     field :is_fetch, :boolean, deprecate: "This field will be ignored"
   end
 
-  payload_object(:user_location_update_payload, :boolean)
+  @desc "Response object for user location uploads"
+  object :user_location_upload_response do
+    @desc "Are any location sharees online"
+    field :watched, non_null(:boolean)
+
+    @desc "The number of location sharees that are online"
+    field :watchers, non_null(:integer)
+
+    @desc "The time at which watchers went above 0 or below 1"
+    field :changed_at, :datetime
+  end
+
+  payload_object(:user_location_update_payload, :user_location_upload_response)
 
   payload_object(:user_location_get_token_payload, :string)
 
