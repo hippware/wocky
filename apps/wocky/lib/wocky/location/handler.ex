@@ -304,7 +304,7 @@ defmodule Wocky.Location.Handler do
     new_count = count - 1
 
     changed_at =
-      if count == 0 do
+      if new_count == 0 do
         DateTime.utc_now()
       else
         state.watched_status_changed_at

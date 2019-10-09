@@ -246,5 +246,13 @@ defmodule Wocky.Location.LocationTest do
 
       assert %{watchers: 0} = Location.get_watched_status(user)
     end
+
+    test "should not go negative", %{user: user} do
+      assert %{watchers: 0} = Location.get_watched_status(user)
+
+      :ok = Location.dec_watcher_count(user)
+
+      assert %{watchers: 0} = Location.get_watched_status(user)
+    end
   end
 end
