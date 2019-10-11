@@ -159,6 +159,23 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       refute Location.get_current_user_location(user)
     end
 
+    test "silently fails when accuracy is negative", %{conn: conn, user: user} do
+      invalid_attrs =
+        packet([
+          %{
+            coords: %{
+              longitude: -85.7935821931526,
+              latitude: 35.17448497921099,
+              accuracy: -1.0
+            }
+          }
+        ])
+
+      post conn, location_path(conn, :create, user.id), invalid_attrs
+
+      refute Location.get_current_user_location(user)
+    end
+
     test "returns 400 when device is missing", %{conn: conn, user: user} do
       invalid_attrs = packet([@location], nil)
       conn = post conn, location_path(conn, :create, user.id), invalid_attrs
