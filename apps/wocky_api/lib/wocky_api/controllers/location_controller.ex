@@ -36,7 +36,7 @@ defmodule WockyAPI.Controllers.LocationController do
     length = length(locations)
 
     for {l, idx} <- Enum.with_index(locations, 1) do
-      if has_required_keys(l) do
+      if has_required_and_valid_keys(l) do
         loc = make_location(l, device)
 
         {:ok, _} = Location.set_user_location(user_id, loc, idx == length)
@@ -44,12 +44,21 @@ defmodule WockyAPI.Controllers.LocationController do
     end
   end
 
-  defp has_required_keys(%{"coords" => coords}) do
-    Map.get(coords, "latitude") && Map.get(coords, "longitude") &&
-      Map.get(coords, "accuracy")
+  defp has_required_and_valid_keys(%{"coords" => coords}) do
+    Enum.all?(["latitude", "longitude"], &valid_coord?(coords, &1)) &&
+      valid_accuracy?(Map.get(coords, "accuracy"))
   end
 
-  defp has_required_keys(_), do: false
+  defp has_required_and_valid_keys(_), do: false
+
+  defp valid_coord?(coords, name) do
+    c = Map.get(coords, name)
+    is_float(c) || is_integer(c)
+  end
+
+  defp valid_accuracy?(a) do
+    (is_float(a) || is_integer(a)) && a >= 0
+  end
 
   defp make_location(%{"coords" => c} = l, device) do
     %{
