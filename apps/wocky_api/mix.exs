@@ -39,7 +39,7 @@ defmodule WockyAPI.Mixfile do
   end
 
   # Specifies which paths to compile per environment.
-  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(:test), do: ["lib", "test/support", "test/support/query"]
   defp elixirc_paths(_), do: ["lib"]
 
   defp deps do
@@ -71,6 +71,10 @@ defmodule WockyAPI.Mixfile do
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
       # Non-prod
+      {:absinthe_websocket,
+       path: "/home/bernard/src/absinthe_websocket", override: true},
+      # {:absinthe_websocket, "~> 0.2", only: :test, runtime: false},
+      {:common_graphql_client, "~> 0.2", only: :test, runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
       {:excoveralls, "~> 0.6", only: :test},

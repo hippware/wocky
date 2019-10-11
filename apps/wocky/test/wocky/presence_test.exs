@@ -177,4 +177,60 @@ defmodule Wocky.PresenceTest do
                Manager.get_presence(manager, ctx.user)
     end
   end
+
+  describe "socket tests" do
+    test "get_sockets/1 with one socket", ctx do
+      conn = fake_socket_pid(ctx.user)
+      assert Presence.get_sockets(ctx.user) == [conn]
+
+      close_fake_socket(conn)
+      assert Presence.get_sockets(ctx.user) == []
+    end
+
+    test "connected?/1 with one socket", ctx do
+      conn = fake_socket_pid(ctx.user)
+
+      assert Presence.connected?(ctx.user)
+
+      close_fake_socket(conn)
+      refute Presence.connected?(ctx.user)
+    end
+
+    test "get_sockets/1 with multiple sockets", ctx do
+      conn = fake_socket_pid(ctx.user)
+      conn2 = fake_socket_pid(ctx.user)
+
+      assert ctx.user |> Presence.get_sockets() |> Enum.sort() ==
+               [conn, conn2] |> Enum.sort()
+
+      close_fake_socket(conn)
+      assert Presence.get_sockets(ctx.user) == [conn2]
+    end
+
+    test "connected?/1 with multiple sockets", ctx do
+      conn = fake_socket_pid(ctx.user)
+      conn2 = fake_socket_pid(ctx.user)
+      assert Presence.connected?(ctx.user)
+
+      close_fake_socket(conn)
+      assert Presence.connected?(ctx.user)
+
+      close_fake_socket(conn2)
+      refute Presence.connected?(ctx.user)
+    end
+  end
+
+  defp fake_socket_pid(user) do
+    pid =
+      spawn_link(fn ->
+        receive do
+          :exit -> :ok
+        end
+      end)
+
+    Presence.register_socket(user, pid)
+    pid
+  end
+
+  defp close_fake_socket(pid), do: send(pid, :exit)
 end

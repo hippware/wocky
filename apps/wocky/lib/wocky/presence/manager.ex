@@ -8,11 +8,31 @@ defmodule Wocky.Presence.Manager do
   defmodule State do
     @moduledoc false
 
-    defstruct online_pid: nil,
-              mon_refs: [],
-              user: nil,
-              # BiMap of (User.id -> reference()):
-              contact_refs: []
+    alias Wocky.Account.User
+
+    defstruct [
+      :user,
+      :contact_refs,
+      online_pid: nil,
+      handler_mon_refs: %{},
+      socket_mon_refs: %{}
+    ]
+
+    @type t :: %__MODULE__{
+            # The user to which this presence manager belongs
+            user: User.t(),
+            # BiMap of (User.id() -> reference()) containing a user's
+            # friends and their online processes, if present.
+            contact_refs: BiMap.t(),
+            # Pid (if any) representing this user's online state
+            online_pid: nil | pid(),
+            # Map of (reference() -> pid()) containing monitor references
+            # and their respective pids for a user's open graphql handlers (if any)
+            handler_mon_refs: %{optional(reference()) => pid()},
+            # Map of (reference() -> pid()) containing monitor references
+            # and their respective pids for a user's open sockets (if any)
+            socket_mon_refs: %{optional(reference()) => pid()}
+          }
   end
 
   use GenServer, restart: :temporary
@@ -60,24 +80,35 @@ defmodule Wocky.Presence.Manager do
     {:ok, %State{user: user, contact_refs: contact_refs}}
   end
 
-  @spec register_sock(User.t()) :: pid()
-  def register_sock(user), do: do_register_sock(user, 0)
+  @spec register_handler(User.t()) :: pid()
+  def register_handler(user), do: do_register_handler(user, 0)
+
+  @spec register_socket(pid(), pid()) :: :ok
+  def register_socket(manager, socket_pid) do
+    GenServer.call(manager, {:register_socket, socket_pid})
+  end
 
   # Work around a race condition here: if the manager is acquired, then dies
-  # before handling the :register_sock, we'll get an :exit thrown. In this case
-  # retrying should create us a new, non-dead manager which should work fine.
-  defp do_register_sock(_user, @max_register_retries),
+  # before handling the :register_handler, we'll get an :exit thrown. In this
+  # case retrying should create us a new, non-dead manager which should work
+  # fine.
+  defp do_register_handler(_user, @max_register_retries),
     do: exit(:presence_manger_not_acquired)
 
-  defp do_register_sock(user, retries) do
+  defp do_register_handler(user, retries) do
     {:ok, manager} = acquire(user)
 
     try do
-      GenServer.call(manager, {:register_sock, self()})
+      GenServer.call(manager, {:register_handler, self()})
       manager
     catch
-      :exit, _ -> do_register_sock(user, retries + 1)
+      :exit, _ -> do_register_handler(user, retries + 1)
     end
+  end
+
+  @spec get_sockets(pid()) :: [pid()]
+  def get_sockets(manager) do
+    GenServer.call(manager, :get_sockets)
   end
 
   @spec set_status(pid(), Presence.status()) :: :ok
@@ -104,9 +135,14 @@ defmodule Wocky.Presence.Manager do
   @impl true
   def handle_info({:DOWN, ref, :process, _, _}, s) do
     cond do
-      Enum.member?(s.mon_refs, ref) ->
-        # A monitored connection process is down - the user has disconnected
-        delete_own_connection(ref, s)
+      Map.has_key?(s.handler_mon_refs, ref) ->
+        # A monitored connection process is down - the user has disconnected.
+        delete_own_handler(ref, s)
+
+      Map.has_key?(s.socket_mon_refs, ref) ->
+        # A registered socket has closed. Remove it from our records.
+        signal_connection(s.user, :disconnected)
+        {:noreply, %{s | socket_mon_refs: Map.delete(s.socket_mon_refs, ref)}}
 
       BiMap.has_value?(s.contact_refs, ref) ->
         # A tracked presence process for a contact has gone down.
@@ -146,13 +182,28 @@ defmodule Wocky.Presence.Manager do
     {:noreply, s}
   end
 
-  @impl true
-  def handle_call({:register_sock, sock_pid}, _from, %{mon_refs: mon_refs} = s) do
-    ref = Process.monitor(sock_pid)
+  def handle_call(
+        {:register_handler, handler_pid},
+        _from,
+        %{handler_mon_refs: handler_mon_refs} = s
+      ) do
+    ref = Process.monitor(handler_pid)
 
-    if mon_refs == [], do: signal_connection(s.user, :connected)
+    {:reply, :ok,
+     %{s | handler_mon_refs: Map.put(handler_mon_refs, ref, handler_pid)}}
+  end
 
-    {:reply, :ok, %{s | mon_refs: [ref | mon_refs]}}
+  def handle_call(
+        {:register_socket, socket_pid},
+        _from,
+        %{socket_mon_refs: socket_mon_refs} = s
+      ) do
+    if socket_mon_refs == %{}, do: signal_connection(s.user, :connected)
+
+    ref = Process.monitor(socket_pid)
+
+    {:reply, :ok,
+     %{s | socket_mon_refs: Map.put(socket_mon_refs, ref, socket_pid)}}
   end
 
   def handle_call(:online_contacts, _from, %{contact_refs: contact_refs} = s) do
@@ -230,6 +281,10 @@ defmodule Wocky.Presence.Manager do
     {:reply, :ok, %{s | online_pid: nil}}
   end
 
+  def handle_call(:get_sockets, _from, s) do
+    {:reply, Map.values(s.socket_mon_refs), s}
+  end
+
   defp maybe_monitor(target, acc) do
     case Store.get_online(target.id) do
       nil ->
@@ -243,17 +298,16 @@ defmodule Wocky.Presence.Manager do
 
   defp pubsub_topic(user), do: "user:" <> user.id
 
-  defp delete_own_connection(ref, %{mon_refs: mon_refs} = s) do
-    case List.delete(mon_refs, ref) do
-      [] ->
+  defp delete_own_handler(ref, %{handler_mon_refs: handler_mon_refs} = s) do
+    case Map.delete(handler_mon_refs, ref) do
+      m when m == %{} ->
         Store.remove(s.user.id)
-        signal_connection(s.user, :disconnected)
         # No need to publish to ourselves here - by definition we can't have any
         # live connections to receive the message on
-        {:stop, :normal, s}
+        {:stop, :normal, %{s | handler_mon_refs: m}}
 
       new_refs ->
-        {:noreply, %{s | mon_refs: new_refs}}
+        {:noreply, %{s | handler_mon_refs: new_refs}}
     end
   end
 
