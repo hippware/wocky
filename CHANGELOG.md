@@ -6,6 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: credo (PR #2856)
+* Implement dynamic location upload rate support (#2845)
 
 
 # 2019.10.4+ra3469c8
