@@ -2,6 +2,7 @@ defmodule Wocky.PresenceTest do
   use Wocky.DataCase, async: false
 
   import Eventually
+  import Wocky.Presence.TestHelper
 
   alias Wocky.Account.User
   alias Wocky.Presence
@@ -42,7 +43,7 @@ defmodule Wocky.PresenceTest do
 
       Presence.set_status(ctx.user, :online)
       assert_eventually(Presence.get(ctx.user, ctx.requestor).status == :online)
-      close_conn(conn)
+      disconnect(conn)
 
       assert_eventually(
         Presence.get(ctx.user, ctx.requestor).status == :offline
@@ -158,7 +159,7 @@ defmodule Wocky.PresenceTest do
     end
 
     test "should publish an offline state when a user disconnects", ctx do
-      close_conn(ctx.conn_pid)
+      disconnect(ctx.conn_pid)
 
       assert_eventually(
         {ctx.requestor.id, :offline, ctx.user.id} ==
@@ -176,24 +177,4 @@ defmodule Wocky.PresenceTest do
                Manager.get_presence(manager, ctx.user)
     end
   end
-
-  defp connect(user) do
-    self = self()
-
-    conn_pid =
-      spawn_link(fn ->
-        users = Presence.connect(user)
-        send(self, {:connected, users})
-
-        receive do
-          :exit -> :ok
-        end
-      end)
-
-    receive do
-      {:connected, users} -> {conn_pid, users}
-    end
-  end
-
-  defp close_conn(pid), do: send(pid, :exit)
 end

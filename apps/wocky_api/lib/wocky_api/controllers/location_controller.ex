@@ -17,10 +17,16 @@ defmodule WockyAPI.Controllers.LocationController do
 
       _ = process_locations(user_id, device, locations)
 
-      send_resp(conn, :created, "")
+      send_resp(conn, :created, make_response_body(user_id))
     else
       {:error, :missing_keys}
     end
+  end
+
+  defp make_response_body(user_id) do
+    user_id
+    |> Location.get_watched_status()
+    |> Poison.encode!()
   end
 
   defp normalize_location(locations) when is_list(locations), do: locations

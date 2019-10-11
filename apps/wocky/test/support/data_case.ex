@@ -35,6 +35,10 @@ defmodule Wocky.DataCase do
       Sandbox.mode(Wocky.Repo, {:shared, self()})
     end
 
+    # Make sure that there are no Dawdle handlers registered to avoid
+    # weird test failures.
+    Dawdle.Client.clear_all_handlers()
+
     :ok
   end
 

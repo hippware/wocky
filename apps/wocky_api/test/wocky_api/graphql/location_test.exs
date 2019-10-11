@@ -24,12 +24,18 @@ defmodule WockyAPI.GraphQL.LocationTest do
     @query """
     mutation ($input: UserLocationUpdateInput!) {
       userLocationUpdate (input: $input) {
+        result {
+          watched
+          watchers
+        }
         successful
       }
     }
     """
 
     test "set location", %{user: user} do
+      Location.inc_watcher_count(user)
+
       lat = :rand.uniform() * 89.0
       lon = :rand.uniform() * 179.0
       accuracy = :rand.uniform() * 10.0
@@ -49,6 +55,10 @@ defmodule WockyAPI.GraphQL.LocationTest do
 
       assert result.data == %{
                "userLocationUpdate" => %{
+                 "result" => %{
+                   "watched" => true,
+                   "watchers" => 1
+                 },
                  "successful" => true
                }
              }
@@ -75,6 +85,7 @@ defmodule WockyAPI.GraphQL.LocationTest do
 
       assert result.data == %{
                "userLocationUpdate" => %{
+                 "result" => nil,
                  "successful" => false
                }
              }

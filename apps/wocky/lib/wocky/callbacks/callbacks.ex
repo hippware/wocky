@@ -7,6 +7,7 @@ defmodule Wocky.Callbacks do
   alias Wocky.Callbacks.BotInvitation
   alias Wocky.Callbacks.BotItem
   alias Wocky.Callbacks.BotSubscription
+  alias Wocky.Callbacks.Connection
   alias Wocky.Callbacks.LocationShare
   alias Wocky.Callbacks.Message
   alias Wocky.Callbacks.RosterInvitation
@@ -17,6 +18,7 @@ defmodule Wocky.Callbacks do
     BotInvitation,
     BotItem,
     BotSubscription,
+    Connection,
     LocationShare,
     Message,
     RosterInvitation,

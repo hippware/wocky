@@ -57,9 +57,14 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
   end
 
   describe "create location" do
-    test "returns 201 when data is valid", %{conn: conn, user: user} do
+    test "returns 201 and watched status when data is valid", %{
+      conn: conn,
+      user: user
+    } do
+      Location.inc_watcher_count(user)
       conn = post conn, location_path(conn, :create, user.id), packet()
-      assert response(conn, 201)
+      assert response(conn, 201) =~ ~s/"watched":true/
+      assert response(conn, 201) =~ ~s/"watchers":1/
     end
 
     test "caches location when data is valid", %{conn: conn, user: user} do

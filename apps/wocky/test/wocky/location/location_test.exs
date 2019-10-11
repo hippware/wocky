@@ -225,4 +225,34 @@ defmodule Wocky.Location.LocationTest do
       assert Location.get_location_sharers(ctx.user2) == []
     end
   end
+
+  describe "watcher count" do
+    test "should increment and decrement the watcher count", %{user: user} do
+      assert %{watchers: 0} = Location.get_watched_status(user)
+
+      :ok = Location.inc_watcher_count(user)
+
+      assert %{watchers: 1} = Location.get_watched_status(user)
+
+      :ok = Location.inc_watcher_count(user)
+
+      assert %{watchers: 2} = Location.get_watched_status(user)
+
+      :ok = Location.dec_watcher_count(user)
+
+      assert %{watchers: 1} = Location.get_watched_status(user)
+
+      :ok = Location.dec_watcher_count(user)
+
+      assert %{watchers: 0} = Location.get_watched_status(user)
+    end
+
+    test "should not go negative", %{user: user} do
+      assert %{watchers: 0} = Location.get_watched_status(user)
+
+      :ok = Location.dec_watcher_count(user)
+
+      assert %{watchers: 0} = Location.get_watched_status(user)
+    end
+  end
 end

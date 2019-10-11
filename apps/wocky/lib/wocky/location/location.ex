@@ -149,6 +149,15 @@ defmodule Wocky.Location do
   @spec refresh_share_cache(User.id()) :: [User.id()]
   def refresh_share_cache(user_id), do: Cache.refresh(user_id)
 
+  @spec inc_watcher_count(User.t() | User.id()) :: :ok
+  defdelegate inc_watcher_count(user), to: Handler
+
+  @spec dec_watcher_count(User.t() | User.id()) :: :ok
+  defdelegate dec_watcher_count(user), to: Handler
+
+  @spec get_watched_status(User.t() | User.id()) :: Handler.watched_status()
+  defdelegate get_watched_status(user), to: Handler
+
   @spec to_point(UserLocation.t()) :: Point.t()
   def to_point(location), do: Map.take(location, [:lat, :lon])
 end
