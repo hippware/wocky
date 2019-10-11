@@ -22,43 +22,24 @@ defmodule WockyAPI.GraphQL.WebsocketTest do
   end
 
   setup ctx do
+    await_ready(get_client_socket(ctx.sup))
+
     on_exit(fn ->
       Supervisor.terminate_child(ctx.sup, WebSocket)
       Supervisor.restart_child(ctx.sup, WebSocket)
-      await_connected(get_client_socket(ctx.sup))
     end)
 
     :ok
   end
 
-  defp await_connected(socket) do
-    # Jeeze, who knew it was so hard to figure out if a Websockex socket was
-    # connected?
-    connection_status =
-      socket
-      |> :sys.get_status()
-      |> elem(3)
-      |> Enum.filter(&is_list/1)
-      |> Enum.find(&Keyword.has_key?(&1, :data))
-      |> Enum.reduce([], fn
-        {:data, d}, acc -> [d | acc]
-        _, acc -> acc
-      end)
-      |> Enum.reduce_while(nil, fn x, _ ->
-        case List.keyfind(x, "Connection Status", 0) do
-          nil -> {:cont, nil}
-          s -> {:halt, s}
-        end
-      end)
-      |> elem(1)
-
-    case connection_status do
-      :connected ->
+  defp await_ready(socket) do
+    case :sys.get_state(socket).ready do
+      true ->
         :ok
 
-      _ ->
+      false ->
         Process.sleep(50)
-        await_connected(socket)
+        await_ready(socket)
     end
   end
 

@@ -72,8 +72,10 @@ defmodule WockyAPI.Mixfile do
       {:prometheus_plugs, "~> 1.1"},
       # Non-prod
       {:absinthe_websocket,
-       path: "/home/bernard/src/absinthe_websocket", override: true},
-      # {:absinthe_websocket, "~> 0.2", only: :test, runtime: false},
+       github: "hippware/absinthe_websocket",
+       branch: "disconnect_callback",
+       only: :test,
+       runtime: false},
       {:common_graphql_client, "~> 0.2", only: :test, runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},

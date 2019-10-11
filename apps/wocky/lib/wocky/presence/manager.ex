@@ -64,6 +64,14 @@ defmodule Wocky.Presence.Manager do
 
   def start_link(user), do: GenServer.start_link(__MODULE__, user)
 
+  @spec stop(User.t()) :: :ok
+  def stop(user) do
+    case Store.get_manager(user.id) do
+      nil -> :ok
+      manager when is_pid(manager) -> GenServer.call(manager, :stop)
+    end
+  end
+
   @impl true
   def init(user) do
     _ = PubSub.subscribe(:presence, pubsub_topic(user))
@@ -182,6 +190,7 @@ defmodule Wocky.Presence.Manager do
     {:noreply, s}
   end
 
+  @impl true
   def handle_call(
         {:register_handler, handler_pid},
         _from,
@@ -283,6 +292,10 @@ defmodule Wocky.Presence.Manager do
 
   def handle_call(:get_sockets, _from, s) do
     {:reply, Map.values(s.socket_mon_refs), s}
+  end
+
+  def handle_call(:stop, _from, s) do
+    {:stop, :normal, :ok, s}
   end
 
   defp maybe_monitor(target, acc) do
