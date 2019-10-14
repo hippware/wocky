@@ -104,7 +104,7 @@ defmodule Wocky.Mixfile do
       {:geocalc, "~> 0.5"},
       {:guardian, "~> 1.0"},
       {:guardian_firebase, "~> 0.2.1"},
-      {:honeybadger, "~> 0.6"},
+      {:honeybadger, "~> 0.13"},
       {:kadabra, "~> 0.3"},
       {:module_config, "~> 1.0"},
       {:observer_cli, "~> 1.5"},
