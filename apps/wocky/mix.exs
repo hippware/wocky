@@ -113,8 +113,7 @@ defmodule Wocky.Mixfile do
       {:peerage, "~> 1.0"},
       {:phoenix_pubsub, "~> 1.0"},
       {:phoenix_pubsub_redis, "~> 2.1.5"},
-      # TODO: go back to hex version once changes are merged
-      {:pigeon, github: "hippware/pigeon", branch: "apns-push-type"},
+      {:pigeon, "~> 1.4"},
       {:plug, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:postgrex, ">= 0.0.0"},
