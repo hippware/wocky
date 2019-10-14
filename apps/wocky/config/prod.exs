@@ -63,7 +63,8 @@ config :fun_with_flags, :redis,
   password: {{:via, VaultAdapter}, "redis-password", nil}
 
 config :honeybadger,
-  api_key: {{:via, VaultAdapter}, "honeybadger-api-key"}
+  api_key: {{:via, VaultAdapter}, "honeybadger-api-key"},
+  breadcrumbs_enabled: true
 
 config :ex_twilio,
   auth_token: {{:via, VaultAdapter}, "twilio-auth-token", nil}
