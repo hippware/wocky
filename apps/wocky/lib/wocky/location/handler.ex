@@ -119,6 +119,15 @@ defmodule Wocky.Location.Handler do
     |> GenServer.call(:get_watched_status)
   end
 
+  # Shutdown an existing handler, if present. Used only in testing to release
+  # DB checkouts
+  @spec stop(User.t()) :: :ok
+  def stop(user) do
+    user
+    |> get_handler_if_exists()
+    |> maybe_call(:stop)
+  end
+
   # Always returns a handler, creating a new one if one does not already exist.
   @spec get_handler(User.t() | User.id()) :: pid()
   def get_handler(%User{id: user_id} = user), do: do_get_handler(user_id, user)
@@ -265,6 +274,10 @@ defmodule Wocky.Location.Handler do
   def handle_call({:swarm, :begin_handoff}, _from, state) do
     Logger.debug(fn -> "Swarm handing off state with user #{state.user.id}" end)
     {:reply, :restart, state}
+  end
+
+  def handle_call(:stop, _from, state) do
+    {:stop, :normal, :ok, state}
   end
 
   @impl true

@@ -10,6 +10,7 @@ defmodule Wocky.PresenceTest do
   alias Wocky.Presence.PresenceEvent
   alias Wocky.Repo.Factory
   alias Wocky.Roster
+  alias Wocky.Test.FakeSocket
 
   setup do
     [user, requestor] = Factory.insert_list(2, :user)
@@ -175,6 +176,48 @@ defmodule Wocky.PresenceTest do
 
       assert %Presence{status: :offline} =
                Manager.get_presence(manager, ctx.user)
+    end
+  end
+
+  describe "socket tests" do
+    test "get_sockets/1 with one socket", ctx do
+      conn = FakeSocket.open(ctx.user)
+      assert Presence.get_sockets(ctx.user) == [conn]
+
+      FakeSocket.close(conn)
+      assert Presence.get_sockets(ctx.user) == []
+    end
+
+    test "connected?/1 with one socket", ctx do
+      conn = FakeSocket.open(ctx.user)
+
+      assert Presence.connected?(ctx.user)
+
+      FakeSocket.close(conn)
+      refute Presence.connected?(ctx.user)
+    end
+
+    test "get_sockets/1 with multiple sockets", ctx do
+      conn = FakeSocket.open(ctx.user)
+      conn2 = FakeSocket.open(ctx.user)
+
+      assert ctx.user |> Presence.get_sockets() |> Enum.sort() ==
+               [conn, conn2] |> Enum.sort()
+
+      FakeSocket.close(conn)
+      assert Presence.get_sockets(ctx.user) == [conn2]
+    end
+
+    test "connected?/1 with multiple sockets", ctx do
+      conn = FakeSocket.open(ctx.user)
+      conn2 = FakeSocket.open(ctx.user)
+      assert Presence.connected?(ctx.user)
+
+      FakeSocket.close(conn)
+      assert Presence.connected?(ctx.user)
+
+      FakeSocket.close(conn2)
+      refute Presence.connected?(ctx.user)
     end
   end
 end

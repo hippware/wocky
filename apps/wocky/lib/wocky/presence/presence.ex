@@ -26,7 +26,7 @@ defmodule Wocky.Presence do
   @spec connect(User.t()) :: [User.t()]
   def connect(user) do
     user
-    |> Manager.register_sock()
+    |> Manager.register_handler()
     |> Manager.online_contacts()
     |> Enum.map(&Account.get_user/1)
     |> Enum.map(&add_presence(&1, :online))
@@ -63,4 +63,19 @@ defmodule Wocky.Presence do
   @spec make_presence(status()) :: __MODULE__.t()
   def make_presence(status),
     do: %__MODULE__{status: status, updated_at: DateTime.utc_now()}
+
+  @spec register_socket(User.t(), pid()) :: :ok
+  def register_socket(user, socket_pid) do
+    {:ok, manager} = Manager.acquire(user)
+    Manager.register_socket(manager, socket_pid)
+  end
+
+  @spec get_sockets(User.t()) :: [pid()]
+  def get_sockets(user) do
+    {:ok, manager} = Manager.acquire(user)
+    Manager.get_sockets(manager)
+  end
+
+  @spec connected?(User.t()) :: boolean()
+  def connected?(user), do: get_sockets(user) != []
 end
