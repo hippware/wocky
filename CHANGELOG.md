@@ -5,9 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: credo (PR #2856)
+* Update: credo (PR #2856), pigeon (PR #2863)
 * Implement dynamic location upload rate support (#2845)
 * Handle negative or invalid accuracy gracefully (#2858, PR #2860)
+* Enable Honeybadger breadcrumbs (PR #2861)
+* Presence connection (PR #2862)
 
 
 # 2019.10.4+ra3469c8
