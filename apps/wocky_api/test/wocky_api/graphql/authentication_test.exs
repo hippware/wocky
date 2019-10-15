@@ -29,6 +29,13 @@ defmodule WockyAPI.GraphQL.AuthenticationTest do
       assert result.data == %{"authenticate" => %{"user" => %{"id" => user.id}}}
     end
 
+    test "re-authentication should not be permitted", %{user: user, jwt: jwt} do
+      result = run_query(@query, user, %{"token" => jwt})
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "already authenticated"
+      assert result.data == %{"authenticate" => nil}
+    end
+
     test "unsuccessful authentication" do
       result = run_query(@query, nil, %{"token" => Lorem.word()})
 
