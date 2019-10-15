@@ -71,6 +71,7 @@ defmodule WockyAPI.Mixfile do
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
       # Non-prod
+      # TODO Back to upstream once merged
       {:absinthe_websocket,
        github: "hippware/absinthe_websocket",
        branch: "disconnect_callback",
