@@ -6,6 +6,7 @@ defmodule Wocky.Callbacks.Message do
   use DawdleDB.Handler, type: Wocky.Messaging.Message
 
   alias Wocky.Events.NewMessage
+  alias Wocky.Messaging
   alias Wocky.Notifier
   alias Wocky.Repo.Hydrator
 
@@ -19,7 +20,8 @@ defmodule Wocky.Callbacks.Message do
       from: msg.sender,
       content: msg.content,
       image_url: msg.image_url,
-      conversation_id: msg.id
+      conversation_id: msg.id,
+      unread_count: Messaging.unread_count(msg.recipient)
     }
     |> Notifier.notify()
   end

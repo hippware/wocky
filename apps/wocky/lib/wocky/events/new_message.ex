@@ -8,15 +8,17 @@ defmodule Wocky.Events.NewMessage do
     :from,
     :content,
     :image_url,
-    :conversation_id
+    :conversation_id,
+    :unread_count
   ]
 
   @type t :: %__MODULE__{
           to: User.t(),
           from: User.t(),
-          content: nil | binary,
-          image_url: nil | binary,
-          conversation_id: binary
+          content: nil | binary(),
+          image_url: nil | binary(),
+          conversation_id: binary(),
+          unread_count: non_neg_integer()
         }
 
   use ExConstructor
@@ -41,5 +43,7 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.NewMessage do
 
   def ignore_block?(_event), do: false
 
-  def opts(_), do: [sound: "default", android_channel_id: "chat"]
+  def opts(%{unread_count: unread}) do
+    [sound: "default", android_channel_id: "chat", badge: unread]
+  end
 end

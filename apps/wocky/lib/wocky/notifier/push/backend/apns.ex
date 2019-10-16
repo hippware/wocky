@@ -60,15 +60,20 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
 
   defp add_opts(notification, opts) do
     notification
-    |> add_badge_or_content_avail(Keyword.get(opts, :background, false))
+    |> maybe_add_badge(Keyword.get(opts, :badge))
+    |> maybe_add_content_avail(Keyword.get(opts, :background, false))
     |> maybe_put(&Notification.put_sound/2, Keyword.get(opts, :sound))
     |> Notification.put_custom(Keyword.get(opts, :extra_fields, %{}))
   end
 
-  defp add_badge_or_content_avail(notification, false),
-    do: Notification.put_badge(notification, 1)
+  defp maybe_add_badge(notification, nil), do: notification
 
-  defp add_badge_or_content_avail(notification, true) do
+  defp maybe_add_badge(notification, count),
+    do: Notification.put_badge(notification, count)
+
+  defp maybe_add_content_avail(notification, false), do: notification
+
+  defp maybe_add_content_avail(notification, true) do
     %Notification{notification | priority: 5, push_type: "background"}
     |> Notification.put_content_available()
   end
