@@ -72,4 +72,12 @@ defmodule Wocky.Messaging do
     Message
     |> where([m], m.id == ^id and m.recipient_id == ^requestor.id)
   end
+
+  @spec unread_count(User.t()) :: non_neg_integer()
+  def unread_count(requestor) do
+    Message
+    |> where([m], m.recipient_id == ^requestor.id and not m.read)
+    |> select([m], count(1))
+    |> Repo.one()
+  end
 end

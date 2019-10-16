@@ -21,7 +21,7 @@ defmodule Wocky.Notifier.Push.BackendTest do
   describe "build_notification/2 for standard message" do
     setup ctx do
       content = Lorem.paragraph()
-      event = %NewMessage{from: ctx.user, content: content}
+      event = %NewMessage{from: ctx.user, content: content, unread_count: 3}
 
       {:ok, event: event}
     end
@@ -54,8 +54,8 @@ defmodule Wocky.Notifier.Push.BackendTest do
                payload: %{
                  "aps" => %{
                    "alert" => ^body,
-                   "badge" => 1,
-                   "sound" => "default"
+                   "sound" => "default",
+                   "badge" => 3
                  },
                  "uri" => ^url
                },

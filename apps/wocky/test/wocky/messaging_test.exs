@@ -170,6 +170,24 @@ defmodule Wocky.MessagingTest do
     end
   end
 
+  describe "unread_count/1" do
+    setup do
+      user = Factory.insert(:user)
+      unread = Factory.insert_list(5, :message, recipient: user)
+      Factory.insert_list(2, :message, recipient: user, read: true)
+      {:ok, user: user, unread: unread}
+    end
+
+    test "should return the unread message count", ctx do
+      assert Messaging.unread_count(ctx.user) == 5
+    end
+
+    test "should reflect read messages", ctx do
+      Messaging.mark_read(hd(ctx.unread).id, ctx.user, true)
+      assert Messaging.unread_count(ctx.user) == 4
+    end
+  end
+
   defp assert_match(a, b) do
     fields = [:id, :user_id, :other_id, :message, :direction]
     assert Map.take(a, fields) == Map.take(b, fields)
