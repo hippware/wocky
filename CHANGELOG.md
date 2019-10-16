@@ -10,6 +10,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Handle negative or invalid accuracy gracefully (#2858, PR #2860)
 * Enable Honeybadger breadcrumbs (PR #2861)
 * Presence connection (PR #2862)
+* Socket cleanup (#2849, PR #2864)
+  * Close all sockets belonging to a user once that user is deleted
+  * Disallow re-authentication on an already authenticated connection
 
 
 # 2019.10.4+ra3469c8
