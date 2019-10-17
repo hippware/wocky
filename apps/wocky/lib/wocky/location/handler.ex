@@ -125,7 +125,7 @@ defmodule Wocky.Location.Handler do
   def stop(user) do
     user
     |> get_handler_if_exists()
-    |> maybe_call(:stop)
+    |> maybe_stop()
   end
 
   # Always returns a handler, creating a new one if one does not already exist.
@@ -162,6 +162,9 @@ defmodule Wocky.Location.Handler do
 
   defp maybe_call(nil, _), do: :ok
   defp maybe_call(pid, args), do: GenServer.call(pid, args)
+
+  defp maybe_stop(nil), do: :ok
+  defp maybe_stop(pid), do: GenServer.stop(pid, :normal)
 
   @impl true
   def init(user) do
@@ -274,10 +277,6 @@ defmodule Wocky.Location.Handler do
   def handle_call({:swarm, :begin_handoff}, _from, state) do
     Logger.debug(fn -> "Swarm handing off state with user #{state.user.id}" end)
     {:reply, :restart, state}
-  end
-
-  def handle_call(:stop, _from, state) do
-    {:stop, :normal, :ok, state}
   end
 
   @impl true
