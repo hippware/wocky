@@ -8,7 +8,9 @@ IMAGE_NAME    ?= hippware/$(shell echo $(RELEASE_NAME) | tr "_" "-")
 IMAGE_TAG     ?= $(shell git rev-parse HEAD)
 WOCKY_ENV     ?= testing
 KUBE_NS       := wocky-$(WOCKY_ENV)
+WOCKY_DB_HOST ?= localhost
 WOCKY_DB_USER ?= postgres
+MIX_ENV       ?= dev
 
 help:
 	@echo "Repo:    $(IMAGE_REPO)/$(IMAGE_NAME)"
