@@ -6,14 +6,23 @@ defmodule Wocky.Roster.Item do
   use Wocky.Repo.Schema
 
   import Ecto.Query
+  import EctoEnum
 
   alias Wocky.Account.User
   alias Wocky.Repo
   alias Wocky.Roster
 
+  defenum(LocationShareTypeEnum, :location_share_type, [
+    :disabled,
+    :always,
+    :nearby
+  ])
+
   @foreign_key_type :binary_id
   schema "roster_items" do
     field :name, :binary, default: ""
+    field :share_type, LocationShareTypeEnum, null: false, default: :disabled
+    field :share_migrated, :boolean, null: false, default: true
 
     belongs_to :user, User
     belongs_to :contact, User
