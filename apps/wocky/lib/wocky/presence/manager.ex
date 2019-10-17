@@ -67,8 +67,11 @@ defmodule Wocky.Presence.Manager do
   @spec stop(User.t()) :: :ok
   def stop(user) do
     case Store.get_manager(user.id) do
-      nil -> :ok
-      manager when is_pid(manager) -> GenServer.call(manager, :stop)
+      nil ->
+        :ok
+
+      manager when is_pid(manager) ->
+        safe_op(fn -> GenServer.stop(manager, :normal) end, fn -> :ok end)
     end
   end
 
@@ -106,17 +109,19 @@ defmodule Wocky.Presence.Manager do
   defp do_register_handler(user, retries) do
     {:ok, manager} = acquire(user)
 
-    try do
-      GenServer.call(manager, {:register_handler, self()})
-      manager
-    catch
-      :exit, _ -> do_register_handler(user, retries + 1)
-    end
+    safe_op(
+      fn ->
+        GenServer.call(manager, {:register_handler, self()})
+        manager
+      end,
+      fn -> do_register_handler(user, retries + 1) end
+    )
   end
 
   @spec get_sockets(pid()) :: [pid()]
   def get_sockets(manager) do
-    GenServer.call(manager, :get_sockets)
+    # This is often called as a user is disconnecting
+    safe_call(manager, :get_sockets, [])
   end
 
   @spec set_status(pid(), Presence.status()) :: :ok
@@ -132,25 +137,29 @@ defmodule Wocky.Presence.Manager do
 
   @doc "Get the online/offline status of a contact"
   @spec get_presence(pid(), User.t()) :: Presence.t()
-  def get_presence(manager, user) do
-    GenServer.call(manager, {:get_presence, user.id})
-  catch
-    # Catch the situation where the requesting user went offline
-    # (terminating their presence process) just as they requested a status
-    :exit, _ -> Presence.make_presence(:offline)
-  end
+  def get_presence(manager, user),
+    do:
+      safe_call(
+        manager,
+        {:get_presence, user.id},
+        Presence.make_presence(:offline)
+      )
 
   @impl true
   def handle_info({:DOWN, ref, :process, _, _}, s) do
     cond do
       Map.has_key?(s.handler_mon_refs, ref) ->
         # A monitored connection process is down - the user has disconnected.
-        delete_own_handler(ref, s)
+        ref
+        |> delete_own_handler(s)
+        |> maybe_shutdown()
 
       Map.has_key?(s.socket_mon_refs, ref) ->
         # A registered socket has closed. Remove it from our records.
         signal_connection(s.user, :disconnected)
-        {:noreply, %{s | socket_mon_refs: Map.delete(s.socket_mon_refs, ref)}}
+
+        %{s | socket_mon_refs: Map.delete(s.socket_mon_refs, ref)}
+        |> maybe_shutdown()
 
       BiMap.has_value?(s.contact_refs, ref) ->
         # A tracked presence process for a contact has gone down.
@@ -294,10 +303,6 @@ defmodule Wocky.Presence.Manager do
     {:reply, Map.values(s.socket_mon_refs), s}
   end
 
-  def handle_call(:stop, _from, s) do
-    {:stop, :normal, :ok, s}
-  end
-
   defp maybe_monitor(target, acc) do
     case Store.get_online(target.id) do
       nil ->
@@ -317,10 +322,10 @@ defmodule Wocky.Presence.Manager do
         Store.remove(s.user.id)
         # No need to publish to ourselves here - by definition we can't have any
         # live connections to receive the message on
-        {:stop, :normal, %{s | handler_mon_refs: m}}
+        %{s | handler_mon_refs: m}
 
       new_refs ->
-        {:noreply, %{s | handler_mon_refs: new_refs}}
+        %{s | handler_mon_refs: new_refs}
     end
   end
 
@@ -350,6 +355,27 @@ defmodule Wocky.Presence.Manager do
 
       contact ->
         Presence.publish(user.id, contact, :offline)
+    end
+  end
+
+  # Call an existing manager - if the manager exits during the call, return
+  # the supplied default value.
+  defp safe_call(manager, call, default),
+    do: safe_op(fn -> GenServer.call(manager, call) end, fn -> default end)
+
+  defp safe_op(op, fallback) do
+    op.()
+  catch
+    :exit, _ -> fallback.()
+  end
+
+  defp maybe_shutdown(
+         %{handler_mon_refs: handlers, socket_mon_refs: sockets} = s
+       ) do
+    if handlers == %{} and sockets == %{} do
+      {:stop, :normal, s}
+    else
+      {:noreply, s}
     end
   end
 end
