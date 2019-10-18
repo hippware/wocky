@@ -15,6 +15,7 @@ defmodule Wocky.Repo.Migrations.MergeSharingRoster do
     schema "user_location_shares" do
       field :user_id, :binary_id
       field :shared_with_id, :binary_id
+      field :created_at, :utc_datetime
     end
   end
 
@@ -22,6 +23,8 @@ defmodule Wocky.Repo.Migrations.MergeSharingRoster do
     LocationShareTypeEnum.create_type()
 
     alter table(:roster_items) do
+      add :share_changed_at, :timestamptz
+
       add :share_migrated, :boolean, null: false, default: true
 
       add :share_type, LocationShareTypeEnum.type(),
@@ -38,10 +41,12 @@ defmodule Wocky.Repo.Migrations.MergeSharingRoster do
     # the easy route.
     OldShare
     |> Repo.all()
-    |> Enum.each(fn %{user_id: uid, shared_with_id: swid} ->
+    |> Enum.each(fn %{user_id: uid, shared_with_id: swid, created_at: ts} ->
       Item
       |> where([i], i.user_id == ^uid and i.contact_id == ^swid)
-      |> Repo.update_all(set: [share_type: "always", share_migrated: true])
+      |> Repo.update_all(
+        set: [share_type: "always", share_migrated: true, share_changed_at: ts]
+      )
     end)
 
     # I intentionally didn't delete the 'user_location_shares' table. There is
