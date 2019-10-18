@@ -1,6 +1,6 @@
 defmodule Wocky.Roster do
   @moduledoc """
-  DB interface module for roster items
+  Context module for managing the friends list (roster)
   """
 
   import Ecto.Query
@@ -19,26 +19,37 @@ defmodule Wocky.Roster do
   @type error :: {:error, term()}
 
   # ----------------------------------------------------------------------
-  # Database interaction
+  # Roster item management
 
-  @spec get_item(User.t(), User.t()) :: Item.t() | nil
-  def get_item(user, contact) do
+  @spec insert_item(User.t(), User.t()) :: {:ok, Item.t()} | error()
+  def insert_item(user, contact) do
+    %{user_id: user.id, contact_id: contact.id}
+    |> Item.insert_changeset()
+    |> Repo.insert(
+      on_conflict: :nothing,
+      conflict_target: [:user_id, :contact_id]
+    )
+  end
+
+  @spec get_item(User.t() | User.id(), User.t() | User.id()) :: Item.t() | nil
+  def get_item(%User{id: user_id}, %User{id: contact_id}),
+    do: get_item(user_id, contact_id)
+
+  def get_item(user_id, contact_id) do
     Item
-    |> where([i], i.user_id == ^user.id and i.contact_id == ^contact.id)
+    |> where([i], i.user_id == ^user_id and i.contact_id == ^contact_id)
     |> Repo.one()
   end
 
-  @spec set_name(User.t(), User.t(), binary()) :: {:ok, Item.t()} | error()
-  def set_name(user, contact, name) do
-    Item
-    |> where([i], i.user_id == ^user.id and i.contact_id == ^contact.id)
-    |> select([i], i)
-    |> Repo.update_all(set: [name: name])
-    |> case do
-      {1, [i]} -> {:ok, i}
-      {0, _} -> {:error, :not_found}
-    end
+  @spec update_item(Item.t(), map()) :: {:ok, Item.t()} | error()
+  def update_item(item, changes) do
+    item
+    |> Item.update_changeset(changes)
+    |> Repo.update()
   end
+
+  # ----------------------------------------------------------------------
+  # High-level friendship API
 
   @doc "Returns the relationship of user to target"
   @spec relationship(User.t(), User.t()) :: relationship
@@ -73,6 +84,45 @@ defmodule Wocky.Roster do
     |> Repo.one()
     |> Kernel.!=(nil)
   end
+
+  @spec befriend(User.t(), User.t(), boolean) :: :ok
+  def befriend(user, contact, notify \\ true) do
+    {:ok, _} = insert_item(user, contact)
+    {:ok, _} = insert_item(contact, user)
+    Invitation.delete_pair(user, contact)
+
+    if notify do
+      %UserInvitationResponse{
+        from: user,
+        to: contact
+      }
+      |> Notifier.notify()
+    end
+
+    :ok
+  end
+
+  @doc "Removes all relationships (friend + follow) between the two users"
+  @spec unfriend(User.t(), User.t()) :: :ok
+  def unfriend(a, b) do
+    Item
+    |> with_pair(a, b)
+    |> Repo.delete_all()
+
+    Invitation.delete_pair(a, b)
+
+    :ok
+  end
+
+  defp with_pair(query, a, b) do
+    from r in query,
+      where:
+        (r.user_id == ^a.id and r.contact_id == ^b.id) or
+          (r.user_id == ^b.id and r.contact_id == ^a.id)
+  end
+
+  # ----------------------------------------------------------------------
+  # Roster invitations
 
   @doc "Returns true if the first user has invited the second to be friends"
   @spec invited?(User.t(), User.t()) :: boolean
@@ -111,51 +161,6 @@ defmodule Wocky.Roster do
       :self ->
         :self
     end
-  end
-
-  @spec befriend(User.t(), User.t(), boolean) :: :ok
-  def befriend(user, contact, notify \\ true) do
-    {:ok, _} = add(user, contact)
-    {:ok, _} = add(contact, user)
-    Invitation.delete_pair(user, contact)
-
-    if notify do
-      %UserInvitationResponse{
-        from: user,
-        to: contact
-      }
-      |> Notifier.notify()
-    end
-
-    :ok
-  end
-
-  defp add(user, contact) do
-    %{user_id: user.id, contact_id: contact.id}
-    |> Item.insert_changeset()
-    |> Repo.insert(
-      on_conflict: :nothing,
-      conflict_target: [:user_id, :contact_id]
-    )
-  end
-
-  @doc "Removes all relationships (friend + follow) between the two users"
-  @spec unfriend(User.t(), User.t()) :: :ok
-  def unfriend(a, b) do
-    Item
-    |> with_pair(a, b)
-    |> Repo.delete_all()
-
-    Invitation.delete_pair(a, b)
-
-    :ok
-  end
-
-  defp with_pair(query, a, b) do
-    from r in query,
-      where:
-        (r.user_id == ^a.id and r.contact_id == ^b.id) or
-          (r.user_id == ^b.id and r.contact_id == ^a.id)
   end
 
   # ----------------------------------------------------------------------

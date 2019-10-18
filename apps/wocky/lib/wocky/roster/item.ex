@@ -40,7 +40,8 @@ defmodule Wocky.Roster.Item do
           updated_at: DateTime.t()
         }
 
-  @insert_fields [:user_id, :contact_id, :name]
+  @update_fields [:name, :share_type]
+  @insert_fields [:user_id, :contact_id | @update_fields]
 
   @spec insert_changeset(map()) :: Changeset.t()
   def insert_changeset(params) do
@@ -48,5 +49,20 @@ defmodule Wocky.Roster.Item do
     |> cast(params, @insert_fields)
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:contact_id)
+  end
+
+  @spec update_changeset(Item.t(), map()) :: Changeset.t()
+  def update_changeset(struct, params) do
+    struct
+    |> cast(params, @update_fields)
+    |> maybe_set_migrated()
+  end
+
+  defp maybe_set_migrated(cs) do
+    if get_change(cs, :share_type) do
+      put_change(cs, :share_migrated, true)
+    else
+      cs
+    end
   end
 end

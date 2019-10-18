@@ -47,7 +47,7 @@ defmodule Wocky.RosterTest do
      blocked_viewer: blocked_viewer}
   end
 
-  describe "get/2" do
+  describe "get_item/2" do
     test "should return the roster item for the specified contact", ctx do
       Enum.map(ctx.all_friends, fn c ->
         assert ctx.user |> Roster.get_item(c) |> Map.get(:contact_id) == c.id
@@ -55,30 +55,16 @@ defmodule Wocky.RosterTest do
     end
   end
 
-  describe "set_name/3" do
+  describe "update/2" do
     test "should update the existing contact", ctx do
       new_name = Name.first_name()
-
-      assert {:ok, %RosterItem{}} =
-               Roster.set_name(ctx.user, ctx.contact, new_name)
-
       item = Roster.get_item(ctx.user, ctx.contact)
-      assert item.contact_id == ctx.contact.id
-      assert item.name == new_name
-    end
 
-    test "should fail on a non-existant user", ctx do
-      other = Factory.build(:user)
-      assert {:error, _} = Roster.set_name(ctx.user, other, Name.first_name())
+      assert {:ok, %RosterItem{}} = Roster.update_item(item, %{name: new_name})
 
-      assert nil == Roster.get_item(ctx.user, other)
-    end
-
-    test "should fail for a non-friend user", ctx do
-      assert {:error, _} =
-               Roster.set_name(ctx.user, ctx.invitee, Name.first_name())
-
-      assert nil == Roster.get_item(ctx.user, ctx.invitee)
+      new_item = Roster.get_item(ctx.user, ctx.contact)
+      assert new_item.contact_id == ctx.contact.id
+      assert new_item.name == new_name
     end
   end
 

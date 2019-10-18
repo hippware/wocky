@@ -980,8 +980,11 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "get friends", %{user: user, user2: user2} do
       Roster.befriend(user, user2)
+      item = Roster.get_item(user, user2)
+
       name = Name.name()
-      Roster.set_name(user, user2, name)
+      Roster.update_item(item, %{name: name})
+
       id2 = user2.id
 
       result = run_query(@query, user)
