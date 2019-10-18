@@ -22,10 +22,23 @@ defmodule Wocky.Roster do
   # Database interaction
 
   @spec get_item(User.t(), User.t()) :: Item.t() | nil
-  def get_item(a, b), do: Item.get(a, b)
+  def get_item(user, contact) do
+    Item
+    |> where([i], i.user_id == ^user.id and i.contact_id == ^contact.id)
+    |> Repo.one()
+  end
 
   @spec set_name(User.t(), User.t(), binary()) :: {:ok, Item.t()} | error()
-  def set_name(user, contact, name), do: Item.set_name(user, contact, name)
+  def set_name(user, contact, name) do
+    Item
+    |> where([i], i.user_id == ^user.id and i.contact_id == ^contact.id)
+    |> select([i], i)
+    |> Repo.update_all(set: [name: name])
+    |> case do
+      {1, [i]} -> {:ok, i}
+      {0, _} -> {:error, :not_found}
+    end
+  end
 
   @doc "Returns the relationship of user to target"
   @spec relationship(User.t(), User.t()) :: relationship
@@ -102,8 +115,8 @@ defmodule Wocky.Roster do
 
   @spec befriend(User.t(), User.t(), boolean) :: :ok
   def befriend(user, contact, notify \\ true) do
-    {:ok, _} = Item.add(user, contact)
-    {:ok, _} = Item.add(contact, user)
+    {:ok, _} = add(user, contact)
+    {:ok, _} = add(contact, user)
     Invitation.delete_pair(user, contact)
 
     if notify do
@@ -117,20 +130,43 @@ defmodule Wocky.Roster do
     :ok
   end
 
+  defp add(user, contact) do
+    %{user_id: user.id, contact_id: contact.id}
+    |> Item.insert_changeset()
+    |> Repo.insert(
+      on_conflict: :nothing,
+      conflict_target: [:user_id, :contact_id]
+    )
+  end
+
   @doc "Removes all relationships (friend + follow) between the two users"
   @spec unfriend(User.t(), User.t()) :: :ok
   def unfriend(a, b) do
-    Item.delete_pair(a, b)
+    Item
+    |> with_pair(a, b)
+    |> Repo.delete_all()
+
     Invitation.delete_pair(a, b)
+
     :ok
+  end
+
+  defp with_pair(query, a, b) do
+    from r in query,
+      where:
+        (r.user_id == ^a.id and r.contact_id == ^b.id) or
+          (r.user_id == ^b.id and r.contact_id == ^a.id)
   end
 
   # ----------------------------------------------------------------------
   # Queries
 
   @spec friends_query(User.t(), User.t()) :: Queryable.t() | error()
-  def friends_query(%User{id: id} = user, %User{id: id}),
-    do: Item.friends_query(user)
+  def friends_query(%User{id: id} = user, %User{id: id}) do
+    User
+    |> join(:left, [u], i in Item, on: u.id == i.contact_id)
+    |> where([..., i], i.user_id == ^user.id)
+  end
 
   def friends_query(_, _), do: {:error, :permission_denied}
 
@@ -149,7 +185,7 @@ defmodule Wocky.Roster do
 
   @spec items_query(User.t(), User.t()) :: Queryable.t() | error()
   def items_query(%User{id: id} = user, %User{id: id}),
-    do: Item.items_query(user)
+    do: where(Item, [i], i.user_id == ^user.id)
 
   def items_query(_, _), do: {:error, :permission_denied}
 end
