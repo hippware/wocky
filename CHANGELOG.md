@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.10.17+r65711dd
+
 * Socket cleanup (#2849, PR #2864)
   * Close all sockets belonging to a user once that user is deleted
   * Disallow re-authentication on an already authenticated connection
