@@ -23,6 +23,8 @@ defmodule Wocky.Repo.Migrations.MergeSharingRoster do
     LocationShareTypeEnum.create_type()
 
     alter table(:roster_items) do
+      add :share_id, :bigint
+
       add :share_changed_at, :timestamptz
 
       add :share_migrated, :boolean, null: false, default: true
@@ -41,11 +43,16 @@ defmodule Wocky.Repo.Migrations.MergeSharingRoster do
     # the easy route.
     OldShare
     |> Repo.all()
-    |> Enum.each(fn %{user_id: uid, shared_with_id: swid, created_at: ts} ->
+    |> Enum.each(fn %{user_id: uid, shared_with_id: swid} = share ->
       Item
       |> where([i], i.user_id == ^uid and i.contact_id == ^swid)
       |> Repo.update_all(
-        set: [share_type: "always", share_migrated: true, share_changed_at: ts]
+        set: [
+          share_id: share.id,
+          share_type: "always",
+          share_migrated: true,
+          share_changed_at: share.created_at
+        ]
       )
     end)
 

@@ -17,6 +17,9 @@ defmodule Wocky.Roster.Item do
   @foreign_key_type :binary_id
   schema "roster_items" do
     field :name, :binary, default: ""
+    # TODO The share_id field is used to support the legacy sharing API. It
+    # should be removed when that API is decommissioned.
+    field :share_id, :integer
     field :share_type, LocationShareTypeEnum, null: false, default: :disabled
     field :share_migrated, :boolean, null: false, default: true
     field :share_changed_at, :utc_datetime_usec
@@ -39,7 +42,7 @@ defmodule Wocky.Roster.Item do
           updated_at: DateTime.t()
         }
 
-  @update_fields [:name, :share_type]
+  @update_fields [:name, :share_id, :share_type]
   @insert_fields [:user_id, :contact_id | @update_fields]
 
   @spec insert_changeset(map()) :: Changeset.t()
