@@ -107,7 +107,7 @@
   "mock": {:hex, :mock, "0.3.3", "42a433794b1291a9cf1525c6d26b38e039e0d3a360732b5e467bfc77ef26c914", [:mix], [{:meck, "~> 0.8.13", [hex: :meck, repo: "hexpm", optional: false]}], "hexpm"},
   "module_config": {:hex, :module_config, "1.0.0", "73661dcb135136fdb4bd755df956872e8344a2774323a83c770c0f9616a9451c", [:mix], [{:confex, "~> 3.4", [hex: :confex, repo: "hexpm", optional: false]}], "hexpm"},
   "nimble_parsec": {:hex, :nimble_parsec, "0.5.0", "90e2eca3d0266e5c53f8fbe0079694740b9c91b6747f2b7e3c5d21966bba8300", [:mix], [], "hexpm"},
-  "observer_cli": {:hex, :observer_cli, "1.5.2", "6e93437f74a99708068a32b767b02432d113896275421409e3018d989236a65a", [:mix, :rebar3], [{:recon, "~>2.5.0", [hex: :recon, repo: "hexpm", optional: false]}], "hexpm"},
+  "observer_cli": {:hex, :observer_cli, "1.5.3", "d42e20054116c49d5242d3ff9e1913acccebe6015f449d6e312a5bc160e79a62", [:mix, :rebar3], [{:recon, "~>2.5.0", [hex: :recon, repo: "hexpm", optional: false]}], "hexpm"},
   "p1_utils": {:hex, :p1_utils, "1.0.16", "05b5d4fb1f002d827b0d0d344eecdb4208b535bf95264d44f588affec644212b", [:rebar3], [], "hexpm"},
   "paginator": {:git, "https://github.com/duffelhq/paginator.git", "6740061bf629e4d7a460d581a390b52f3bebf76c", [branch: "master"]},
   "parse_trans": {:hex, :parse_trans, "3.3.0", "09765507a3c7590a784615cfd421d101aec25098d50b89d7aa1d66646bc571c1", [:rebar3], [], "hexpm"},
