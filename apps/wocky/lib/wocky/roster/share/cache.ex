@@ -1,4 +1,4 @@
-defmodule Wocky.Location.Share.Cache do
+defmodule Wocky.Roster.Share.Cache do
   @moduledoc """
   A write-through cache for user location shares
   """

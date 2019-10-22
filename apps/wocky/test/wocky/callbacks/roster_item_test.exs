@@ -2,10 +2,10 @@ defmodule Wocky.Callbacks.RosterItemTest do
   use Wocky.WatcherCase
 
   alias Wocky.Callbacks.RosterItem, as: Callback
-  alias Wocky.Location.Share.Cache
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo.Factory
   alias Wocky.Roster
+  alias Wocky.Roster.Share.Cache
 
   setup_all do
     Callback.register()

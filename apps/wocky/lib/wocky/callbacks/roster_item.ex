@@ -6,10 +6,10 @@ defmodule Wocky.Callbacks.RosterItem do
   alias Wocky.Events.LocationShare
   alias Wocky.Events.LocationShareEnd
   alias Wocky.Events.LocationShareEndSelf
-  alias Wocky.Location.Share
   alias Wocky.Notifier
   alias Wocky.Repo.Hydrator
   alias Wocky.Roster
+  alias Wocky.Roster.Share
 
   def handle_insert(%{share_type: stype} = new) when stype != :disabled,
     do: notify_share_start(new)

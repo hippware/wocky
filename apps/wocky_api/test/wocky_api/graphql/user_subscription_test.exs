@@ -6,9 +6,9 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
 
   alias Wocky.Account
   alias Wocky.Location
-  alias Wocky.Location.Share.Cache
   alias Wocky.Repo.Factory
   alias Wocky.Roster
+  alias Wocky.Roster.Share.Cache
 
   setup_all do
     require_watcher()

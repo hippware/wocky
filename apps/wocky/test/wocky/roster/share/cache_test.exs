@@ -1,9 +1,9 @@
-defmodule Wocky.Location.Share.CacheTest do
+defmodule Wocky.Roster.Share.CacheTest do
   use Wocky.DataCase, async: true
 
-  alias Wocky.Location.Share.Cache
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
+  alias Wocky.Roster.Share.Cache
 
   describe "refresh/1" do
     setup do

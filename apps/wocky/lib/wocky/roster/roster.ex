@@ -8,12 +8,12 @@ defmodule Wocky.Roster do
   alias Ecto.Queryable
   alias Wocky.Account.User
   alias Wocky.Events.UserInvitationResponse
-  alias Wocky.Location.Share
-  alias Wocky.Location.Share.Cache
   alias Wocky.Notifier
   alias Wocky.Repo
   alias Wocky.Roster.Invitation
   alias Wocky.Roster.Item
+  alias Wocky.Roster.Share
+  alias Wocky.Roster.Share.Cache
 
   require Logger
 

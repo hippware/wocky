@@ -1,4 +1,4 @@
-defmodule Wocky.Location.Share do
+defmodule Wocky.Roster.Share do
   @moduledoc false
 
   # This is a temporary shim to make the old location sharing API work.

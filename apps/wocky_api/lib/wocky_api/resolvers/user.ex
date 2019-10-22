@@ -9,13 +9,13 @@ defmodule WockyAPI.Resolvers.User do
   alias Wocky.Account.User
   alias Wocky.Events.LocationRequest
   alias Wocky.Location
-  alias Wocky.Location.Share
   alias Wocky.Location.UserLocation
   alias Wocky.Notifier
   alias Wocky.Notifier.Push
   alias Wocky.Repo
   alias Wocky.Roster
   alias Wocky.Roster.Item
+  alias Wocky.Roster.Share
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
