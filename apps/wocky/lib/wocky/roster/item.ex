@@ -9,6 +9,7 @@ defmodule Wocky.Roster.Item do
 
   alias Ecto.Changeset
   alias Wocky.Account.User
+  alias Wocky.Repo.Timestamp
 
   @share_types [:disabled, :always, :nearby]
 
@@ -42,7 +43,7 @@ defmodule Wocky.Roster.Item do
           updated_at: DateTime.t()
         }
 
-  @update_fields [:name, :share_id, :share_type]
+  @update_fields [:name, :share_type]
   @insert_fields [:user_id, :contact_id | @update_fields]
 
   @spec insert_changeset(map()) :: Changeset.t()
@@ -59,8 +60,21 @@ defmodule Wocky.Roster.Item do
     |> validate_inclusion(:share_type, @share_types)
     |> foreign_key_constraint(:user_id)
     |> foreign_key_constraint(:contact_id)
+    |> maybe_set_share_id(struct)
     |> maybe_set_share_metadata()
   end
+
+  defp maybe_set_share_id(changeset, %{share_type: :disabled} = item) do
+    if get_change(changeset, :share_type) do
+      now_str = DateTime.utc_now() |> Timestamp.to_string!()
+      id = :erlang.crc32([item.user_id, item.contact_id, now_str])
+      put_change(changeset, :share_id, id)
+    else
+      changeset
+    end
+  end
+
+  defp maybe_set_share_id(changeset, _item), do: changeset
 
   defp maybe_set_share_metadata(changeset) do
     if get_change(changeset, :share_type) do
