@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: excoveralls (PR #2882), geocalc (PR #2883)
+
+
 # 2019.10.17+r65711dd
 
 * Socket cleanup (#2849, PR #2864)
