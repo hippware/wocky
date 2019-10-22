@@ -4,17 +4,16 @@ defmodule Wocky.Location.Share.CacheTest do
   alias Wocky.Location.Share.Cache
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Repo.Timestamp
 
   describe "refresh/1" do
     setup do
-      share1 = Factory.insert(:user_location_share)
-      share2 = Factory.insert(:user_location_share, user: share1.user)
+      share1 = Factory.insert(:roster_item)
+      share2 = Factory.insert(:roster_item, user: share1.user)
 
       {:ok,
        user: share1.user,
-       shared_with1: share1.shared_with,
-       shared_with2: share2.shared_with}
+       shared_with1: share1.contact,
+       shared_with2: share2.contact}
     end
 
     test "should return the found user ids", ctx do
@@ -28,16 +27,13 @@ defmodule Wocky.Location.Share.CacheTest do
       assert results == Cache.get(ctx.user.id)
     end
 
-    test "should not load expired shares", ctx do
+    test "should not load disabled shares", ctx do
       share =
-        Factory.insert(:user_location_share,
-          expires_at: Timestamp.shift(seconds: -1),
-          user: ctx.user
-        )
+        Factory.insert(:roster_item, share_type: :disabled, user: ctx.user)
 
       results = Cache.refresh(ctx.user.id)
 
-      refute Enum.member?(results, share.shared_with.id)
+      refute Enum.member?(results, share.contact.id)
     end
 
     test "should do nothing for nonexistant user" do
@@ -46,24 +42,21 @@ defmodule Wocky.Location.Share.CacheTest do
       assert [] == Cache.refresh(id)
       assert [] == Cache.get(id)
     end
+
+    test "handles old cache entries appropriately", ctx do
+      id = ID.new()
+
+      Cache.put(ctx.user.id, [{id, DateTime.utc_now()}])
+
+      assert Cache.get(ctx.user.id) == [id]
+    end
   end
 
   describe "get/1" do
     test "should refresh the cache automatically" do
-      share = Factory.insert(:user_location_share)
+      share = Factory.insert(:roster_item)
 
-      assert [share.shared_with.id] == Cache.get(share.user.id)
-    end
-
-    test "should not return expired shares" do
-      share =
-        Factory.build(:user_location_share,
-          expires_at: Timestamp.shift(seconds: -1)
-        )
-
-      Cache.put(share.user.id, [{share.shared_with.id, share.expires_at}])
-
-      assert [] == Cache.get(share.user.id)
+      assert [share.contact.id] == Cache.get(share.user.id)
     end
   end
 end

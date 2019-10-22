@@ -7,8 +7,8 @@ defmodule Wocky.Location.Share.Cache do
 
   alias Timex.Duration
   alias Wocky.Account.User
-  alias Wocky.Location.Share
   alias Wocky.Repo
+  alias Wocky.Roster.Item
 
   # Let Redis expire an untouched cache after two weeks - cleans up any deleted
   # users but shouldn't add any significant refresh overhead.
@@ -25,29 +25,27 @@ defmodule Wocky.Location.Share.Cache do
         refresh(user_id)
 
       _ ->
-        now = DateTime.utc_now()
-
         members
         |> decode()
-        |> Enum.filter(fn {_, expiry} ->
-          DateTime.compare(expiry, now) == :gt
+        |> Enum.map(fn
+          {id, _} -> id
+          id -> id
         end)
-        |> Enum.map(&elem(&1, 0))
     end
   end
 
   @spec refresh(User.id()) :: [User.id()]
   def refresh(user_id) do
     values =
-      Share
-      |> where([ls], ls.user_id == ^user_id)
-      |> where([ls], ls.expires_at > ^DateTime.utc_now())
-      |> select([ls], {ls.shared_with_id, ls.expires_at})
+      Item
+      |> where([i], i.user_id == ^user_id)
+      |> where([i], i.share_type != "disabled")
+      |> select([i], i.contact_id)
       |> Repo.all()
 
     put(user_id, values)
 
-    Enum.map(values, fn {id, _} -> id end)
+    values
   end
 
   # Public for testing purposes

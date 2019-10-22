@@ -9,6 +9,7 @@ defmodule WockyAPI.Resolvers.User do
   alias Wocky.Account.User
   alias Wocky.Events.LocationRequest
   alias Wocky.Location
+  alias Wocky.Location.Share
   alias Wocky.Location.UserLocation
   alias Wocky.Notifier
   alias Wocky.Notifier.Push
@@ -167,14 +168,16 @@ defmodule WockyAPI.Resolvers.User do
   def live_share_location(_root, args, %{context: %{current_user: user}}) do
     input = args[:input]
 
-    with %User{} = shared_with <- Account.get_user(input.shared_with_id, user),
-         {:ok, share} <-
-           Location.start_sharing_location(user, shared_with, input.expires_at),
-         {:ok, _} <- maybe_update_location(input, user) do
-      {:ok, Repo.preload(share, [:shared_with, :user])}
-    else
-      nil -> user_not_found(input.shared_with_id)
-      error -> error
+    case Roster.start_sharing_location(user.id, input.shared_with_id) do
+      {:ok, item} ->
+        _ = maybe_update_location(input, user)
+        {:ok, Share.make_shim(item, input.expires_at)}
+
+      {:error, :not_friends} ->
+        {:error, Share.make_error(input)}
+
+      error ->
+        error
     end
   end
 
@@ -186,29 +189,31 @@ defmodule WockyAPI.Resolvers.User do
   def cancel_location_share(_root, args, %{context: %{current_user: user}}) do
     input = args[:input]
 
-    with %User{} = shared_with <- Account.get_user(input.shared_with_id, user) do
-      :ok = Location.stop_sharing_location(user, shared_with)
-    end
+    case Roster.stop_sharing_location(user.id, input.shared_with_id) do
+      :ok ->
+        {:ok, true}
 
-    {:ok, true}
+      error ->
+        error
+    end
   end
 
   def cancel_all_location_shares(_root, _args, %{context: %{current_user: user}}) do
-    :ok = Location.stop_sharing_location(user)
+    :ok = Roster.stop_sharing_location(user)
 
     {:ok, true}
   end
 
   def get_location_shares(_root, args, %{context: %{current_user: user}}) do
     user
-    |> Location.get_location_shares_query()
-    |> Utils.connection_from_query(user, args)
+    |> Roster.get_location_shares_query()
+    |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
   end
 
   def get_location_sharers(_root, args, %{context: %{current_user: user}}) do
     user
-    |> Location.get_location_sharers_query()
-    |> Utils.connection_from_query(user, args)
+    |> Roster.get_location_sharers_query()
+    |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
   end
 
   def trigger_location_request(_root, %{input: %{user_id: user_id}}, _info) do
@@ -273,7 +278,7 @@ defmodule WockyAPI.Resolvers.User do
   def location_catchup(user) do
     result =
       user
-      |> Location.get_location_sharers()
+      |> Roster.get_location_sharers()
       |> Enum.reduce([], &build_location_catchup/2)
 
     {:ok, result}
@@ -291,7 +296,7 @@ defmodule WockyAPI.Resolvers.User do
 
   def notify_location(user, location) do
     user
-    |> Location.get_location_share_targets()
+    |> Roster.get_location_share_targets()
     |> Enum.each(&do_notify_location(&1, user, location))
   end
 

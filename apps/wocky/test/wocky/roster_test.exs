@@ -6,10 +6,11 @@ defmodule Wocky.RosterTest do
   alias Wocky.Block
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
+  alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Roster
-  alias Wocky.Roster.Item, as: RosterItem
+  alias Wocky.Roster.Item
 
   setup do
     # A user with 5 friends
@@ -60,7 +61,7 @@ defmodule Wocky.RosterTest do
       new_name = Name.first_name()
       item = Roster.get_item(ctx.user, ctx.contact)
 
-      assert {:ok, %RosterItem{}} = Roster.update_item(item, %{name: new_name})
+      assert {:ok, %Item{}} = Roster.update_item(item, %{name: new_name})
 
       new_item = Roster.get_item(ctx.user, ctx.contact)
       assert new_item.contact_id == ctx.contact.id
@@ -199,15 +200,15 @@ defmodule Wocky.RosterTest do
       Factory.insert(
         :roster_item,
         name: name,
-        user_id: ctx.user.id,
-        contact_id: ctx.user2.id,
+        user: ctx.user,
+        contact: ctx.user2,
         name: name
       )
 
       Factory.insert(
         :roster_item,
-        user_id: ctx.user2.id,
-        contact_id: ctx.user.id,
+        user: ctx.user2,
+        contact: ctx.user,
         name: name2
       )
 
@@ -237,6 +238,43 @@ defmodule Wocky.RosterTest do
     test "unfriend/2 when there is no existing relationship", ctx do
       assert :ok = Roster.unfriend(ctx.user, ctx.user2)
       assert Roster.relationship(ctx.user, ctx.user2) == :none
+    end
+  end
+
+  describe "unfriend cleanup" do
+    setup ctx do
+      user_bot = Factory.insert(:bot, user: ctx.user)
+      contact_bot = Factory.insert(:bot, user: ctx.contact)
+
+      {:ok, user_bot: user_bot, contact_bot: contact_bot}
+    end
+
+    test "bots should no longer be subscribed", ctx do
+      Relation.subscribe(ctx.contact, ctx.user_bot)
+      Relation.subscribe(ctx.user, ctx.contact_bot)
+
+      Roster.unfriend(ctx.user, ctx.contact)
+
+      refute Relation.subscribed?(ctx.contact, ctx.user_bot)
+      refute Relation.subscribed?(ctx.user, ctx.contact_bot)
+    end
+
+    test "bot invitations should be removed", ctx do
+      Relation.invite(ctx.contact, ctx.user_bot, ctx.user)
+      Relation.invite(ctx.user, ctx.contact_bot, ctx.contact)
+
+      Roster.unfriend(ctx.user, ctx.contact)
+
+      refute Relation.invited?(ctx.contact, ctx.user_bot)
+      refute Relation.invited?(ctx.user, ctx.contact_bot)
+    end
+
+    test "locations shares should be canceled", ctx do
+      Roster.start_sharing_location(ctx.user, ctx.contact)
+
+      Roster.unfriend(ctx.user, ctx.contact)
+
+      assert Roster.get_location_shares(ctx.user) == []
     end
   end
 
@@ -302,6 +340,81 @@ defmodule Wocky.RosterTest do
     test "should have no effect on self", ctx do
       assert Roster.invite(ctx.user, ctx.user) == :self
       assert Roster.relationship(ctx.user, ctx.user) == :self
+    end
+  end
+
+  describe "start_sharing_location/3" do
+    test "should create a share record", ctx do
+      assert {:ok, _} = Roster.start_sharing_location(ctx.user, ctx.contact)
+
+      assert [%Item{} = share] = Roster.get_location_shares(ctx.user)
+      assert [%Item{} = ^share] = Roster.get_location_sharers(ctx.contact)
+      assert share.contact_id == ctx.contact.id
+      assert share.share_type == :always
+    end
+
+    test "should update an existing share record", ctx do
+      Roster.start_sharing_location(ctx.user, ctx.contact)
+
+      assert {:ok, _} =
+               Roster.start_sharing_location(ctx.user, ctx.contact, :nearby)
+
+      assert [%Item{} = share] = Roster.get_location_shares(ctx.user)
+      assert share.share_type == :nearby
+    end
+
+    test "should not share location with a stranger", ctx do
+      stranger = Factory.insert(:user)
+
+      assert {:error, _} = Roster.start_sharing_location(ctx.user, stranger)
+      assert Roster.get_location_shares(ctx.user) == []
+    end
+
+    test "should not share with self", ctx do
+      assert {:error, _} = Roster.start_sharing_location(ctx.user, ctx.user)
+      assert Roster.get_location_shares(ctx.user) == []
+    end
+  end
+
+  describe "stop_sharing_location/2" do
+    test "should remove existing location share", ctx do
+      Roster.start_sharing_location(ctx.user, ctx.contact)
+
+      assert :ok = Roster.stop_sharing_location(ctx.user, ctx.contact)
+      assert Roster.get_location_shares(ctx.user) == []
+    end
+
+    test "should succeed if no location share exists", ctx do
+      stranger = Factory.insert(:user)
+
+      assert :ok = Roster.stop_sharing_location(ctx.user, stranger)
+    end
+  end
+
+  describe "stop_sharing_location/1" do
+    test "should remove existing location share", ctx do
+      Roster.start_sharing_location(ctx.user, ctx.contact)
+
+      assert :ok = Roster.stop_sharing_location(ctx.user)
+      assert Roster.get_location_shares(ctx.user) == []
+    end
+
+    test "should succeed if no location share exists", ctx do
+      assert :ok = Roster.stop_sharing_location(ctx.user)
+    end
+  end
+
+  describe "get_location_shares/1" do
+    test "should not return disabled location shares", ctx do
+      # Sharing is disabled by default on new friendships
+      assert Roster.get_location_shares(ctx.user) == []
+    end
+  end
+
+  describe "get_location_sharers/1" do
+    test "should not return disabled location shares", ctx do
+      # Sharing is disabled by default on new friendships
+      assert Roster.get_location_sharers(ctx.contact) == []
     end
   end
 end

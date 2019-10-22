@@ -24,7 +24,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Events.UserInvitationResponse
   alias Wocky.GeoUtils
   alias Wocky.Location.BotEvent
-  alias Wocky.Location.Share
   alias Wocky.Location.UserLocation
   alias Wocky.Location.UserProximity.Subscription, as: ProxSubscription
   alias Wocky.Messaging.Message
@@ -35,7 +34,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Relation.Invitation, as: BotInvitation
   alias Wocky.Relation.Subscription
   alias Wocky.Repo.ID
-  alias Wocky.Repo.Timestamp
   alias Wocky.Roster.Invitation, as: RosterInvitation
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS
@@ -116,7 +114,10 @@ defmodule Wocky.Repo.Factory do
 
   def roster_item_factory do
     %RosterItem{
-      name: Name.first_name()
+      user: build(:user),
+      contact: build(:user),
+      name: Name.first_name(),
+      share_type: :always
     }
   end
 
@@ -124,14 +125,6 @@ defmodule Wocky.Repo.Factory do
     %RosterInvitation{
       user: build(:user),
       invitee: build(:user)
-    }
-  end
-
-  def user_location_share_factory do
-    %Share{
-      user: build(:user),
-      shared_with: build(:user),
-      expires_at: Timestamp.shift(days: 1)
     }
   end
 

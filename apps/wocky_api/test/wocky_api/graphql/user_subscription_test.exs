@@ -8,7 +8,6 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   alias Wocky.Location
   alias Wocky.Location.Share.Cache
   alias Wocky.Repo.Factory
-  alias Wocky.Repo.Timestamp
   alias Wocky.Roster
 
   setup_all do
@@ -114,11 +113,10 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
     """
 
     setup %{user: user} do
-      expiry = Timestamp.shift(days: 5)
       friend = Factory.insert(:user)
 
       Roster.befriend(friend, user)
-      Location.start_sharing_location(friend, user, expiry)
+      Roster.start_sharing_location(friend, user)
 
       # Wait for the cache to catch up
       assert_eventually(length(Cache.get(friend.id)) == 1)

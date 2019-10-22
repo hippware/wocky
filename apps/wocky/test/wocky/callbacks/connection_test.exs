@@ -26,12 +26,7 @@ defmodule Wocky.Callbacks.ConnectionTest do
     shared_with = Factory.insert(:user)
 
     Roster.befriend(sharer, shared_with)
-
-    expiry =
-      Timestamp.shift(days: 5)
-      |> DateTime.truncate(:second)
-
-    Location.start_sharing_location(sharer, shared_with, expiry)
+    Roster.start_sharing_location(sharer, shared_with)
 
     on_exit(fn ->
       [sharer, shared_with]

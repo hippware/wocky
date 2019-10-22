@@ -8,9 +8,9 @@ defmodule Wocky.Callbacks do
   alias Wocky.Callbacks.BotItem
   alias Wocky.Callbacks.BotSubscription
   alias Wocky.Callbacks.Connection
-  alias Wocky.Callbacks.LocationShare
   alias Wocky.Callbacks.Message
   alias Wocky.Callbacks.RosterInvitation
+  alias Wocky.Callbacks.RosterItem
   alias Wocky.Callbacks.TROSMetadata
 
   @modules [
@@ -19,9 +19,9 @@ defmodule Wocky.Callbacks do
     BotItem,
     BotSubscription,
     Connection,
-    LocationShare,
     Message,
     RosterInvitation,
+    RosterItem,
     TROSMetadata
   ]
 

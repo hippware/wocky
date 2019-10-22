@@ -8,6 +8,8 @@ defmodule Wocky.Roster do
   alias Ecto.Queryable
   alias Wocky.Account.User
   alias Wocky.Events.UserInvitationResponse
+  alias Wocky.Location.Share
+  alias Wocky.Location.Share.Cache
   alias Wocky.Notifier
   alias Wocky.Repo
   alias Wocky.Roster.Invitation
@@ -15,6 +17,8 @@ defmodule Wocky.Roster do
 
   require Logger
 
+  @type user_or_id() :: User.t() | User.id()
+  @type share_type :: Item.share_type()
   @type relationship :: :self | :friend | :invited | :invited_by | :none
   @type error :: {:error, term()}
 
@@ -31,7 +35,7 @@ defmodule Wocky.Roster do
     )
   end
 
-  @spec get_item(User.t() | User.id(), User.t() | User.id()) :: Item.t() | nil
+  @spec get_item(user_or_id(), user_or_id()) :: Item.t() | nil
   def get_item(%User{id: user_id}, %User{id: contact_id}),
     do: get_item(user_id, contact_id)
 
@@ -120,6 +124,103 @@ defmodule Wocky.Roster do
         (r.user_id == ^a.id and r.contact_id == ^b.id) or
           (r.user_id == ^b.id and r.contact_id == ^a.id)
   end
+
+  # ----------------------------------------------------------------------
+  # Live Location Sharing
+
+  @spec start_sharing_location(user_or_id(), user_or_id(), :always | :nearby) ::
+          {:ok, Share.t()} | {:error, any()}
+  def start_sharing_location(user, shared_with, share_type \\ :always)
+
+  def start_sharing_location(
+        %User{id: user_id},
+        %User{id: shared_with_id},
+        share_type
+      ),
+      do: start_sharing_location(user_id, shared_with_id, share_type)
+
+  def start_sharing_location(user_id, shared_with_id, share_type) do
+    with %Item{} = item <- get_item(user_id, shared_with_id),
+         {:ok, new_item} <- update_item(item, %{share_type: share_type}) do
+      {:ok, new_item}
+    else
+      nil -> {:error, :not_friends}
+      error -> error
+    end
+  end
+
+  @spec stop_sharing_location(user_or_id(), user_or_id()) ::
+          :ok | {:error, any()}
+  def stop_sharing_location(%User{id: user_id}, %User{id: shared_with_id}),
+    do: stop_sharing_location(user_id, shared_with_id)
+
+  def stop_sharing_location(user_id, shared_with_id) do
+    with %Item{} = item <- get_item(user_id, shared_with_id),
+         {:ok, _} <- update_item(item, %{share_type: :disabled}) do
+      :ok
+    else
+      nil -> :ok
+      error -> error
+    end
+  end
+
+  @doc "Stops location sharing with all friends"
+  @spec stop_sharing_location(user_or_id()) :: :ok
+  def stop_sharing_location(%User{id: user_id}),
+    do: stop_sharing_location(user_id)
+
+  def stop_sharing_location(user_id) do
+    Item
+    |> where(user_id: ^user_id)
+    |> Repo.update_all(
+      set: [
+        share_type: :disabled,
+        share_changed_at: DateTime.utc_now(),
+        updated_at: DateTime.utc_now()
+      ]
+    )
+
+    :ok
+  end
+
+  @spec get_location_share_targets(User.t()) :: [User.id()]
+  def get_location_share_targets(user), do: Cache.get(user.id)
+
+  @spec get_location_shares(User.t()) :: [Share.t()]
+  def get_location_shares(user) do
+    user
+    |> get_location_shares_query()
+    |> Repo.all()
+  end
+
+  @spec get_location_shares_query(User.t()) :: Queryable.t()
+  def get_location_shares_query(%User{id: user_id}) do
+    location_shares_query()
+    |> where([i], i.user_id == ^user_id)
+  end
+
+  @spec get_location_sharers(User.t()) :: [Share.t()]
+  def get_location_sharers(user) do
+    user
+    |> get_location_sharers_query()
+    |> Repo.all()
+  end
+
+  @spec get_location_sharers_query(User.t()) :: Queryable.t()
+  def get_location_sharers_query(%User{id: user_id}) do
+    location_shares_query()
+    |> where([i], i.contact_id == ^user_id)
+  end
+
+  defp location_shares_query do
+    Item
+    |> preload([:user, :contact])
+    |> where([i], i.share_type != "disabled")
+    |> order_by([i], desc: i.share_changed_at)
+  end
+
+  @spec refresh_share_cache(User.id()) :: [User.id()]
+  def refresh_share_cache(user_id), do: Cache.refresh(user_id)
 
   # ----------------------------------------------------------------------
   # Roster invitations

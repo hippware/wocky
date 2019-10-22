@@ -3,12 +3,9 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
   import Eventually
 
-  alias Wocky.Location
-  alias Wocky.Location.Share
   alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.Repo.Timestamp
   alias Wocky.Roster
   alias WockyAPI.Factory, as: APIFactory
 
@@ -188,23 +185,36 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       })
     end
 
+    defp assert_location_update(subscription_id, user_id, share_id) do
+      assert_subscription_update %{
+        result: %{
+          data: %{
+            "notifications" => %{
+              "__typename" => "Notification",
+              "createdAt" => _,
+              "data" => %{
+                "__typename" => "LocationShareNotification",
+                "user" => %{"id" => ^user_id},
+                "expiresAt" => _,
+                "shareId" => ^share_id
+              }
+            }
+          }
+        },
+        subscriptionId: ^subscription_id
+      }
+    end
+
     test "user shares their location", %{
       user: user,
       user2: user2,
       subscription_id: subscription_id
     } do
-      expires_at = Timestamp.shift(days: 1) |> DateTime.truncate(:second)
       Roster.befriend(user, user2)
 
-      {:ok, %Share{id: id}} =
-        Location.start_sharing_location(user2, user, expires_at)
+      {:ok, %{share_id: id}} = Roster.start_sharing_location(user2, user)
 
-      assert_notification_update(subscription_id, %{
-        "__typename" => "LocationShareNotification",
-        "user" => %{"id" => user2.id},
-        "expiresAt" => Timestamp.to_string!(expires_at),
-        "shareId" => to_string(id)
-      })
+      assert_location_update(subscription_id, user2.id, to_string(id))
     end
 
     test "other user stops sharing their location", %{
@@ -212,20 +222,13 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      expires_at = Timestamp.shift(days: 1) |> DateTime.truncate(:second)
       Roster.befriend(user, user2)
 
-      {:ok, %Share{id: id}} =
-        Location.start_sharing_location(user2, user, expires_at)
+      {:ok, %{share_id: id}} = Roster.start_sharing_location(user2, user)
 
-      assert_notification_update(subscription_id, %{
-        "__typename" => "LocationShareNotification",
-        "user" => %{"id" => user2.id},
-        "expiresAt" => Timestamp.to_string!(expires_at),
-        "shareId" => to_string(id)
-      })
+      assert_location_update(subscription_id, user2.id, to_string(id))
 
-      Location.stop_sharing_location(user2, user)
+      Roster.stop_sharing_location(user2, user)
 
       assert_notification_update(subscription_id, %{
         "__typename" => "LocationShareEndNotification",
@@ -239,13 +242,11 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      expires_at = Timestamp.shift(days: 1) |> DateTime.truncate(:second)
       Roster.befriend(user, user2)
 
-      {:ok, %Share{id: id}} =
-        Location.start_sharing_location(user, user2, expires_at)
+      {:ok, %{share_id: id}} = Roster.start_sharing_location(user, user2)
 
-      Location.stop_sharing_location(user, user2)
+      Roster.stop_sharing_location(user, user2)
 
       assert_notification_update(subscription_id, %{
         "__typename" => "LocationShareEndSelfNotification",

@@ -5,10 +5,10 @@ defmodule Wocky.Location.UserLocation.Current do
 
   alias Timex.Duration
   alias Wocky.Account.User
-  alias Wocky.Location.Share
   alias Wocky.Location.UserLocation
   alias Wocky.Location.UserLocation.LocationChangedEvent
   alias Wocky.Repo
+  alias Wocky.Roster.Item
 
   # Expire current location after 2 days
   @expire_secs Duration.from_days(2)
@@ -55,9 +55,10 @@ defmodule Wocky.Location.UserLocation.Current do
   @spec delete_when_not_shared([User.id()]) :: non_neg_integer()
   def delete_when_not_shared(user_ids) do
     have_shares =
-      Share
-      |> select([ls], ls.user_id)
-      |> where([ls], ls.user_id in ^user_ids)
+      Item
+      |> select([i], i.user_id)
+      |> where([i], i.user_id in ^user_ids)
+      |> where([i], i.share_type != "disabled")
       |> distinct(true)
       |> Repo.all()
 

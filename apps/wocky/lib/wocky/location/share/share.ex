@@ -1,48 +1,63 @@
 defmodule Wocky.Location.Share do
   @moduledoc false
 
-  use Wocky.Repo.Schema
+  # This is a temporary shim to make the old location sharing API work.
+
+  use Ecto.Schema
+
+  import Ecto.Changeset
 
   alias Wocky.Account.User
-  alias Wocky.Roster
+  alias Wocky.Repo
+  alias Wocky.Repo.Timestamp
+  alias Wocky.Roster.Item
 
-  @foreign_key_type :binary_id
-  schema "user_location_shares" do
-    field :expires_at, :utc_datetime, null: false
-
-    timestamps()
-
-    belongs_to :user, User
-    belongs_to :shared_with, User, foreign_key: :shared_with_id
+  @primary_key false
+  embedded_schema do
+    field :id, :integer
+    field :user, :map
+    field :user_id, :binary_id
+    field :shared_with, :map
+    field :shared_with_id, :binary_id
+    field :created_at, :utc_datetime_usec
+    field :expires_at, :utc_datetime_usec
   end
 
   @type t :: %__MODULE__{
+          id: integer(),
+          user: User.t(),
           user_id: User.id(),
+          shared_with: User.t(),
           shared_with_id: User.id(),
           expires_at: DateTime.t(),
-          created_at: DateTime.t(),
-          updated_at: DateTime.t()
+          created_at: DateTime.t()
         }
 
-  def changeset(struct, params) do
-    struct
-    |> cast(params, [:user_id, :shared_with_id, :expires_at])
-    |> validate_required([:user_id, :shared_with_id, :expires_at])
-    |> foreign_key_constraint(:user_id)
-    |> foreign_key_constraint(:shared_with_id)
-    |> validate_change(:expires_at, fn :expires_at, expiry ->
-      if Timex.before?(expiry, Timex.now()) do
-        [expires_at: "must be in the future"]
-      else
-        []
-      end
-    end)
-    |> validate_change(:shared_with_id, fn :shared_with_id, shared_with_id ->
-      if Roster.friend?(params[:user_id], shared_with_id) do
-        []
-      else
-        [shared_with_id: "must be a friend"]
-      end
-    end)
+  @spec make_expiry :: DateTime.t()
+  def make_expiry do
+    Timestamp.shift(years: 1)
+    |> DateTime.truncate(:second)
+  end
+
+  @spec make_shim(Item.t(), DateTime.t()) :: t()
+  def make_shim(item, expiry \\ make_expiry()) do
+    item = Repo.preload(item, [:user, :contact])
+
+    %__MODULE__{
+      id: item.share_id,
+      user: item.user,
+      user_id: item.user.id,
+      shared_with: item.contact,
+      shared_with_id: item.contact.id,
+      created_at: item.share_changed_at,
+      expires_at: expiry
+    }
+  end
+
+  @spec make_error(map()) :: Ecto.Changeset.t()
+  def make_error(params) do
+    %__MODULE__{}
+    |> change(params)
+    |> add_error(:shared_with_id, "must be a friend")
   end
 end

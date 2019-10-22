@@ -7,12 +7,13 @@ defmodule Wocky.Callbacks.Connection do
   alias Wocky.Events.LocationRequest
   alias Wocky.Location
   alias Wocky.Notifier
+  alias Wocky.Roster
 
   @stale_location_seconds 15
 
   def handle_event(%{user: user, status: status}) do
     user
-    |> Location.get_location_sharers()
+    |> Roster.get_location_sharers()
     |> Enum.each(fn %{user: %User{} = sharer} ->
       case status do
         :connected ->
