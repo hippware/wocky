@@ -34,6 +34,12 @@ defmodule Wocky.Repo.Migrations.MergeSharingRoster do
         null: false
     end
 
+    alter table(:user_invitations) do
+      add :share_type, LocationShareTypeEnum.type(),
+        default: "disabled",
+        null: false
+    end
+
     flush()
 
     Repo.update_all(Item, set: [share_migrated: false])
@@ -64,6 +70,10 @@ defmodule Wocky.Repo.Migrations.MergeSharingRoster do
   def down do
     alter table(:roster_items) do
       remove :share_migrated
+      remove :share_type
+    end
+
+    alter table(:user_invitations) do
       remove :share_type
     end
 

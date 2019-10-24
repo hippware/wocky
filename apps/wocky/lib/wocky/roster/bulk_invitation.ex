@@ -87,10 +87,10 @@ defmodule Wocky.Roster.BulkInvitation do
   # We found an unblocked user for this number - send an invite
   defp send_invitation(%{user: user} = r, sent_numbers, requestor) do
     result =
-      case Roster.invite(requestor, user) do
-        :invited -> :internal_invitation_sent
-        :friend -> :already_friends
-        :self -> :self
+      case Roster.make_friends(requestor, user, :disabled) do
+        {:ok, :invited} -> :internal_invitation_sent
+        {:ok, :friend} -> :already_friends
+        {:error, _} -> :self
       end
 
     {Map.put(r, :result, result),

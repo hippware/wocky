@@ -124,7 +124,8 @@ defmodule Wocky.Repo.Factory do
   def user_invitation_factory do
     %RosterInvitation{
       user: build(:user),
-      invitee: build(:user)
+      invitee: build(:user),
+      share_type: :always
     }
   end
 

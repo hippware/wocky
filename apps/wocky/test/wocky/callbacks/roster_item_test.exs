@@ -14,10 +14,10 @@ defmodule Wocky.Callbacks.RosterItemTest do
   setup do
     [user, friend1, friend2] = Factory.insert_list(3, :user)
 
-    Roster.befriend(user, friend1, false)
-    Roster.befriend(user, friend2, false)
+    Roster.befriend(user, friend1, notify: false)
+    Roster.befriend(user, friend2, notify: false)
 
-    {:ok, _} = Roster.start_sharing_location(user, friend1)
+    {:ok, _} = Roster.update_sharing(user, friend1, :always)
 
     {:ok, user: user, friend1: friend1, friend2: friend2}
   end
@@ -41,7 +41,7 @@ defmodule Wocky.Callbacks.RosterItemTest do
       assert_eventually(in_band_notification_count(ctx.friend1) == 1)
       %Notification{id: id} = Repo.get_by(Notification, user_id: ctx.friend1.id)
 
-      Roster.stop_sharing_location(ctx.user, ctx.friend1)
+      Roster.update_sharing(ctx.user, ctx.friend1, :disabled)
 
       assert_eventually(in_band_notification_count(ctx.friend1) == 2)
 
@@ -59,7 +59,7 @@ defmodule Wocky.Callbacks.RosterItemTest do
          ending a location share generates a notification for the sharing user
          """,
          ctx do
-      Roster.stop_sharing_location(ctx.user, ctx.friend1)
+      Roster.update_sharing(ctx.user, ctx.friend1, :disabled)
 
       assert_eventually(in_band_notification_count(ctx.user) == 1)
 
@@ -80,7 +80,7 @@ defmodule Wocky.Callbacks.RosterItemTest do
     end
 
     test "starting another share inserts it into the cache", ctx do
-      {:ok, _} = Roster.start_sharing_location(ctx.user, ctx.friend2)
+      {:ok, _} = Roster.update_sharing(ctx.user, ctx.friend2, :always)
 
       assert_eventually(
         [ctx.friend1.id, ctx.friend2.id] |> Enum.sort() ==

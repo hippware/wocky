@@ -25,7 +25,7 @@ defmodule Wocky.Location.GeoFenceTest do
     user = Factory.insert(:user)
     Push.enable(user, @device, Code.isbn13())
 
-    Roster.befriend(user, owner, false)
+    Roster.befriend(user, owner, notify: false)
 
     # This user should never get notified in spite of being a subscriber
     stranger = Factory.insert(:user)

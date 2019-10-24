@@ -29,7 +29,7 @@ defmodule Wocky.Callbacks.RosterInvitationTest do
     end
 
     test "invite user", ctx do
-      Roster.invite(ctx.user2, ctx.user1)
+      Roster.make_friends(ctx.user2, ctx.user1, :always)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 10_000, global: true)
       assert length(msgs) == 1

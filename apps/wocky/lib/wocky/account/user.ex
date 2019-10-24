@@ -10,6 +10,7 @@ defmodule Wocky.Account.User do
   alias Wocky.Presence
   alias Wocky.Relation.Invitation
   alias Wocky.Relation.Subscription
+  alias Wocky.Repo
   alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
 
@@ -89,6 +90,8 @@ defmodule Wocky.Account.User do
           transient: boolean
         }
 
+  @type tid :: t() | id()
+
   @update_fields [
     :handle,
     :image_url,
@@ -108,6 +111,14 @@ defmodule Wocky.Account.User do
   @min_handle_len 3
   @max_handle_len 16
   @max_name_len 65
+
+  @spec id(tid()) :: id()
+  def id(%__MODULE__{id: id}), do: id
+  def id(id), do: id
+
+  @spec hydrate(tid()) :: t()
+  def hydrate(%__MODULE__{} = user), do: user
+  def hydrate(id), do: Repo.get(User, id)
 
   def changeset(user, params) do
     user

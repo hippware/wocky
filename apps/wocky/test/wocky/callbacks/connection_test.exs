@@ -25,8 +25,7 @@ defmodule Wocky.Callbacks.ConnectionTest do
     sharer = Factory.insert(:user)
     shared_with = Factory.insert(:user)
 
-    Roster.befriend(sharer, shared_with)
-    Roster.start_sharing_location(sharer, shared_with)
+    Roster.befriend(sharer, shared_with, share_type: :always)
 
     on_exit(fn ->
       [sharer, shared_with]
