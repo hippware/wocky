@@ -5,7 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.10.22+rf55d9bd
+
 * Update: excoveralls (PR #2882), geocalc (PR #2883)
+  * observer_cli (PR #2886)
 
 
 # 2019.10.17+r65711dd
