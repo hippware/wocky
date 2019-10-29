@@ -13,7 +13,6 @@ defmodule Wocky.Application do
   alias Wocky.Notifier.Email.Mailer
   alias Wocky.Notifier.Push.Backend.Sandbox, as: PushSandbox
   alias Wocky.Presence.Supervisor, as: PresenceSupervisor
-  alias Wocky.Tasks.Recurring
 
   require Logger
   require Prometheus.Registry
@@ -62,8 +61,6 @@ defmodule Wocky.Application do
         &Wocky.Repo.Instrumenter.handle_event/4,
         nil
       )
-
-    {:ok, _} = Recurring.start()
 
     if Confex.get_env(:wocky, :start_watcher, true) do
       :ok = DawdleDB.start_watcher(Wocky.Repo)

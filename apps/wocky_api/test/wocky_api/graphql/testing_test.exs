@@ -2,7 +2,7 @@ defmodule WockyAPI.GraphQL.TestingTest do
   use WockyAPI.GraphQLCase, async: true
 
   alias Wocky.Account.User
-  alias Wocky.Location.Share
+  alias Wocky.POI.Bot
   alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -70,11 +70,8 @@ defmodule WockyAPI.GraphQL.TestingTest do
               "string_params" => [%{"key" => "phone_number", "value" => number}]
             },
             %{
-              "type" => "user_location_share",
-              "string_params" => [
-                %{"key" => "user_id", "value" => user.id},
-                %{"key" => "shared_with_id", "value" => user.id}
-              ]
+              "type" => "bot",
+              "string_params" => [%{"key" => "user_id", "value" => user.id}]
             }
           ]
         })
@@ -82,7 +79,7 @@ defmodule WockyAPI.GraphQL.TestingTest do
       refute has_errors(result)
 
       assert Repo.get_by(User, phone_number: number)
-      assert Repo.get_by(Share, user_id: user.id)
+      assert Repo.get_by(Bot, user_id: user.id)
     end
 
     test "should fail to insert with improper params", %{user: user} do

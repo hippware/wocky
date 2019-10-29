@@ -6,7 +6,6 @@ defmodule WockyAPI.Resolvers.User do
   alias Absinthe.Relay.Connection
   alias Absinthe.Subscription
   alias Wocky.Account
-  alias Wocky.Account.User
   alias Wocky.Events.LocationRequest
   alias Wocky.Location
   alias Wocky.Location.UserLocation
@@ -15,6 +14,7 @@ defmodule WockyAPI.Resolvers.User do
   alias Wocky.Repo
   alias Wocky.Roster
   alias Wocky.Roster.Item
+  alias Wocky.Roster.Share
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
@@ -167,14 +167,13 @@ defmodule WockyAPI.Resolvers.User do
   def live_share_location(_root, args, %{context: %{current_user: user}}) do
     input = args[:input]
 
-    with %User{} = shared_with <- Account.get_user(input.shared_with_id, user),
-         {:ok, share} <-
-           Location.start_sharing_location(user, shared_with, input.expires_at),
-         {:ok, _} <- maybe_update_location(input, user) do
-      {:ok, Repo.preload(share, [:shared_with, :user])}
-    else
-      nil -> user_not_found(input.shared_with_id)
-      error -> error
+    case Roster.update_sharing(user.id, input.shared_with_id, :always) do
+      {:ok, item} ->
+        _ = maybe_update_location(input, user)
+        {:ok, Share.make_shim(item, input.expires_at)}
+
+      error ->
+        error
     end
   end
 
@@ -186,29 +185,31 @@ defmodule WockyAPI.Resolvers.User do
   def cancel_location_share(_root, args, %{context: %{current_user: user}}) do
     input = args[:input]
 
-    with %User{} = shared_with <- Account.get_user(input.shared_with_id, user) do
-      :ok = Location.stop_sharing_location(user, shared_with)
-    end
+    case Roster.update_sharing(user.id, input.shared_with_id, :disabled) do
+      {:ok, _} ->
+        {:ok, true}
 
-    {:ok, true}
+      {:error, _} = error ->
+        error
+    end
   end
 
   def cancel_all_location_shares(_root, _args, %{context: %{current_user: user}}) do
-    :ok = Location.stop_sharing_location(user)
+    :ok = Roster.stop_sharing_location(user)
 
     {:ok, true}
   end
 
   def get_location_shares(_root, args, %{context: %{current_user: user}}) do
     user
-    |> Location.get_location_shares_query()
-    |> Utils.connection_from_query(user, args)
+    |> Roster.get_location_shares_query()
+    |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
   end
 
   def get_location_sharers(_root, args, %{context: %{current_user: user}}) do
     user
-    |> Location.get_location_sharers_query()
-    |> Utils.connection_from_query(user, args)
+    |> Roster.get_location_sharers_query()
+    |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
   end
 
   def trigger_location_request(_root, %{input: %{user_id: user_id}}, _info) do
@@ -273,7 +274,7 @@ defmodule WockyAPI.Resolvers.User do
   def location_catchup(user) do
     result =
       user
-      |> Location.get_location_sharers()
+      |> Roster.get_location_sharers()
       |> Enum.reduce([], &build_location_catchup/2)
 
     {:ok, result}
@@ -291,7 +292,7 @@ defmodule WockyAPI.Resolvers.User do
 
   def notify_location(user, location) do
     user
-    |> Location.get_location_share_targets()
+    |> Roster.get_location_share_targets()
     |> Enum.each(&do_notify_location(&1, user, location))
   end
 
@@ -328,40 +329,21 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def invite(_root, args, %{context: %{current_user: user}}) do
-    with {:ok, %{relationship: r}} <-
-           roster_action(user, args[:input][:user_id], &Roster.invite/2) do
-      {:ok, r}
-    end
+    Roster.make_friends(user, args[:input][:user_id], :disabled)
   end
 
   def unfriend(_root, args, %{context: %{current_user: user}}) do
-    with {:ok, _} <-
-           roster_action(user, args[:input][:user_id], &Roster.unfriend/2) do
-      {:ok, true}
-    end
+    :ok = Roster.unfriend(user, args[:input][:user_id])
+    {:ok, true}
   end
 
   def name_friend(_root, args, %{context: %{current_user: user}}) do
-    with %User{} = other_user <- Account.get_user(args[:input][:user_id], user),
-         %Item{} <- Roster.get_item(user, other_user) do
-      {:ok, _} = Roster.set_name(user, other_user, args[:input][:name])
-      {:ok, true}
-    else
-      nil -> user_not_found(args[:input][:user_id])
+    contact_id = args[:input][:user_id]
+    new_name = args[:input][:name]
+
+    case Roster.update_name(user, contact_id, new_name) do
+      {:ok, _} -> {:ok, true}
       error -> error
-    end
-  end
-
-  defp roster_action(%User{id: id}, id, _), do: {:error, "Invalid user"}
-
-  defp roster_action(user, contact_id, roster_fun) do
-    case Account.get_user(contact_id, user) do
-      nil ->
-        {:error, "Invalid user"}
-
-      contact ->
-        relationship = roster_fun.(user, contact)
-        {:ok, %{relationship: relationship, user: contact}}
     end
   end
 

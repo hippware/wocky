@@ -1,10 +1,8 @@
 defmodule Wocky.Location.UserLocation.CurrentTest do
   use Wocky.DataCase, async: true
 
-  alias Wocky.Location
   alias Wocky.Location.UserLocation.Current
   alias Wocky.Repo.Factory
-  alias Wocky.Repo.Timestamp
   alias Wocky.Roster
 
   setup do
@@ -13,13 +11,7 @@ defmodule Wocky.Location.UserLocation.CurrentTest do
 
   describe "delete_when_not_shared/1" do
     setup %{users: [u1, u2 | _] = users} do
-      Roster.befriend(u1, u2)
-
-      {:ok, _} =
-        Location.start_sharing_location(u1, u2, Timestamp.shift(days: 1))
-
-      {:ok, _} =
-        Location.start_sharing_location(u2, u1, Timestamp.shift(days: 1))
+      Roster.befriend(u1, u2, share_type: :always)
 
       loc = Factory.build(:location)
       Enum.each(users, &Current.set(&1, loc))

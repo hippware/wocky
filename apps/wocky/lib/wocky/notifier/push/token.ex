@@ -31,16 +31,19 @@ defmodule Wocky.Notifier.Push.Token do
     belongs_to :user, User
   end
 
-  @type token :: binary
+  @type token :: binary()
+  @type platform :: :apns | :platform
 
-  @type t :: %Token{
+  @type t :: %__MODULE__{
           user_id: User.id(),
           device: User.device(),
-          token: token,
-          valid: boolean,
-          enabled_at: DateTime,
-          disabled_at: DateTime,
-          invalidated_at: DateTime
+          token: token(),
+          platform: platform(),
+          dev_mode: boolean(),
+          valid: boolean(),
+          enabled_at: DateTime.t(),
+          disabled_at: DateTime.t(),
+          invalidated_at: DateTime.t()
         }
 
   @required_attrs [:user_id, :device, :token]
@@ -54,7 +57,7 @@ defmodule Wocky.Notifier.Push.Token do
       |> Enum.reject(fn {_, v} -> is_nil(v) end)
       |> Enum.into(%{})
 
-    %Token{}
+    %__MODULE__{}
     |> cast(attrs, @register_attrs)
     |> validate_required(@required_attrs)
     |> foreign_key_constraint(:user_id)
@@ -64,7 +67,7 @@ defmodule Wocky.Notifier.Push.Token do
 
   @spec all_for_user(User.t()) :: [Token]
   def all_for_user(user) do
-    Token
+    __MODULE__
     |> where(user_id: ^user.id)
     |> where(valid: true)
     |> Repo.all()

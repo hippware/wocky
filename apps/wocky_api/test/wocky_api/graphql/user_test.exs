@@ -6,7 +6,6 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Block
-  alias Wocky.Location
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Notifier.Push.Token
@@ -470,10 +469,9 @@ defmodule WockyAPI.GraphQL.UserTest do
     test "get user's sharing sessions", %{user: user, user2: user2} do
       sharer = user.id
       shared_with = user2.id
-      expiry = sharing_expiry()
 
-      {:ok, share} = Location.start_sharing_location(user, user2, expiry)
-      id = to_string(share.id)
+      {:ok, item} = Roster.update_sharing(user, user2, :always)
+      id = to_string(item.share_id)
 
       result = run_query(@query, user, %{})
 
@@ -487,8 +485,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                        "node" => %{
                          "id" => ^id,
                          "user" => %{"id" => ^sharer},
-                         "sharedWith" => %{"id" => ^shared_with},
-                         "expiresAt" => ^expiry
+                         "sharedWith" => %{"id" => ^shared_with}
                        }
                      }
                    ],
@@ -519,10 +516,9 @@ defmodule WockyAPI.GraphQL.UserTest do
     test "get sharing sessions with user", %{user: user, user2: user2} do
       sharer = user.id
       shared_with = user2.id
-      expiry = sharing_expiry()
 
-      {:ok, share} = Location.start_sharing_location(user, user2, expiry)
-      id = to_string(share.id)
+      {:ok, item} = Roster.update_sharing(user, user2, :always)
+      id = to_string(item.share_id)
 
       result = run_query(@query, user2, %{})
 
@@ -536,8 +532,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                        "node" => %{
                          "id" => ^id,
                          "user" => %{"id" => ^sharer},
-                         "sharedWith" => %{"id" => ^shared_with},
-                         "expiresAt" => ^expiry
+                         "sharedWith" => %{"id" => ^shared_with}
                        }
                      }
                    ],
@@ -611,7 +606,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                  "result" => nil,
                  "messages" => [
                    %{
-                     "field" => "sharedWithId",
+                     "field" => "contactId",
                      "message" => "must be a friend"
                    }
                  ]
@@ -629,9 +624,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "stop sharing location", %{user: user, user2: user2} do
-      expiry = sharing_expiry()
-
-      {:ok, _} = Location.start_sharing_location(user, user2, expiry)
+      {:ok, _} = Roster.update_sharing(user, user2, :always)
 
       result =
         run_query(@query, user, %{
@@ -660,9 +653,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "stop all location sharing", %{user: user, user2: user2} do
-      expiry = sharing_expiry()
-
-      {:ok, _} = Location.start_sharing_location(user, user2, expiry)
+      {:ok, _} = Roster.update_sharing(user, user2, :always)
 
       result = run_query(@query, user, %{})
 
@@ -834,6 +825,10 @@ defmodule WockyAPI.GraphQL.UserTest do
       friendInvite(input: {userId: $userId}) {
         successful
         result
+        messages {
+          field
+          message
+        }
       }
     }
     """
@@ -844,7 +839,8 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert result.data == %{
                "friendInvite" => %{
                  "successful" => true,
-                 "result" => "INVITED"
+                 "result" => "INVITED",
+                 "messages" => []
                }
              }
 
@@ -852,14 +848,15 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
 
     test "should make a friend from a invited_by", shared do
-      Roster.invite(shared.user2, shared.user)
+      Roster.make_friends(shared.user2, shared.user, :disabled)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
       assert result.data == %{
                "friendInvite" => %{
                  "successful" => true,
-                 "result" => "FRIEND"
+                 "result" => "FRIEND",
+                 "messages" => []
                }
              }
 
@@ -869,20 +866,59 @@ defmodule WockyAPI.GraphQL.UserTest do
     test "should return an error for a blocked user", shared do
       Block.block(shared.user2, shared.user)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
-      assert has_errors(result)
-      assert error_msg(result) =~ "Invalid user"
+
+      refute has_errors(result)
+
+      assert %{
+               "friendInvite" => %{
+                 "successful" => false,
+                 "result" => nil,
+                 "messages" => [
+                   %{
+                     "field" => "inviteeId",
+                     "message" => "blocked"
+                   }
+                 ]
+               }
+             } = result.data
     end
 
     test "should return an error if you try to follow yourself", shared do
       result = run_query(@query, shared.user, %{"userId" => shared.user.id})
-      assert has_errors(result)
-      assert error_msg(result) =~ "Invalid user"
+
+      refute has_errors(result)
+
+      assert %{
+               "friendInvite" => %{
+                 "successful" => false,
+                 "result" => nil,
+                 "messages" => [
+                   %{
+                     "field" => "inviteeId",
+                     "message" => "self"
+                   }
+                 ]
+               }
+             } = result.data
     end
 
     test "should return an error for a non-existant", shared do
       result = run_query(@query, shared.user, %{"userId" => ID.new()})
-      assert has_errors(result)
-      assert error_msg(result) =~ "Invalid user"
+
+      refute has_errors(result)
+
+      assert %{
+               "friendInvite" => %{
+                 "successful" => false,
+                 "result" => nil,
+                 "messages" => [
+                   %{
+                     "field" => "inviteeId",
+                     "message" => "does not exist"
+                   }
+                 ]
+               }
+             } = result.data
     end
   end
 
@@ -911,7 +947,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
 
     test "should remove all relationship with an invitee", shared do
-      Roster.invite(shared.user, shared.user2)
+      Roster.make_friends(shared.user, shared.user2, :always)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -926,7 +962,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
 
     test "should remove all relationship with an invited_by", shared do
-      Roster.invite(shared.user2, shared.user)
+      Roster.make_friends(shared.user2, shared.user, :always)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -940,23 +976,20 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert Roster.relationship(shared.user, shared.user2) == :none
     end
 
-    test "should return an error for a blocked user", shared do
+    test "should work for a blocked user", shared do
       Block.block(shared.user2, shared.user)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
-      assert has_errors(result)
-      assert error_msg(result) =~ "Invalid user"
+      refute has_errors(result)
     end
 
-    test "should return an error if you try to unfriend yourself", shared do
+    test "should work when you try to unfriend yourself", shared do
       result = run_query(@query, shared.user, %{"userId" => shared.user.id})
-      assert has_errors(result)
-      assert error_msg(result) =~ "Invalid user"
+      refute has_errors(result)
     end
 
-    test "should return an error for a non-existant", shared do
+    test "should work for a non-existant friend", shared do
       result = run_query(@query, shared.user, %{"userId" => ID.new()})
-      assert has_errors(result)
-      assert error_msg(result) =~ "Invalid user"
+      refute has_errors(result)
     end
   end
 
@@ -980,8 +1013,10 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "get friends", %{user: user, user2: user2} do
       Roster.befriend(user, user2)
+
       name = Name.name()
-      Roster.set_name(user, user2, name)
+      Roster.update_name(user, user2, name)
+
       id2 = user2.id
 
       result = run_query(@query, user)
@@ -1026,7 +1061,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get sent_invitations", %{user: user, user2: user2} do
-      Roster.invite(user, user2)
+      Roster.make_friends(user, user2, :always)
       id = user.id
       id2 = user2.id
 
@@ -1072,7 +1107,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get received_invitations", %{user: user, user2: user2} do
-      Roster.invite(user2, user)
+      Roster.make_friends(user2, user, :always)
       id = user.id
       id2 = user2.id
 
@@ -1105,6 +1140,10 @@ defmodule WockyAPI.GraphQL.UserTest do
       friendName (input: {user_id: $user_id, name: $name}) {
         successful
         result
+        messages {
+          field
+          message
+        }
       }
     }
     """
@@ -1121,7 +1160,8 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert result.data == %{
                "friendName" => %{
                  "successful" => true,
-                 "result" => true
+                 "result" => true,
+                 "messages" => []
                }
              }
 
@@ -1134,8 +1174,17 @@ defmodule WockyAPI.GraphQL.UserTest do
       result =
         run_query(@query, user, %{"user_id" => ID.new(), "name" => new_name})
 
-      assert has_errors(result)
-      assert error_msg(result) =~ "User not found"
+      refute has_errors(result)
+
+      assert result.data == %{
+               "friendName" => %{
+                 "successful" => false,
+                 "result" => nil,
+                 "messages" => [
+                   %{"field" => "contactId", "message" => "must be a friend"}
+                 ]
+               }
+             }
     end
 
     test "should fail when the user is not a friend", %{
@@ -1147,8 +1196,17 @@ defmodule WockyAPI.GraphQL.UserTest do
       result =
         run_query(@query, user, %{"user_id" => user2.id, "name" => new_name})
 
-      assert has_errors(result)
-      assert error_msg(result) =~ "User not found"
+      refute has_errors(result)
+
+      assert result.data == %{
+               "friendName" => %{
+                 "successful" => false,
+                 "result" => nil,
+                 "messages" => [
+                   %{"field" => "contactId", "message" => "must be a friend"}
+                 ]
+               }
+             }
     end
   end
 end

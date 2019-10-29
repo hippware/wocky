@@ -196,8 +196,8 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
     test "should return the correct relationship for target users", ctx do
       [friend, inviter, invitee] = Enum.slice(ctx.users, 0..2)
       Roster.befriend(ctx.user, friend)
-      Roster.invite(inviter, ctx.user)
-      Roster.invite(ctx.user, invitee)
+      Roster.make_friends(inviter, ctx.user, :disabled)
+      Roster.make_friends(ctx.user, invitee, :disabled)
 
       result =
         run_query(@query, ctx.user, %{

@@ -9,6 +9,5 @@
   # Logger.info ignores:
   {"lib/wocky/repo/cleaner.ex", :unmatched_return},
   {"lib/wocky/application.ex", :unmatched_return},
-  {"lib/wocky/sms/sandbox.ex", :unmatched_return, 11},
-  {"lib/wocky/tasks/loc_share_expire.ex", :unmatched_return, 15}
+  {"lib/wocky/sms/sandbox.ex", :unmatched_return, 11}
 ]

@@ -140,8 +140,7 @@ defmodule WockyAPI.GraphQL.LocationTest do
                  "successful" => true,
                  "result" => %{
                    "user" => %{"id" => ^sharer},
-                   "sharedWith" => %{"id" => ^shared_with},
-                   "expiresAt" => ^expiry
+                   "sharedWith" => %{"id" => ^shared_with}
                  }
                }
              } = result.data
