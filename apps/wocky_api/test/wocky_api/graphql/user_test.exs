@@ -31,10 +31,6 @@ defmodule WockyAPI.GraphQL.UserTest do
           tros_url
         }
         updated_at
-        hidden {
-          enabled
-          expires
-        }
       }
     }
     """
@@ -52,12 +48,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                  "media" => %{
                    "tros_url" => user.image_url
                  },
-                 "updated_at" => DateTime.to_iso8601(user.updated_at),
-                 "hidden" => %{
-                   "enabled" => false,
-                   "expires" =>
-                     0 |> DateTime.from_unix!() |> DateTime.to_iso8601()
-                 }
+                 "updated_at" => DateTime.to_iso8601(user.updated_at)
                }
              }
     end

@@ -73,8 +73,7 @@ defmodule WockyAPI.Schema.MessageTypes do
     value :outgoing
   end
 
-  # DEPRECATED
-  input_object :send_message_input do
+  input_object :message_send_input do
     @desc "Message recipient"
     field :recipient_id, non_null(:uuid)
 
@@ -83,12 +82,7 @@ defmodule WockyAPI.Schema.MessageTypes do
 
     @desc "TROS URL of any attached media"
     field :image_url, :string
-  end
 
-  input_object :message_send_input do
-    field :recipient_id, non_null(:uuid)
-    field :content, :string
-    field :image_url, :string
     field :client_data, :string
   end
 
@@ -105,20 +99,10 @@ defmodule WockyAPI.Schema.MessageTypes do
     field :read, :boolean
   end
 
-  # DEPRECATED
-  payload_object(:send_message_payload, :boolean)
   payload_object(:message_send_payload, :boolean)
   payload_object(:message_mark_read_payload, list_of(:message_mark_read_result))
 
   object :message_mutations do
-    @desc "Send a message to another user"
-    field :send_message, type: :send_message_payload do
-      deprecate "Use messageSend instead"
-      arg :input, non_null(:send_message_input)
-      resolve &Message.send_message/3
-      changeset_mutation_middleware()
-    end
-
     @desc "Send a message to another user"
     field :message_send, type: :message_send_payload do
       arg :input, non_null(:message_send_input)

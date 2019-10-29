@@ -306,11 +306,6 @@ defmodule WockyAPI.Resolvers.User do
   defp make_location_data(user, location),
     do: %{user: user, location: location}
 
-  def hide(_root, _args, _context) do
-    # DEPRECATED
-    {:ok, true}
-  end
-
   def delete(_root, _args, %{context: %{current_user: user}}) do
     Account.delete(user.id)
     {:ok, true}
