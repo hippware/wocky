@@ -52,12 +52,6 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "A list of roles assigned to the user"
     field :roles, non_null(list_of(non_null(:string)))
 
-    @desc "The user's hidden state"
-    field :hidden, :hidden,
-      deprecate: "hidden is no longer supported on the server" do
-      resolve fn _, _ -> {:ok, %{}} end
-    end
-
     @desc """
     Timestamp for the last time the user object's data was changed. Applies
     only to the following fields:
@@ -257,12 +251,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "The user is the requesting user"
     value :self
-
-    @desc "DEPRECATED - use INVITED instead"
-    value :follower
-
-    @desc "DEPRECATED - use INVITED_BY instead"
-    value :following
   end
 
   @desc "Another user with whom a relationship exists"
@@ -406,22 +394,6 @@ defmodule WockyAPI.Schema.UserTypes do
     end
   end
 
-  @desc "The state of the user's hidden mode"
-  object :hidden do
-    @desc "Whether the user is currently hidden"
-    field :enabled, non_null(:boolean),
-      deprecate: "hidden is no longer supported by the server",
-      resolve: fn _, _ -> {:ok, false} end
-
-    @desc """
-    When the current or last hidden state expires/expired. Null if no
-    expiry is/was scheduled.
-    """
-    field :expires, :datetime,
-      deprecate: "hidden is no longer supported by the server",
-      resolve: fn _, _ -> {:ok, DateTime.from_unix!(0)} end
-  end
-
   @desc "Parameters for modifying a user"
   input_object :user_params do
     field :handle, :string
@@ -445,17 +417,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
   input_object :user_update_input do
     field :values, non_null(:user_params)
-  end
-
-  input_object :user_hide_input do
-    @desc "Enable or disable hidden/invisible mode"
-    field :enable, non_null(:boolean)
-
-    @desc """
-    Timestamp of when to expire hidden mode, if enabled. If not present,
-    hidden mode will remain on until explicitly disabled.
-    """
-    field :expire, :datetime
   end
 
   input_object :follow_input do
@@ -485,7 +446,6 @@ defmodule WockyAPI.Schema.UserTypes do
   end
 
   payload_object(:user_update_payload, :user)
-  payload_object(:user_hide_payload, :boolean)
   payload_object(:follow_payload, :contact)
   payload_object(:friend_invite_payload, :user_contact_relationship)
   payload_object(:friend_delete_payload, :boolean)
@@ -549,26 +509,9 @@ defmodule WockyAPI.Schema.UserTypes do
       middleware WockyAPI.Middleware.RefreshCurrentUser
       changeset_mutation_middleware()
     end
-
-    @desc "Hide the current user"
-    field :user_hide,
-      type: :user_hide_payload,
-      deprecate: "hidden mode is no longer supported by the server" do
-      arg :input, non_null(:user_hide_input)
-      resolve &User.hide/3
-    end
   end
 
   object :contact_mutations do
-    @desc "Start following another user"
-    field :follow,
-      type: :follow_payload,
-      deprecate: "Use friendInvite instead" do
-      arg :input, non_null(:follow_input)
-      resolve &User.invite/3
-      changeset_mutation_middleware()
-    end
-
     @desc """
     Invite another user to be your friend or accept an existing invitation from
     them
