@@ -1,6 +1,6 @@
-defmodule Wocky.Roster do
+defmodule Wocky.Friends do
   @moduledoc """
-  Context module for managing the friends list (roster)
+  Context module for managing the friends list.
   """
 
   import Ecto.Query
@@ -10,21 +10,21 @@ defmodule Wocky.Roster do
   alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.Events.UserInvitationResponse
+  alias Wocky.Friends.Friend
+  alias Wocky.Friends.Invitation
+  alias Wocky.Friends.Share
+  alias Wocky.Friends.Share.Cache
   alias Wocky.Notifier
   alias Wocky.Repo
-  alias Wocky.Roster.Invitation
-  alias Wocky.Roster.Item
-  alias Wocky.Roster.Share
-  alias Wocky.Roster.Share.Cache
 
   require Logger
 
-  @type share_type :: Item.share_type()
+  @type share_type :: Friend.share_type()
   @type relationship :: :self | :friend | :invited | :invited_by | :none
   @type error :: {:error, term()}
 
-  @spec get_item(User.tid(), User.tid()) :: Item.t() | nil
-  def get_item(user, contact), do: Item.get(user, contact)
+  @spec get_friend(User.tid(), User.tid()) :: Friend.t() | nil
+  def get_friend(user, friend), do: Friend.get(user, friend)
 
   @doc """
   Befriends two users.
@@ -131,7 +131,7 @@ defmodule Wocky.Roster do
       contact_id: User.id(contact),
       share_type: share_type
     }
-    |> Item.insert_changeset()
+    |> Friend.insert_changeset()
     |> Repo.insert(
       on_conflict: {:replace, [:share_type]},
       conflict_target: [:user_id, :contact_id]
@@ -140,12 +140,12 @@ defmodule Wocky.Roster do
 
   @doc "Removes all relationships (friend + follow) between the two users"
   @spec unfriend(User.tid(), User.tid()) :: :ok
-  def unfriend(a, b) do
-    Item
-    |> with_pair(a, b)
+  def unfriend(user, friend) do
+    Friend
+    |> with_pair(user, friend)
     |> Repo.delete_all()
 
-    Invitation.delete_pair(a, b)
+    Invitation.delete_pair(user, friend)
 
     :ok
   end
@@ -160,22 +160,22 @@ defmodule Wocky.Roster do
           (r.user_id == ^b_id and r.contact_id == ^a_id)
   end
 
-  @spec update_name(User.tid(), User.tid(), binary()) :: Repo.result(Item.t())
-  def update_name(user, contact, name) do
-    do_update_item(user, contact, %{name: name})
+  @spec update_name(User.tid(), User.tid(), binary()) :: Repo.result(Friend.t())
+  def update_name(user, friend, name) do
+    do_update_item(user, friend, %{name: name})
   end
 
   @spec update_sharing(User.tid(), User.tid(), share_type(), Keyword.t()) ::
-          Repo.result(Item.t())
-  def update_sharing(user, contact, share_type, _opts \\ []) do
+          Repo.result(Friend.t())
+  def update_sharing(user, friend, share_type, _opts \\ []) do
     # TODO The `opts` parameter exists to support extended options for
     # "nearby" sharing
-    do_update_item(user, contact, %{share_type: share_type})
+    do_update_item(user, friend, %{share_type: share_type})
   end
 
-  defp do_update_item(user, contact, changes) do
-    {User.id(user), User.id(contact)}
-    |> Item.update_changeset(changes)
+  defp do_update_item(user, friend, changes) do
+    {User.id(user), User.id(friend)}
+    |> Friend.update_changeset(changes)
     |> Repo.update()
   end
 
@@ -184,7 +184,7 @@ defmodule Wocky.Roster do
   def stop_sharing_location(user) do
     user_id = User.id(user)
 
-    Item
+    Friend
     |> where(user_id: ^user_id)
     |> Repo.update_all(
       set: [
@@ -200,7 +200,7 @@ defmodule Wocky.Roster do
   defp get_relationship(user, contact) do
     cond do
       User.id(user) == User.id(contact) -> {:self, nil}
-      item = Item.get(user, contact) -> {:friend, item}
+      item = Friend.get(user, contact) -> {:friend, item}
       invitation = Invitation.get(user, contact) -> {:invited, invitation}
       invitation = Invitation.get(contact, user) -> {:invited_by, invitation}
       Block.blocked?(User.id(user), User.id(contact)) -> {:blocked, nil}
@@ -225,7 +225,7 @@ defmodule Wocky.Roster do
 
   @doc "Returns true if the two users are friends"
   @spec friend?(User.tid(), User.tid()) :: boolean
-  def friend?(user, contact), do: !is_nil(Item.get(user, contact))
+  def friend?(user, contact), do: !is_nil(Friend.get(user, contact))
 
   @doc "Returns true if the first user has invited the second to be friends"
   @spec invited?(User.tid(), User.tid()) :: boolean
@@ -251,10 +251,10 @@ defmodule Wocky.Roster do
     end
   end
 
-  @spec items_query(User.tid(), User.tid()) :: Queryable.t() | error()
-  def items_query(user, requestor) do
+  @spec friend_entries_query(User.tid(), User.tid()) :: Queryable.t() | error()
+  def friend_entries_query(user, requestor) do
     with_same_user(user, requestor, fn user_id ->
-      where(Item, [i], i.user_id == ^user_id)
+      where(Friend, [i], i.user_id == ^user_id)
     end)
   end
 
@@ -278,7 +278,7 @@ defmodule Wocky.Roster do
   def friends_query(user, requestor) do
     with_same_user(user, requestor, fn user_id ->
       User
-      |> join(:left, [u], i in Item, on: u.id == i.contact_id)
+      |> join(:left, [u], i in Friend, on: u.id == i.contact_id)
       |> where([..., i], i.user_id == ^user_id)
     end)
   end
@@ -317,7 +317,7 @@ defmodule Wocky.Roster do
   end
 
   defp location_shares_query do
-    Item
+    Friend
     |> preload([:user, :contact])
     |> where([i], i.share_type != "disabled")
     |> order_by([i], desc: i.share_changed_at)

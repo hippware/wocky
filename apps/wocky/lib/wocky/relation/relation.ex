@@ -11,6 +11,7 @@ defmodule Wocky.Relation do
   alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.Events.GeofenceEvent
+  alias Wocky.Friends
   alias Wocky.GeoUtils
   alias Wocky.Location
   alias Wocky.Notifier
@@ -21,7 +22,6 @@ defmodule Wocky.Relation do
   alias Wocky.Relation.Invitation
   alias Wocky.Relation.Subscription
   alias Wocky.Repo
-  alias Wocky.Roster
 
   @type relationship ::
           :visible
@@ -304,7 +304,7 @@ defmodule Wocky.Relation do
 
     friends =
       sender
-      |> Roster.friends_query(sender)
+      |> Friends.friends_query(sender)
       |> Repo.all()
       |> MapSet.new()
       |> MapSet.put(sender)
@@ -372,7 +372,7 @@ defmodule Wocky.Relation do
 
   @spec subscribe(User.t(), Bot.t()) :: :ok | {:error, :permission_denied}
   def subscribe(user, bot) do
-    if Roster.self_or_friend?(user.id, bot.user_id) do
+    if Friends.self_or_friend?(user.id, bot.user_id) do
       %Subscription{}
       |> Subscription.changeset(%{user_id: user.id, bot_id: bot.id})
       |> Repo.insert!(
@@ -475,7 +475,7 @@ defmodule Wocky.Relation do
         %Bot{id: bot_id, user_id: user_id},
         %User{id: user_id} = user
       ) do
-    if Roster.friend?(invitee, user) do
+    if Friends.friend?(invitee, user) do
       %Invitation{}
       |> Invitation.changeset(%{
         user_id: user.id,

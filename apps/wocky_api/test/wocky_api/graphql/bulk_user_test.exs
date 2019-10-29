@@ -7,9 +7,9 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
   alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.DynamicLink.Sandbox, as: DLSandbox
+  alias Wocky.Friends
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
   alias Wocky.SMS.Sandbox, as: SMSSandbox
 
   setup do
@@ -195,9 +195,9 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
 
     test "should return the correct relationship for target users", ctx do
       [friend, inviter, invitee] = Enum.slice(ctx.users, 0..2)
-      Roster.befriend(ctx.user, friend)
-      Roster.make_friends(inviter, ctx.user, :disabled)
-      Roster.make_friends(ctx.user, invitee, :disabled)
+      Friends.befriend(ctx.user, friend)
+      Friends.make_friends(inviter, ctx.user, :disabled)
+      Friends.make_friends(ctx.user, invitee, :disabled)
 
       result =
         run_query(@query, ctx.user, %{
@@ -385,7 +385,7 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
 
       Enum.each(
         ctx.users,
-        fn u -> assert Roster.relationship(ctx.user, u) == :invited end
+        fn u -> assert Friends.relationship(ctx.user, u) == :invited end
       )
     end
 
@@ -512,7 +512,7 @@ defmodule WockyAPI.GraphQL.BulkUserTest do
 
       # Internal invitation result
       assert has_result(results, n3, n3, u, nil, "INTERNAL_INVITATION_SENT")
-      assert Roster.relationship(ctx.user, u) == :invited
+      assert Friends.relationship(ctx.user, u) == :invited
 
       # Bad number
       assert has_result(

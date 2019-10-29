@@ -3,12 +3,12 @@ defmodule Wocky.Callbacks.BotTest do
 
   alias Wocky.Callbacks.Bot, as: BotCallback
   alias Wocky.Callbacks.BotSubscription, as: SubCallback
+  alias Wocky.Friends
   alias Wocky.GeoUtils
   alias Wocky.Location.Handler
   alias Wocky.POI
   alias Wocky.Relation
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
 
   setup_all do
     BotCallback.register()
@@ -21,7 +21,7 @@ defmodule Wocky.Callbacks.BotTest do
 
     bot = Factory.insert(:bot, user: owner)
 
-    Roster.befriend(owner, user)
+    Friends.befriend(owner, user)
 
     # Make sure the handler is instantiated
     pid = Handler.get_handler(user)

@@ -3,6 +3,7 @@ defmodule Wocky.Relation.RelationTest do
 
   alias Ecto.Adapters.SQL
   alias Wocky.Account.User
+  alias Wocky.Friends
   alias Wocky.GeoUtils
   alias Wocky.POI
   alias Wocky.POI.Bot
@@ -10,7 +11,6 @@ defmodule Wocky.Relation.RelationTest do
   alias Wocky.Relation.Invitation
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Roster
 
   defp eq_bot(bot1, bot2),
     do: Map.drop(bot1, [:user]) == Map.drop(bot2, [:user])
@@ -53,7 +53,7 @@ defmodule Wocky.Relation.RelationTest do
 
     test "should return the bot for a subscriber", ctx do
       subscriber = Factory.insert(:user)
-      Roster.befriend(subscriber, ctx.user)
+      Friends.befriend(subscriber, ctx.user)
       Relation.subscribe(subscriber, ctx.bot)
 
       ctx.bot.id |> Relation.get_bot(subscriber) |> assert_bot_eq(ctx.bot)
@@ -125,7 +125,7 @@ defmodule Wocky.Relation.RelationTest do
       pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)
       subscribed_bot = Factory.insert(:bot)
 
-      Roster.befriend(ctx.user, subscribed_bot.user)
+      Friends.befriend(ctx.user, subscribed_bot.user)
       Relation.subscribe(ctx.user, subscribed_bot)
 
       {:ok,
@@ -147,7 +147,7 @@ defmodule Wocky.Relation.RelationTest do
   describe "get_active_bots/1" do
     setup ctx do
       subscriber = Factory.insert(:user)
-      Roster.befriend(subscriber, ctx.user)
+      Friends.befriend(subscriber, ctx.user)
       Relation.subscribe(subscriber, ctx.bot)
 
       {:ok, subscriber: subscriber}
@@ -205,7 +205,7 @@ defmodule Wocky.Relation.RelationTest do
   describe "get_bots_by_relationship/3" do
     setup ctx do
       [stranger, subscriber, visitor, invitee] = Factory.insert_list(4, :user)
-      Enum.map([subscriber, visitor, invitee], &Roster.befriend(&1, ctx.user))
+      Enum.map([subscriber, visitor, invitee], &Friends.befriend(&1, ctx.user))
 
       Relation.subscribe(ctx.user, ctx.bot)
       Relation.subscribe(subscriber, ctx.bot)
@@ -456,7 +456,7 @@ defmodule Wocky.Relation.RelationTest do
   describe "subscribers" do
     setup ctx do
       sub = Factory.insert(:user)
-      Roster.befriend(sub, ctx.user)
+      Friends.befriend(sub, ctx.user)
       Relation.subscribe(sub, ctx.bot)
 
       {:ok, sub: sub}
@@ -486,7 +486,7 @@ defmodule Wocky.Relation.RelationTest do
 
     test "should get visitors when they are present", ctx do
       visitor = Factory.insert(:user)
-      Roster.befriend(visitor, ctx.user)
+      Friends.befriend(visitor, ctx.user)
       Relation.subscribe(visitor, ctx.bot)
       Relation.visit(visitor, ctx.bot, false)
       assert Relation.get_visitors(ctx.bot) == [visitor]
@@ -497,9 +497,9 @@ defmodule Wocky.Relation.RelationTest do
     setup %{bot: bot, user: user} do
       friend1 = Factory.insert(:user)
       friend2 = Factory.insert(:user)
-      Roster.befriend(friend1, friend2)
-      Roster.befriend(friend1, user)
-      Roster.befriend(friend2, user)
+      Friends.befriend(friend1, friend2)
+      Friends.befriend(friend1, user)
+      Friends.befriend(friend2, user)
 
       stranger = Factory.insert(:user)
 
@@ -526,7 +526,7 @@ defmodule Wocky.Relation.RelationTest do
   describe "bot relationships" do
     setup ctx do
       other_user = Factory.insert(:user)
-      Roster.befriend(ctx.user, other_user)
+      Friends.befriend(ctx.user, other_user)
 
       owned_bot = Factory.insert(:bot, user: ctx.user)
       invited_bot = Factory.insert(:bot, user: other_user)
@@ -608,8 +608,8 @@ defmodule Wocky.Relation.RelationTest do
 
   def create_subscription(ctx) do
     [user, visitor, stranger] = Factory.insert_list(3, :user)
-    Roster.befriend(ctx.user, user)
-    Roster.befriend(ctx.user, visitor)
+    Friends.befriend(ctx.user, user)
+    Friends.befriend(ctx.user, visitor)
 
     Factory.insert(:subscription, user: user, bot: ctx.bot)
 
@@ -650,7 +650,7 @@ defmodule Wocky.Relation.RelationTest do
 
     test "when a subscription does not already exist", ctx do
       new_user = Factory.insert(:user)
-      Roster.befriend(new_user, ctx.owner)
+      Friends.befriend(new_user, ctx.owner)
 
       result = Relation.subscribe(new_user, ctx.bot)
 
@@ -772,7 +772,7 @@ defmodule Wocky.Relation.RelationTest do
   describe "invite/3" do
     setup ctx do
       [invitee, stranger] = Factory.insert_list(2, :user, device: "testing")
-      Roster.befriend(ctx.user, invitee)
+      Friends.befriend(ctx.user, invitee)
 
       {:ok, invitee: invitee, stranger: stranger}
     end
@@ -811,7 +811,7 @@ defmodule Wocky.Relation.RelationTest do
 
   defp setup_invitation(ctx) do
     invitee = Factory.insert(:user, device: "testing")
-    Roster.befriend(ctx.user, invitee)
+    Friends.befriend(ctx.user, invitee)
 
     invitation =
       Factory.insert(:bot_invitation,

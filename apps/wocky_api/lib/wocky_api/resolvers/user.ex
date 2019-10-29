@@ -7,14 +7,14 @@ defmodule WockyAPI.Resolvers.User do
   alias Absinthe.Subscription
   alias Wocky.Account
   alias Wocky.Events.LocationRequest
+  alias Wocky.Friends
+  alias Wocky.Friends.Friend
+  alias Wocky.Friends.Share
   alias Wocky.Location
   alias Wocky.Location.UserLocation
   alias Wocky.Notifier
   alias Wocky.Notifier.Push
   alias Wocky.Repo
-  alias Wocky.Roster
-  alias Wocky.Roster.Item
-  alias Wocky.Roster.Share
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
 
@@ -54,16 +54,16 @@ defmodule WockyAPI.Resolvers.User do
   defp contacts_query(user, args, requestor) do
     case args[:relationship] do
       nil ->
-        {:query, Roster.friends_query(user, requestor)}
+        {:query, Friends.friends_query(user, requestor)}
 
       :friend ->
-        {:query, Roster.friends_query(user, requestor)}
+        {:query, Friends.friends_query(user, requestor)}
 
       :invited ->
-        {:query, Roster.sent_invitations_query(user, requestor)}
+        {:query, Friends.sent_invitations_query(user, requestor)}
 
       :invited_by ->
-        {:query, Roster.received_invitations_query(user, requestor)}
+        {:query, Friends.received_invitations_query(user, requestor)}
 
       :follower ->
         {:ok, Connection.from_list([], args)}
@@ -76,21 +76,21 @@ defmodule WockyAPI.Resolvers.User do
   def get_contact_relationship(_root, _args, %{
         source: %{node: target_user, parent: parent}
       }) do
-    {:ok, Roster.relationship(parent, target_user)}
+    {:ok, Friends.relationship(parent, target_user)}
   end
 
   def get_contact_created_at(_root, _args, %{
         source: %{node: target_user, parent: parent}
       }) do
-    item = Roster.get_item(parent, target_user)
-    {:ok, item.created_at}
+    friend = Friends.get_friend(parent, target_user)
+    {:ok, friend.created_at}
   end
 
   def get_friends(user, args, %{context: %{current_user: requestor}}),
-    do: roster_query(user, args, requestor, &Roster.items_query/2)
+    do: roster_query(user, args, requestor, &Friends.friend_entries_query/2)
 
   def get_sent_invitations(user, args, %{context: %{current_user: requestor}}),
-    do: roster_query(user, args, requestor, &Roster.sent_invitations_query/2)
+    do: roster_query(user, args, requestor, &Friends.sent_invitations_query/2)
 
   def get_received_invitations(user, args, %{
         context: %{current_user: requestor}
@@ -100,7 +100,7 @@ defmodule WockyAPI.Resolvers.User do
           user,
           args,
           requestor,
-          &Roster.received_invitations_query/2
+          &Friends.received_invitations_query/2
         )
 
   defp roster_query(user, args, requestor, query, post_process \\ nil) do
@@ -167,7 +167,7 @@ defmodule WockyAPI.Resolvers.User do
   def live_share_location(_root, args, %{context: %{current_user: user}}) do
     input = args[:input]
 
-    case Roster.update_sharing(user.id, input.shared_with_id, :always) do
+    case Friends.update_sharing(user.id, input.shared_with_id, :always) do
       {:ok, item} ->
         _ = maybe_update_location(input, user)
         {:ok, Share.make_shim(item, input.expires_at)}
@@ -185,7 +185,7 @@ defmodule WockyAPI.Resolvers.User do
   def cancel_location_share(_root, args, %{context: %{current_user: user}}) do
     input = args[:input]
 
-    case Roster.update_sharing(user.id, input.shared_with_id, :disabled) do
+    case Friends.update_sharing(user.id, input.shared_with_id, :disabled) do
       {:ok, _} ->
         {:ok, true}
 
@@ -195,20 +195,20 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def cancel_all_location_shares(_root, _args, %{context: %{current_user: user}}) do
-    :ok = Roster.stop_sharing_location(user)
+    :ok = Friends.stop_sharing_location(user)
 
     {:ok, true}
   end
 
   def get_location_shares(_root, args, %{context: %{current_user: user}}) do
     user
-    |> Roster.get_location_shares_query()
+    |> Friends.get_location_shares_query()
     |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
   end
 
   def get_location_sharers(_root, args, %{context: %{current_user: user}}) do
     user
-    |> Roster.get_location_sharers_query()
+    |> Friends.get_location_sharers_query()
     |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
   end
 
@@ -258,7 +258,7 @@ defmodule WockyAPI.Resolvers.User do
   def notify_friends(user) do
     Repo.transaction(fn ->
       user
-      |> Roster.items_query(user)
+      |> Friends.friend_entries_query(user)
       |> Repo.stream()
       |> Stream.each(&notify_friend(&1, user))
       |> Stream.run()
@@ -274,7 +274,7 @@ defmodule WockyAPI.Resolvers.User do
   def location_catchup(user) do
     result =
       user
-      |> Roster.get_location_sharers()
+      |> Friends.get_location_sharers()
       |> Enum.reduce([], &build_location_catchup/2)
 
     {:ok, result}
@@ -292,7 +292,7 @@ defmodule WockyAPI.Resolvers.User do
 
   def notify_location(user, location) do
     user
-    |> Roster.get_location_share_targets()
+    |> Friends.get_location_share_targets()
     |> Enum.each(&do_notify_location(&1, user, location))
   end
 
@@ -324,11 +324,11 @@ defmodule WockyAPI.Resolvers.User do
   end
 
   def invite(_root, args, %{context: %{current_user: user}}) do
-    Roster.make_friends(user, args[:input][:user_id], :disabled)
+    Friends.make_friends(user, args[:input][:user_id], :disabled)
   end
 
   def unfriend(_root, args, %{context: %{current_user: user}}) do
-    :ok = Roster.unfriend(user, args[:input][:user_id])
+    :ok = Friends.unfriend(user, args[:input][:user_id])
     {:ok, true}
   end
 
@@ -336,13 +336,13 @@ defmodule WockyAPI.Resolvers.User do
     contact_id = args[:input][:user_id]
     new_name = args[:input][:name]
 
-    case Roster.update_name(user, contact_id, new_name) do
+    case Friends.update_name(user, contact_id, new_name) do
       {:ok, _} -> {:ok, true}
       error -> error
     end
   end
 
-  def get_contact_user(%Item{} = c, _args, _context) do
+  def get_contact_user(%Friend{} = c, _args, _context) do
     {:ok,
      c
      |> Repo.preload([:contact])

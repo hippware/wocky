@@ -4,6 +4,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Faker.Lorem
   alias Wocky.Account.User
   alias Wocky.Block
+  alias Wocky.Friends
   alias Wocky.GeoUtils
   alias Wocky.POI
   alias Wocky.POI.Bot
@@ -14,7 +15,6 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
-  alias Wocky.Roster
   alias WockyAPI.Factory, as: APIFactory
 
   setup do
@@ -751,7 +751,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   describe "local bots" do
     setup %{user: user, user2: user2} do
       Repo.delete_all(Bot)
-      Roster.befriend(user, user2)
+      Friends.befriend(user, user2)
 
       {owned, subscribed, unrelated} =
         Enum.reduce(1..4, {[], [], []}, fn x, {o, s, u} ->
@@ -1111,7 +1111,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     """
 
     setup ctx do
-      Roster.befriend(ctx.user, ctx.user2)
+      Friends.befriend(ctx.user, ctx.user2)
       unsubbed_bot = Factory.insert(:bot, user: ctx.user2)
 
       Factory.insert(:bot_invitation,
@@ -1595,7 +1595,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   describe "sending invitations" do
     setup ctx do
-      Roster.befriend(ctx.user, ctx.user3)
+      Friends.befriend(ctx.user, ctx.user3)
 
       :ok
     end
@@ -1698,7 +1698,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   describe "responding to invitations" do
     setup shared do
-      Roster.befriend(shared.user, shared.user3)
+      Friends.befriend(shared.user, shared.user3)
 
       %{id: id} =
         Factory.insert(:bot_invitation,

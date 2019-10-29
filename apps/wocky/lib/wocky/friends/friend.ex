@@ -1,4 +1,4 @@
-defmodule Wocky.Roster.Item do
+defmodule Wocky.Friends.Friend do
   @moduledoc """
   DB interface module for roster items
   """
@@ -50,13 +50,13 @@ defmodule Wocky.Roster.Item do
   @insert_fields [:user_id, :contact_id | @update_fields]
 
   @spec get(User.tid(), User.tid()) :: t() | nil
-  def get(user, contact) do
+  def get(user, friend) do
     user_id = User.id(user)
-    contact_id = User.id(contact)
+    friend_id = User.id(friend)
 
     __MODULE__
     |> where(user_id: ^user_id)
-    |> where(contact_id: ^contact_id)
+    |> where(contact_id: ^friend_id)
     |> Repo.one()
   end
 
@@ -64,20 +64,19 @@ defmodule Wocky.Roster.Item do
   def insert_changeset(params),
     do: changeset(%__MODULE__{}, @insert_fields, params)
 
-  @spec update_changeset({User.id(), User.id()} | Item.t(), map()) ::
-          Changeset.t()
-  def update_changeset({uid, cid}, params) do
-    case get(uid, cid) do
-      nil -> error_changeset(uid, cid, params)
+  @spec update_changeset({User.id(), User.id()} | t(), map()) :: Changeset.t()
+  def update_changeset({uid, fid}, params) do
+    case get(uid, fid) do
+      nil -> error_changeset(uid, fid, params)
       item -> update_changeset(item, params)
     end
   end
 
-  def update_changeset(%Item{} = struct, params),
+  def update_changeset(%__MODULE__{} = struct, params),
     do: changeset(struct, @update_fields, params)
 
-  defp error_changeset(uid, cid, params) do
-    %__MODULE__{user_id: uid, contact_id: cid}
+  defp error_changeset(uid, fid, params) do
+    %__MODULE__{user_id: uid, contact_id: fid}
     |> cast(params, @update_fields)
     |> add_error(:contact_id, "must be a friend")
   end

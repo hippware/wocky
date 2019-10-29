@@ -9,11 +9,11 @@ defmodule Wocky.Account.AccountTest do
   alias Wocky.Account.InviteCode
   alias Wocky.Account.User
   alias Wocky.Block
+  alias Wocky.Friends
   alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Roster
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
 
@@ -445,7 +445,7 @@ defmodule Wocky.Account.AccountTest do
   describe "searchable checks" do
     setup ctx do
       other_user = Factory.insert(:user)
-      Roster.befriend(ctx.user, other_user)
+      Friends.befriend(ctx.user, other_user)
 
       owned_bot = Factory.insert(:bot, user: ctx.user)
       pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)
@@ -498,7 +498,7 @@ defmodule Wocky.Account.AccountTest do
 
     test "it should friend the current user and the owner of the code", ctx do
       assert Account.redeem_invite_code(ctx.redeemer, ctx.code)
-      assert Roster.friend?(ctx.user, ctx.redeemer)
+      assert Friends.friend?(ctx.user, ctx.redeemer)
     end
 
     test "it should return true if the redeemer created the code", ctx do

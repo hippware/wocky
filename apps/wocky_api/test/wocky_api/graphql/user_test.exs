@@ -6,13 +6,13 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Block
+  alias Wocky.Friends
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Notifier.Push.Token
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Roster
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)
@@ -434,7 +434,7 @@ defmodule WockyAPI.GraphQL.UserTest do
 
   describe "live location sharing" do
     setup %{user: user, user2: user2} do
-      Roster.befriend(user, user2)
+      Friends.befriend(user, user2)
 
       :ok
     end
@@ -461,7 +461,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       sharer = user.id
       shared_with = user2.id
 
-      {:ok, item} = Roster.update_sharing(user, user2, :always)
+      {:ok, item} = Friends.update_sharing(user, user2, :always)
       id = to_string(item.share_id)
 
       result = run_query(@query, user, %{})
@@ -508,7 +508,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       sharer = user.id
       shared_with = user2.id
 
-      {:ok, item} = Roster.update_sharing(user, user2, :always)
+      {:ok, item} = Friends.update_sharing(user, user2, :always)
       id = to_string(item.share_id)
 
       result = run_query(@query, user2, %{})
@@ -615,7 +615,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "stop sharing location", %{user: user, user2: user2} do
-      {:ok, _} = Roster.update_sharing(user, user2, :always)
+      {:ok, _} = Friends.update_sharing(user, user2, :always)
 
       result =
         run_query(@query, user, %{
@@ -644,7 +644,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "stop all location sharing", %{user: user, user2: user2} do
-      {:ok, _} = Roster.update_sharing(user, user2, :always)
+      {:ok, _} = Friends.update_sharing(user, user2, :always)
 
       result = run_query(@query, user, %{})
 
@@ -704,7 +704,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get contacts by relationship", %{user: user, user2: user2} do
-      Roster.befriend(user, user2)
+      Friends.befriend(user, user2)
       id2 = user2.id
 
       for rel <- [nil, "FRIEND"] do
@@ -835,11 +835,11 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Roster.relationship(shared.user, shared.user2) == :invited
+      assert Friends.relationship(shared.user, shared.user2) == :invited
     end
 
     test "should make a friend from a invited_by", shared do
-      Roster.make_friends(shared.user2, shared.user, :disabled)
+      Friends.make_friends(shared.user2, shared.user, :disabled)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -851,7 +851,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Roster.relationship(shared.user, shared.user2) == :friend
+      assert Friends.relationship(shared.user, shared.user2) == :friend
     end
 
     test "should return an error for a blocked user", shared do
@@ -923,7 +923,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     }
     """
     test "should remove all relationship with a friend", shared do
-      Roster.befriend(shared.user, shared.user2)
+      Friends.befriend(shared.user, shared.user2)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -934,11 +934,11 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Roster.relationship(shared.user, shared.user2) == :none
+      assert Friends.relationship(shared.user, shared.user2) == :none
     end
 
     test "should remove all relationship with an invitee", shared do
-      Roster.make_friends(shared.user, shared.user2, :always)
+      Friends.make_friends(shared.user, shared.user2, :always)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -949,11 +949,11 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Roster.relationship(shared.user, shared.user2) == :none
+      assert Friends.relationship(shared.user, shared.user2) == :none
     end
 
     test "should remove all relationship with an invited_by", shared do
-      Roster.make_friends(shared.user2, shared.user, :always)
+      Friends.make_friends(shared.user2, shared.user, :always)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -964,7 +964,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Roster.relationship(shared.user, shared.user2) == :none
+      assert Friends.relationship(shared.user, shared.user2) == :none
     end
 
     test "should work for a blocked user", shared do
@@ -1003,10 +1003,10 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get friends", %{user: user, user2: user2} do
-      Roster.befriend(user, user2)
+      Friends.befriend(user, user2)
 
       name = Name.name()
-      Roster.update_name(user, user2, name)
+      Friends.update_name(user, user2, name)
 
       id2 = user2.id
 
@@ -1052,7 +1052,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get sent_invitations", %{user: user, user2: user2} do
-      Roster.make_friends(user, user2, :always)
+      Friends.make_friends(user, user2, :always)
       id = user.id
       id2 = user2.id
 
@@ -1098,7 +1098,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "get received_invitations", %{user: user, user2: user2} do
-      Roster.make_friends(user2, user, :always)
+      Friends.make_friends(user2, user, :always)
       id = user.id
       id2 = user2.id
 
@@ -1140,7 +1140,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     """
 
     test "assign a name to a friend", %{user: user, user2: user2} do
-      Roster.befriend(user, user2)
+      Friends.befriend(user, user2)
       new_name = Name.name()
 
       result =
@@ -1156,7 +1156,7 @@ defmodule WockyAPI.GraphQL.UserTest do
                }
              }
 
-      assert Roster.get_item(user, user2).name == new_name
+      assert Friends.get_friend(user, user2).name == new_name
     end
 
     test "should fail when the user doesn't exist", %{user: user} do

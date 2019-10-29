@@ -5,13 +5,13 @@ defmodule Wocky.Account.User do
 
   alias Wocky.Account.Avatar
   alias Wocky.Account.InviteCode
+  alias Wocky.Friends.Friend
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.POI.Bot
   alias Wocky.Presence
   alias Wocky.Relation.Invitation
   alias Wocky.Relation.Subscription
   alias Wocky.Repo
-  alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS.Metadata, as: TROSMetadata
 
   @primary_key {:id, :binary_id, autogenerate: false}
@@ -54,8 +54,8 @@ defmodule Wocky.Account.User do
 
     has_many :bots, Bot
     has_many :push_tokens, PushToken
-    has_many :roster_contacts, RosterItem, foreign_key: :contact_id
-    has_many :roster_items, RosterItem
+    has_many :roster_contacts, Friend, foreign_key: :contact_id
+    has_many :roster_items, Friend
     has_many :tros_metadatas, TROSMetadata
     has_many :invite_codes, InviteCode
     has_many :sent_invitations, Invitation

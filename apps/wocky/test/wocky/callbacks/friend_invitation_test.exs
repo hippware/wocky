@@ -1,15 +1,15 @@
-defmodule Wocky.Callbacks.RosterInvitationTest do
+defmodule Wocky.Callbacks.FriendInvitationTest do
   use Wocky.WatcherCase
 
   alias Faker.Code
   alias Pigeon.APNS.Notification, as: APNSNotification
-  alias Wocky.Callbacks.RosterInvitation, as: Callback
+  alias Wocky.Callbacks.FriendInvitation, as: Callback
+  alias Wocky.Friends
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
 
   setup_all do
     Callback.register()
@@ -29,7 +29,7 @@ defmodule Wocky.Callbacks.RosterInvitationTest do
     end
 
     test "invite user", ctx do
-      Roster.make_friends(ctx.user2, ctx.user1, :always)
+      Friends.make_friends(ctx.user2, ctx.user1, :always)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 10_000, global: true)
       assert length(msgs) == 1

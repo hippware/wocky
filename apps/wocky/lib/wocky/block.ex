@@ -10,8 +10,8 @@ defmodule Wocky.Block do
 
   alias Ecto.Queryable
   alias Wocky.Account.User
+  alias Wocky.Friends
   alias Wocky.Repo
-  alias Wocky.Roster
 
   @foreign_key_type :binary_id
   @primary_key false
@@ -36,7 +36,7 @@ defmodule Wocky.Block do
     }
     |> Repo.insert(on_conflict: :nothing)
 
-    Roster.unfriend(blocker, blockee)
+    Friends.unfriend(blocker, blockee)
 
     update_counter("blocking.blocked", 1)
 

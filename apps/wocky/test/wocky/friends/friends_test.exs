@@ -1,17 +1,17 @@
-defmodule Wocky.Roster.RosterTest do
+defmodule Wocky.Friends.FriendsTest do
   use Wocky.DataCase, async: true
 
   alias Faker.Code
   alias Faker.Name
   alias Wocky.Block
+  alias Wocky.Friends
+  alias Wocky.Friends.Friend
+  alias Wocky.Friends.Invitation
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
-  alias Wocky.Roster.Invitation
-  alias Wocky.Roster.Item
 
   setup do
     # A user with 5 friends
@@ -20,7 +20,7 @@ defmodule Wocky.Roster.RosterTest do
     friends =
       for _ <- 1..5 do
         c = Factory.insert(:user)
-        Roster.befriend(user, c)
+        Friends.befriend(user, c)
         c
       end
 
@@ -37,7 +37,7 @@ defmodule Wocky.Roster.RosterTest do
     Block.block(blocked_viewer, invitee)
 
     nil_handle_user = Factory.insert(:user, handle: nil)
-    Roster.befriend(nil_handle_user, user)
+    Friends.befriend(nil_handle_user, user)
 
     {:ok,
      user: user,
@@ -49,10 +49,10 @@ defmodule Wocky.Roster.RosterTest do
      blocked_viewer: blocked_viewer}
   end
 
-  describe "get_item/2" do
+  describe "get_friend/2" do
     test "should return the roster item for the specified contact", ctx do
       Enum.map(ctx.all_friends, fn c ->
-        assert ctx.user |> Roster.get_item(c) |> Map.get(:contact_id) == c.id
+        assert ctx.user |> Friends.get_friend(c) |> Map.get(:contact_id) == c.id
       end)
     end
   end
@@ -63,8 +63,8 @@ defmodule Wocky.Roster.RosterTest do
     end
 
     test "befriend/2 when there is no existing relationship", ctx do
-      assert :ok = Roster.befriend(ctx.user, ctx.stranger)
-      assert Roster.friend?(ctx.user, ctx.stranger)
+      assert :ok = Friends.befriend(ctx.user, ctx.stranger)
+      assert Friends.friend?(ctx.user, ctx.stranger)
     end
 
     test "befriend/2 when there is an existing relationship", ctx do
@@ -72,7 +72,7 @@ defmodule Wocky.Roster.RosterTest do
       name2 = Name.first_name()
 
       Factory.insert(
-        :roster_item,
+        :friend,
         name: name,
         user: ctx.user,
         contact: ctx.stranger,
@@ -80,16 +80,16 @@ defmodule Wocky.Roster.RosterTest do
       )
 
       Factory.insert(
-        :roster_item,
+        :friend,
         user: ctx.stranger,
         contact: ctx.user,
         name: name2
       )
 
-      assert :ok = Roster.befriend(ctx.user, ctx.stranger)
-      assert Roster.friend?(ctx.user, ctx.stranger)
-      assert Roster.get_item(ctx.user, ctx.stranger).name == name
-      assert Roster.get_item(ctx.stranger, ctx.user).name == name2
+      assert :ok = Friends.befriend(ctx.user, ctx.stranger)
+      assert Friends.friend?(ctx.user, ctx.stranger)
+      assert Friends.get_friend(ctx.user, ctx.stranger).name == name
+      assert Friends.get_friend(ctx.stranger, ctx.user).name == name2
     end
   end
 
@@ -99,7 +99,7 @@ defmodule Wocky.Roster.RosterTest do
     end
 
     test "should create an invitation for a stranger", ctx do
-      assert Roster.make_friends(ctx.user, ctx.stranger, :always) ==
+      assert Friends.make_friends(ctx.user, ctx.stranger, :always) ==
                {:ok, :invited}
 
       assert %Invitation{share_type: :always} =
@@ -107,21 +107,21 @@ defmodule Wocky.Roster.RosterTest do
     end
 
     test "should accept an existing invitation", ctx do
-      assert Roster.make_friends(ctx.user, ctx.inviter, :always) ==
+      assert Friends.make_friends(ctx.user, ctx.inviter, :always) ==
                {:ok, :friend}
 
-      assert %Item{share_type: :always} = Item.get(ctx.user, ctx.inviter)
-      assert %Item{share_type: :always} = Item.get(ctx.inviter, ctx.user)
+      assert %Friend{share_type: :always} = Friend.get(ctx.user, ctx.inviter)
+      assert %Friend{share_type: :always} = Friend.get(ctx.inviter, ctx.user)
     end
 
     test "should update sharing after multiple calls", ctx do
-      assert Roster.make_friends(ctx.user, ctx.stranger, :always) ==
+      assert Friends.make_friends(ctx.user, ctx.stranger, :always) ==
                {:ok, :invited}
 
       assert %Invitation{share_type: :always} =
                Invitation.get(ctx.user, ctx.stranger)
 
-      assert Roster.make_friends(ctx.user, ctx.stranger, :nearby) ==
+      assert Friends.make_friends(ctx.user, ctx.stranger, :nearby) ==
                {:ok, :invited}
 
       assert %Invitation{share_type: :nearby} =
@@ -129,12 +129,12 @@ defmodule Wocky.Roster.RosterTest do
     end
 
     test "should no no effect on an existing friend", ctx do
-      assert Roster.make_friends(ctx.user, ctx.contact, :always) ==
+      assert Friends.make_friends(ctx.user, ctx.contact, :always) ==
                {:ok, :friend}
     end
 
     test "should have no effect on self", ctx do
-      assert {:error, cs} = Roster.make_friends(ctx.user, ctx.user, :always)
+      assert {:error, cs} = Friends.make_friends(ctx.user, ctx.user, :always)
       assert errors_on(cs).invitee_id == ["self"]
     end
 
@@ -142,7 +142,7 @@ defmodule Wocky.Roster.RosterTest do
       Sandbox.clear_notifications()
       Push.enable(ctx.user, "testing", Code.isbn13())
 
-      assert Roster.make_friends(ctx.user, ctx.inviter, :always) ==
+      assert Friends.make_friends(ctx.user, ctx.inviter, :always) ==
                {:ok, :friend}
 
       notifications = Sandbox.wait_notifications(count: 1, timeout: 5000)
@@ -159,21 +159,21 @@ defmodule Wocky.Roster.RosterTest do
     end
 
     test "unfriend/2 when users are friends", ctx do
-      assert :ok = Roster.unfriend(ctx.user, ctx.contact)
-      refute Roster.get_item(ctx.user, ctx.contact)
+      assert :ok = Friends.unfriend(ctx.user, ctx.contact)
+      refute Friends.get_friend(ctx.user, ctx.contact)
     end
 
     test "unfriend/2 when there is no existing relationship", ctx do
       stranger = Factory.insert(:user)
 
-      assert :ok = Roster.unfriend(ctx.user, stranger)
+      assert :ok = Friends.unfriend(ctx.user, stranger)
     end
 
     test "bots should no longer be subscribed", ctx do
       Relation.subscribe(ctx.contact, ctx.user_bot)
       Relation.subscribe(ctx.user, ctx.contact_bot)
 
-      Roster.unfriend(ctx.user, ctx.contact)
+      Friends.unfriend(ctx.user, ctx.contact)
 
       refute Relation.subscribed?(ctx.contact, ctx.user_bot)
       refute Relation.subscribed?(ctx.user, ctx.contact_bot)
@@ -183,18 +183,18 @@ defmodule Wocky.Roster.RosterTest do
       Relation.invite(ctx.contact, ctx.user_bot, ctx.user)
       Relation.invite(ctx.user, ctx.contact_bot, ctx.contact)
 
-      Roster.unfriend(ctx.user, ctx.contact)
+      Friends.unfriend(ctx.user, ctx.contact)
 
       refute Relation.invited?(ctx.contact, ctx.user_bot)
       refute Relation.invited?(ctx.user, ctx.contact_bot)
     end
 
     test "locations shares should be canceled", ctx do
-      Roster.update_sharing(ctx.user, ctx.contact, :always)
+      Friends.update_sharing(ctx.user, ctx.contact, :always)
 
-      Roster.unfriend(ctx.user, ctx.contact)
+      Friends.unfriend(ctx.user, ctx.contact)
 
-      assert Roster.get_location_shares(ctx.user) == []
+      assert Friends.get_location_shares(ctx.user) == []
     end
   end
 
@@ -202,161 +202,161 @@ defmodule Wocky.Roster.RosterTest do
     test "should update the existing contact name", ctx do
       new_name = Name.first_name()
 
-      assert {:ok, %Item{}} =
-               Roster.update_name(ctx.user, ctx.contact, new_name)
+      assert {:ok, %Friend{}} =
+               Friends.update_name(ctx.user, ctx.contact, new_name)
 
-      new_item = Roster.get_item(ctx.user, ctx.contact)
-      assert new_item.contact_id == ctx.contact.id
-      assert new_item.name == new_name
+      new_friend = Friends.get_friend(ctx.user, ctx.contact)
+      assert new_friend.contact_id == ctx.contact.id
+      assert new_friend.name == new_name
     end
 
     test "should fail when users aren't friends", ctx do
       stranger = Factory.insert(:user)
       new_name = Name.first_name()
 
-      assert {:error, cs} = Roster.update_name(ctx.user, stranger, new_name)
+      assert {:error, cs} = Friends.update_name(ctx.user, stranger, new_name)
       assert errors_on(cs).contact_id == ["must be a friend"]
     end
   end
 
   describe "update_sharing/4" do
     test "should start sharing", ctx do
-      assert {:ok, _} = Roster.update_sharing(ctx.user, ctx.contact, :always)
+      assert {:ok, _} = Friends.update_sharing(ctx.user, ctx.contact, :always)
 
-      assert [%Item{} = share] = Roster.get_location_shares(ctx.user)
-      assert [%Item{} = ^share] = Roster.get_location_sharers(ctx.contact)
+      assert [%Friend{} = share] = Friends.get_location_shares(ctx.user)
+      assert [%Friend{} = ^share] = Friends.get_location_sharers(ctx.contact)
       assert share.contact_id == ctx.contact.id
       assert share.share_type == :always
     end
 
     test "should update share type when sharing is already enabled", ctx do
-      assert {:ok, _} = Roster.update_sharing(ctx.user, ctx.contact, :always)
-      assert {:ok, _} = Roster.update_sharing(ctx.user, ctx.contact, :nearby)
+      assert {:ok, _} = Friends.update_sharing(ctx.user, ctx.contact, :always)
+      assert {:ok, _} = Friends.update_sharing(ctx.user, ctx.contact, :nearby)
 
-      assert [%Item{} = share] = Roster.get_location_shares(ctx.user)
+      assert [%Friend{} = share] = Friends.get_location_shares(ctx.user)
       assert share.share_type == :nearby
     end
 
     test "should disable sharing", ctx do
-      assert {:ok, _} = Roster.update_sharing(ctx.user, ctx.contact, :always)
-      assert {:ok, _} = Roster.update_sharing(ctx.user, ctx.contact, :disabled)
-      assert Roster.get_location_shares(ctx.user) == []
+      assert {:ok, _} = Friends.update_sharing(ctx.user, ctx.contact, :always)
+      assert {:ok, _} = Friends.update_sharing(ctx.user, ctx.contact, :disabled)
+      assert Friends.get_location_shares(ctx.user) == []
     end
 
     test "should not share location with a stranger", ctx do
       stranger = Factory.insert(:user)
 
-      assert {:error, cs} = Roster.update_sharing(ctx.user, stranger, :always)
+      assert {:error, cs} = Friends.update_sharing(ctx.user, stranger, :always)
       assert errors_on(cs).contact_id == ["must be a friend"]
-      assert Roster.get_location_shares(ctx.user) == []
+      assert Friends.get_location_shares(ctx.user) == []
     end
 
     test "should fail with bad share type", ctx do
-      assert {:error, cs} = Roster.update_sharing(ctx.user, ctx.contact, :bad)
+      assert {:error, cs} = Friends.update_sharing(ctx.user, ctx.contact, :bad)
       assert errors_on(cs).share_type == ["is invalid"]
     end
 
     test "should not share with self", ctx do
-      assert {:error, cs} = Roster.update_sharing(ctx.user, ctx.user, :always)
+      assert {:error, cs} = Friends.update_sharing(ctx.user, ctx.user, :always)
       assert errors_on(cs).contact_id == ["must be a friend"]
-      assert Roster.get_location_shares(ctx.user) == []
+      assert Friends.get_location_shares(ctx.user) == []
     end
   end
 
   describe "stop_sharing_location/1" do
     test "should remove existing location share", ctx do
-      assert {:ok, _} = Roster.update_sharing(ctx.user, ctx.contact, :always)
-      assert :ok = Roster.stop_sharing_location(ctx.user)
-      assert Roster.get_location_shares(ctx.user) == []
+      assert {:ok, _} = Friends.update_sharing(ctx.user, ctx.contact, :always)
+      assert :ok = Friends.stop_sharing_location(ctx.user)
+      assert Friends.get_location_shares(ctx.user) == []
     end
 
     test "should succeed if no location share exists", ctx do
-      assert :ok = Roster.stop_sharing_location(ctx.user)
+      assert :ok = Friends.stop_sharing_location(ctx.user)
     end
   end
 
   describe "relationship/2" do
     test "should return :self when both user IDs are equal", ctx do
-      assert Roster.relationship(ctx.user, ctx.user) == :self
+      assert Friends.relationship(ctx.user, ctx.user) == :self
     end
 
     test "should return :friend where the two users are friends", ctx do
-      assert Roster.relationship(ctx.user, ctx.contact) == :friend
-      assert Roster.relationship(ctx.contact, ctx.user) == :friend
+      assert Friends.relationship(ctx.user, ctx.contact) == :friend
+      assert Friends.relationship(ctx.contact, ctx.user) == :friend
     end
 
     test "should return :invited where user a has invited user b", ctx do
-      assert Roster.relationship(ctx.user, ctx.invitee) == :invited
+      assert Friends.relationship(ctx.user, ctx.invitee) == :invited
     end
 
     test "should return :invited_by where user b has invited user a", ctx do
-      assert Roster.relationship(ctx.user, ctx.inviter) == :invited_by
+      assert Friends.relationship(ctx.user, ctx.inviter) == :invited_by
     end
 
     test "should return :none if the users have no relationship", ctx do
-      assert Roster.relationship(ctx.user, ctx.rosterless_user) == :none
-      assert Roster.relationship(ctx.rosterless_user, ctx.user) == :none
+      assert Friends.relationship(ctx.user, ctx.rosterless_user) == :none
+      assert Friends.relationship(ctx.rosterless_user, ctx.user) == :none
     end
   end
 
   describe "self_or_friend?/1" do
     test "should return true when a user is a friend", ctx do
-      assert Roster.self_or_friend?(ctx.user, ctx.contact)
+      assert Friends.self_or_friend?(ctx.user, ctx.contact)
     end
 
     test "should return false if the user has blocked the contact", ctx do
       Block.block(ctx.user, ctx.contact)
 
-      refute Roster.self_or_friend?(ctx.user, ctx.contact)
+      refute Friends.self_or_friend?(ctx.user, ctx.contact)
     end
 
     test "should return false if the contact has blocked the user", ctx do
       Block.block(ctx.contact, ctx.user)
 
-      refute Roster.self_or_friend?(ctx.user, ctx.contact)
+      refute Friends.self_or_friend?(ctx.user, ctx.contact)
     end
 
     test "should return false for non-existant friends", ctx do
-      refute Roster.self_or_friend?(ctx.user, Factory.build(:user))
-      refute Roster.self_or_friend?(ctx.user, ctx.rosterless_user)
+      refute Friends.self_or_friend?(ctx.user, Factory.build(:user))
+      refute Friends.self_or_friend?(ctx.user, ctx.rosterless_user)
     end
 
     test "should return true for self", ctx do
-      assert Roster.self_or_friend?(ctx.user, ctx.user)
+      assert Friends.self_or_friend?(ctx.user, ctx.user)
     end
   end
 
   describe "friend?/1" do
     test "should return true when a user is a friend", ctx do
-      assert Roster.friend?(ctx.user, ctx.contact)
+      assert Friends.friend?(ctx.user, ctx.contact)
     end
 
     test "should return false if the user has blocked the contact", ctx do
       Block.block(ctx.user, ctx.contact)
 
-      refute Roster.friend?(ctx.user, ctx.contact)
+      refute Friends.friend?(ctx.user, ctx.contact)
     end
 
     test "should return false if the contact has blocked the user", ctx do
       Block.block(ctx.contact, ctx.user)
 
-      refute Roster.friend?(ctx.user, ctx.contact)
+      refute Friends.friend?(ctx.user, ctx.contact)
     end
 
     test "should return false for non-existant friends", ctx do
-      refute Roster.friend?(ctx.user, Factory.build(:user))
-      refute Roster.friend?(ctx.user, ctx.rosterless_user)
+      refute Friends.friend?(ctx.user, Factory.build(:user))
+      refute Friends.friend?(ctx.user, ctx.rosterless_user)
     end
 
     test "should return false for self", ctx do
-      refute Roster.friend?(ctx.user, ctx.user)
+      refute Friends.friend?(ctx.user, ctx.user)
     end
   end
 
-  describe "items_query/2" do
+  describe "friend_entries_query/2" do
     test "should return all roster items for a user", ctx do
       assert ctx.user
-             |> Roster.items_query(ctx.user)
+             |> Friends.friend_entries_query(ctx.user)
              |> Repo.all()
              |> Enum.map(& &1.contact_id)
              |> Enum.sort() ==
@@ -364,7 +364,7 @@ defmodule Wocky.Roster.RosterTest do
     end
 
     test "should return an error for a non-self user", ctx do
-      assert Roster.items_query(ctx.user, ctx.contact) ==
+      assert Friends.friend_entries_query(ctx.user, ctx.contact) ==
                {:error, :permission_denied}
     end
   end
@@ -372,13 +372,13 @@ defmodule Wocky.Roster.RosterTest do
   describe "sent_invitations_query/1" do
     test "return a query that will list all invited users", ctx do
       assert ctx.user
-             |> Roster.sent_invitations_query(ctx.user)
+             |> Friends.sent_invitations_query(ctx.user)
              |> Repo.one!()
              |> Map.get(:invitee_id) == ctx.invitee.id
     end
 
     test "will fail when it's not made on self", ctx do
-      assert Roster.sent_invitations_query(ctx.user, ctx.invitee) ==
+      assert Friends.sent_invitations_query(ctx.user, ctx.invitee) ==
                {:error, :permission_denied}
     end
   end
@@ -387,13 +387,13 @@ defmodule Wocky.Roster.RosterTest do
     test "return a query that will list all users that sent an invitation",
          ctx do
       assert ctx.user
-             |> Roster.received_invitations_query(ctx.user)
+             |> Friends.received_invitations_query(ctx.user)
              |> Repo.one!()
              |> Map.get(:user_id) == ctx.inviter.id
     end
 
     test "will fail when it's not made on self", ctx do
-      assert Roster.received_invitations_query(ctx.user, ctx.invitee) ==
+      assert Friends.received_invitations_query(ctx.user, ctx.invitee) ==
                {:error, :permission_denied}
     end
   end
@@ -406,28 +406,28 @@ defmodule Wocky.Roster.RosterTest do
     end
 
     test "should return all unblocked friends", ctx do
-      query = Roster.friends_query(ctx.user, ctx.user)
+      query = Friends.friends_query(ctx.user, ctx.user)
 
       assert Enum.sort(Repo.all(query)) == Enum.sort(ctx.all_friends)
     end
 
     test "should not return entries blocked by the requester", ctx do
       assert {:error, :permission_denied} ==
-               Roster.friends_query(ctx.user, ctx.blocked_user)
+               Friends.friends_query(ctx.user, ctx.blocked_user)
     end
   end
 
   describe "get_location_shares/1" do
     test "should not return disabled location shares", ctx do
       # Sharing is disabled by default on new friendships
-      assert Roster.get_location_shares(ctx.user) == []
+      assert Friends.get_location_shares(ctx.user) == []
     end
   end
 
   describe "get_location_sharers/1" do
     test "should not return disabled location shares", ctx do
       # Sharing is disabled by default on new friendships
-      assert Roster.get_location_sharers(ctx.contact) == []
+      assert Friends.get_location_sharers(ctx.contact) == []
     end
   end
 end

@@ -3,10 +3,10 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
   import Eventually
 
+  alias Wocky.Friends
   alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
   alias WockyAPI.Factory, as: APIFactory
 
   setup_all do
@@ -105,7 +105,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       bot: bot,
       subscription_id: subscription_id
     } do
-      Roster.befriend(user, user2)
+      Friends.befriend(user, user2)
 
       Relation.visit(user2, bot, true)
 
@@ -123,7 +123,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       bot: bot,
       subscription_id: subscription_id
     } do
-      Roster.befriend(user, user2)
+      Friends.befriend(user, user2)
 
       Relation.depart(user2, bot, true)
 
@@ -141,7 +141,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       subscription_id: subscription_id
     } do
       bot2 = Factory.insert(:bot, user: user2)
-      Roster.befriend(user, user2)
+      Friends.befriend(user, user2)
       {:ok, invitation} = Relation.invite(user, bot2, user2)
 
       assert_notification_update(subscription_id, %{
@@ -177,7 +177,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Roster.make_friends(user2, user, :disabled)
+      Friends.make_friends(user2, user, :disabled)
 
       assert_notification_update(subscription_id, %{
         "__typename" => "UserInvitationNotification",
@@ -210,9 +210,9 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Roster.befriend(user, user2)
+      Friends.befriend(user, user2)
 
-      {:ok, %{share_id: id}} = Roster.update_sharing(user2, user, :always)
+      {:ok, %{share_id: id}} = Friends.update_sharing(user2, user, :always)
 
       assert_location_update(subscription_id, user2.id, to_string(id))
     end
@@ -222,13 +222,13 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Roster.befriend(user, user2)
+      Friends.befriend(user, user2)
 
-      {:ok, %{share_id: id}} = Roster.update_sharing(user2, user, :always)
+      {:ok, %{share_id: id}} = Friends.update_sharing(user2, user, :always)
 
       assert_location_update(subscription_id, user2.id, to_string(id))
 
-      Roster.update_sharing(user2, user, :disabled)
+      Friends.update_sharing(user2, user, :disabled)
 
       assert_notification_update(subscription_id, %{
         "__typename" => "LocationShareEndNotification",
@@ -242,11 +242,11 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Roster.befriend(user, user2)
+      Friends.befriend(user, user2)
 
-      {:ok, %{share_id: id}} = Roster.update_sharing(user, user2, :always)
+      {:ok, %{share_id: id}} = Friends.update_sharing(user, user2, :always)
 
-      Roster.update_sharing(user, user2, :disabled)
+      Friends.update_sharing(user, user2, :disabled)
 
       assert_notification_update(subscription_id, %{
         "__typename" => "LocationShareEndSelfNotification",

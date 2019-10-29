@@ -6,12 +6,12 @@ defmodule Wocky.Callbacks.BotInvitationTest do
   alias Faker.Code
   alias Pigeon.APNS.Notification
   alias Wocky.Callbacks.BotInvitation, as: Callback
+  alias Wocky.Friends
   alias Wocky.Notifier.InBand.Notification, as: IBNotification
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Relation
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
 
   setup_all do
     Callback.register()
@@ -19,7 +19,7 @@ defmodule Wocky.Callbacks.BotInvitationTest do
 
   setup do
     [user, invitee] = Factory.insert_list(2, :user, device: "testing")
-    Roster.befriend(user, invitee)
+    Friends.befriend(user, invitee)
     bot = Factory.insert(:bot, user: user)
 
     Sandbox.clear_notifications(global: true)

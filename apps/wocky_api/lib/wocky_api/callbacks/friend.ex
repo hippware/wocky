@@ -1,9 +1,9 @@
-defmodule WockyAPI.Callbacks.RosterItem do
+defmodule WockyAPI.Callbacks.Friend do
   @moduledoc """
   Callbacks for roster item changes
   """
 
-  use DawdleDB.Handler, type: Wocky.Roster.Item
+  use DawdleDB.Handler, type: Wocky.Friends.Friend
 
   alias Wocky.Repo.Hydrator
   alias WockyAPI.Resolvers.User

@@ -2,9 +2,9 @@ defmodule WockyAPI.Resolvers.BulkUser do
   @moduledoc "GraphQL resolver for bulk user operations"
 
   alias Wocky.Account
+  alias Wocky.Friends
+  alias Wocky.Friends.BulkInvitation
   alias Wocky.PhoneNumber
-  alias Wocky.Roster
-  alias Wocky.Roster.BulkInvitation
 
   @max_lookups 100
 
@@ -57,7 +57,7 @@ defmodule WockyAPI.Resolvers.BulkUser do
 
   defp build_lookup_result(user, numbers, requestor) do
     request_numbers = Map.get(numbers, user.phone_number)
-    relationship = Roster.relationship(requestor, user)
+    relationship = Friends.relationship(requestor, user)
 
     {
       Enum.map(

@@ -37,7 +37,7 @@ defmodule Wocky.Notifier.InBand.Notification do
     belongs_to :bot, Bot
     belongs_to :bot_item, Wocky.POI.Item
     belongs_to :bot_invitation, Wocky.Relation.Invitation, type: :integer
-    belongs_to :share, Wocky.Roster.Item, type: :integer
+    belongs_to :share, Wocky.Friends.Friend, type: :integer
 
     timestamps()
   end

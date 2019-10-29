@@ -3,6 +3,7 @@ defmodule Wocky.Location.GeoFenceTest do
 
   alias Faker.Code
   alias Timex.Duration
+  alias Wocky.Friends
   alias Wocky.Location.BotEvent
   alias Wocky.Location.GeoFence
   alias Wocky.Location.UserLocation
@@ -12,7 +13,6 @@ defmodule Wocky.Location.GeoFenceTest do
   alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
 
   @device "testing"
 
@@ -25,7 +25,7 @@ defmodule Wocky.Location.GeoFenceTest do
     user = Factory.insert(:user)
     Push.enable(user, @device, Code.isbn13())
 
-    Roster.befriend(user, owner, notify: false)
+    Friends.befriend(user, owner, notify: false)
 
     # This user should never get notified in spite of being a subscriber
     stranger = Factory.insert(:user)
