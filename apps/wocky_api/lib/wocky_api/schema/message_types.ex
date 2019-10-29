@@ -5,8 +5,6 @@ defmodule WockyAPI.Schema.MessageTypes do
 
   use WockyAPI.Schema.Notation
 
-  import AbsintheErrorPayload.Payload
-
   alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.Message
 

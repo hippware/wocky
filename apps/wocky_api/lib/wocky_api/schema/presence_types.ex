@@ -5,8 +5,6 @@ defmodule WockyAPI.Schema.PresenceTypes do
 
   use WockyAPI.Schema.Notation
 
-  import AbsintheErrorPayload.Payload
-
   alias WockyAPI.Resolvers.Presence
 
   @desc "Presence data for a user"

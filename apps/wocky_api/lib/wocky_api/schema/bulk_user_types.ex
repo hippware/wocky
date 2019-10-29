@@ -5,8 +5,6 @@ defmodule WockyAPI.Schema.BulkUserTypes do
 
   use WockyAPI.Schema.Notation
 
-  import AbsintheErrorPayload.Payload
-
   alias WockyAPI.Resolvers.BulkUser
 
   @desc "Single result for userBulkLookup"

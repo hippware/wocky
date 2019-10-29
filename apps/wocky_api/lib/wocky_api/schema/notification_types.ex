@@ -5,9 +5,6 @@ defmodule WockyAPI.Schema.NotificationTypes do
 
   use WockyAPI.Schema.Notation
 
-  import Absinthe.Resolution.Helpers
-  import AbsintheErrorPayload.Payload
-
   alias WockyAPI.Resolvers.Notification
   alias WockyAPI.Resolvers.User
 

@@ -5,9 +5,6 @@ defmodule WockyAPI.Schema.BotTypes do
 
   use WockyAPI.Schema.Notation
 
-  import Absinthe.Resolution.Helpers
-  import AbsintheErrorPayload.Payload
-
   alias WockyAPI.Resolvers.Bot
   alias WockyAPI.Resolvers.Media
 
