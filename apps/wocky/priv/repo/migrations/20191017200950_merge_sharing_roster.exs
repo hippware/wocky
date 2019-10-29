@@ -3,9 +3,9 @@ defmodule Wocky.Repo.Migrations.MergeSharingRoster do
 
   import Ecto.Query
 
-  alias Wocky.Repo
   alias Wocky.Friends.Friend
   alias Wocky.Friends.Friend.LocationShareTypeEnum
+  alias Wocky.Repo
 
   defmodule OldShare do
     @moduledoc false
