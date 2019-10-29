@@ -31,7 +31,7 @@ defmodule Wocky.Roster do
 
   NOTE The sharing level will be the same for both users. The sharing level
   can be passed in the `opts` parameter with the key `:share_type`. If no
-  share type is passed, sharing defaults to `:always`.
+  share type is passed, sharing defaults to `:disabled`.
 
   To befriend two users with different sharing types, use `make_friends/3`.
   """
@@ -231,7 +231,7 @@ defmodule Wocky.Roster do
   @spec invited?(User.tid(), User.tid()) :: boolean
   def invited?(user, contact), do: !is_nil(Invitation.get(user, contact))
 
-  @doc "Returns true if the roster item refers to a followee of the item owner"
+  @doc "Returns true if the first user has been invited by the second to be friends"
   @spec invited_by?(User.t(), User.t()) :: boolean
   def invited_by?(user, target), do: invited?(target, user)
 
