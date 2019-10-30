@@ -5,7 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: credo_naming (PR #2887), mix_test_watch (PR #2888)
+* Update: credo_naming (PR #2887), mix_test_watch (PR #2888, PR #2892)
+  * eventually (PR #2895), gen_stage (PR #2894)
+* Merge sharing table into roster items (#2871)
+* Remove deprecated mutations (#2893)
+* Consistent naming for Friends (#2897)
+  * Rename Roster => Friends and Item => Friend (PR #2898)
 
 
 # 2019.10.22+rf55d9bd
