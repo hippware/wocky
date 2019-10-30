@@ -73,6 +73,18 @@ defmodule WockyAPI.Schema.MessageTypes do
     value :outgoing
   end
 
+  @desc "DEPRECATED - use messageSendInput"
+  input_object :send_message_input do
+    @desc "Message recipient"
+    field :recipient_id, non_null(:uuid)
+
+    @desc "Textual content of the message"
+    field :content, :string
+
+    @desc "TROS URL of any attached media"
+    field :image_url, :string
+  end
+
   input_object :message_send_input do
     @desc "Message recipient"
     field :recipient_id, non_null(:uuid)
@@ -83,6 +95,7 @@ defmodule WockyAPI.Schema.MessageTypes do
     @desc "TROS URL of any attached media"
     field :image_url, :string
 
+    @desc "Client data - opaque to server"
     field :client_data, :string
   end
 
