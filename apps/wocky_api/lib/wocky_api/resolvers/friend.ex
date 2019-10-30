@@ -1,7 +1,6 @@
 defmodule WockyAPI.Resolvers.Friend do
   @moduledoc "Resolves GraphQL queries related to friends"
 
-  alias Absinthe.Relay.Connection
   alias Absinthe.Subscription
   alias Wocky.Friends
   alias Wocky.Friends.Friend
@@ -64,12 +63,6 @@ defmodule WockyAPI.Resolvers.Friend do
 
       :invited_by ->
         {:query, Friends.received_invitations_query(user, requestor)}
-
-      :follower ->
-        {:ok, Connection.from_list([], args)}
-
-      :following ->
-        {:ok, Connection.from_list([], args)}
     end
   end
 
