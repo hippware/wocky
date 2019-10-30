@@ -6,7 +6,6 @@ defmodule WockyAPI.Schema.NotificationTypes do
   use WockyAPI.Schema.Notation
 
   alias WockyAPI.Resolvers.Notification
-  alias WockyAPI.Resolvers.User
 
   connection :notifications, node_type: :notification do
     total_count_field()
@@ -247,7 +246,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   object :notification_subscriptions do
     @desc "Subscribe to newly created notifications for a user"
     field :notifications, non_null(:notification_update) do
-      user_subscription_config(&User.notification_subscription_topic/1)
+      user_subscription_config(&Notification.notification_subscription_topic/1)
     end
   end
 end

@@ -8,7 +8,6 @@ defmodule WockyAPI.Callbacks.Notification do
   alias Absinthe.Subscription
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Notification
-  alias WockyAPI.Resolvers.User
 
   def handle_insert(notification) do
     notification
@@ -22,7 +21,7 @@ defmodule WockyAPI.Callbacks.Notification do
   end
 
   defp publish(data, user_id) do
-    topic = User.notification_subscription_topic(user_id)
+    topic = Notification.notification_subscription_topic(user_id)
 
     Subscription.publish(Endpoint, data, [{:notifications, topic}])
   end

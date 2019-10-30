@@ -3,9 +3,9 @@ defmodule WockyAPI.Callbacks.LocationChanged do
 
   use Dawdle.Handler, only: [Wocky.Location.UserLocation.LocationChangedEvent]
 
-  alias WockyAPI.Resolvers.User
+  alias WockyAPI.Resolvers.Friend
 
   def handle_event(%{user: user, location: location}) do
-    User.notify_location(user, location)
+    Friend.notify_location(user, location)
   end
 end
