@@ -76,17 +76,6 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       assert cur_loc.lon == @location.coords.longitude
     end
 
-    test "returns 201 when data is valid with fetch", %{conn: conn, user: user} do
-      loc_with_fetch = @location |> Map.put(:isFetch, true)
-
-      conn =
-        post conn,
-             location_path(conn, :create, user.id),
-             packet([loc_with_fetch])
-
-      assert response(conn, 201)
-    end
-
     test "returns 201 without battery or activity data", %{
       conn: conn,
       user: user
