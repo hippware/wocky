@@ -22,6 +22,8 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Events.NewMessage
   alias Wocky.Events.UserInvitation
   alias Wocky.Events.UserInvitationResponse
+  alias Wocky.Friends.Friend, as: Friend
+  alias Wocky.Friends.Invitation, as: FriendInvitation
   alias Wocky.GeoUtils
   alias Wocky.Location.BotEvent
   alias Wocky.Location.UserLocation
@@ -34,8 +36,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Relation.Invitation, as: BotInvitation
   alias Wocky.Relation.Subscription
   alias Wocky.Repo.ID
-  alias Wocky.Roster.Invitation, as: RosterInvitation
-  alias Wocky.Roster.Item, as: RosterItem
   alias Wocky.TROS
   alias Wocky.TROS.Metadata, as: TROSMetadata
 
@@ -112,8 +112,8 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def roster_item_factory do
-    %RosterItem{
+  def friend_factory do
+    %Friend{
       user: build(:user),
       contact: build(:user),
       name: Name.first_name(),
@@ -122,7 +122,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def user_invitation_factory do
-    %RosterInvitation{
+    %FriendInvitation{
       user: build(:user),
       invitee: build(:user),
       share_type: :always

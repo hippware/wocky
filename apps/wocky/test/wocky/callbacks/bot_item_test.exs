@@ -7,12 +7,12 @@ defmodule Wocky.Callbacks.BotItemTest do
   alias Faker.Lorem
   alias Pigeon.APNS.Notification
   alias Wocky.Callbacks.BotItem, as: Callback
+  alias Wocky.Friends
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.POI
   alias Wocky.Relation
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
 
   setup_all do
     Callback.register()
@@ -21,8 +21,8 @@ defmodule Wocky.Callbacks.BotItemTest do
   setup do
     [user, author, sub] = Factory.insert_list(3, :user, device: "testing")
     bot = Factory.insert(:bot, user: user)
-    Roster.befriend(user, author)
-    Roster.befriend(user, sub)
+    Friends.befriend(user, author)
+    Friends.befriend(user, sub)
     Relation.subscribe(author, bot)
     Relation.subscribe(sub, bot)
 

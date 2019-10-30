@@ -1,4 +1,4 @@
-defmodule Wocky.Roster.Invitation do
+defmodule Wocky.Friends.Invitation do
   @moduledoc """
   DB interface module for roster invitations
   """
@@ -8,12 +8,12 @@ defmodule Wocky.Roster.Invitation do
   import Ecto.Query
 
   alias Wocky.Account.User
+  alias Wocky.Friends.Friend
   alias Wocky.Repo
-  alias Wocky.Roster.Item
 
   @foreign_key_type :binary_id
   schema "user_invitations" do
-    field :share_type, Item.LocationShareTypeEnum,
+    field :share_type, Friend.LocationShareTypeEnum,
       null: false,
       default: :disabled
 
@@ -28,7 +28,7 @@ defmodule Wocky.Roster.Invitation do
   @type t :: %__MODULE__{
           user: User.t(),
           invitee: User.t(),
-          share_type: Item.share_type(),
+          share_type: Friend.share_type(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()
         }
@@ -46,7 +46,7 @@ defmodule Wocky.Roster.Invitation do
     |> Repo.one()
   end
 
-  @spec add(User.tid(), User.tid(), Item.share_type()) :: Repo.result(t())
+  @spec add(User.tid(), User.tid(), Friend.share_type()) :: Repo.result(t())
   def add(user, target, share_type) do
     %__MODULE__{}
     |> changeset(%{

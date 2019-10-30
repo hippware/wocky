@@ -1,15 +1,15 @@
-defmodule Wocky.Callbacks.RosterItem do
+defmodule Wocky.Callbacks.Friend do
   @moduledoc "DB callback handler for location shares"
 
-  use DawdleDB.Handler, type: Wocky.Roster.Item
+  use DawdleDB.Handler, type: Wocky.Friends.Friend
 
   alias Wocky.Events.LocationShare
   alias Wocky.Events.LocationShareEnd
   alias Wocky.Events.LocationShareEndSelf
+  alias Wocky.Friends
+  alias Wocky.Friends.Share
   alias Wocky.Notifier
   alias Wocky.Repo.Hydrator
-  alias Wocky.Roster
-  alias Wocky.Roster.Share
 
   def handle_insert(%{share_type: stype} = new) when stype != :disabled,
     do: notify_share_start(new)
@@ -42,7 +42,7 @@ defmodule Wocky.Callbacks.RosterItem do
       |> Notifier.notify()
     end)
 
-    Roster.refresh_share_cache(share.user_id)
+    Friends.refresh_share_cache(share.user_id)
   end
 
   defp notify_share_end(share) do
@@ -64,6 +64,6 @@ defmodule Wocky.Callbacks.RosterItem do
       end
     end)
 
-    Roster.refresh_share_cache(share.user_id)
+    Friends.refresh_share_cache(share.user_id)
   end
 end

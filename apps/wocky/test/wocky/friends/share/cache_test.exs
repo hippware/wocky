@@ -1,14 +1,14 @@
-defmodule Wocky.Roster.Share.CacheTest do
+defmodule Wocky.Friends.Share.CacheTest do
   use Wocky.DataCase, async: true
 
+  alias Wocky.Friends.Share.Cache
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Roster.Share.Cache
 
   describe "refresh/1" do
     setup do
-      share1 = Factory.insert(:roster_item)
-      share2 = Factory.insert(:roster_item, user: share1.user)
+      share1 = Factory.insert(:friend)
+      share2 = Factory.insert(:friend, user: share1.user)
 
       {:ok,
        user: share1.user,
@@ -28,8 +28,7 @@ defmodule Wocky.Roster.Share.CacheTest do
     end
 
     test "should not load disabled shares", ctx do
-      share =
-        Factory.insert(:roster_item, share_type: :disabled, user: ctx.user)
+      share = Factory.insert(:friend, share_type: :disabled, user: ctx.user)
 
       results = Cache.refresh(ctx.user.id)
 
@@ -54,7 +53,7 @@ defmodule Wocky.Roster.Share.CacheTest do
 
   describe "get/1" do
     test "should refresh the cache automatically" do
-      share = Factory.insert(:roster_item)
+      share = Factory.insert(:friend)
 
       assert [share.contact.id] == Cache.get(share.user.id)
     end

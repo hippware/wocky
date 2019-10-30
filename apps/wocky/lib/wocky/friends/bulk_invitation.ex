@@ -1,4 +1,4 @@
-defmodule Wocky.Roster.BulkInvitation do
+defmodule Wocky.Friends.BulkInvitation do
   @moduledoc """
   Module for sending bulk invitations, both SMS (external) and internal
   """
@@ -6,8 +6,8 @@ defmodule Wocky.Roster.BulkInvitation do
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.DynamicLink
+  alias Wocky.Friends
   alias Wocky.PhoneNumber
-  alias Wocky.Roster
   alias Wocky.SMS.Messenger
 
   @type results :: [map()]
@@ -87,7 +87,7 @@ defmodule Wocky.Roster.BulkInvitation do
   # We found an unblocked user for this number - send an invite
   defp send_invitation(%{user: user} = r, sent_numbers, requestor) do
     result =
-      case Roster.make_friends(requestor, user, :disabled) do
+      case Friends.make_friends(requestor, user, :disabled) do
         {:ok, :invited} -> :internal_invitation_sent
         {:ok, :friend} -> :already_friends
         {:error, _} -> :self

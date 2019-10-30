@@ -1,4 +1,4 @@
-defmodule Wocky.Roster.Share.Cache do
+defmodule Wocky.Friends.Share.Cache do
   @moduledoc """
   A write-through cache for user location shares
   """
@@ -7,8 +7,8 @@ defmodule Wocky.Roster.Share.Cache do
 
   alias Timex.Duration
   alias Wocky.Account.User
+  alias Wocky.Friends.Friend
   alias Wocky.Repo
-  alias Wocky.Roster.Item
 
   # Let Redis expire an untouched cache after two weeks - cleans up any deleted
   # users but shouldn't add any significant refresh overhead.
@@ -37,7 +37,7 @@ defmodule Wocky.Roster.Share.Cache do
   @spec refresh(User.id()) :: [User.id()]
   def refresh(user_id) do
     values =
-      Item
+      Friend
       |> where([i], i.user_id == ^user_id)
       |> where([i], i.share_type != "disabled")
       |> select([i], i.contact_id)

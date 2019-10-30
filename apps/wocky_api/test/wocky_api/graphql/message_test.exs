@@ -3,12 +3,12 @@ defmodule WockyAPI.GraphQL.MessageTest do
 
   alias Faker.Lorem
   alias Wocky.Account
+  alias Wocky.Friends
   alias Wocky.Messaging
   alias Wocky.Messaging.Message
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
-  alias Wocky.Roster
   alias WockyAPI.Factory, as: APIFactory
 
   setup do
@@ -227,7 +227,7 @@ defmodule WockyAPI.GraphQL.MessageTest do
     } do
       text = Lorem.paragraph()
       data = Lorem.paragraph()
-      Roster.befriend(user, user2)
+      Friends.befriend(user, user2)
 
       result =
         run_query(@query, user, %{

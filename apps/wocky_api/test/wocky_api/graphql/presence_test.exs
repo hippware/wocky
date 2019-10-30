@@ -5,9 +5,9 @@ defmodule WockyAPI.GraphQL.PresenceTest do
   import Wocky.Presence.TestHelper
   import WockyAPI.GraphQLHelper
 
+  alias Wocky.Friends
   alias Wocky.Presence
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
 
   setup_all do
     # Share database access with the Presence Manager process.
@@ -24,7 +24,7 @@ defmodule WockyAPI.GraphQL.PresenceTest do
   setup ctx do
     [friend, stranger] = Factory.insert_list(2, :user)
 
-    Roster.befriend(ctx.user, friend)
+    Friends.befriend(ctx.user, friend)
 
     {:ok, friend: friend, stranger: stranger}
   end

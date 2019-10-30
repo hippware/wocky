@@ -5,16 +5,16 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   import WockyAPI.GraphQLHelper
 
   alias Wocky.Account
+  alias Wocky.Friends
+  alias Wocky.Friends.Share.Cache
   alias Wocky.Location
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
-  alias Wocky.Roster.Share.Cache
 
   setup_all do
     require_watcher()
 
     WockyAPI.Callbacks.LocationChanged.register()
-    WockyAPI.Callbacks.RosterItem.register()
+    WockyAPI.Callbacks.Friend.register()
     WockyAPI.Callbacks.User.register()
   end
 
@@ -51,7 +51,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
     setup %{user: user, socket: socket} do
       [friend, stranger] = Factory.insert_list(2, :user)
 
-      Roster.befriend(friend, user)
+      Friends.befriend(friend, user)
 
       ref = push_doc(socket, @query)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
@@ -115,8 +115,8 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
     setup %{user: user} do
       friend = Factory.insert(:user)
 
-      Roster.befriend(friend, user)
-      Roster.update_sharing(friend, user, :always)
+      Friends.befriend(friend, user)
+      Friends.update_sharing(friend, user, :always)
 
       # Wait for the cache to catch up
       assert_eventually(length(Cache.get(friend.id)) == 1)

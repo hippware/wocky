@@ -6,6 +6,7 @@ defmodule Wocky.Callbacks.ConnectionTest do
   alias Faker.Code
   alias Wocky.Callbacks.Connection, as: Callback
   alias Wocky.Factory, as: LocationFactory
+  alias Wocky.Friends
   alias Wocky.Location
   alias Wocky.Location.Handler
   alias Wocky.Location.UserLocation.Current
@@ -14,7 +15,6 @@ defmodule Wocky.Callbacks.ConnectionTest do
   alias Wocky.Presence.Manager
   alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
-  alias Wocky.Roster
   alias Wocky.Test.FakeSocket
 
   setup_all do
@@ -25,7 +25,7 @@ defmodule Wocky.Callbacks.ConnectionTest do
     sharer = Factory.insert(:user)
     shared_with = Factory.insert(:user)
 
-    Roster.befriend(sharer, shared_with, share_type: :always)
+    Friends.befriend(sharer, shared_with, share_type: :always)
 
     on_exit(fn ->
       [sharer, shared_with]

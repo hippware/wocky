@@ -1,9 +1,9 @@
-defmodule Wocky.Callbacks.RosterInvitation do
+defmodule Wocky.Callbacks.FriendInvitation do
   @moduledoc """
   DB Callback handler for user invitations
   """
 
-  use DawdleDB.Handler, type: Wocky.Roster.Invitation
+  use DawdleDB.Handler, type: Wocky.Friends.Invitation
 
   alias Wocky.Events.UserInvitation
   alias Wocky.Notifier

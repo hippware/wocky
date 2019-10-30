@@ -1,11 +1,11 @@
-defmodule Wocky.Callbacks.RosterItemTest do
+defmodule Wocky.Callbacks.FriendTest do
   use Wocky.WatcherCase
 
-  alias Wocky.Callbacks.RosterItem, as: Callback
+  alias Wocky.Callbacks.Friend, as: Callback
+  alias Wocky.Friends
+  alias Wocky.Friends.Share.Cache
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
-  alias Wocky.Roster.Share.Cache
 
   setup_all do
     Callback.register()
@@ -14,10 +14,10 @@ defmodule Wocky.Callbacks.RosterItemTest do
   setup do
     [user, friend1, friend2] = Factory.insert_list(3, :user)
 
-    Roster.befriend(user, friend1, notify: false)
-    Roster.befriend(user, friend2, notify: false)
+    Friends.befriend(user, friend1, notify: false)
+    Friends.befriend(user, friend2, notify: false)
 
-    {:ok, _} = Roster.update_sharing(user, friend1, :always)
+    {:ok, _} = Friends.update_sharing(user, friend1, :always)
 
     {:ok, user: user, friend1: friend1, friend2: friend2}
   end
@@ -41,7 +41,7 @@ defmodule Wocky.Callbacks.RosterItemTest do
       assert_eventually(in_band_notification_count(ctx.friend1) == 1)
       %Notification{id: id} = Repo.get_by(Notification, user_id: ctx.friend1.id)
 
-      Roster.update_sharing(ctx.user, ctx.friend1, :disabled)
+      Friends.update_sharing(ctx.user, ctx.friend1, :disabled)
 
       assert_eventually(in_band_notification_count(ctx.friend1) == 2)
 
@@ -59,7 +59,7 @@ defmodule Wocky.Callbacks.RosterItemTest do
          ending a location share generates a notification for the sharing user
          """,
          ctx do
-      Roster.update_sharing(ctx.user, ctx.friend1, :disabled)
+      Friends.update_sharing(ctx.user, ctx.friend1, :disabled)
 
       assert_eventually(in_band_notification_count(ctx.user) == 1)
 
@@ -80,7 +80,7 @@ defmodule Wocky.Callbacks.RosterItemTest do
     end
 
     test "starting another share inserts it into the cache", ctx do
-      {:ok, _} = Roster.update_sharing(ctx.user, ctx.friend2, :always)
+      {:ok, _} = Friends.update_sharing(ctx.user, ctx.friend2, :always)
 
       assert_eventually(
         [ctx.friend1.id, ctx.friend2.id] |> Enum.sort() ==
@@ -91,14 +91,14 @@ defmodule Wocky.Callbacks.RosterItemTest do
     test "ending a share removes it from the cache", ctx do
       assert_eventually([ctx.friend1.id] == Cache.get(ctx.user.id))
 
-      Roster.stop_sharing_location(ctx.user)
+      Friends.stop_sharing_location(ctx.user)
       assert_eventually([] == Cache.get(ctx.user.id))
     end
 
     test "unfriending updates the cache", ctx do
       assert_eventually([ctx.friend1.id] == Cache.get(ctx.user.id))
 
-      Roster.unfriend(ctx.user, ctx.friend1)
+      Friends.unfriend(ctx.user, ctx.friend1)
       assert_eventually([] == Cache.get(ctx.user.id))
     end
   end

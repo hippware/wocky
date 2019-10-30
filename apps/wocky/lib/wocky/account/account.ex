@@ -8,9 +8,9 @@ defmodule Wocky.Account do
   alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.Events.NewUser
+  alias Wocky.Friends
   alias Wocky.Notifier
   alias Wocky.Repo
-  alias Wocky.Roster
   alias Wocky.TROS
 
   require Logger
@@ -197,7 +197,7 @@ defmodule Wocky.Account do
       # Code has expired
       false
     else
-      :ok = Roster.befriend(redeemer, inviter)
+      :ok = Friends.befriend(redeemer, inviter)
       true
     end
   end

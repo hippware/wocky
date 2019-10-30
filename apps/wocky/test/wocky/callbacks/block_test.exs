@@ -4,11 +4,11 @@ defmodule Wocky.Callbacks.BlockTest do
   import Eventually
 
   alias Wocky.Block
+  alias Wocky.Friends
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Relation
   alias Wocky.Relation.Invitation
   alias Wocky.Repo.Factory
-  alias Wocky.Roster
 
   setup do
     [u1, u2] = Factory.insert_list(2, :user)
@@ -56,15 +56,15 @@ defmodule Wocky.Callbacks.BlockTest do
     end
 
     test "should cancel any location sharing", ctx do
-      assert_eventually(Roster.get_location_shares(ctx.user1) == [])
-      assert_eventually(Roster.get_location_shares(ctx.user2) == [])
+      assert_eventually(Friends.get_location_shares(ctx.user1) == [])
+      assert_eventually(Friends.get_location_shares(ctx.user2) == [])
     end
   end
 
   describe "block-triggered unsubscription" do
     test "should unsubscribe users from others bot", ctx do
       bot = Factory.insert(:bot, user: ctx.user1)
-      Roster.befriend(ctx.user1, ctx.user2)
+      Friends.befriend(ctx.user1, ctx.user2)
       Relation.subscribe(ctx.user2, bot)
 
       assert_eventually(Relation.subscribed?(ctx.user2, bot))
