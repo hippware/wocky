@@ -45,8 +45,7 @@ defmodule WockyAPI.GraphQL.LocationTest do
         "lat" => lat,
         "lon" => lon,
         "accuracy" => accuracy,
-        "device" => device,
-        "isFetch" => true
+        "device" => device
       }
 
       result = run_query(@query, user, %{"input" => location_input})

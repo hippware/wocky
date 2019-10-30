@@ -8,7 +8,6 @@ defmodule WockyAPI.Schema.UserTypes do
   import Absinthe.Resolution.Helpers
   import AbsintheErrorPayload.Payload
 
-  alias Absinthe.Relay.Connection
   alias WockyAPI.Resolvers.Block
   alias WockyAPI.Resolvers.Bot
   alias WockyAPI.Resolvers.Media
@@ -133,20 +132,6 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &Bot.get_active_bots/3
     end
 
-    @desc "The user's location history for a given device"
-    connection field :locations, node_type: :locations do
-      deprecate "This query is no longer supported and will return no data"
-      arg :device, non_null(:string)
-      resolve fn _, args, _ -> Connection.from_list([], args) end
-    end
-
-    @desc "The user's location event history"
-    connection field :location_events, node_type: :location_events do
-      deprecate "This query is no longer supported and will return no data"
-      arg :device, non_null(:string)
-      resolve fn _, args, _ -> Connection.from_list([], args) end
-    end
-
     @desc "The user's live location sharing sessions"
     connection field :location_shares, node_type: :user_location_live_shares do
       connection_complexity()
@@ -229,9 +214,6 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "The user has subscribed to the bot and does not own it"
     value :subscribed_not_owned
 
-    @desc "The user is a guest of the bot (will fire entry/exit events)"
-    value :guest, deprecate: "All subscribers are now guests"
-
     @desc "The user is a visitor to the bot (is currently within the bot)"
     value :visitor
   end
@@ -310,7 +292,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
   @desc "A user location update entry"
   object :location do
-    # DEPRECATED - all referring connections are deprecated return empty lists
     @desc "Unique ID of the location report"
     field :id, :uuid
 
@@ -334,74 +315,14 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Time of location report"
     field :created_at, non_null(:datetime)
-
-    @desc "List of events triggered by this location update"
-    connection field :events, node_type: :location_events do
-      resolve fn _, args, _ -> Connection.from_list([], args) end
-    end
-  end
-
-  connection :locations, node_type: :location do
-    total_count_field()
-
-    edge do
-    end
-  end
-
-  @desc "A user location event entry"
-  object :location_event do
-    @desc "The bot whose boundary was entered or exited"
-    field :bot, non_null(:bot), resolve: dataloader(Wocky)
-
-    @desc "The type of the event (enter, exit, etc)"
-    field :event, non_null(:location_event_type)
-
-    @desc "Time when the event was created"
-    field :created_at, non_null(:datetime)
-
-    @desc "The location update that triggered this event (if any)"
-    field :location, :location, resolve: dataloader(Wocky)
-  end
-
-  @desc "User location event type"
-  enum :location_event_type do
-    @desc "User is inside a bot's perimeter"
-    value :enter
-
-    @desc "User is outside a bot's perimeter"
-    value :exit
-
-    @desc "User has entered a bot's perimeter and debouncing has started"
-    value :transition_in
-
-    @desc "User has exited a bot's perimeter and debouncing has started"
-    value :transition_out
-
-    @desc "User has not sent location updates in some time and is now inactive"
-    value :timeout
-
-    @desc "User has reappeared after timeout while inside a bot's perimeter"
-    value :reactivate
-
-    @desc "User has reappeared after timeout while outside a bot's perimeter"
-    value :deactivate
-  end
-
-  connection :location_events, node_type: :location_event do
-    total_count_field()
-
-    edge do
-    end
   end
 
   @desc "Parameters for modifying a user"
   input_object :user_params do
     field :handle, :string
     field :image_url, :string
-    # Deprecated in favour of `name`:
-    field :first_name, :string
-    # Deprecated in favour of `name`:
-    field :last_name, :string
+    field :first_name, :string, deprecate: "Please use the single 'name' field"
+    field :last_name, :string, deprecate: "Please use the single 'name' field"
     field :name, :string
     field :email, :string
     field :tagline, :string
@@ -657,9 +578,6 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Is the device plugged in?"
     field :battery_charging, :boolean
-
-    @desc "DEPRECATED This field is ignored"
-    field :is_fetch, :boolean, deprecate: "This field will be ignored"
   end
 
   @desc "Response object for user location uploads"
