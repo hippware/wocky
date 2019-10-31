@@ -75,7 +75,12 @@ defmodule Wocky.Mixfile do
       {:dawdle, "~> 0.7"},
       {:dawdle_db, "~> 0.7"},
       {:distillery, "~> 2.0"},
-      {:ecto_enum, github: "gjaldon/ecto_enum", branch: "master"},
+      # TODO: Move back to release if/when Ecto 3.2 fixes are merged
+      # See: https://github.com/gjaldon/ecto_enum/pull/92
+      {:ecto_enum,
+       github: "dnsbty/ecto_enum",
+       ref: "a69a9dde72cf98497606f9603bd46e3924979145"},
+      # {:ecto_enum, github: "gjaldon/ecto_enum", branch: "master"},
       {:ecto_sql, "~> 3.0"},
       {:elixometer, github: "hippware/elixometer", branch: "working"},
       {:email_checker, "~> 0.1"},
