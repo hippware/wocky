@@ -30,6 +30,7 @@ defmodule WockyAPI.Resolvers.Friend do
     {:ok, Friends.relationship(parent, target_user)}
   end
 
+  # DEPRECATED
   def get_contact_created_at(_root, _args, %{
         source: %{node: target_user, parent: parent}
       }) do
@@ -41,6 +42,7 @@ defmodule WockyAPI.Resolvers.Friend do
     {:error, :unsupported}
   end
 
+  # DEPRECATED
   def get_contacts(user, args, %{context: %{current_user: requestor}}) do
     with {:query, query} <- contacts_query(user, args, requestor) do
       case query do
@@ -67,23 +69,23 @@ defmodule WockyAPI.Resolvers.Friend do
   end
 
   def get_friends(user, args, %{context: %{current_user: requestor}}),
-    do: roster_query(user, args, requestor, &Friends.friend_entries_query/2)
+    do: friends_query(user, args, requestor, &Friends.friend_entries_query/2)
 
   def get_sent_invitations(user, args, %{context: %{current_user: requestor}}),
-    do: roster_query(user, args, requestor, &Friends.sent_invitations_query/2)
+    do: friends_query(user, args, requestor, &Friends.sent_invitations_query/2)
 
   def get_received_invitations(user, args, %{
         context: %{current_user: requestor}
       }),
       do:
-        roster_query(
+        friends_query(
           user,
           args,
           requestor,
           &Friends.received_invitations_query/2
         )
 
-  defp roster_query(user, args, requestor, query, post_process \\ nil) do
+  defp friends_query(user, args, requestor, query, post_process \\ nil) do
     user
     |> query.(requestor)
     |> Utils.connection_from_query(
@@ -109,32 +111,29 @@ defmodule WockyAPI.Resolvers.Friend do
   # -------------------------------------------------------------------
   # Mutations
 
-  def invite(_root, args, %{context: %{current_user: user}}) do
-    Friends.make_friends(user, args[:input][:user_id], :disabled)
+  def friend_invite(%{input: input}, %{context: %{current_user: user}}) do
+    share_type = Map.get(input, :share_type, :disabled)
+    Friends.make_friends(user, input.user_id, share_type)
   end
 
-  def name_friend(_root, args, %{context: %{current_user: user}}) do
-    contact_id = args[:input][:user_id]
-    new_name = args[:input][:name]
-
-    case Friends.update_name(user, contact_id, new_name) do
+  # DEPRECATED
+  def friend_name(%{input: input}, %{context: %{current_user: user}}) do
+    case Friends.update_name(user, input.user_id, input.name) do
       {:ok, _} -> {:ok, true}
       error -> error
     end
   end
 
-  def unfriend(_root, args, %{context: %{current_user: user}}) do
-    :ok = Friends.unfriend(user, args[:input][:user_id])
-    {:ok, true}
+  def friend_name_update(%{input: input}, %{context: %{current_user: user}}) do
+    Friends.update_name(user, input.user_id, input.name)
   end
 
-  def live_share_location(_root, args, %{context: %{current_user: user}}) do
-    input = args[:input]
-
-    case Friends.update_sharing(user.id, input.shared_with_id, :always) do
-      {:ok, item} ->
+  def friend_share_update(%{input: input}, %{context: %{current_user: user}}) do
+    # TODO Pull sharing opts out of input and pass to update_sharing
+    case Friends.update_sharing(user.id, input.user_id, input.share_type) do
+      {:ok, friend} ->
         _ = maybe_update_location(input, user)
-        {:ok, Share.make_shim(item, input.expires_at)}
+        {:ok, friend}
 
       error ->
         error
@@ -146,9 +145,25 @@ defmodule WockyAPI.Resolvers.Friend do
 
   defp maybe_update_location(_args, _user), do: {:ok, :skip}
 
-  def cancel_location_share(_root, args, %{context: %{current_user: user}}) do
-    input = args[:input]
+  def friend_delete(%{input: input}, %{context: %{current_user: user}}) do
+    :ok = Friends.unfriend(user, input.user_id)
+    {:ok, true}
+  end
 
+  # DEPRECATED
+  def live_share_location(%{input: input}, %{context: %{current_user: user}}) do
+    case Friends.update_sharing(user.id, input.shared_with_id, :always) do
+      {:ok, item} ->
+        _ = maybe_update_location(input, user)
+        {:ok, Share.make_shim(item, input.expires_at)}
+
+      error ->
+        error
+    end
+  end
+
+  # DEPRECATED
+  def cancel_location_share(%{input: input}, %{context: %{current_user: user}}) do
     case Friends.update_sharing(user.id, input.shared_with_id, :disabled) do
       {:ok, _} ->
         {:ok, true}
@@ -158,7 +173,8 @@ defmodule WockyAPI.Resolvers.Friend do
     end
   end
 
-  def cancel_all_location_shares(_root, _args, %{context: %{current_user: user}}) do
+  # DEPRECATED
+  def cancel_all_location_shares(_args, %{context: %{current_user: user}}) do
     :ok = Friends.stop_sharing_location(user)
 
     {:ok, true}

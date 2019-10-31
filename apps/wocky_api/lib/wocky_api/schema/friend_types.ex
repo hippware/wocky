@@ -27,18 +27,47 @@ defmodule WockyAPI.Schema.FriendTypes do
     value :self
   end
 
-  @desc "Another user with whom a relationship exists"
-  object :contact do
-    @desc "The other user"
+  enum :friend_share_type do
+    @desc "Always share location to this contact (except when hidden)"
+    value :always
+
+    @desc """
+    Share location to this contact only when within the specified distance
+    from them
+    """
+    value :nearby
+
+    @desc "Never share location to this contact"
+    value :disabled
+  end
+
+  object :friend_share_config do
+    @desc "Range in meters within which 'nearby' sharing will activate"
+    field :nearby_distance, :integer
+
+    @desc "Cooldown period between 'nearby' sharing notifications"
+    field :notify_cooldown, :integer
+  end
+
+  @desc "Another user with whom a friendship exists"
+  object :friend do
+    @desc "The friend"
     field :user, non_null(:user), resolve: &Friend.get_contact_user/3
 
-    @desc "The current user's relationship with the other user"
-    field :relationship, :user_contact_relationship
+    @desc "DEPRECATED Always returns FRIEND"
+    field :relationship, :user_contact_relationship,
+      deprecate: "Always returns FRIEND."
 
     @desc "The current user's nickname for the other user"
     field :name, :string
 
-    @desc "The creation time of the contact"
+    @desc "The current user's share level with the other user"
+    field :share_type, non_null(:friend_share_type)
+
+    @desc "The current user's location share config for the other user"
+    field :share_config, :friend_share_config
+
+    @desc "The creation time of the friendship"
     field :created_at, non_null(:datetime)
   end
 
@@ -49,6 +78,9 @@ defmodule WockyAPI.Schema.FriendTypes do
 
     @desc "The recipient"
     field :recipient, :user, resolve: dataloader(Wocky, :invitee)
+
+    @desc "Share mode"
+    field :share_type, non_null(:friend_share_type)
 
     @desc "When the invitation was created"
     field :created_at, non_null(:datetime)
@@ -81,10 +113,37 @@ defmodule WockyAPI.Schema.FriendTypes do
     field :created_at, non_null(:datetime)
   end
 
+  @desc "Describes a relationship change with another user"
+  object :contact_relationship_change do
+    @desc "The other user"
+    field :user, non_null(:user), resolve: &Friend.get_contact_user/3
+
+    @desc "The current user's relationship with the other user"
+    field :relationship, :user_contact_relationship
+
+    @desc "The current user's nickname for the other user"
+    field :name, :string, deprecate: "This field will be removed."
+
+    @desc "The creation time of the contact"
+    field :created_at, non_null(:datetime),
+      deprecate: """
+      This field can be misleading, especially when relationship is NONE.
+      """
+  end
+
+  @desc "Data that is sent when a user's shared location changes"
+  object :user_location_update do
+    @desc "The user whose location has changed"
+    field :user, non_null(:user)
+
+    @desc "The user's new location"
+    field :location, non_null(:location)
+  end
+
   @desc "Attributes of a user location live sharing session"
   object :user_location_live_share do
     @desc "ID for this sharing session"
-    field :id, non_null(:aint)
+    field :id, non_null(:aint), deprecate: "This field will be removed"
 
     @desc "The user sharing their location"
     field :user, non_null(:other_user)
@@ -92,11 +151,15 @@ defmodule WockyAPI.Schema.FriendTypes do
     @desc "The user with whom the location is being shared"
     field :shared_with, non_null(:other_user)
 
+    @desc "The share mode"
+    field :share_type, non_null(:friend_share_type)
+
     @desc "When the share was created"
     field :created_at, non_null(:datetime)
 
     @desc "The expiry for the share"
-    field :expires_at, non_null(:datetime)
+    field :expires_at, non_null(:datetime),
+      deprecate: "Expiration is no longer supported"
   end
 
   # -------------------------------------------------------------------
@@ -116,7 +179,7 @@ defmodule WockyAPI.Schema.FriendTypes do
     end
   end
 
-  connection :friends, node_type: :contact do
+  connection :friends, node_type: :friend do
     total_count_field()
 
     edge do
@@ -143,10 +206,14 @@ defmodule WockyAPI.Schema.FriendTypes do
   input_object :friend_invite_input do
     @desc "The ID of the user to invite to be a friend"
     field :user_id, non_null(:uuid)
+
+    @desc "The share mode for the invited user (defaults to DISABLED)"
+    field :share_type, :friend_share_type
   end
 
   payload_object(:friend_invite_payload, :user_contact_relationship)
 
+  @desc "DEPRECATED"
   input_object :friend_name_input do
     @desc "The ID of the user to whom to assign a name"
     field :user_id, non_null(:uuid)
@@ -156,6 +223,38 @@ defmodule WockyAPI.Schema.FriendTypes do
   end
 
   payload_object(:friend_name_payload, :boolean)
+
+  input_object :friend_name_update_input do
+    @desc "The ID of the user to whom to assign a name"
+    field :user_id, non_null(:uuid)
+
+    @desc "The name to assign to the specified user"
+    field :name, non_null(:string)
+  end
+
+  input_object :friend_share_config_input do
+    @desc "Range in meters within which 'nearby' sharing will activate"
+    field :nearby_distance, :integer
+
+    @desc "Cooldown period between 'nearby' sharing notifications"
+    field :notify_cooldown, :integer
+  end
+
+  input_object :friend_share_update_input do
+    @desc "The ID of the contact user"
+    field :user_id, non_null(:uuid)
+
+    @desc "The share mode for the contact user"
+    field :share_type, non_null(:friend_share_type)
+
+    @desc "The location share config for the contact user"
+    field :share_config, :friend_share_config_input
+
+    @desc "Allows the user to set their location when updating sharing"
+    field :location, :user_location_update_input
+  end
+
+  payload_object(:friend_update_payload, :friend)
 
   input_object :friend_delete_input do
     @desc """
@@ -167,7 +266,7 @@ defmodule WockyAPI.Schema.FriendTypes do
 
   payload_object(:friend_delete_payload, :boolean)
 
-  @desc "Parameters for starting a live location share"
+  @desc "DEPRECATED Parameters for starting a live location share"
   input_object :user_location_live_share_input do
     @desc "The user with whom to share location"
     field :shared_with_id, non_null(:string)
@@ -181,7 +280,7 @@ defmodule WockyAPI.Schema.FriendTypes do
 
   payload_object(:user_location_live_share_payload, :user_location_live_share)
 
-  @desc "Parameters for canceling a live location share"
+  @desc "DEPRECATED Parameters for canceling a live location share"
   input_object :user_location_cancel_share_input do
     @desc "The user whose location sharing to cancel"
     field :shared_with_id, non_null(:string)
@@ -196,15 +295,29 @@ defmodule WockyAPI.Schema.FriendTypes do
     """
     field :friend_invite, type: :friend_invite_payload do
       arg :input, non_null(:friend_invite_input)
-      resolve &Friend.invite/3
+      resolve &Friend.friend_invite/2
+      changeset_mutation_middleware()
+    end
+
+    @desc "DEPRECATED Sets the nickname for a friend"
+    field :friend_name, type: :friend_name_payload do
+      deprecate "use friendNameUpdate instead"
+      arg :input, non_null(:friend_name_input)
+      resolve &Friend.friend_name/2
       changeset_mutation_middleware()
     end
 
     @desc "Sets the nickname for a friend"
-    # TODO Shouldn't this be :friend_name_update?
-    field :friend_name, type: :friend_name_payload do
-      arg :input, non_null(:friend_name_input)
-      resolve &Friend.name_friend/3
+    field :friend_name_update, type: :friend_update_payload do
+      arg :input, non_null(:friend_name_update_input)
+      resolve &Friend.friend_name_update/2
+      changeset_mutation_middleware()
+    end
+
+    @desc "Update the location sharing settings of a friendship"
+    field :friend_share_update, type: :friend_update_payload do
+      arg :input, non_null(:friend_share_update_input)
+      resolve &Friend.friend_share_update/2
       changeset_mutation_middleware()
     end
 
@@ -214,28 +327,31 @@ defmodule WockyAPI.Schema.FriendTypes do
     """
     field :friend_delete, type: :friend_delete_payload do
       arg :input, non_null(:friend_delete_input)
-      resolve &Friend.unfriend/3
+      resolve &Friend.friend_delete/2
       changeset_mutation_middleware()
     end
 
-    @desc "Share the user's location"
+    @desc "DEPRECATED Share the user's location"
     field :user_location_live_share, type: :user_location_live_share_payload do
+      deprecate "Set sharing options via friendShareUpdate"
       arg :input, non_null(:user_location_live_share_input)
-      resolve &Friend.live_share_location/3
+      resolve &Friend.live_share_location/2
       changeset_mutation_middleware()
     end
 
-    @desc "Cancel a live location share"
+    @desc "DEPRECATED Cancel a live location share"
     field :user_location_cancel_share, type: :user_location_cancel_share_payload do
+      deprecate "Set sharing options via friendShareUpdate"
       arg :input, non_null(:user_location_cancel_share_input)
-      resolve &Friend.cancel_location_share/3
+      resolve &Friend.cancel_location_share/2
       changeset_mutation_middleware()
     end
 
-    @desc "Cancel all live location shares"
+    @desc "DEPRECATED Cancel all live location shares"
     field :user_location_cancel_all_shares,
       type: :user_location_cancel_share_payload do
-      resolve &Friend.cancel_all_location_shares/3
+      deprecate "Set sharing options via friendShareUpdate"
+      resolve &Friend.cancel_all_location_shares/2
       changeset_mutation_middleware()
     end
   end
@@ -243,20 +359,11 @@ defmodule WockyAPI.Schema.FriendTypes do
   # -------------------------------------------------------------------
   # Subscriptions
 
-  @desc "Data that is sent when a user's shared location changes"
-  object :user_location_update do
-    @desc "The user whose location has changed"
-    field :user, non_null(:user)
-
-    @desc "The user's new location"
-    field :location, non_null(:location)
-  end
-
   object :friend_subscriptions do
     @desc """
     Receive an update when a contact's state (friended/unfriended) changes
     """
-    field :contacts, non_null(:contact) do
+    field :contacts, non_null(:contact_relationship_change) do
       user_subscription_config(&Friend.contacts_subscription_topic/1)
     end
 
