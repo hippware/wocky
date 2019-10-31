@@ -5,8 +5,6 @@ defmodule WockyAPI.Schema.MediaTypes do
 
   use WockyAPI.Schema.Notation
 
-  import AbsintheErrorPayload.Payload
-
   alias WockyAPI.Resolvers.Media
 
   @desc "A Wocky TROS media object"

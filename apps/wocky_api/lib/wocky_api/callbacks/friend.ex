@@ -6,7 +6,7 @@ defmodule WockyAPI.Callbacks.Friend do
   use DawdleDB.Handler, type: Wocky.Friends.Friend
 
   alias Wocky.Repo.Hydrator
-  alias WockyAPI.Resolvers.User
+  alias WockyAPI.Resolvers.Friend
 
   def handle_insert(new),
     do: send_update(new, :friend)
@@ -16,7 +16,7 @@ defmodule WockyAPI.Callbacks.Friend do
 
   defp send_update(item, relationship) do
     Hydrator.with_assocs(item, [:contact], fn rec ->
-      User.notify_contact(rec, relationship)
+      Friend.notify_contact(rec, relationship)
     end)
   end
 end

@@ -8,6 +8,9 @@ defmodule WockyAPI.Schema.Notation do
       use Absinthe.Schema.Notation
       use Absinthe.Relay.Schema.Notation, :modern
 
+      import Absinthe.Resolution.Helpers
+      import AbsintheErrorPayload.Payload
+
       import unquote(__MODULE__), only: :macros
     end
   end

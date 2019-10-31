@@ -16,6 +16,9 @@ defmodule WockyAPI.Resolvers.Notification do
     {:user_proximity, :user_proximity_notification}
   ]
 
+  def notification_subscription_topic(user_id),
+    do: "notification_subscription_" <> user_id
+
   def get_notifications(parent, args, %{context: %{current_user: requestor}}) do
     requestor
     |> Notification.user_query(

@@ -5,15 +5,36 @@ defmodule WockyAPI.Schema.UserTypes do
 
   use WockyAPI.Schema.Notation
 
-  import Absinthe.Resolution.Helpers
-  import AbsintheErrorPayload.Payload
-
   alias WockyAPI.Resolvers.Block
   alias WockyAPI.Resolvers.Bot
+  alias WockyAPI.Resolvers.Friend
   alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.Message
   alias WockyAPI.Resolvers.Presence
   alias WockyAPI.Resolvers.User
+
+  # -------------------------------------------------------------------
+  # Objects
+
+  enum :user_bot_relationship do
+    @desc "A bot is visible to the user"
+    value :visible
+
+    @desc "A bot is owned by the user"
+    value :owned
+
+    @desc "A user has been invited to a bot"
+    value :invited
+
+    @desc "The user has subscribed to the bot (including owned bots)"
+    value :subscribed
+
+    @desc "The user has subscribed to the bot and does not own it"
+    value :subscribed_not_owned
+
+    @desc "The user is a visitor to the bot (is currently within the bot)"
+    value :visitor
+  end
 
   @desc "The main Wocky user interface"
   interface :user do
@@ -76,7 +97,7 @@ defmodule WockyAPI.Schema.UserTypes do
     connection field :contacts, node_type: :contacts do
       connection_complexity()
       arg :relationship, :user_contact_relationship
-      resolve &User.get_contacts/3
+      resolve &Friend.get_contacts/3
     end
 
     @desc "The user's current presence status"
@@ -135,13 +156,13 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "The user's live location sharing sessions"
     connection field :location_shares, node_type: :user_location_live_shares do
       connection_complexity()
-      resolve &User.get_location_shares/3
+      resolve &Friend.get_location_shares/3
     end
 
     @desc "The live location sharing sessions with the user"
     connection field :location_sharers, node_type: :user_location_live_shares do
       connection_complexity()
-      resolve &User.get_location_sharers/3
+      resolve &Friend.get_location_sharers/3
     end
 
     @desc "The user's archive of messages sorted from oldest to newest"
@@ -173,22 +194,22 @@ defmodule WockyAPI.Schema.UserTypes do
                  """ do
       connection_complexity()
       arg :relationship, :user_contact_relationship
-      resolve &User.get_contacts/3
+      resolve &Friend.get_contacts/3
     end
 
     connection field :friends, node_type: :friends do
       connection_complexity()
-      resolve &User.get_friends/3
+      resolve &Friend.get_friends/3
     end
 
     connection field :sent_invitations, node_type: :invitations do
       connection_complexity()
-      resolve &User.get_sent_invitations/3
+      resolve &Friend.get_sent_invitations/3
     end
 
     connection field :received_invitations, node_type: :invitations do
       connection_complexity()
-      resolve &User.get_received_invitations/3
+      resolve &Friend.get_received_invitations/3
     end
 
     @desc "Other users that this user has blocked"
@@ -198,198 +219,8 @@ defmodule WockyAPI.Schema.UserTypes do
     end
   end
 
-  enum :user_bot_relationship do
-    @desc "A bot is visible to the user"
-    value :visible
-
-    @desc "A bot is owned by the user"
-    value :owned
-
-    @desc "A user has been invited to a bot"
-    value :invited
-
-    @desc "The user has subscribed to the bot (including owned bots)"
-    value :subscribed
-
-    @desc "The user has subscribed to the bot and does not own it"
-    value :subscribed_not_owned
-
-    @desc "The user is a visitor to the bot (is currently within the bot)"
-    value :visitor
-  end
-
-  enum :user_contact_relationship do
-    @desc "The parent user has invited the child user to be a friend"
-    value :invited
-
-    @desc "The child user has invited the user to be a friend"
-    value :invited_by
-
-    @desc "The two users are friends"
-    value :friend
-
-    @desc "The users have no relationship"
-    value :none
-
-    @desc "The user is the requesting user"
-    value :self
-  end
-
-  @desc "Another user with whom a relationship exists"
-  object :contact do
-    @desc "The other user"
-    field :user, non_null(:user), resolve: &User.get_contact_user/3
-
-    @desc "The current user's relationship with the other user"
-    field :relationship, :user_contact_relationship
-
-    @desc "The current user's nickname for the other user"
-    field :name, :string
-
-    @desc "The creation time of the contact"
-    field :created_at, non_null(:datetime)
-  end
-
-  connection :contacts, node_type: :user do
-    total_count_field()
-
-    edge do
-      @desc "The relationship between the parent and child users"
-      field :relationship, :user_contact_relationship,
-        do: resolve(&User.get_contact_relationship/3)
-
-      @desc "When the relationship was created"
-      field :created_at, non_null(:datetime),
-        do: resolve(&User.get_contact_created_at/3)
-    end
-  end
-
-  connection :friends, node_type: :contact do
-    total_count_field()
-
-    edge do
-    end
-  end
-
-  connection :invitations, node_type: :invitation do
-    total_count_field()
-
-    edge do
-    end
-  end
-
-  @desc "An invitation from one user to another to become a friend"
-  object :invitation do
-    @desc "The sender"
-    field :sender, :user, resolve: dataloader(Wocky, :user)
-
-    @desc "The recipient"
-    field :recipient, :user, resolve: dataloader(Wocky, :invitee)
-
-    @desc "When the invitation was created"
-    field :created_at, non_null(:datetime)
-  end
-
-  @desc "A user location update entry"
-  object :location do
-    @desc "Unique ID of the location report"
-    field :id, :uuid
-
-    @desc "Latitude in degrees"
-    field :lat, non_null(:float)
-
-    @desc "Longitude in degrees"
-    field :lon, non_null(:float)
-
-    @desc "Reported accuracy in meters"
-    field :accuracy, non_null(:float)
-
-    @desc "The reported activity for this location update"
-    field :activity, :string
-
-    @desc "The confidence value for the reported activity"
-    field :activity_confidence, :integer
-
-    @desc "Timestamp when the report was captured on the device"
-    field :captured_at, :datetime
-
-    @desc "Time of location report"
-    field :created_at, non_null(:datetime)
-  end
-
-  @desc "Parameters for modifying a user"
-  input_object :user_params do
-    field :handle, :string
-    field :image_url, :string
-    field :first_name, :string, deprecate: "Please use the single 'name' field"
-    field :last_name, :string, deprecate: "Please use the single 'name' field"
-    field :name, :string
-    field :email, :string
-    field :tagline, :string
-    field :client_data, :string
-
-    @desc """
-    Setting a user as transient allows that user to be deleted AT WILL by the
-    server.  This should be set on users which are created as one-shot tests so
-    that the server knows they can be safely cleaned up at a later point.
-    """
-    field :transient, :boolean
-  end
-
-  input_object :user_update_input do
-    field :values, non_null(:user_params)
-  end
-
-  input_object :follow_input do
-    @desc "The ID of the user to start following"
-    field :user_id, non_null(:uuid)
-  end
-
-  input_object :friend_invite_input do
-    @desc "The ID of the user to invite to be a friend"
-    field :user_id, non_null(:uuid)
-  end
-
-  input_object :friend_delete_input do
-    @desc """
-    The ID of the user remove as a friend or whose invitation to decline
-    or cancel
-    """
-    field :user_id, non_null(:uuid)
-  end
-
-  input_object :friend_name_input do
-    @desc "The ID of the user to whom to assign a name"
-    field :user_id, non_null(:uuid)
-
-    @desc "The name to assign to the specified user"
-    field :name, non_null(:string)
-  end
-
-  payload_object(:user_update_payload, :user)
-  payload_object(:follow_payload, :contact)
-  payload_object(:friend_invite_payload, :user_contact_relationship)
-  payload_object(:friend_delete_payload, :boolean)
-  payload_object(:friend_name_payload, :boolean)
-
-  # This definition is an almost straight copy from the payload_object macro.
-  # However we need to make the scope public because the object permissions
-  # get checked after the user is deleted, and the macro doesn't allow us to do
-  # that
-  object :user_delete_payload do
-    scope :public
-
-    @desc "Indicates if the mutation completed successfully or not. "
-    field :successful, non_null(:boolean)
-
-    @desc """
-    A list of failed validations. May be blank or null if mutation succeeded.
-    """
-    field :messages, list_of(:validation_message)
-
-    @desc "The object created/updated/deleted by the mutation"
-    field :result, :boolean
-  end
+  # -------------------------------------------------------------------
+  # Queries
 
   object :user_queries do
     @desc "Retrive the currently authenticated user"
@@ -415,6 +246,53 @@ defmodule WockyAPI.Schema.UserTypes do
     end
   end
 
+  # -------------------------------------------------------------------
+  # User mutations
+
+  @desc "Parameters for modifying a user"
+  input_object :user_params do
+    field :handle, :string
+    field :image_url, :string
+    field :first_name, :string, deprecate: "Please use the single 'name' field"
+    field :last_name, :string, deprecate: "Please use the single 'name' field"
+    field :name, :string
+    field :email, :string
+    field :tagline, :string
+    field :client_data, :string
+
+    @desc """
+    Setting a user as transient allows that user to be deleted AT WILL by the
+    server.  This should be set on users which are created as one-shot tests so
+    that the server knows they can be safely cleaned up at a later point.
+    """
+    field :transient, :boolean
+  end
+
+  input_object :user_update_input do
+    field :values, non_null(:user_params)
+  end
+
+  payload_object(:user_update_payload, :user)
+
+  # This definition is an almost straight copy from the payload_object macro.
+  # However we need to make the scope public because the object permissions
+  # get checked after the user is deleted, and the macro doesn't allow us to do
+  # that
+  object :user_delete_payload do
+    scope :public
+
+    @desc "Indicates if the mutation completed successfully or not. "
+    field :successful, non_null(:boolean)
+
+    @desc """
+    A list of failed validations. May be blank or null if mutation succeeded.
+    """
+    field :messages, list_of(:validation_message)
+
+    @desc "The object created/updated/deleted by the mutation"
+    field :result, :boolean
+  end
+
   object :user_mutations do
     @desc "Modify an existing user"
     field :user_update, type: :user_update_payload do
@@ -426,47 +304,22 @@ defmodule WockyAPI.Schema.UserTypes do
 
     @desc "Delete the current user"
     field :user_delete, type: :user_delete_payload do
-      resolve &User.delete/3
+      resolve &User.delete_user/3
       middleware WockyAPI.Middleware.RefreshCurrentUser
       changeset_mutation_middleware()
     end
   end
 
-  object :contact_mutations do
-    @desc """
-    Invite another user to be your friend or accept an existing invitation from
-    them
-    """
-    field :friend_invite, type: :friend_invite_payload do
-      arg :input, non_null(:friend_invite_input)
-      resolve &User.invite/3
-      changeset_mutation_middleware()
-    end
+  # -------------------------------------------------------------------
+  # User invitation mutations
 
-    @desc """
-    Remove the friendship between the sender and another user or decline
-    or cancel an invitation from or to them
-    """
-    field :friend_delete, type: :friend_delete_payload do
-      arg :input, non_null(:friend_delete_input)
-      resolve &User.unfriend/3
-      changeset_mutation_middleware()
-    end
-
-    @desc "Sets the nickname for a friend"
-    field :friend_name, type: :friend_name_payload do
-      arg :input, non_null(:friend_name_input)
-      resolve &User.name_friend/3
-      changeset_mutation_middleware()
-    end
-  end
+  payload_object(:user_invite_make_code_payload, :string)
 
   input_object :user_invite_redeem_code_input do
     @desc "The invite code to redeem"
     field :code, non_null(:string)
   end
 
-  payload_object(:user_invite_make_code_payload, :string)
   payload_object(:user_invite_redeem_code_payload, :boolean)
 
   object :user_invite_code_mutations do
@@ -481,6 +334,9 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &User.redeem_invite_code/3
     end
   end
+
+  # -------------------------------------------------------------------
+  # Push notification mutations
 
   enum :notification_platform do
     @desc "Apple Push Notification service"
@@ -528,6 +384,11 @@ defmodule WockyAPI.Schema.UserTypes do
       changeset_mutation_middleware()
     end
   end
+
+  # -------------------------------------------------------------------
+  # User location mutations
+
+  payload_object(:user_location_get_token_payload, :string)
 
   @desc "Parameters for sending a location update"
   input_object :user_location_update_input do
@@ -594,94 +455,24 @@ defmodule WockyAPI.Schema.UserTypes do
 
   payload_object(:user_location_update_payload, :user_location_upload_response)
 
-  payload_object(:user_location_get_token_payload, :string)
-
-  @desc "Parameters for starting a live location share"
-  input_object :user_location_live_share_input do
-    @desc "The user with whom to share location"
-    field :shared_with_id, non_null(:string)
-
-    @desc "The expiry for the share"
-    field :expires_at, non_null(:datetime)
-
-    @desc "The user's current location"
-    field :location, :user_location_update_input
-  end
-
-  @desc "Attributes of a user location live sharing session"
-  object :user_location_live_share do
-    @desc "ID for this sharing session"
-    field :id, non_null(:aint)
-
-    @desc "The user sharing their location"
-    field :user, non_null(:other_user)
-
-    @desc "The user with whom the location is being shared"
-    field :shared_with, non_null(:other_user)
-
-    @desc "When the share was created"
-    field :created_at, non_null(:datetime)
-
-    @desc "The expiry for the share"
-    field :expires_at, non_null(:datetime)
-  end
-
-  connection :user_location_live_shares, node_type: :user_location_live_share do
-    total_count_field()
-
-    edge do
-    end
-  end
-
-  payload_object(:user_location_live_share_payload, :user_location_live_share)
-
-  @desc "Parameters for canceling a live location share"
-  input_object :user_location_cancel_share_input do
-    @desc "The user whose location sharing to cancel"
-    field :shared_with_id, non_null(:string)
-  end
-
-  payload_object(:user_location_cancel_share_payload, :boolean)
-
-  payload_object(:user_location_request_trigger_payload, :boolean)
-
   @desc "Parameters for triggering a location update request"
   input_object :user_location_request_trigger_input do
     @desc "The user to trigger the location update request"
     field :user_id, non_null(:uuid)
   end
 
-  object :location_mutations do
-    @desc "Update a user's current location"
-    field :user_location_update, type: :user_location_update_payload do
-      arg :input, non_null(:user_location_update_input)
-      resolve &User.update_location/3
-      changeset_mutation_middleware()
-    end
+  payload_object(:user_location_request_trigger_payload, :boolean)
 
+  object :location_mutations do
     @desc "Generate a new token for location updates"
     field :user_location_get_token, type: :user_location_get_token_payload do
       resolve &User.get_location_token/3
     end
 
-    @desc "Share the user's location"
-    field :user_location_live_share, type: :user_location_live_share_payload do
-      arg :input, non_null(:user_location_live_share_input)
-      resolve &User.live_share_location/3
-      changeset_mutation_middleware()
-    end
-
-    @desc "Cancel a live location share"
-    field :user_location_cancel_share, type: :user_location_cancel_share_payload do
-      arg :input, non_null(:user_location_cancel_share_input)
-      resolve &User.cancel_location_share/3
-      changeset_mutation_middleware()
-    end
-
-    @desc "Cancel all live location shares"
-    field :user_location_cancel_all_shares,
-      type: :user_location_cancel_share_payload do
-      resolve &User.cancel_all_location_shares/3
+    @desc "Update a user's current location"
+    field :user_location_update, type: :user_location_update_payload do
+      arg :input, non_null(:user_location_update_input)
+      resolve &User.update_location/3
       changeset_mutation_middleware()
     end
 
@@ -691,46 +482,6 @@ defmodule WockyAPI.Schema.UserTypes do
       arg :input, non_null(:user_location_request_trigger_input)
       resolve &User.trigger_location_request/3
       changeset_mutation_middleware()
-    end
-  end
-
-  @desc "Data that is sent when a user's shared location changes"
-  object :user_location_update do
-    @desc "The user whose location has changed"
-    field :user, non_null(:user)
-
-    @desc "The user's new location"
-    field :location, non_null(:location)
-  end
-
-  object :user_subscriptions do
-    @desc """
-    Receive an update when a contact's state (friended/unfriended) changes
-    """
-    field :contacts, non_null(:contact) do
-      user_subscription_config(&User.contacts_subscription_topic/1)
-    end
-
-    @desc """
-    Receive an update when a friend's data (eg name, handle) changes
-    """
-    field :friends, non_null(:user) do
-      user_subscription_config(&User.friends_subscription_topic/1)
-    end
-
-    @desc """
-    Receive an update when a friend's shared location changes
-    """
-    field :shared_locations, non_null(:user_location_update) do
-      config fn
-        _, %{context: %{current_user: user}} ->
-          {:ok,
-           topic: User.location_subscription_topic(user.id),
-           catchup: fn -> User.location_catchup(user) end}
-
-        _, _ ->
-          {:error, "This operation requires an authenticated user"}
-      end
     end
   end
 end

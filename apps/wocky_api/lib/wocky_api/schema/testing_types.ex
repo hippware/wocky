@@ -6,8 +6,6 @@ defmodule WockyAPI.Schema.TestingTypes do
 
   use WockyAPI.Schema.Notation
 
-  import AbsintheErrorPayload.Payload
-
   alias WockyAPI.Resolvers.Testing
 
   input_object :factory_insert_input do

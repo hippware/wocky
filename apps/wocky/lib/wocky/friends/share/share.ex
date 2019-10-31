@@ -19,6 +19,7 @@ defmodule Wocky.Friends.Share do
     field :user_id, :binary_id
     field :shared_with, :map
     field :shared_with_id, :binary_id
+    field :share_type, :string
     field :created_at, :utc_datetime_usec
     field :expires_at, :utc_datetime_usec
   end
@@ -29,6 +30,7 @@ defmodule Wocky.Friends.Share do
           user_id: User.id(),
           shared_with: User.t(),
           shared_with_id: User.id(),
+          share_type: :always | :nearby,
           expires_at: DateTime.t(),
           created_at: DateTime.t()
         }
@@ -49,6 +51,7 @@ defmodule Wocky.Friends.Share do
       user_id: item.user.id,
       shared_with: item.contact,
       shared_with_id: item.contact.id,
+      share_type: item.share_type,
       created_at: item.share_changed_at,
       expires_at: expiry
     }
