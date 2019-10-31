@@ -81,7 +81,7 @@ defmodule Wocky.Mixfile do
        github: "dnsbty/ecto_enum",
        ref: "a69a9dde72cf98497606f9603bd46e3924979145"},
       # {:ecto_enum, github: "gjaldon/ecto_enum", branch: "master"},
-      {:ecto_sql, "~> 3.0"},
+      {:ecto_sql, "~> 3.2"},
       {:elixometer, github: "hippware/elixometer", branch: "working"},
       {:email_checker, "~> 0.1"},
       {:eventually, "~> 1.0"},

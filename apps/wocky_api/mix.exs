@@ -58,7 +58,6 @@ defmodule WockyAPI.Mixfile do
       {:absinthe_relay, github: "hippware/absinthe_relay", branch: "working"},
       {:apollo_tracing, "~> 0.4.0"},
       {:cors_plug, "~> 2.0"},
-      {:ecto_sql, "~> 3.0"},
       {:health_checkup, "~> 0.1.0"},
       {:honeybadger, "~> 0.6"},
       {:httpoison, "~> 1.4"},
