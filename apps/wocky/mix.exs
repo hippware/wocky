@@ -75,7 +75,7 @@ defmodule Wocky.Mixfile do
       {:dawdle, "~> 0.7"},
       {:dawdle_db, "~> 0.7"},
       {:distillery, "~> 2.0"},
-      {:ecto_enum, github: "gjaldon/ecto_enum", branch: "master"},
+      {:ecto_enum, "~> 1.4"},
       {:ecto_sql, "~> 3.0"},
       {:elixometer, github: "hippware/elixometer", branch: "working"},
       {:email_checker, "~> 0.1"},
