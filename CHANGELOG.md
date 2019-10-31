@@ -5,10 +5,15 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Remove more deprecated stuff (PR #2901)
+
+
+# 2019.10.30+r8124707
+
 * Update: credo_naming (PR #2887), mix_test_watch (PR #2888, PR #2892)
   * eventually (PR #2895), gen_stage (PR #2894)
 * Merge sharing table into roster items (#2871)
-* Remove deprecated mutations (#2893)
+* Remove deprecated mutations (#2893, PR #2896, #2900)
 * Consistent naming for Friends (#2897)
   * Rename Roster => Friends and Item => Friend (PR #2898)
 
