@@ -20,6 +20,7 @@ defmodule Wocky.Location.Handler do
 
   require Logger
 
+  @swarm_group :location_handlers
   @timeout :timer.hours(1)
   @watcher_debounce_secs 5 * 60
 
@@ -128,8 +129,14 @@ defmodule Wocky.Location.Handler do
     |> maybe_stop()
   end
 
+  def stop_all do
+    @swarm_group
+    |> Swarm.members()
+    |> Enum.each(&maybe_stop/1)
+  end
+
   # Always returns a handler, creating a new one if one does not already exist.
-  @spec get_handler(User.t() | User.id()) :: pid()
+  @spec get_handler(User.tid()) :: pid()
   def get_handler(%User{id: user_id} = user), do: do_get_handler(user_id, user)
 
   def get_handler(user_id) when is_binary(user_id),
@@ -144,6 +151,8 @@ defmodule Wocky.Location.Handler do
         [arg],
         5000
       )
+
+    Swarm.join(@swarm_group, pid)
 
     pid
   end

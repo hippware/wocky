@@ -75,6 +75,15 @@ defmodule Wocky.Presence.Manager do
     end
   end
 
+  @spec stop_all() :: :ok
+  def stop_all do
+    Supervisor
+    |> DynamicSupervisor.which_children()
+    |> Enum.map(&elem(&1, 1))
+    |> Enum.filter(&is_pid/1)
+    |> Enum.each(&DynamicSupervisor.terminate_child(Supervisor, &1))
+  end
+
   @impl true
   def init(user) do
     _ = PubSub.subscribe(:presence, pubsub_topic(user))

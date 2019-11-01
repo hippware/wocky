@@ -15,27 +15,27 @@ defmodule Wocky.Location.UserLocation.Current do
                |> Duration.to_seconds(truncate: true)
                |> to_string()
 
-  @spec set(User.t(), UserLocation.t()) :: :ok
+  @spec set(User.tid(), UserLocation.t()) :: :ok
   def set(user, loc) do
     {:ok, _} =
       Redix.command(Redix, [
         "SET",
-        key(user.id),
+        key(User.id(user)),
         value(loc),
         "EX",
         @expire_secs
       ])
 
     _ =
-      %LocationChangedEvent{location: loc, user: user}
+      %LocationChangedEvent{location: loc, user: User.hydrate(user)}
       |> Dawdle.signal(direct: true)
 
     :ok
   end
 
-  @spec get(User.t()) :: UserLocation.t() | nil
+  @spec get(User.tid()) :: UserLocation.t() | nil
   def get(user) do
-    case Redix.command(Redix, ["GET", key(user.id)]) do
+    case Redix.command(Redix, ["GET", key(user)]) do
       {:ok, nil} ->
         nil
 
@@ -44,11 +44,9 @@ defmodule Wocky.Location.UserLocation.Current do
     end
   end
 
-  @spec delete(User.id() | User.t()) :: :ok
-  def delete(%User{id: id}), do: delete(id)
-
-  def delete(user_id) do
-    {:ok, _} = Redix.command(Redix, ["DEL", key(user_id)])
+  @spec delete(User.tid()) :: :ok
+  def delete(user) do
+    {:ok, _} = Redix.command(Redix, ["DEL", key(user)])
     :ok
   end
 
@@ -67,7 +65,7 @@ defmodule Wocky.Location.UserLocation.Current do
     |> length()
   end
 
-  defp key(user_id), do: "current_loc:" <> user_id
+  defp key(user), do: "current_loc:" <> User.id(user)
 
   defp value(%UserLocation{} = loc), do: :erlang.term_to_binary(loc)
 end

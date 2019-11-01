@@ -237,7 +237,7 @@ defmodule WockyAPI.Schema.FriendTypes do
     field :nearby_distance, :integer
 
     @desc "Cooldown period between 'nearby' sharing notifications"
-    field :notify_cooldown, :integer
+    field :nearby_cooldown, :integer
   end
 
   input_object :friend_share_update_input do

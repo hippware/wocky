@@ -21,6 +21,7 @@ defmodule Wocky.Notifier.InBand.Notification do
     :location_share,
     :location_share_end,
     :location_share_end_self,
+    :location_share_nearby_start,
     :user_invitation,
     :user_proximity
   ])

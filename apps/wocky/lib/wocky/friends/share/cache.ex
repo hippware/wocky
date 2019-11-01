@@ -8,7 +8,10 @@ defmodule Wocky.Friends.Share.Cache do
   alias Timex.Duration
   alias Wocky.Account.User
   alias Wocky.Friends.Friend
+  alias Wocky.Friends.Share.CachedFriend
   alias Wocky.Repo
+
+  @cache_version 1
 
   # Let Redis expire an untouched cache after two weeks - cleans up any deleted
   # users but shouldn't add any significant refresh overhead.
@@ -16,36 +19,37 @@ defmodule Wocky.Friends.Share.Cache do
                |> Duration.to_seconds(truncate: true)
                |> to_string()
 
-  @spec get(User.id()) :: [User.id()]
+  @spec get(User.id()) :: [CachedFriend.t()]
   def get(user_id) do
-    {:ok, members} = Redix.command(Redix, ["GET", key(user_id)])
+    {:ok, cache} = Redix.command(Redix, ["GET", key(user_id)])
 
-    case members do
+    case cache do
       nil ->
         refresh(user_id)
 
       _ ->
-        members
-        |> decode()
-        |> Enum.map(fn
-          {id, _} -> id
-          id -> id
-        end)
+        case decode(cache) do
+          {@cache_version, members} ->
+            Enum.map(members, &cache_to_struct/1)
+
+          # Older cache format
+          x when is_list(x) ->
+            refresh(user_id)
+        end
     end
   end
 
-  @spec refresh(User.id()) :: [User.id()]
+  @spec refresh(User.id()) :: [CachedFriend.t()]
   def refresh(user_id) do
     values =
       Friend
       |> where([i], i.user_id == ^user_id)
       |> where([i], i.share_type != "disabled")
-      |> select([i], i.contact_id)
       |> Repo.all()
 
-    put(user_id, values)
+    put(user_id, {@cache_version, Enum.map(values, &struct_to_cache/1)})
 
-    values
+    Enum.map(values, &Friend.to_cached/1)
   end
 
   # Public for testing purposes
@@ -69,4 +73,14 @@ defmodule Wocky.Friends.Share.Cache do
   defp encode(values), do: :erlang.term_to_binary(values)
 
   defp decode(values), do: :erlang.binary_to_term(values)
+
+  defp struct_to_cache(%Friend{} = friend) do
+    CachedFriend.fields()
+    |> Enum.map(&Map.get(friend, &1))
+  end
+
+  defp cache_to_struct(members) do
+    keyword = List.zip([CachedFriend.fields(), members])
+    struct(CachedFriend, keyword)
+  end
 end
