@@ -6,6 +6,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Remove more deprecated stuff (PR #2901)
+* Implement new sharing model in GQL API (#2872)
+* Update: ecto and ecto_enum (PR #2905)
 
 
 # 2019.10.30+r8124707
