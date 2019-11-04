@@ -70,7 +70,7 @@ defmodule WockyAPI.Schema.MediaTypes do
       """
       arg :timeout, :integer
 
-      resolve &Media.get_media_urls/3
+      resolve &Media.get_media_urls/2
     end
   end
 
@@ -128,14 +128,14 @@ defmodule WockyAPI.Schema.MediaTypes do
     @desc "Request upload of a file"
     field :media_upload, type: :media_upload_payload do
       arg :input, non_null(:media_upload_params)
-      resolve &Media.upload/3
+      resolve &Media.media_upload/2
       changeset_mutation_middleware()
     end
 
     @desc "Delete a file"
     field :media_delete, type: :media_delete_payload do
       arg :input, non_null(:media_delete_params)
-      resolve &Media.delete/3
+      resolve &Media.media_delete/2
       changeset_mutation_middleware()
     end
   end

@@ -235,7 +235,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
     """
     field :notification_delete, type: :notification_delete_payload do
       arg :input, non_null(:notification_delete_input)
-      resolve &Notification.delete/3
+      resolve &Notification.notification_delete/2
       middleware &build_payload/2
     end
   end

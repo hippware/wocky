@@ -12,18 +12,8 @@ defmodule WockyAPI.Resolvers.Message do
   alias WockyAPI.Resolvers.User, as: UserResolver
   alias WockyAPI.Resolvers.Utils
 
-  def messages_subscription_topic(user_id),
-    do: "messages_subscription_" <> user_id
-
-  def notify_message(message) do
-    topic = messages_subscription_topic(message.recipient_id)
-
-    Subscription.publish(
-      Endpoint,
-      map_to_graphql(message, message.recipient_id),
-      [{:messages, topic}]
-    )
-  end
+  # -------------------------------------------------------------------
+  # Connections
 
   def get_messages(_root, args, %{context: %{current_user: user}}) do
     with {:ok, query} <- get_messages_query(args[:other_user], user) do
@@ -51,7 +41,34 @@ defmodule WockyAPI.Resolvers.Message do
     end
   end
 
-  def send_message(_root, %{input: args}, %{context: %{current_user: user}}) do
+  defp map_to_graphql(%Message{} = message, requestor_id) do
+    data =
+      if message.sender.id == requestor_id do
+        %{
+          direction: :outgoing,
+          other_user: message.recipient
+        }
+      else
+        %{
+          direction: :incoming,
+          other_user: message.sender
+        }
+      end
+
+    message |> Map.merge(data)
+  end
+
+  def get_conversations(user, args, _info) do
+    user.id
+    |> Messaging.get_conversations_query()
+    |> preload([:other_user])
+    |> Utils.connection_from_query(user, args, order_by: [desc: :created_at])
+  end
+
+  # -------------------------------------------------------------------
+  # Mutations
+
+  def message_send(%{input: args}, %{context: %{current_user: user}}) do
     recipient_id = args[:recipient_id]
 
     with %User{} = recipient <- Account.get_user(recipient_id, user),
@@ -71,7 +88,7 @@ defmodule WockyAPI.Resolvers.Message do
     end
   end
 
-  def mark_read(_root, %{input: args}, %{context: %{current_user: user}}) do
+  def message_mark_read(%{input: args}, %{context: %{current_user: user}}) do
     results = Enum.map(args[:messages], &mark_read(&1, user))
 
     {:ok, results}
@@ -95,27 +112,19 @@ defmodule WockyAPI.Resolvers.Message do
     end
   end
 
-  def get_conversations(user, args, _info) do
-    user.id
-    |> Messaging.get_conversations_query()
-    |> preload([:other_user])
-    |> Utils.connection_from_query(user, args, order_by: [desc: :created_at])
-  end
+  # -------------------------------------------------------------------
+  # Subscriptions
 
-  defp map_to_graphql(%Message{} = message, requestor_id) do
-    data =
-      if message.sender.id == requestor_id do
-        %{
-          direction: :outgoing,
-          other_user: message.recipient
-        }
-      else
-        %{
-          direction: :incoming,
-          other_user: message.sender
-        }
-      end
+  def messages_subscription_topic(user_id),
+    do: "messages_subscription_" <> user_id
 
-    message |> Map.merge(data)
+  def notify_message(message) do
+    topic = messages_subscription_topic(message.recipient_id)
+
+    Subscription.publish(
+      Endpoint,
+      map_to_graphql(message, message.recipient_id),
+      [{:messages, topic}]
+    )
   end
 end

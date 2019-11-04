@@ -71,14 +71,14 @@ defmodule WockyAPI.Schema.BlockTypes do
     @desc "Block a user"
     field :user_block, type: :user_block_payload do
       arg :input, non_null(:user_block_input)
-      resolve &Block.block/3
+      resolve &Block.user_block/2
       changeset_mutation_middleware()
     end
 
     @desc "Unblock a blocked user"
     field :user_unblock, type: :user_unblock_payload do
       arg :input, non_null(:user_unblock_input)
-      resolve &Block.unblock/3
+      resolve &Block.user_unblock/2
       changeset_mutation_middleware()
     end
   end

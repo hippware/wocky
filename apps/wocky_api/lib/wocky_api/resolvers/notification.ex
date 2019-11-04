@@ -16,8 +16,13 @@ defmodule WockyAPI.Resolvers.Notification do
     {:user_proximity, :user_proximity_notification}
   ]
 
-  def notification_subscription_topic(user_id),
-    do: "notification_subscription_" <> user_id
+  def to_graphql(%Notification{id: id, created_at: created_at} = n),
+    do: %{data: n, id: id, created_at: created_at}
+
+  # -------------------------------------------------------------------
+  # Connections
+
+  def resolve_type(%{type: type}, _), do: Keyword.fetch!(@type_map, type)
 
   def get_notifications(parent, args, %{context: %{current_user: requestor}}) do
     requestor
@@ -30,21 +35,6 @@ defmodule WockyAPI.Resolvers.Notification do
     |> Utils.map_edges(&to_graphql/1)
   end
 
-  def delete(_root, args, %{context: %{current_user: requestor}}) do
-    Notification.delete(args.input.id, requestor)
-
-    {:ok, true}
-  end
-
-  def to_graphql(%Notification{id: id, created_at: created_at} = n),
-    do: %{data: n, id: id, created_at: created_at}
-
-  def resolve_type(%{type: type}, _), do: Keyword.fetch!(@type_map, type)
-
-  def resolve_update_type(%{data: _}, _), do: :notification
-
-  def resolve_update_type(_, _), do: :notification_deleted
-
   defp map_types(nil), do: nil
 
   defp map_types(types) do
@@ -56,4 +46,23 @@ defmodule WockyAPI.Resolvers.Notification do
       end
     end)
   end
+
+  # -------------------------------------------------------------------
+  # Mutations
+
+  def notification_delete(args, %{context: %{current_user: requestor}}) do
+    Notification.delete(args.input.id, requestor)
+
+    {:ok, true}
+  end
+
+  # -------------------------------------------------------------------
+  # Subscriptions
+
+  def notification_subscription_topic(user_id),
+    do: "notification_subscription_" <> user_id
+
+  def resolve_update_type(%{data: _}, _), do: :notification
+
+  def resolve_update_type(_, _), do: :notification_deleted
 end

@@ -12,37 +12,13 @@ defmodule WockyAPI.Resolvers.Friend do
   alias WockyAPI.Resolvers.Utils
 
   # -------------------------------------------------------------------
-  # Queries
-
-  def get_contact_user(%Friend{} = c, _args, _context) do
-    {:ok,
-     c
-     |> Repo.preload([:contact])
-     |> Map.get(:contact)}
-  end
-
-  # Explicitly built map - user should already be in place
-  def get_contact_user(x, _args, _context), do: {:ok, x.user}
-
-  def get_contact_relationship(_root, _args, %{
-        source: %{node: target_user, parent: parent}
-      }) do
-    {:ok, Friends.relationship(parent, target_user)}
-  end
+  # Connections
 
   # DEPRECATED
-  def get_contact_created_at(_root, _args, %{
-        source: %{node: target_user, parent: parent}
-      }) do
-    friend = Friends.get_friend(parent, target_user)
-    {:ok, friend.created_at}
-  end
-
   def get_contacts(_, %{relationship: :none}, _) do
     {:error, :unsupported}
   end
 
-  # DEPRECATED
   def get_contacts(user, args, %{context: %{current_user: requestor}}) do
     with {:query, query} <- contacts_query(user, args, requestor) do
       case query do
@@ -66,6 +42,20 @@ defmodule WockyAPI.Resolvers.Friend do
       :invited_by ->
         {:query, Friends.received_invitations_query(user, requestor)}
     end
+  end
+
+  def get_contact_relationship(_root, _args, %{
+        source: %{node: target_user, parent: parent}
+      }) do
+    {:ok, Friends.relationship(parent, target_user)}
+  end
+
+  # DEPRECATED
+  def get_contact_created_at(_root, _args, %{
+        source: %{node: target_user, parent: parent}
+      }) do
+    friend = Friends.get_friend(parent, target_user)
+    {:ok, friend.created_at}
   end
 
   def get_friends(user, args, %{context: %{current_user: requestor}}),
@@ -107,6 +97,19 @@ defmodule WockyAPI.Resolvers.Friend do
     |> Friends.get_location_sharers_query()
     |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
   end
+
+  # -------------------------------------------------------------------
+  # Queries
+
+  def get_contact_user(%Friend{} = c, _args, _context) do
+    {:ok,
+     c
+     |> Repo.preload([:contact])
+     |> Map.get(:contact)}
+  end
+
+  # Explicitly built map - user should already be in place
+  def get_contact_user(x, _args, _context), do: {:ok, x.user}
 
   # -------------------------------------------------------------------
   # Mutations

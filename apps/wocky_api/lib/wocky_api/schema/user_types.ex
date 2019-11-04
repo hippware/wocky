@@ -150,7 +150,7 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "The active bots to which a user is subscribed, in last visited order"
     connection field :active_bots, node_type: :bots do
       connection_complexity()
-      resolve &Bot.get_active_bots/3
+      resolve &Bot.get_active_bots/2
     end
 
     @desc "The user's live location sharing sessions"
@@ -225,13 +225,13 @@ defmodule WockyAPI.Schema.UserTypes do
   object :user_queries do
     @desc "Retrive the currently authenticated user"
     field :current_user, :current_user do
-      resolve &User.get_current_user/3
+      resolve &User.get_current_user/2
     end
 
     @desc "Retrive a user by ID"
     field :user, :user do
       arg :id, non_null(:uuid)
-      resolve &User.get_user/3
+      resolve &User.get_user/2
     end
 
     @desc "Search for users by first name, last name and handle"
@@ -242,7 +242,7 @@ defmodule WockyAPI.Schema.UserTypes do
       @desc "Maximum number of results to return"
       arg :limit, :integer
 
-      resolve &User.search_users/3
+      resolve &User.get_users/2
     end
   end
 
@@ -297,14 +297,14 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "Modify an existing user"
     field :user_update, type: :user_update_payload do
       arg :input, non_null(:user_update_input)
-      resolve &User.update_user/3
+      resolve &User.user_update/2
       middleware WockyAPI.Middleware.RefreshCurrentUser
       changeset_mutation_middleware()
     end
 
     @desc "Delete the current user"
     field :user_delete, type: :user_delete_payload do
-      resolve &User.delete_user/3
+      resolve &User.user_delete/2
       middleware WockyAPI.Middleware.RefreshCurrentUser
       changeset_mutation_middleware()
     end
@@ -325,13 +325,13 @@ defmodule WockyAPI.Schema.UserTypes do
   object :user_invite_code_mutations do
     @desc "Generate a user invite code"
     field :user_invite_make_code, type: :user_invite_make_code_payload do
-      resolve &User.make_invite_code/3
+      resolve &User.user_invite_make_code/2
     end
 
     @desc "Redeem a user invite code"
     field :user_invite_redeem_code, type: :user_invite_redeem_code_payload do
       arg :input, non_null(:user_invite_redeem_code_input)
-      resolve &User.redeem_invite_code/3
+      resolve &User.user_invite_redeem_code/2
     end
   end
 
@@ -373,14 +373,14 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "Enable push notifications for this device"
     field :push_notifications_enable, type: :push_notifications_enable_payload do
       arg :input, non_null(:push_notifications_enable_input)
-      resolve &User.enable_notifications/2
+      resolve &User.push_notifications_enable/2
       changeset_mutation_middleware()
     end
 
     @desc "Disable push notifications for this device"
     field :push_notifications_disable, type: :push_notifications_disable_payload do
       arg :input, non_null(:push_notifications_disable_input)
-      resolve &User.disable_notifications/2
+      resolve &User.push_notifications_disable/2
       changeset_mutation_middleware()
     end
   end
@@ -466,13 +466,13 @@ defmodule WockyAPI.Schema.UserTypes do
   object :location_mutations do
     @desc "Generate a new token for location updates"
     field :user_location_get_token, type: :user_location_get_token_payload do
-      resolve &User.get_location_token/3
+      resolve &User.user_location_get_token/2
     end
 
     @desc "Update a user's current location"
     field :user_location_update, type: :user_location_update_payload do
       arg :input, non_null(:user_location_update_input)
-      resolve &User.update_location/3
+      resolve &User.user_location_update/2
       changeset_mutation_middleware()
     end
 
@@ -480,7 +480,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :user_location_request_trigger,
       type: :user_location_request_trigger_payload do
       arg :input, non_null(:user_location_request_trigger_input)
-      resolve &User.trigger_location_request/3
+      resolve &User.user_location_request_trigger/2
       changeset_mutation_middleware()
     end
   end

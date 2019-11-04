@@ -8,6 +8,9 @@ defmodule WockyAPI.Resolvers.Block do
   alias Wocky.Block
   alias WockyAPI.Resolvers.Utils
 
+  # -------------------------------------------------------------------
+  # Connections
+
   def get_blocks(%User{} = user, args, _info) do
     user.id
     |> Block.blocks_query()
@@ -20,10 +23,13 @@ defmodule WockyAPI.Resolvers.Block do
     )
   end
 
-  def block(_root, args, %{context: %{current_user: blocker}}),
+  # -------------------------------------------------------------------
+  # Mutations
+
+  def user_block(args, %{context: %{current_user: blocker}}),
     do: do_action(&Block.block/2, args, blocker)
 
-  def unblock(_root, args, %{context: %{current_user: blocker}}),
+  def user_unblock(args, %{context: %{current_user: blocker}}),
     do: do_action(&Block.unblock/2, args, blocker)
 
   defp do_action(fun, args, blocker) do

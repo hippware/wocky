@@ -26,7 +26,7 @@ defmodule WockyAPI.Schema.AuthTypes do
         field :user, non_null(:user)
       end
 
-      resolve &Auth.authenticate/3
+      resolve &Auth.authenticate/2
 
       middleware Socket, :authenticated
     end

@@ -10,7 +10,10 @@ defmodule WockyAPI.Resolvers.Media do
   alias Wocky.TROS.Metadata
   alias Wocky.Waiter
 
-  def get_media_urls(_root, args, %{context: %{current_user: _user}}) do
+  # -------------------------------------------------------------------
+  # Queries
+
+  def get_media_urls(args, %{context: %{current_user: _user}}) do
     get_urls(args[:tros_url], true, args[:timeout] || @ready_timeout)
   end
 
@@ -49,9 +52,27 @@ defmodule WockyAPI.Resolvers.Media do
     end
   end
 
+  defp maybe_wait(false, _, _), do: :ok
+
+  defp maybe_wait(true, file_id, timeout) do
+    file_id
+    |> TROS.file_ready_event()
+    |> Waiter.wait(timeout, fn -> file_ready(file_id) end)
+  end
+
+  defp file_ready(file_id) do
+    case TROS.get_metadata(file_id) do
+      {:ok, %Metadata{ready: true}} -> true
+      _ -> false
+    end
+  end
+
   defp make_url({type, url}), do: %{type: type, url: url}
 
-  def upload(_root, %{input: args}, %{context: %{current_user: user}}) do
+  # -------------------------------------------------------------------
+  # Mutations
+
+  def media_upload(%{input: args}, %{context: %{current_user: user}}) do
     metadata = %{content_type: args[:mime_type], name: args[:filename]}
     id = ID.new()
 
@@ -85,7 +106,7 @@ defmodule WockyAPI.Resolvers.Media do
   defp make_return_headers(headers),
     do: Enum.map(headers, fn {n, v} -> %{name: n, value: v} end)
 
-  def delete(_root, args, %{context: %{current_user: user}}) do
+  def media_delete(args, %{context: %{current_user: user}}) do
     with {:ok, file_id} <- TROS.parse_url(args[:input][:url]),
          {:ok, _file} <- TROS.delete(file_id, user) do
       {:ok, true}
@@ -93,21 +114,6 @@ defmodule WockyAPI.Resolvers.Media do
       {:error, :invalid_url} -> {:error, "Invalid URL"}
       {:error, :permission_denied} -> {:error, "Permission denied"}
       {:error, :not_found} -> {:error, "File not found"}
-    end
-  end
-
-  defp maybe_wait(false, _, _), do: :ok
-
-  defp maybe_wait(true, file_id, timeout) do
-    file_id
-    |> TROS.file_ready_event()
-    |> Waiter.wait(timeout, fn -> file_ready(file_id) end)
-  end
-
-  defp file_ready(file_id) do
-    case TROS.get_metadata(file_id) do
-      {:ok, %Metadata{ready: true}} -> true
-      _ -> false
     end
   end
 end

@@ -127,14 +127,14 @@ defmodule WockyAPI.Schema.MessageTypes do
     @desc "Send a message to another user"
     field :message_send, type: :message_send_payload do
       arg :input, non_null(:message_send_input)
-      resolve &Message.send_message/3
+      resolve &Message.message_send/2
       changeset_mutation_middleware()
     end
 
     @desc "Mark a message's read status"
     field :message_mark_read, type: :message_mark_read_payload do
       arg :input, non_null(:message_mark_read_input)
-      resolve &Message.mark_read/3
+      resolve &Message.message_mark_read/2
       changeset_mutation_middleware()
     end
   end

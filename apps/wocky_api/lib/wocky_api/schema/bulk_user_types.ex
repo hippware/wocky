@@ -36,7 +36,7 @@ defmodule WockyAPI.Schema.BulkUserTypes do
     field :user_bulk_lookup, type: list_of(:user_bulk_lookup_result) do
       @desc "The list of phone numbers to lookup"
       arg :phone_numbers, non_null(list_of(non_null(:string)))
-      resolve &BulkUser.lookup/3
+      resolve &BulkUser.get_user_bulk_lookup/2
     end
   end
 
@@ -109,7 +109,7 @@ defmodule WockyAPI.Schema.BulkUserTypes do
     field :friend_bulk_invite, type: :friend_bulk_invite_payload do
       @desc "The list of phone numbers to invite"
       arg :input, non_null(:friend_bulk_invite_input)
-      resolve &BulkUser.send_invitations/3
+      resolve &BulkUser.friend_bulk_invite/2
       middleware &build_payload/2
       middleware WockyAPI.Middleware.RefreshCurrentUser
     end

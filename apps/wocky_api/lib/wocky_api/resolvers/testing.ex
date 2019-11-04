@@ -3,6 +3,9 @@ defmodule WockyAPI.Resolvers.Testing do
 
   alias Wocky.Repo.Factory
 
+  # -------------------------------------------------------------------
+  # Mutations
+
   def factory_insert(args, _context) do
     true = Confex.get_env(:wocky_api, :allow_factory_insert, false)
     {:ok, Enum.map(args[:input], &do_factory_insert/1)}

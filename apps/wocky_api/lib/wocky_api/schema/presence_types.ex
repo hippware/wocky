@@ -48,7 +48,7 @@ defmodule WockyAPI.Schema.PresenceTypes do
     @desc "Set the current user's presence status"
     field :presence_status, type: :presence_status_payload do
       arg :input, non_null(:presence_status_input)
-      resolve &Presence.set_status/2
+      resolve &Presence.presence_status/2
       middleware &build_payload/2
     end
   end
