@@ -8,16 +8,8 @@ defmodule WockyAPI.Schema.BotTypes do
   alias WockyAPI.Resolvers.Bot
   alias WockyAPI.Resolvers.Media
 
-  connection :bots, node_type: :bot do
-    total_count_field()
-
-    edge do
-      @desc "The set of relationships between the user and the bot"
-      field :relationships, list_of(:user_bot_relationship) do
-        resolve &Bot.get_bot_relationships/3
-      end
-    end
-  end
+  # -------------------------------------------------------------------
+  # Objects
 
   enum :subscription_type do
     @desc "A user who is subscribed to the bot"
@@ -171,6 +163,20 @@ defmodule WockyAPI.Schema.BotTypes do
     field :lon, non_null(:float), resolve: &Bot.get_lon/3
   end
 
+  # -------------------------------------------------------------------
+  # Connections
+
+  connection :bots, node_type: :bot do
+    total_count_field()
+
+    edge do
+      @desc "The set of relationships between the user and the bot"
+      field :relationships, list_of(:user_bot_relationship) do
+        resolve &Bot.get_bot_relationships/3
+      end
+    end
+  end
+
   connection :bot_items, node_type: :bot_item do
     total_count_field()
 
@@ -189,114 +195,17 @@ defmodule WockyAPI.Schema.BotTypes do
     end
   end
 
-  @desc "Parameters for creating and updating a bot"
-  input_object :bot_params do
-    field :title, :string
+  # -------------------------------------------------------------------
+  # Queries
 
-    field :lat, :float
-    field :lon, :float
-    field :radius, :float
-    field :description, :string
-    field :shortname, :string
-    field :image_url, :string
-    field :type, :string
-    field :icon, :string
-    field :address, :string
-    field :address_data, :string
+  @desc "A point on the globe"
+  input_object :point do
+    @desc "Latitude in degrees"
+    field :lat, non_null(:float)
+
+    @desc "Longitude in degrees"
+    field :lon, non_null(:float)
   end
-
-  input_object :bot_create_input do
-    field :values, non_null(:bot_params)
-
-    @desc "Optional location to immediately apply to user against bot"
-    field :user_location, :user_location_update_input
-  end
-
-  input_object :bot_update_input do
-    @desc "ID of bot to update"
-    field :id, non_null(:uuid)
-
-    field :values, non_null(:bot_params)
-
-    @desc "Optional location to immediately apply to user against bot"
-    field :user_location, :user_location_update_input
-  end
-
-  input_object :bot_delete_input do
-    @desc "ID of bot to delete"
-    field :id, non_null(:uuid)
-  end
-
-  input_object :bot_subscribe_input do
-    @desc "ID of bot to which to subscribe"
-    field :id, non_null(:uuid)
-
-    @desc "Optional location to immediately apply to user against bot"
-    field :user_location, :user_location_update_input
-
-    @desc "Whether to enable guest functionality for the user (default: false)"
-    field :guest, :boolean
-  end
-
-  input_object :bot_unsubscribe_input do
-    @desc "ID of the bot from which to unsubscribe"
-    field :id, non_null(:uuid)
-  end
-
-  input_object :bot_item_publish_input do
-    @desc "ID of the bot containing the item"
-    field :bot_id, non_null(:uuid)
-
-    @desc """
-    ID for the item. If this is not supplied, a new one will be generated.
-    NOTE: For backwards compatability, supplying a non-existant ID will
-    create a new item with an unrelated ID different from the one provided.
-    """
-    field :id, :string
-
-    @desc "Content of the item"
-    field :content, :string
-
-    @desc "URL for an image attached to the item"
-    field :image_url, :string
-  end
-
-  input_object :bot_item_delete_input do
-    @desc "ID of the bot containing the item"
-    field :bot_id, non_null(:uuid)
-
-    @desc "ID of the item to delete"
-    field :id, non_null(:uuid)
-  end
-
-  input_object :bot_invite_input do
-    @desc "ID of the bot to which the user is invited"
-    field :bot_id, non_null(:uuid)
-
-    @desc "Users to invite"
-    field :user_ids, non_null(list_of(non_null(:uuid)))
-  end
-
-  input_object :bot_invitation_respond_input do
-    @desc "ID of the invitation being replied to"
-    field :invitation_id, non_null(:aint)
-
-    @desc "Whether the invitation is accepted (true) or declined (false)"
-    field :accept, non_null(:boolean)
-
-    @desc "Optional location to immediately apply to user against bot"
-    field :user_location, :user_location_update_input
-  end
-
-  payload_object(:bot_create_payload, :bot)
-  payload_object(:bot_update_payload, :bot)
-  payload_object(:bot_delete_payload, :boolean)
-  payload_object(:bot_subscribe_payload, :boolean)
-  payload_object(:bot_unsubscribe_payload, :boolean)
-  payload_object(:bot_item_publish_payload, :bot_item)
-  payload_object(:bot_item_delete_payload, :boolean)
-  payload_object(:bot_invite_payload, :bot_invitation)
-  payload_object(:bot_invitation_respond_payload, :boolean)
 
   object :bot_queries do
     @desc "Retrieve a single bot by ID"
@@ -360,6 +269,126 @@ defmodule WockyAPI.Schema.BotTypes do
       resolve &Bot.get_local_bots_cluster/3
     end
   end
+
+  # -------------------------------------------------------------------
+  # Mutations
+
+  @desc "Parameters for creating and updating a bot"
+  input_object :bot_params do
+    field :title, :string
+
+    field :lat, :float
+    field :lon, :float
+    field :radius, :float
+    field :description, :string
+    field :shortname, :string
+    field :image_url, :string
+    field :type, :string
+    field :icon, :string
+    field :address, :string
+    field :address_data, :string
+  end
+
+  input_object :bot_create_input do
+    field :values, non_null(:bot_params)
+
+    @desc "Optional location to immediately apply to user against bot"
+    field :user_location, :user_location_update_input
+  end
+
+  payload_object(:bot_create_payload, :bot)
+
+  input_object :bot_update_input do
+    @desc "ID of bot to update"
+    field :id, non_null(:uuid)
+
+    field :values, non_null(:bot_params)
+
+    @desc "Optional location to immediately apply to user against bot"
+    field :user_location, :user_location_update_input
+  end
+
+  payload_object(:bot_update_payload, :bot)
+
+  input_object :bot_delete_input do
+    @desc "ID of bot to delete"
+    field :id, non_null(:uuid)
+  end
+
+  payload_object(:bot_delete_payload, :boolean)
+
+  input_object :bot_subscribe_input do
+    @desc "ID of bot to which to subscribe"
+    field :id, non_null(:uuid)
+
+    @desc "Optional location to immediately apply to user against bot"
+    field :user_location, :user_location_update_input
+
+    @desc "Whether to enable guest functionality for the user (default: false)"
+    field :guest, :boolean
+  end
+
+  payload_object(:bot_subscribe_payload, :boolean)
+
+  input_object :bot_unsubscribe_input do
+    @desc "ID of the bot from which to unsubscribe"
+    field :id, non_null(:uuid)
+  end
+
+  payload_object(:bot_unsubscribe_payload, :boolean)
+
+  input_object :bot_item_publish_input do
+    @desc "ID of the bot containing the item"
+    field :bot_id, non_null(:uuid)
+
+    @desc """
+    ID for the item. If this is not supplied, a new one will be generated.
+    NOTE: For backwards compatability, supplying a non-existant ID will
+    create a new item with an unrelated ID different from the one provided.
+    """
+    field :id, :string
+
+    @desc "Content of the item"
+    field :content, :string
+
+    @desc "URL for an image attached to the item"
+    field :image_url, :string
+  end
+
+  payload_object(:bot_item_publish_payload, :bot_item)
+
+  input_object :bot_item_delete_input do
+    @desc "ID of the bot containing the item"
+    field :bot_id, non_null(:uuid)
+
+    @desc "ID of the item to delete"
+    field :id, non_null(:uuid)
+  end
+
+  payload_object(:bot_item_delete_payload, :boolean)
+
+  input_object :bot_invite_input do
+    @desc "ID of the bot to which the user is invited"
+    field :bot_id, non_null(:uuid)
+
+    @desc "Users to invite"
+    field :user_ids, non_null(list_of(non_null(:uuid)))
+  end
+
+  payload_object(:bot_invite_payload, :bot_invitation)
+
+  input_object :bot_invitation_respond_input do
+    @desc "ID of the invitation being replied to"
+    field :invitation_id, non_null(:aint)
+
+    @desc "Whether the invitation is accepted (true) or declined (false)"
+    field :accept, non_null(:boolean)
+
+    @desc "Optional location to immediately apply to user against bot"
+    field :user_location, :user_location_update_input
+  end
+
+  payload_object(:bot_invitation_respond_payload, :boolean)
 
   object :bot_mutations do
     @desc "Create a new bot"
@@ -426,6 +455,9 @@ defmodule WockyAPI.Schema.BotTypes do
       changeset_mutation_middleware()
     end
   end
+
+  # -------------------------------------------------------------------
+  # Subscriptions
 
   enum :visitor_action do
     @desc "A visitor newly arriving at a bot"

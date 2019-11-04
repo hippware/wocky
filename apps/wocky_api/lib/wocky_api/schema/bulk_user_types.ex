@@ -7,6 +7,9 @@ defmodule WockyAPI.Schema.BulkUserTypes do
 
   alias WockyAPI.Resolvers.BulkUser
 
+  # -------------------------------------------------------------------
+  # Queries - bulk user lookup
+
   @desc "Single result for userBulkLookup"
   object :user_bulk_lookup_result do
     @desc "The original input phone number for which this is the result set"
@@ -22,22 +25,27 @@ defmodule WockyAPI.Schema.BulkUserTypes do
     field :relationship, :user_contact_relationship
   end
 
-  @desc "Single result for friendBulkInvite"
-  object :friend_bulk_invite_result do
-    @desc "The original input phone number for which this is the result set"
-    field :phone_number, non_null(:string)
+  object :bulk_user_queries do
+    @desc """
+    Lookup users by phone number. Numbers not already in E.164 format will be
+    attempted to be parsed and normalised based on the user's country (which
+    in turn is inferred from their phone number as received from Firebase).
 
-    @desc "The E.164 normalised form of the phone number"
-    field :e164_phone_number, :string
+    Bypass numbers will be treated as being in the US.
+    """
+    field :user_bulk_lookup, type: list_of(:user_bulk_lookup_result) do
+      @desc "The list of phone numbers to lookup"
+      arg :phone_numbers, non_null(list_of(non_null(:string)))
+      resolve &BulkUser.lookup/3
+    end
+  end
 
-    @desc "The user, if any, currently associated with the phone number"
-    field :user, :user
+  # -------------------------------------------------------------------
+  # Mutations - bulk friend invite
 
-    @desc "The result of the attempt to send the invitation"
-    field :result, non_null(:bulk_invite_result)
-
-    @desc "The details of the error, if any, from sending the invitation"
-    field :error, :string
+  input_object :friend_bulk_invite_input do
+    @desc "A list of phone numbers to which to send invitations"
+    field :phone_numbers, non_null(list_of(non_null(:string)))
   end
 
   enum :bulk_invite_result do
@@ -64,30 +72,28 @@ defmodule WockyAPI.Schema.BulkUserTypes do
     value :sms_error
   end
 
-  input_object :friend_bulk_invite_input do
-    @desc "A list of phone numbers to which to send invitations"
-    field :phone_numbers, non_null(list_of(non_null(:string)))
+  @desc "Single result for friendBulkInvite"
+  object :friend_bulk_invite_result do
+    @desc "The original input phone number for which this is the result set"
+    field :phone_number, non_null(:string)
+
+    @desc "The E.164 normalised form of the phone number"
+    field :e164_phone_number, :string
+
+    @desc "The user, if any, currently associated with the phone number"
+    field :user, :user
+
+    @desc "The result of the attempt to send the invitation"
+    field :result, non_null(:bulk_invite_result)
+
+    @desc "The details of the error, if any, from sending the invitation"
+    field :error, :string
   end
 
   payload_object(
     :friend_bulk_invite_payload,
     list_of(:friend_bulk_invite_result)
   )
-
-  object :bulk_user_queries do
-    @desc """
-    Lookup users by phone number. Numbers not already in E.164 format will be
-    attempted to be parsed and normalised based on the user's country (which
-    in turn is inferred from their phone number as received from Firebase).
-
-    Bypass numbers will be treated as being in the US.
-    """
-    field :user_bulk_lookup, type: list_of(:user_bulk_lookup_result) do
-      @desc "The list of phone numbers to lookup"
-      arg :phone_numbers, non_null(list_of(non_null(:string)))
-      resolve &BulkUser.lookup/3
-    end
-  end
 
   object :bulk_user_mutations do
     @desc """

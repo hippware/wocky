@@ -8,6 +8,17 @@ defmodule WockyAPI.Schema.MessageTypes do
   alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.Message
 
+  # -------------------------------------------------------------------
+  # Objects
+
+  enum :message_direction do
+    @desc "The message was sent to the current user"
+    value :incoming
+
+    @desc "The message was sent by the current user"
+    value :outgoing
+  end
+
   @desc "A message to a user"
   object :message do
     @desc "The ID of this message"
@@ -38,16 +49,8 @@ defmodule WockyAPI.Schema.MessageTypes do
     field :updated_at, non_null(:datetime)
   end
 
-  object :message_mark_read_result do
-    @desc "ID of message being marked"
-    field :id, non_null(:integer)
-
-    @desc "Result of marking"
-    field :successful, non_null(:boolean)
-
-    @desc "Any error that occurred"
-    field :error, :string
-  end
+  # -------------------------------------------------------------------
+  # Connections
 
   connection :messages, node_type: :message do
     total_count_field()
@@ -63,13 +66,8 @@ defmodule WockyAPI.Schema.MessageTypes do
     end
   end
 
-  enum :message_direction do
-    @desc "The message was sent to the current user"
-    value :incoming
-
-    @desc "The message was sent by the current user"
-    value :outgoing
-  end
+  # -------------------------------------------------------------------
+  # Mutations
 
   @desc "DEPRECATED - use messageSendInput"
   input_object :send_message_input do
@@ -97,10 +95,7 @@ defmodule WockyAPI.Schema.MessageTypes do
     field :client_data, :string
   end
 
-  input_object :message_mark_read_input do
-    @desc "List of messages to mark as read"
-    field :messages, non_null(list_of(:message_mark_read))
-  end
+  payload_object(:message_send_payload, :boolean)
 
   input_object(:message_mark_read) do
     @desc "ID of message to mark"
@@ -110,7 +105,22 @@ defmodule WockyAPI.Schema.MessageTypes do
     field :read, :boolean
   end
 
-  payload_object(:message_send_payload, :boolean)
+  input_object :message_mark_read_input do
+    @desc "List of messages to mark as read"
+    field :messages, non_null(list_of(:message_mark_read))
+  end
+
+  object :message_mark_read_result do
+    @desc "ID of message being marked"
+    field :id, non_null(:integer)
+
+    @desc "Result of marking"
+    field :successful, non_null(:boolean)
+
+    @desc "Any error that occurred"
+    field :error, :string
+  end
+
   payload_object(:message_mark_read_payload, list_of(:message_mark_read_result))
 
   object :message_mutations do
@@ -128,6 +138,9 @@ defmodule WockyAPI.Schema.MessageTypes do
       changeset_mutation_middleware()
     end
   end
+
+  # -------------------------------------------------------------------
+  # Subscriptions
 
   @desc "Subscribe to incoming messages for the current user"
   object :message_subscriptions do

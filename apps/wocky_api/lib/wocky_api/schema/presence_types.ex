@@ -7,6 +7,19 @@ defmodule WockyAPI.Schema.PresenceTypes do
 
   alias WockyAPI.Resolvers.Presence
 
+  # -------------------------------------------------------------------
+  # Objects
+
+  enum :presence_status do
+    @desc "Online"
+    value :online
+
+    @desc "Offline"
+    value :offline
+
+    # Maybe other items here such as 'DND'
+  end
+
   @desc "Presence data for a user"
   object :presence do
     @desc "The user's current status"
@@ -21,15 +34,8 @@ defmodule WockyAPI.Schema.PresenceTypes do
     field :updated_at, :datetime
   end
 
-  enum :presence_status do
-    @desc "Online"
-    value :online
-
-    @desc "Offline"
-    value :offline
-
-    # Maybe other items here such as 'DND'
-  end
+  # -------------------------------------------------------------------
+  # Mutations
 
   input_object :presence_status_input do
     @desc "The status to set for the user's presence"
@@ -46,6 +52,9 @@ defmodule WockyAPI.Schema.PresenceTypes do
       middleware &build_payload/2
     end
   end
+
+  # -------------------------------------------------------------------
+  # Subscriptions
 
   object :presence_subscriptions do
     @desc """

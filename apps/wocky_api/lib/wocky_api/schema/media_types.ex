@@ -7,23 +7,8 @@ defmodule WockyAPI.Schema.MediaTypes do
 
   alias WockyAPI.Resolvers.Media
 
-  @desc "A Wocky TROS media object"
-  object :media do
-    @desc "The TROS URL (invariant over the life of the object)"
-    field :tros_url, :string
-
-    @desc "The S3 URL for the full object (valid for 10 minutes)"
-    field :full_url, :string, deprecate: "Please use the 'urls' list"
-
-    @desc "The S3 URL for the thumbnail object (valid for 10 minutes)"
-    field :thumbnail_url, :string, deprecate: "Please use the 'urls' list"
-
-    @desc """
-    A list of URLs for this image in different formats. If a format does not
-    appear in the list, the image is not available in that format.
-    """
-    field :urls, non_null(list_of(non_null(:media_url)))
-  end
+  # -------------------------------------------------------------------
+  # Objects
 
   @desc "Formats in which media can be downloaded"
   enum :media_format do
@@ -52,6 +37,46 @@ defmodule WockyAPI.Schema.MediaTypes do
     field :url, non_null(:string)
   end
 
+  @desc "A Wocky TROS media object"
+  object :media do
+    @desc "The TROS URL (invariant over the life of the object)"
+    field :tros_url, :string
+
+    @desc "The S3 URL for the full object (valid for 10 minutes)"
+    field :full_url, :string, deprecate: "Please use the 'urls' list"
+
+    @desc "The S3 URL for the thumbnail object (valid for 10 minutes)"
+    field :thumbnail_url, :string, deprecate: "Please use the 'urls' list"
+
+    @desc """
+    A list of URLs for this image in different formats. If a format does not
+    appear in the list, the image is not available in that format.
+    """
+    field :urls, non_null(list_of(non_null(:media_url)))
+  end
+
+  # -------------------------------------------------------------------
+  # Queries
+
+  object :media_queries do
+    @desc "Request the newest retrieval URLS for a TROS file"
+    field :media_urls, :media do
+      @desc "The TROS URL of the object for which to retrieve URLs"
+      arg :tros_url, non_null(:string)
+
+      @desc """
+      Time (in milliseconds) to wait before returning an error if the
+      file has not become ready
+      """
+      arg :timeout, :integer
+
+      resolve &Media.get_media_urls/3
+    end
+  end
+
+  # -------------------------------------------------------------------
+  # Mutations
+
   input_object :media_upload_params do
     @desc "Name of the file being uploaded"
     field :filename, non_null(:string)
@@ -65,14 +90,6 @@ defmodule WockyAPI.Schema.MediaTypes do
     @desc "Access string for the file being uploaded"
     field :access, :string
   end
-
-  payload_object(:media_upload_payload, :media_upload_result)
-
-  input_object :media_delete_params do
-    field :url, non_null(:string)
-  end
-
-  payload_object(:media_delete_payload, :boolean)
 
   object :request_header do
     @desc "HTTP Header name"
@@ -99,21 +116,13 @@ defmodule WockyAPI.Schema.MediaTypes do
     field :reference_url, non_null(:string)
   end
 
-  object :media_queries do
-    @desc "Request the newest retrieval URLS for a TROS file"
-    field :media_urls, :media do
-      @desc "The TROS URL of the object for which to retrieve URLs"
-      arg :tros_url, non_null(:string)
+  payload_object(:media_upload_payload, :media_upload_result)
 
-      @desc """
-      Time (in milliseconds) to wait before returning an error if the
-      file has not become ready
-      """
-      arg :timeout, :integer
-
-      resolve &Media.get_media_urls/3
-    end
+  input_object :media_delete_params do
+    field :url, non_null(:string)
   end
+
+  payload_object(:media_delete_payload, :boolean)
 
   object :media_mutations do
     @desc "Request upload of a file"

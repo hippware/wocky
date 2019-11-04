@@ -8,6 +8,9 @@ defmodule WockyAPI.Schema.BlockTypes do
   alias WockyAPI.Resolvers.Block
   alias WockyAPI.Resolvers.Media
 
+  # -------------------------------------------------------------------
+  # Objects
+
   @desc "A block on a user"
   object :block do
     @desc "The blocked user"
@@ -37,6 +40,9 @@ defmodule WockyAPI.Schema.BlockTypes do
     end
   end
 
+  # -------------------------------------------------------------------
+  # Connections
+
   connection :blocks, node_type: :block do
     total_count_field()
 
@@ -44,17 +50,21 @@ defmodule WockyAPI.Schema.BlockTypes do
     end
   end
 
+  # -------------------------------------------------------------------
+  # Mutations
+
   input_object :user_block_input do
     @desc "The ID of the user to block"
     field :user_id, non_null(:uuid)
   end
+
+  payload_object(:user_block_payload, :boolean)
 
   input_object :user_unblock_input do
     @desc "The ID of the user to unblock"
     field :user_id, non_null(:uuid)
   end
 
-  payload_object(:user_block_payload, :boolean)
   payload_object(:user_unblock_payload, :boolean)
 
   object :block_mutations do
