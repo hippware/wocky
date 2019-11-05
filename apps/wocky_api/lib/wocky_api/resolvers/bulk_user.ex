@@ -8,7 +8,10 @@ defmodule WockyAPI.Resolvers.BulkUser do
 
   @max_lookups 100
 
-  def lookup(_root, args, %{context: %{current_user: user}}) do
+  # -------------------------------------------------------------------
+  # Queries - bulk user lookup
+
+  def get_user_bulk_lookup(args, %{context: %{current_user: user}}) do
     numbers = args[:phone_numbers]
 
     with :ok <- check_lookup_count(numbers),
@@ -31,10 +34,6 @@ defmodule WockyAPI.Resolvers.BulkUser do
 
       {:ok, lookup_results}
     end
-  end
-
-  def send_invitations(_root, args, %{context: %{current_user: user}}) do
-    {:ok, BulkInvitation.send(args[:input][:phone_numbers], user)}
   end
 
   defp check_lookup_count(numbers) do
@@ -90,5 +89,12 @@ defmodule WockyAPI.Resolvers.BulkUser do
     failed_numbers
     |> Enum.map(&%{phone_number: &1})
     |> Enum.concat(results)
+  end
+
+  # -------------------------------------------------------------------
+  # Mutations - bulk friend invite
+
+  def friend_bulk_invite(args, %{context: %{current_user: user}}) do
+    {:ok, BulkInvitation.send(args[:input][:phone_numbers], user)}
   end
 end

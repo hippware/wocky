@@ -19,19 +19,19 @@ defmodule WockyAPI.Resolvers.User do
 
   def get_last_name(user, _, _), do: {:ok, Account.last_name(user)}
 
-  def get_current_user(_root, _args, %{context: %{current_user: user}}) do
+  def get_current_user(_args, %{context: %{current_user: user}}) do
     {:ok, user}
   end
 
-  def get_current_user(_root, _args, _info) do
+  def get_current_user(_args, _info) do
     {:error, "This operation requires an authenticated user"}
   end
 
-  def get_user(_root, %{id: id}, %{context: %{current_user: %{id: id} = u}}) do
+  def get_user(%{id: id}, %{context: %{current_user: %{id: id} = u}}) do
     {:ok, u}
   end
 
-  def get_user(_root, %{id: id}, %{context: %{current_user: current_user}}) do
+  def get_user(%{id: id}, %{context: %{current_user: current_user}}) do
     case Account.get_user(id, current_user) do
       nil -> user_not_found(id)
       user -> {:ok, user}
@@ -40,11 +40,11 @@ defmodule WockyAPI.Resolvers.User do
 
   def user_not_found(id), do: {:error, "User not found: " <> id}
 
-  def search_users(_root, %{limit: limit}, _info) when limit < 0 do
+  def get_users(%{limit: limit}, _info) when limit < 0 do
     {:error, "limit cannot be less than 0"}
   end
 
-  def search_users(_root, %{search_term: search_term} = args, %{
+  def get_users(%{search_term: search_term} = args, %{
         context: %{current_user: current_user}
       }) do
     limit = args[:limit] || @default_search_results
@@ -54,7 +54,7 @@ defmodule WockyAPI.Resolvers.User do
   # -------------------------------------------------------------------
   # User mutations
 
-  def update_user(_root, args, %{context: %{current_user: user}}) do
+  def user_update(args, %{context: %{current_user: user}}) do
     input = args[:input][:values] |> fix_name(user)
 
     Account.update(user, input)
@@ -81,7 +81,7 @@ defmodule WockyAPI.Resolvers.User do
 
   defp do_fix_name(_m, _user), do: nil
 
-  def delete_user(_root, _args, %{context: %{current_user: user}}) do
+  def user_delete(_args, %{context: %{current_user: user}}) do
     Account.delete(user.id)
     {:ok, true}
   end
@@ -89,12 +89,12 @@ defmodule WockyAPI.Resolvers.User do
   # -------------------------------------------------------------------
   # User invitation mutations
 
-  def make_invite_code(_root, _args, %{context: %{current_user: user}}) do
+  def user_invite_make_code(_args, %{context: %{current_user: user}}) do
     code = Account.make_invite_code(user)
     {:ok, %{successful: true, result: code}}
   end
 
-  def redeem_invite_code(_root, args, %{context: %{current_user: user}}) do
+  def user_invite_redeem_code(args, %{context: %{current_user: user}}) do
     result = Account.redeem_invite_code(user, args[:input][:code])
     {:ok, %{successful: result, result: result}}
   end
@@ -102,7 +102,7 @@ defmodule WockyAPI.Resolvers.User do
   # -------------------------------------------------------------------
   # Push notification mutations
 
-  def enable_notifications(%{input: i}, %{context: %{current_user: user}}) do
+  def push_notifications_enable(%{input: i}, %{context: %{current_user: user}}) do
     platform = Map.get(i, :platform)
     dev_mode = Map.get(i, :dev_mode)
 
@@ -110,7 +110,7 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, true}
   end
 
-  def disable_notifications(%{input: i}, %{context: %{current_user: user}}) do
+  def push_notifications_disable(%{input: i}, %{context: %{current_user: user}}) do
     :ok = Push.disable(user, i.device)
     {:ok, true}
   end
@@ -118,13 +118,13 @@ defmodule WockyAPI.Resolvers.User do
   # -------------------------------------------------------------------
   # User location mutations
 
-  def get_location_token(_root, _args, %{context: %{current_user: user}}) do
+  def user_location_get_token(_args, %{context: %{current_user: user}}) do
     {:ok, token} = Account.get_location_jwt(user)
 
     {:ok, %{successful: true, result: token}}
   end
 
-  def update_location(_root, %{input: i}, %{context: %{current_user: user}}) do
+  def user_location_update(%{input: i}, %{context: %{current_user: user}}) do
     location = UserLocation.new(i)
 
     with {:ok, _} <- Location.set_user_location(user, location) do
@@ -133,7 +133,7 @@ defmodule WockyAPI.Resolvers.User do
     end
   end
 
-  def trigger_location_request(_root, %{input: %{user_id: user_id}}, _info) do
+  def user_location_request_trigger(%{input: %{user_id: user_id}}, _info) do
     if Confex.get_env(:wocky_api, :enable_location_request_trigger) do
       # Trigger the silent push notification
       user = Account.get_user(user_id)

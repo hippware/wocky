@@ -19,48 +19,17 @@ defmodule WockyAPI.Resolvers.Bot do
   @max_local_bots 50
   @default_local_bots 15
 
-  def get_bot(_root, args, %{context: %{current_user: requestor}}) do
-    {:ok, Relation.get_bot(args[:id], requestor)}
-  end
+  def default_local_bots, do: @default_local_bots
+
+  def max_local_bots, do: @max_local_bots
+
+  defdelegate max_local_bots_search_radius, to: Relation
+
+  # -------------------------------------------------------------------
+  # Connections
 
   def get_bots(%User{} = user, args, %{context: %{current_user: requestor}}) do
     do_get_bots(user, requestor, args)
-  end
-
-  def get_local_bots(_root, %{limit: n}, _info) when n > @max_local_bots,
-    do: {:error, "Maximum local bots is #{@max_local_bots}"}
-
-  def get_local_bots(_root, args, %{context: %{current_user: requestor}}) do
-    point_a = Utils.map_point(args[:point_a])
-    point_b = Utils.map_point(args[:point_b])
-    limit = args[:limit] || @default_local_bots
-
-    case Relation.get_local_bots(requestor, point_a, point_b, limit) do
-      {:ok, bots} ->
-        {:ok, %{bots: bots, area_too_large: false}}
-
-      {:error, :area_too_large} ->
-        {:ok, %{bots: [], area_too_large: true}}
-    end
-  end
-
-  def get_local_bots_cluster(_root, args, %{context: %{current_user: requestor}}) do
-    point_a = Utils.map_point(args[:point_a])
-    point_b = Utils.map_point(args[:point_b])
-
-    case Relation.get_local_bots_clustered(
-           requestor,
-           point_a,
-           point_b,
-           args[:lat_divs],
-           args[:lon_divs]
-         ) do
-      {:ok, bots, clusters} ->
-        {:ok, %{bots: bots, clusters: clusters, area_too_large: false}}
-
-      {:error, :area_too_large} ->
-        {:ok, %{bots: [], clusters: [], area_too_large: true}}
-    end
   end
 
   defp do_get_bots(_user, _requestor, %{id: _, relationship: _}) do
@@ -83,82 +52,11 @@ defmodule WockyAPI.Resolvers.Bot do
     {:error, "Either 'id' or 'relationship' must be specified"}
   end
 
-  def get_bot_relationships(
-        %{parent: %User{} = user, node: %Bot{} = bot},
-        _args,
-        _info
-      ) do
-    {:ok, Relation.get_bot_relationships(user, bot)}
-  end
-
-  def get_bot_relationships(
-        %{parent: %Bot{} = bot, node: %User{} = user},
-        _args,
-        _info
-      ) do
-    {:ok, Relation.get_bot_relationships(user, bot)}
-  end
-
-  def get_lat(%{location: l}, _args, _info) do
-    {:ok, GeoUtils.get_lat(l)}
-  end
-
-  def get_lon(%{location: l}, _args, _info) do
-    {:ok, GeoUtils.get_lon(l)}
-  end
-
-  def get_active_bots(_root, args, %{context: %{current_user: user}}) do
+  def get_active_bots(args, %{context: %{current_user: user}}) do
     user
     |> Relation.active_bots_query()
     |> Utils.connection_from_query(user, args)
   end
-
-  def create_bot(_root, %{input: input}, %{context: %{current_user: user}}) do
-    with {:ok, bot} <-
-           input[:values]
-           |> parse_lat_lon()
-           |> Map.put(:id, ID.new())
-           |> Map.put(:user_id, user.id)
-           |> POI.insert(user),
-         {:ok, _} <- maybe_update_location(input, user, bot) do
-      {:ok, bot}
-    end
-  end
-
-  def create_bot(_root, %{}, %{context: %{current_user: user}}),
-    do: {:ok, POI.preallocate(user)}
-
-  def update_bot(_root, %{input: input}, %{context: %{current_user: requestor}}) do
-    case Relation.get_owned_bot(input[:id], requestor, true) do
-      nil ->
-        not_found_error(input[:id])
-
-      bot ->
-        updates = parse_lat_lon(input[:values])
-
-        with {:ok, bot} <- POI.update(bot, updates),
-             {:ok, _} <- maybe_update_location(input, requestor, bot) do
-          {:ok, bot}
-        end
-    end
-  end
-
-  defp maybe_update_location(%{user_location: l}, user, bot)
-       when not is_nil(l) do
-    bot
-    |> POI.sub_setup_event()
-    |> Waiter.wait(5000, fn -> Relation.subscribed?(user, bot) end)
-
-    Location.set_user_location_for_bot(user, UserLocation.new(l), bot)
-  end
-
-  defp maybe_update_location(_, _, _), do: {:ok, :skip}
-
-  defp parse_lat_lon(%{lat: lat, lon: lon} = input) do
-    Map.put(input, :location, GeoUtils.point(lat, lon))
-  end
-
-  defp parse_lat_lon(input), do: input
 
   def get_items(bot, args, _info) do
     bot
@@ -191,7 +89,140 @@ defmodule WockyAPI.Resolvers.Bot do
     {:error, "At least one of 'id' or 'type' must be specified"}
   end
 
-  def subscribe(_root, %{input: input}, %{context: %{current_user: requestor}}) do
+  def get_bot_relationships(
+        %{parent: %User{} = user, node: %Bot{} = bot},
+        _args,
+        _info
+      ) do
+    {:ok, Relation.get_bot_relationships(user, bot)}
+  end
+
+  def get_bot_relationships(
+        %{parent: %Bot{} = bot, node: %User{} = user},
+        _args,
+        _info
+      ) do
+    {:ok, Relation.get_bot_relationships(user, bot)}
+  end
+
+  # -------------------------------------------------------------------
+  # Queries
+
+  def get_bot(args, %{context: %{current_user: requestor}}) do
+    {:ok, Relation.get_bot(args[:id], requestor)}
+  end
+
+  def get_local_bots(%{limit: n}, _info) when n > @max_local_bots,
+    do: {:error, "Maximum local bots is #{@max_local_bots}"}
+
+  def get_local_bots(args, %{context: %{current_user: requestor}}) do
+    point_a = Utils.map_point(args[:point_a])
+    point_b = Utils.map_point(args[:point_b])
+    limit = args[:limit] || @default_local_bots
+
+    case Relation.get_local_bots(requestor, point_a, point_b, limit) do
+      {:ok, bots} ->
+        {:ok, %{bots: bots, area_too_large: false}}
+
+      {:error, :area_too_large} ->
+        {:ok, %{bots: [], area_too_large: true}}
+    end
+  end
+
+  def get_local_bots_cluster(args, %{context: %{current_user: requestor}}) do
+    point_a = Utils.map_point(args[:point_a])
+    point_b = Utils.map_point(args[:point_b])
+
+    case Relation.get_local_bots_clustered(
+           requestor,
+           point_a,
+           point_b,
+           args[:lat_divs],
+           args[:lon_divs]
+         ) do
+      {:ok, bots, clusters} ->
+        {:ok, %{bots: bots, clusters: clusters, area_too_large: false}}
+
+      {:error, :area_too_large} ->
+        {:ok, %{bots: [], clusters: [], area_too_large: true}}
+    end
+  end
+
+  def get_lat(%{location: l}, _args, _info) do
+    {:ok, GeoUtils.get_lat(l)}
+  end
+
+  def get_lon(%{location: l}, _args, _info) do
+    {:ok, GeoUtils.get_lon(l)}
+  end
+
+  # -------------------------------------------------------------------
+  # Mutations
+
+  def bot_create(%{input: input}, %{context: %{current_user: user}}) do
+    with {:ok, bot} <-
+           input[:values]
+           |> parse_lat_lon()
+           |> Map.put(:id, ID.new())
+           |> Map.put(:user_id, user.id)
+           |> POI.insert(user),
+         {:ok, _} <- maybe_update_location(input, user, bot) do
+      {:ok, bot}
+    end
+  end
+
+  def bot_create(%{}, %{context: %{current_user: user}}),
+    do: {:ok, POI.preallocate(user)}
+
+  def bot_update(%{input: input}, %{context: %{current_user: requestor}}) do
+    case Relation.get_owned_bot(input[:id], requestor, true) do
+      nil ->
+        not_found_error(input[:id])
+
+      bot ->
+        updates = parse_lat_lon(input[:values])
+
+        with {:ok, bot} <- POI.update(bot, updates),
+             {:ok, _} <- maybe_update_location(input, requestor, bot) do
+          {:ok, bot}
+        end
+    end
+  end
+
+  defp maybe_update_location(%{user_location: l}, user, bot)
+       when not is_nil(l) do
+    bot
+    |> POI.sub_setup_event()
+    |> Waiter.wait(5000, fn -> Relation.subscribed?(user, bot) end)
+
+    Location.set_user_location_for_bot(user, UserLocation.new(l), bot)
+  end
+
+  defp maybe_update_location(_, _, _), do: {:ok, :skip}
+
+  defp parse_lat_lon(%{lat: lat, lon: lon} = input) do
+    Map.put(input, :location, GeoUtils.point(lat, lon))
+  end
+
+  defp parse_lat_lon(input), do: input
+
+  def bot_delete(%{input: %{id: bot_id}}, %{
+        context: %{current_user: %{id: user_id} = requestor}
+      }) do
+    case Relation.get_bot(bot_id, requestor) do
+      nil ->
+        not_found_error(bot_id)
+
+      bot = %{user_id: ^user_id} ->
+        POI.delete(bot)
+        {:ok, true}
+
+      _ ->
+        not_owned_error()
+    end
+  end
+
+  def bot_subscribe(%{input: input}, %{context: %{current_user: requestor}}) do
     case Relation.get_bot(input[:id], requestor) do
       nil ->
         not_found_error(input[:id])
@@ -207,7 +238,7 @@ defmodule WockyAPI.Resolvers.Bot do
     end
   end
 
-  def unsubscribe(_root, %{input: %{id: bot_id}}, %{
+  def bot_unsubscribe(%{input: %{id: bot_id}}, %{
         context: %{current_user: requestor}
       }) do
     case Relation.get_bot(bot_id, requestor) do
@@ -220,21 +251,74 @@ defmodule WockyAPI.Resolvers.Bot do
     end
   end
 
-  def delete(_root, %{input: %{id: bot_id}}, %{
-        context: %{current_user: %{id: user_id} = requestor}
-      }) do
-    case Relation.get_bot(bot_id, requestor) do
-      nil ->
-        not_found_error(bot_id)
+  def bot_item_publish(%{input: args}, %{context: %{current_user: requestor}}) do
+    id = args[:id]
+    content = args[:content]
+    image_url = args[:image_url]
 
-      bot = %{user_id: ^user_id} ->
-        POI.delete(bot)
-        {:ok, true}
-
-      _ ->
-        not_owned_error()
+    with %Bot{} = bot <- Relation.get_bot(args.bot_id, requestor),
+         {:ok, item} <- POI.put_item(bot, id, content, image_url, requestor) do
+      {:ok, item}
+    else
+      nil -> not_found_error(args.bot_id)
+      {:error, :permission_denied} -> {:error, "Permission denied"}
+      error -> error
     end
   end
+
+  def bot_item_delete(args, %{context: %{current_user: requestor}}) do
+    with %Bot{} = bot <- Relation.get_bot(args[:input][:bot_id], requestor),
+         :ok <- POI.delete_item(bot, args[:input][:id], requestor) do
+      {:ok, true}
+    else
+      nil -> not_found_error(args[:input][:bot_id])
+      {:error, :permission_denied} -> {:error, "Permission denied"}
+      {:error, :not_found} -> {:error, "Item not found"}
+      error -> error
+    end
+  end
+
+  def bot_invite(args, %{context: %{current_user: requestor}}) do
+    case Relation.get_owned_bot(args[:input][:bot_id], requestor) do
+      nil ->
+        {:error, "Invalid bot"}
+
+      bot ->
+        {:ok, Enum.map(args[:input][:user_ids], &do_invite(&1, bot, requestor))}
+    end
+  end
+
+  defp do_invite(invitee, bot, requestor) do
+    with %User{} = invitee <- Account.get_user(invitee, requestor),
+         {:ok, invitation} <- Relation.invite(invitee, bot, requestor) do
+      invitation
+    else
+      nil -> {:error, "Invalid user"}
+      {:error, :permission_denied} -> {:error, "Permission denied"}
+      error -> error
+    end
+  end
+
+  def bot_invitation_respond(
+        %{input: %{invitation_id: id, accept: accept?} = input},
+        %{context: %{current_user: requestor}}
+      ) do
+    with %Invitation{} = invitation <- Relation.get_invitation(id, requestor),
+         {:ok, result} <- Relation.respond(invitation, accept?, requestor),
+         {:ok, _} <- maybe_update_location(input, requestor, result.bot) do
+      {:ok, true}
+    else
+      nil -> {:error, "Invalid invitation"}
+      {:error, :permission_denied} -> {:error, "Permission denied"}
+      error -> error
+    end
+  end
+
+  defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
+  defp not_owned_error, do: {:error, "Operation only permitted on owned bots"}
+
+  # -------------------------------------------------------------------
+  # Subscriptions
 
   def visitor_subscription_topic(user_id) do
     "visitor_subscription_" <> user_id
@@ -264,77 +348,4 @@ defmodule WockyAPI.Resolvers.Bot do
 
     Subscription.publish(Endpoint, notification, targets)
   end
-
-  def publish_item(_root, %{input: args}, %{context: %{current_user: requestor}}) do
-    id = args[:id]
-    content = args[:content]
-    image_url = args[:image_url]
-
-    with %Bot{} = bot <- Relation.get_bot(args.bot_id, requestor),
-         {:ok, item} <- POI.put_item(bot, id, content, image_url, requestor) do
-      {:ok, item}
-    else
-      nil -> not_found_error(args.bot_id)
-      {:error, :permission_denied} -> {:error, "Permission denied"}
-      error -> error
-    end
-  end
-
-  def delete_item(_root, args, %{context: %{current_user: requestor}}) do
-    with %Bot{} = bot <- Relation.get_bot(args[:input][:bot_id], requestor),
-         :ok <- POI.delete_item(bot, args[:input][:id], requestor) do
-      {:ok, true}
-    else
-      nil -> not_found_error(args[:input][:bot_id])
-      {:error, :permission_denied} -> {:error, "Permission denied"}
-      {:error, :not_found} -> {:error, "Item not found"}
-      error -> error
-    end
-  end
-
-  def invite(_root, args, %{context: %{current_user: requestor}}) do
-    case Relation.get_owned_bot(args[:input][:bot_id], requestor) do
-      nil ->
-        {:error, "Invalid bot"}
-
-      bot ->
-        {:ok, Enum.map(args[:input][:user_ids], &do_invite(&1, bot, requestor))}
-    end
-  end
-
-  defp do_invite(invitee, bot, requestor) do
-    with %User{} = invitee <- Account.get_user(invitee, requestor),
-         {:ok, invitation} <- Relation.invite(invitee, bot, requestor) do
-      invitation
-    else
-      nil -> {:error, "Invalid user"}
-      {:error, :permission_denied} -> {:error, "Permission denied"}
-      error -> error
-    end
-  end
-
-  def invitation_respond(
-        _root,
-        %{input: %{invitation_id: id, accept: accept?} = input},
-        %{context: %{current_user: requestor}}
-      ) do
-    with %Invitation{} = invitation <- Relation.get_invitation(id, requestor),
-         {:ok, result} <- Relation.respond(invitation, accept?, requestor),
-         {:ok, _} <- maybe_update_location(input, requestor, result.bot) do
-      {:ok, true}
-    else
-      nil -> {:error, "Invalid invitation"}
-      {:error, :permission_denied} -> {:error, "Permission denied"}
-      error -> error
-    end
-  end
-
-  def default_local_bots, do: @default_local_bots
-
-  def max_local_bots, do: @max_local_bots
-
-  defdelegate max_local_bots_search_radius, to: Relation
-
-  defp not_found_error(id), do: {:error, "Bot not found: #{id}"}
-  defp not_owned_error, do: {:error, "Operation only permitted on owned bots"}
 end

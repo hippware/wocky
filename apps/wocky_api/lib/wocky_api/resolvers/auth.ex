@@ -3,11 +3,14 @@ defmodule WockyAPI.Resolvers.Auth do
 
   alias Wocky.Account
 
-  def authenticate(_root, _input, %{context: %{current_user: _}}) do
+  # -------------------------------------------------------------------
+  # Mutations
+
+  def authenticate(_input, %{context: %{current_user: _}}) do
     {:error, "already authenticated"}
   end
 
-  def authenticate(_root, %{token: token}, _info) do
+  def authenticate(%{token: token}, _info) do
     case Account.authenticate(token) do
       {:ok, auth_data} ->
         {:ok, auth_data}

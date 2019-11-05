@@ -7,24 +7,8 @@ defmodule WockyAPI.Schema.NotificationTypes do
 
   alias WockyAPI.Resolvers.Notification
 
-  connection :notifications, node_type: :notification do
-    total_count_field()
-
-    edge do
-    end
-  end
-
-  @desc "A single notification"
-  object :notification do
-    @desc "The notification's unique ID"
-    field :id, :aint
-
-    @desc "The type-specific data for the notification"
-    field :data, non_null(:notification_data)
-
-    @desc "The creation time of the notificaiton"
-    field :created_at, non_null(:datetime)
-  end
+  # -------------------------------------------------------------------
+  # Objects
 
   enum :notification_type do
     @desc "BotInvitationNotification type"
@@ -71,19 +55,16 @@ defmodule WockyAPI.Schema.NotificationTypes do
     resolve_type &Notification.resolve_type/2
   end
 
-  union :notification_update do
-    types [
-      :notification,
-      :notification_deleted
-    ]
+  @desc "A single notification"
+  object :notification do
+    @desc "The notification's unique ID"
+    field :id, :aint
 
-    resolve_type &Notification.resolve_update_type/2
-  end
+    @desc "The type-specific data for the notification"
+    field :data, non_null(:notification_data)
 
-  @desc "Deletion of a notification"
-  object :notification_deleted do
-    @desc "The id of the deleted notification"
-    field :id, non_null(:aint)
+    @desc "The creation time of the notificaiton"
+    field :created_at, non_null(:datetime)
   end
 
   @desc "A notification that a user has invited the recipient to a bot"
@@ -128,6 +109,14 @@ defmodule WockyAPI.Schema.NotificationTypes do
 
     @desc "The bot item that has been posted or edited"
     field :bot_item, non_null(:bot_item), resolve: dataloader(Wocky)
+  end
+
+  enum :geofence_event do
+    @desc "A user has entered a bot"
+    value :enter
+
+    @desc "A user has exited a bot"
+    value :exit
   end
 
   @desc "A notification that a user has entered or exited a subscribed bot"
@@ -197,20 +186,18 @@ defmodule WockyAPI.Schema.NotificationTypes do
     field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
   end
 
-  enum :geofence_event do
-    @desc "A user has entered a bot"
-    value :enter
+  # -------------------------------------------------------------------
+  # Connections
 
-    @desc "A user has exited a bot"
-    value :exit
+  connection :notifications, node_type: :notification do
+    total_count_field()
+
+    edge do
+    end
   end
 
-  input_object :notification_delete_input do
-    @desc "The id of the notification to delete"
-    field :id, non_null(:aint)
-  end
-
-  payload_object(:notification_delete_payload, :boolean)
+  # -------------------------------------------------------------------
+  # Queries
 
   object :notification_queries do
     @desc "Get the notifications for the current user"
@@ -231,6 +218,16 @@ defmodule WockyAPI.Schema.NotificationTypes do
     end
   end
 
+  # -------------------------------------------------------------------
+  # Mutations
+
+  input_object :notification_delete_input do
+    @desc "The id of the notification to delete"
+    field :id, non_null(:aint)
+  end
+
+  payload_object(:notification_delete_payload, :boolean)
+
   object :notification_mutations do
     @desc """
     Delete an existing notification. If the notification does not exist
@@ -238,9 +235,27 @@ defmodule WockyAPI.Schema.NotificationTypes do
     """
     field :notification_delete, type: :notification_delete_payload do
       arg :input, non_null(:notification_delete_input)
-      resolve &Notification.delete/3
+      resolve &Notification.notification_delete/2
       middleware &build_payload/2
     end
+  end
+
+  # -------------------------------------------------------------------
+  # Subscriptions
+
+  @desc "Deletion of a notification"
+  object :notification_deleted do
+    @desc "The id of the deleted notification"
+    field :id, non_null(:aint)
+  end
+
+  union :notification_update do
+    types [
+      :notification,
+      :notification_deleted
+    ]
+
+    resolve_type &Notification.resolve_update_type/2
   end
 
   object :notification_subscriptions do

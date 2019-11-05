@@ -8,6 +8,9 @@ defmodule WockyAPI.Schema.AuthTypes do
   alias WockyAPI.Middleware.Socket
   alias WockyAPI.Resolvers.Auth
 
+  # -------------------------------------------------------------------
+  # Mutations
+
   @desc "Authenticate a user to the GraphQL interface"
   object :auth_mutations do
     payload field :authenticate do
@@ -23,7 +26,7 @@ defmodule WockyAPI.Schema.AuthTypes do
         field :user, non_null(:user)
       end
 
-      resolve &Auth.authenticate/3
+      resolve &Auth.authenticate/2
 
       middleware Socket, :authenticated
     end

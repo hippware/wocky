@@ -8,17 +8,8 @@ defmodule WockyAPI.Schema.TestingTypes do
 
   alias WockyAPI.Resolvers.Testing
 
-  input_object :factory_insert_input do
-    field :count, :integer
-
-    field :type, non_null(:string)
-
-    field :string_params, list_of(:string_param)
-    field :int_params, list_of(:int_param)
-    field :float_params, list_of(:float_param)
-    field :bool_params, list_of(:bool_param)
-    field :atom_params, list_of(:atom_param)
-  end
+  # -------------------------------------------------------------------
+  # Mutations
 
   input_object :string_param do
     field :key, non_null(:string)
@@ -43,6 +34,18 @@ defmodule WockyAPI.Schema.TestingTypes do
   input_object :atom_param do
     field :key, non_null(:string)
     field :value, non_null(:string)
+  end
+
+  input_object :factory_insert_input do
+    field :count, :integer
+
+    field :type, non_null(:string)
+
+    field :string_params, list_of(:string_param)
+    field :int_params, list_of(:int_param)
+    field :float_params, list_of(:float_param)
+    field :bool_params, list_of(:bool_param)
+    field :atom_params, list_of(:atom_param)
   end
 
   payload_object(:factory_insert_payload, list_of(list_of(:string)))
