@@ -18,7 +18,10 @@ defmodule WockyAPI.GraphQL.UserTest do
     {:ok, user: user, user2: user2}
   end
 
-  describe "current user" do
+  # -------------------------------------------------------------------
+  # Queries
+
+  describe "currentUser query" do
     @query """
     {
       currentUser {
@@ -91,7 +94,73 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert error_msg(result) =~ "requires an authenticated user"
       assert result.data == %{"currentUser" => nil}
     end
+  end
 
+  describe "user query" do
+    @query """
+    query ($id: String!) {
+      user (id: $id) {
+        id
+        handle
+      }
+    }
+    """
+
+    test "get user info", %{user: user, user2: user2} do
+      result = run_query(@query, user, %{"id" => user2.id})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "user" => %{
+                 "id" => user2.id,
+                 "handle" => user2.handle
+               }
+             }
+    end
+
+    test "get user info with non-existant ID", %{user: user} do
+      result = run_query(@query, user, %{"id" => ID.new()})
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "User not found"
+      assert result.data == %{"user" => nil}
+    end
+
+    test "get user info with invalid ID", %{user: user} do
+      result = run_query(@query, user, %{"id" => "not_an_id"})
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "invalid value"
+      refute has_data(result)
+    end
+
+    test "get user info for blocked user", %{user: user, user2: user2} do
+      Block.block(user2, user)
+
+      result = run_query(@query, user, %{"id" => user2.id})
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "User not found"
+      assert result.data == %{"user" => nil}
+    end
+
+    test "get user info anonymously with non-existant ID" do
+      result = run_query(@query, nil, %{"id" => ID.new()})
+
+      assert error_count(result) == 1
+
+      assert error_msg(result) =~
+               "This operation requires an authenticated user"
+
+      assert result.data == %{"user" => nil}
+    end
+  end
+
+  # -------------------------------------------------------------------
+  # User mutations
+
+  describe "userUpdate mutation" do
     @query """
     mutation ($values: UserUpdateInput!) {
       userUpdate (input: {values: $values}) {
@@ -246,68 +315,70 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "other user" do
+  describe "userDelete mutation" do
+    @query "mutation { userDelete { result } }"
+
+    test "should be false with no related bots", %{user: user} do
+      result = run_query(@query, user)
+      refute has_errors(result)
+      assert result.data == %{"userDelete" => %{"result" => true}}
+      assert Account.get_user(user.id) == nil
+    end
+  end
+
+  # -------------------------------------------------------------------
+  # User invitation mutations
+
+  describe "userInviteMakeCode mutation" do
     @query """
-    query ($id: String!) {
-      user (id: $id) {
-        id
-        handle
+    mutation {
+      userInviteMakeCode {
+        successful
+        result
       }
     }
     """
 
-    test "get user info", %{user: user, user2: user2} do
-      result = run_query(@query, user, %{"id" => user2.id})
+    test "get invitation code", %{user: user} do
+      result = run_query(@query, user)
 
       refute has_errors(result)
 
-      assert result.data == %{
-               "user" => %{
-                 "id" => user2.id,
-                 "handle" => user2.handle
+      assert %{
+               "userInviteMakeCode" => %{
+                 "successful" => true,
+                 "result" => code
                }
-             }
-    end
+             } = result.data
 
-    test "get user info with non-existant ID", %{user: user} do
-      result = run_query(@query, user, %{"id" => ID.new()})
-
-      assert error_count(result) == 1
-      assert error_msg(result) =~ "User not found"
-      assert result.data == %{"user" => nil}
-    end
-
-    test "get user info with invalid ID", %{user: user} do
-      result = run_query(@query, user, %{"id" => "not_an_id"})
-
-      assert error_count(result) == 1
-      assert error_msg(result) =~ "invalid value"
-      refute has_data(result)
-    end
-
-    test "get user info for blocked user", %{user: user, user2: user2} do
-      Block.block(user2, user)
-
-      result = run_query(@query, user, %{"id" => user2.id})
-
-      assert error_count(result) == 1
-      assert error_msg(result) =~ "User not found"
-      assert result.data == %{"user" => nil}
-    end
-
-    test "get user info anonymously with non-existant ID" do
-      result = run_query(@query, nil, %{"id" => ID.new()})
-
-      assert error_count(result) == 1
-
-      assert error_msg(result) =~
-               "This operation requires an authenticated user"
-
-      assert result.data == %{"user" => nil}
+      assert is_binary(code)
+      assert byte_size(code) > 1
     end
   end
 
-  describe "push notification mutations" do
+  describe "userInviteRedeemCode mutation" do
+    @query """
+    mutation ($code: String!) {
+      userInviteRedeemCode(input: {code: $code}) {
+        result
+      }
+    }
+    """
+
+    test "redeem invitation code", %{user: user} do
+      inviter = Factory.insert(:user)
+      code = Account.make_invite_code(inviter)
+
+      result = run_query(@query, user, %{"code" => code})
+      refute has_errors(result)
+      assert result.data == %{"userInviteRedeemCode" => %{"result" => true}}
+    end
+  end
+
+  # -------------------------------------------------------------------
+  # User location mutations
+
+  describe "pushNotificationsEnable mutation" do
     @query """
     mutation ($input: PushNotificationsEnableInput!) {
       pushNotificationsEnable (input: $input) {
@@ -373,7 +444,9 @@ defmodule WockyAPI.GraphQL.UserTest do
                valid: true
              } = Repo.get_by(Token, user_id: user.id)
     end
+  end
 
+  describe "pushNotificationsDisable mutation" do
     @query """
     mutation ($input: PushNotificationsDisableInput!) {
       pushNotificationsDisable (input: $input) {
@@ -404,7 +477,10 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
   end
 
-  describe "location token mutation" do
+  # -------------------------------------------------------------------
+  # User location mutations
+
+  describe "userLocationGetToken mutation" do
     @query """
     mutation {
       userLocationGetToken {
@@ -427,60 +503,6 @@ defmodule WockyAPI.GraphQL.UserTest do
              } = result.data
 
       assert is_binary(token)
-    end
-  end
-
-  describe "invitation codes" do
-    @query """
-    mutation {
-      userInviteMakeCode {
-        successful
-        result
-      }
-    }
-    """
-
-    test "get invitation code", %{user: user} do
-      result = run_query(@query, user)
-
-      refute has_errors(result)
-
-      assert %{
-               "userInviteMakeCode" => %{
-                 "successful" => true,
-                 "result" => code
-               }
-             } = result.data
-
-      assert is_binary(code)
-      assert byte_size(code) > 1
-    end
-
-    @query """
-    mutation ($code: String!) {
-      userInviteRedeemCode(input: {code: $code}) {
-        result
-      }
-    }
-    """
-
-    test "redeem invitation code", %{user: user} do
-      inviter = Factory.insert(:user)
-      code = Account.make_invite_code(inviter)
-
-      result = run_query(@query, user, %{"code" => code})
-      refute has_errors(result)
-      assert result.data == %{"userInviteRedeemCode" => %{"result" => true}}
-    end
-  end
-
-  describe "delete user mutation" do
-    test "Should be false with no related bots", %{user: user} do
-      query = "mutation { userDelete { result } }"
-      result = run_query(query, user)
-      refute has_errors(result)
-      assert result.data == %{"userDelete" => %{"result" => true}}
-      assert Account.get_user(user.id) == nil
     end
   end
 end
