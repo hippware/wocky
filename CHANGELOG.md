@@ -34,6 +34,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * Disallow re-authentication on an already authenticated connection
 * Set badge count to unread messages (PR #2867)
 * Import frequently used modules at iex startup (PR #2868)
+* Better presence manager shutdown handling (PR #2870)
 
 
 # 2019.10.14+r400a75c
