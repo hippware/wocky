@@ -9,13 +9,20 @@ defmodule WockyAPI.GraphQL.LocationTest do
   alias Wocky.Friends
   alias Wocky.GeoUtils
   alias Wocky.Location
+  alias Wocky.Location.Handler
   alias Wocky.Location.UserLocation
   alias Wocky.POI
+  alias Wocky.Presence.Manager
   alias Wocky.Relation
   alias Wocky.Repo.Factory
 
   setup do
     user = Factory.insert(:user)
+
+    on_exit(fn ->
+      Handler.stop_all()
+      Manager.stop_all()
+    end)
 
     {:ok, user: user}
   end

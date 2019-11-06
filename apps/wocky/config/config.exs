@@ -88,7 +88,10 @@ config :wocky,
 
   # Bot search
   max_local_bots_search_radius:
-    {:system, :integer, "WOCKY_MAX_LOCAL_BOTS_SEARCH_RADIUS", 50_000}
+    {:system, :integer, "WOCKY_MAX_LOCAL_BOTS_SEARCH_RADIUS", 50_000},
+
+  # Location sharing
+  min_nearby_distance: {:system, :integer, "WOCKY_MIN_NEARBY_DISTANCE", 500}
 
 config :wocky, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},

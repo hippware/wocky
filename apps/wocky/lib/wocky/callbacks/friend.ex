@@ -11,25 +11,26 @@ defmodule Wocky.Callbacks.Friend do
   alias Wocky.Notifier
   alias Wocky.Repo.Hydrator
 
-  def handle_insert(%{share_type: stype} = new) when stype != :disabled,
+  def handle_insert(%{share_type: stype} = new) when stype == :always,
     do: notify_share_start(new)
 
-  def handle_insert(_new), do: :ok
+  def handle_insert(new), do: Friends.refresh_share_cache(new.user_id)
 
-  def handle_update(%{share_type: stype}, %{share_type: stype}), do: :ok
+  def handle_update(%{share_type: stype} = new, %{share_type: stype}),
+    do: Friends.refresh_share_cache(new.user_id)
 
-  def handle_update(new, %{share_type: :disabled}),
+  def handle_update(%{share_type: :always} = new, _old),
     do: notify_share_start(new)
 
   def handle_update(%{share_type: :disabled} = new, _old),
     do: notify_share_end(new)
 
-  def handle_update(_new, _old), do: :ok
+  def handle_update(new, _old), do: Friends.refresh_share_cache(new.user_id)
 
   def handle_delete(%{share_type: stype} = old) when stype != :disabled,
     do: notify_share_end(old)
 
-  def handle_delete(_old), do: :ok
+  def handle_delete(old), do: Friends.refresh_share_cache(old.user_id)
 
   defp notify_share_start(share) do
     Hydrator.with_assocs(share, [:user, :contact], fn rec ->

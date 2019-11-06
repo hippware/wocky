@@ -11,6 +11,7 @@ defmodule Wocky.Friends.Friend do
 
   alias Ecto.Changeset
   alias Wocky.Account.User
+  alias Wocky.Friends.Share.CachedFriend
   alias Wocky.Repo
   alias Wocky.Repo.Timestamp
 
@@ -27,6 +28,9 @@ defmodule Wocky.Friends.Friend do
     field :share_type, LocationShareTypeEnum, null: false, default: :disabled
     field :share_migrated, :boolean, null: false, default: true
     field :share_changed_at, :utc_datetime_usec
+    field :nearby_distance, :integer, default: 2000
+    field :nearby_cooldown, :integer, default: :timer.hours(2)
+    field :nearby_last_start_notification, :utc_datetime_usec
 
     belongs_to :user, User
     belongs_to :contact, User
@@ -35,7 +39,7 @@ defmodule Wocky.Friends.Friend do
   end
 
   @type name :: binary()
-  @type share_type :: :disabled | :always | :nearby
+  @type share_type :: LocationShareTypeEnum.t()
 
   @type t :: %__MODULE__{
           user_id: User.id(),
@@ -43,10 +47,19 @@ defmodule Wocky.Friends.Friend do
           name: name(),
           share_type: share_type(),
           share_migrated: boolean(),
-          updated_at: DateTime.t()
+          updated_at: DateTime.t(),
+          nearby_distance: integer(),
+          nearby_cooldown: integer(),
+          nearby_last_start_notification: DateTime.t()
         }
 
-  @update_fields [:name, :share_type]
+  @update_fields [
+    :name,
+    :share_type,
+    :nearby_distance,
+    :nearby_cooldown,
+    :nearby_last_start_notification
+  ]
   @insert_fields [:user_id, :contact_id | @update_fields]
 
   @spec get(User.tid(), User.tid()) :: t() | nil
@@ -74,6 +87,12 @@ defmodule Wocky.Friends.Friend do
 
   def update_changeset(%__MODULE__{} = struct, params),
     do: changeset(struct, @update_fields, params)
+
+  def to_cached(friend) do
+    Enum.reduce(CachedFriend.fields(), %CachedFriend{}, fn field, acc ->
+      Map.put(acc, field, Map.get(friend, field))
+    end)
+  end
 
   defp error_changeset(uid, fid, params) do
     %__MODULE__{user_id: uid, contact_id: fid}

@@ -1,6 +1,7 @@
 defmodule Wocky.Friends.Share.CacheTest do
   use Wocky.DataCase, async: true
 
+  alias Wocky.Friends.Friend
   alias Wocky.Friends.Share.Cache
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -12,12 +13,12 @@ defmodule Wocky.Friends.Share.CacheTest do
 
       {:ok,
        user: share1.user,
-       shared_with1: share1.contact,
-       shared_with2: share2.contact}
+       shared_with1: Friend.to_cached(share1),
+       shared_with2: Friend.to_cached(share2)}
     end
 
     test "should return the found user ids", ctx do
-      assert [ctx.shared_with1.id, ctx.shared_with2.id] |> Enum.sort() ==
+      assert [ctx.shared_with1, ctx.shared_with2] |> Enum.sort() ==
                ctx.user.id |> Cache.refresh() |> Enum.sort()
     end
 
@@ -32,7 +33,7 @@ defmodule Wocky.Friends.Share.CacheTest do
 
       results = Cache.refresh(ctx.user.id)
 
-      refute Enum.member?(results, share.contact.id)
+      refute Enum.member?(results, share.contact)
     end
 
     test "should do nothing for nonexistant user" do
@@ -42,20 +43,30 @@ defmodule Wocky.Friends.Share.CacheTest do
       assert [] == Cache.get(id)
     end
 
-    test "handles old cache entries appropriately", ctx do
+    test "handles old cache entries with invalid ID appropriately", ctx do
+      id = ID.new()
+
+      Cache.put(ctx.user.id, [id])
+
+      assert ctx.user.id |> Cache.get() |> Enum.sort() ==
+               [ctx.shared_with1, ctx.shared_with2] |> Enum.sort()
+    end
+
+    test "handles older cache entries with invalid ID appropriately", ctx do
       id = ID.new()
 
       Cache.put(ctx.user.id, [{id, DateTime.utc_now()}])
 
-      assert Cache.get(ctx.user.id) == [id]
+      assert ctx.user.id |> Cache.get() |> Enum.sort() ==
+               [ctx.shared_with1, ctx.shared_with2] |> Enum.sort()
     end
   end
 
   describe "get/1" do
     test "should refresh the cache automatically" do
-      share = Factory.insert(:friend)
+      share = :friend |> Factory.insert()
 
-      assert [share.contact.id] == Cache.get(share.user.id)
+      assert [Friend.to_cached(share)] == Cache.get(share.user.id)
     end
   end
 end

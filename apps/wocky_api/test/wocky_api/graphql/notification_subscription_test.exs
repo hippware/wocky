@@ -4,6 +4,10 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   import Eventually
 
   alias Wocky.Friends
+  alias Wocky.Friends.Share.Cache
+  alias Wocky.Location
+  alias Wocky.Location.Handler
+  alias Wocky.Presence.Manager
   alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -57,6 +61,9 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
             shareId
             user { id }
           }
+          ... on LocationShareNearbyStartNotification {
+            user { id }
+          }
           ... on UserInvitationNotification {
             user { id }
           }
@@ -79,6 +86,12 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
     Relation.subscribe(user2, bot)
 
     assert_eventually(Relation.subscribed?(user, bot))
+
+    on_exit(fn ->
+      Wocky.Repo.delete_all(Wocky.Account.User)
+      Handler.stop_all()
+      Manager.stop_all()
+    end)
 
     {:ok, user2: user2, bot: bot, ref: ref, subscription_id: subscription_id}
   end
@@ -234,6 +247,117 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
         "__typename" => "LocationShareEndNotification",
         "user" => %{"id" => user2.id},
         "shareId" => to_string(id)
+      })
+    end
+
+    test "moves into nearby range", %{
+      user: user,
+      user2: user2,
+      subscription_id: subscription_id
+    } do
+      Friends.befriend(user, user2, share_type: :nearby)
+      assert_eventually(hd(Cache.get(user2.id)).share_type == :nearby)
+
+      now = DateTime.utc_now()
+
+      location =
+        Factory.build(:location,
+          lat: 0.0,
+          lon: 0.0,
+          captured_at: now
+        )
+
+      {:ok, _} =
+        Location.set_user_location(user, %{location | user_id: user.id})
+
+      {:ok, _} =
+        Location.set_user_location(user2, %{location | user_id: user2.id})
+
+      assert_notification_update(subscription_id, %{
+        "__typename" => "LocationShareNearbyStartNotification",
+        "user" => %{"id" => user2.id}
+      })
+    end
+
+    test """
+         moves into nearby range should only generate one notifiation in the
+         cooldown period
+         """,
+         %{
+           user: user,
+           user2: user2,
+           subscription_id: subscription_id
+         } do
+      Friends.befriend(user, user2, share_type: :nearby)
+      assert_eventually(hd(Cache.get(user2.id)).share_type == :nearby)
+
+      now = DateTime.utc_now()
+
+      location =
+        Factory.build(:location,
+          user_id: user.id,
+          lat: 0.0,
+          lon: 0.0,
+          captured_at: now
+        )
+
+      location2 = %{location | user_id: user2.id}
+
+      {:ok, _} = Location.set_user_location(user, location)
+
+      {:ok, _} = Location.set_user_location(user2, location2)
+
+      assert_notification_update(subscription_id, %{
+        "__typename" => "LocationShareNearbyStartNotification",
+        "user" => %{"id" => user2.id}
+      })
+
+      {:ok, _} = Location.set_user_location(user2, location2)
+
+      refute_subscription_update _data
+    end
+
+    test """
+         moves into nearby range should generate a new notification once the
+         cooldown period has expired
+         """,
+         %{
+           user: user,
+           user2: user2,
+           subscription_id: subscription_id
+         } do
+      Friends.befriend(user, user2)
+
+      {:ok, _} =
+        Friends.update_sharing(user2, user, :nearby, nearby_cooldown: 1)
+
+      assert_eventually(hd(Cache.get(user2.id)).share_type == :nearby)
+
+      now = DateTime.utc_now()
+
+      location =
+        Factory.build(:location,
+          user_id: user.id,
+          lat: 0.0,
+          lon: 0.0,
+          captured_at: now
+        )
+
+      location2 = %{location | user_id: user2.id}
+
+      {:ok, _} = Location.set_user_location(user, location)
+      {:ok, _} = Location.set_user_location(user2, location2)
+
+      assert_notification_update(subscription_id, %{
+        "__typename" => "LocationShareNearbyStartNotification",
+        "user" => %{"id" => user2.id}
+      })
+
+      {:ok, _} = Location.set_user_location(user2, location2)
+
+      assert_notification_update(subscription_id, %{
+        "__typename" => "LocationShareNearbyStartNotification",
+        "user" => %{"id" => user2.id}
       })
     end
 

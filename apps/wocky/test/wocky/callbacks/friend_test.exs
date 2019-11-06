@@ -3,6 +3,7 @@ defmodule Wocky.Callbacks.FriendTest do
 
   alias Wocky.Callbacks.Friend, as: Callback
   alias Wocky.Friends
+  alias Wocky.Friends.Friend
   alias Wocky.Friends.Share.Cache
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo.Factory
@@ -17,9 +18,15 @@ defmodule Wocky.Callbacks.FriendTest do
     Friends.befriend(user, friend1, notify: false)
     Friends.befriend(user, friend2, notify: false)
 
-    {:ok, _} = Friends.update_sharing(user, friend1, :always)
+    {:ok, friendship1} = Friends.update_sharing(user, friend1, :always)
+    {:ok, friendship2} = Friends.update_sharing(user, friend2, :disabled)
 
-    {:ok, user: user, friend1: friend1, friend2: friend2}
+    {:ok,
+     user: user,
+     friend1: friend1,
+     friend2: friend2,
+     friendship1: friendship1,
+     friendship2: friendship2}
   end
 
   describe "notifications" do
@@ -76,27 +83,35 @@ defmodule Wocky.Callbacks.FriendTest do
 
   describe "location share cache" do
     test "starting a share inserts it into the cache", ctx do
-      assert_eventually([ctx.friend1.id] == Cache.get(ctx.user.id))
+      assert_eventually(
+        [Friend.to_cached(ctx.friendship1)] == Cache.get(ctx.user.id)
+      )
     end
 
     test "starting another share inserts it into the cache", ctx do
       {:ok, _} = Friends.update_sharing(ctx.user, ctx.friend2, :always)
 
       assert_eventually(
-        [ctx.friend1.id, ctx.friend2.id] |> Enum.sort() ==
+        [ctx.friendship1, %{ctx.friendship2 | share_type: :always}]
+        |> Enum.map(&Friend.to_cached/1)
+        |> Enum.sort() ==
           ctx.user.id |> Cache.get() |> Enum.sort()
       )
     end
 
     test "ending a share removes it from the cache", ctx do
-      assert_eventually([ctx.friend1.id] == Cache.get(ctx.user.id))
+      assert_eventually(
+        [Friend.to_cached(ctx.friendship1)] == Cache.get(ctx.user.id)
+      )
 
       Friends.stop_sharing_location(ctx.user)
       assert_eventually([] == Cache.get(ctx.user.id))
     end
 
     test "unfriending updates the cache", ctx do
-      assert_eventually([ctx.friend1.id] == Cache.get(ctx.user.id))
+      assert_eventually(
+        [Friend.to_cached(ctx.friendship1)] == Cache.get(ctx.user.id)
+      )
 
       Friends.unfriend(ctx.user, ctx.friend1)
       assert_eventually([] == Cache.get(ctx.user.id))

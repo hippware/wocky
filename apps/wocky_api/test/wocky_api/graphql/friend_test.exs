@@ -608,8 +608,8 @@ defmodule WockyAPI.GraphQL.FriendTest do
 
   describe "friendShareUpdate mutation" do
     @query """
-    mutation ($user_id: UUID!, $share_type: FriendShareType!) {
-      friendShareUpdate (input: {user_id: $user_id, share_type: $share_type}) {
+    mutation ($user_id: UUID!, $share_type: FriendShareType!, $share_config: FriendShareConfigInput) {
+      friendShareUpdate (input: {user_id: $user_id, share_type: $share_type, share_config: $share_config}) {
         successful
         result {
           user { id }
@@ -646,6 +646,75 @@ defmodule WockyAPI.GraphQL.FriendTest do
              }
 
       assert Friends.get_friend(user, user2).share_type == :disabled
+    end
+
+    test "change nearby range and cooldown", %{user: user, user2: user2} do
+      Friends.befriend(user, user2, share_type: :always)
+
+      result =
+        run_query(@query, user, %{
+          "user_id" => user2.id,
+          "share_type" => "NEARBY",
+          "share_config" => %{
+            "nearby_distance" => 1000,
+            "nearby_cooldown" => 5
+          }
+        })
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "friendShareUpdate" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "user" => %{"id" => user2.id},
+                   "shareType" => "NEARBY"
+                 },
+                 "messages" => []
+               }
+             }
+
+      assert Friends.get_friend(user, user2).share_type == :nearby
+      assert Friends.get_friend(user, user2).nearby_distance == 1000
+      assert Friends.get_friend(user, user2).nearby_cooldown == 5
+    end
+
+    test "Should fail when the nearby range is less than the minimum", %{
+      user: user,
+      user2: user2
+    } do
+      Friends.befriend(user, user2, share_type: :always)
+
+      result =
+        run_query(@query, user, %{
+          "user_id" => user2.id,
+          "share_type" => "NEARBY",
+          "share_config" => %{
+            "nearby_distance" => 5
+          }
+        })
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "nearbyDistance must be at least"
+    end
+
+    test "Should fail when the nearby cooldown is less than 0", %{
+      user: user,
+      user2: user2
+    } do
+      Friends.befriend(user, user2, share_type: :always)
+
+      result =
+        run_query(@query, user, %{
+          "user_id" => user2.id,
+          "share_type" => "NEARBY",
+          "share_config" => %{
+            "nearby_cooldown" => -1
+          }
+        })
+
+      assert error_count(result) == 1
+      assert error_msg(result) == "nearbyCooldown must be at least 0"
     end
 
     test "should fail when the user doesn't exist", %{user: user} do

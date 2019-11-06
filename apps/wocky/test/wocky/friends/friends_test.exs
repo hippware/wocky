@@ -243,6 +243,20 @@ defmodule Wocky.Friends.FriendsTest do
       assert Friends.get_location_shares(ctx.user) == []
     end
 
+    test "should set distance and cooldown", ctx do
+      dist = Faker.random_between(500, 1000)
+      cooldown = Faker.random_between(1, 100)
+
+      assert {:ok, _} =
+               Friends.update_sharing(ctx.user, ctx.contact, :always,
+                 nearby_distance: dist,
+                 nearby_cooldown: cooldown
+               )
+
+      assert [%Friend{nearby_distance: ^dist, nearby_cooldown: ^cooldown}] =
+               Friends.get_location_shares(ctx.user)
+    end
+
     test "should not share location with a stranger", ctx do
       stranger = Factory.insert(:user)
 

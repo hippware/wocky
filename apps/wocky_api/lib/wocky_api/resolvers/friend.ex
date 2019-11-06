@@ -2,11 +2,16 @@ defmodule WockyAPI.Resolvers.Friend do
   @moduledoc "Resolves GraphQL queries related to friends"
 
   alias Absinthe.Subscription
+  alias Wocky.Account.User
+  alias Wocky.Events.NearbyStart
   alias Wocky.Friends
   alias Wocky.Friends.Friend
   alias Wocky.Friends.Share
+  alias Wocky.Friends.Share.CachedFriend
   alias Wocky.Location
   alias Wocky.Location.UserLocation
+  alias Wocky.Location.UserLocation.Current
+  alias Wocky.Notifier
   alias Wocky.Repo
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Utils
@@ -132,14 +137,26 @@ defmodule WockyAPI.Resolvers.Friend do
   end
 
   def friend_share_update(%{input: input}, %{context: %{current_user: user}}) do
-    # TODO Pull sharing opts out of input and pass to update_sharing
-    case Friends.update_sharing(user.id, input.user_id, input.share_type) do
-      {:ok, friend} ->
-        _ = maybe_update_location(input, user)
-        {:ok, friend}
+    opts =
+      input[:share_config] ||
+        %{}
+        |> Map.take([:nearby_distance, :nearby_cooldown])
+        |> Enum.into([])
 
-      error ->
-        error
+    with :ok <- check_share_opts(opts) do
+      case Friends.update_sharing(
+             user.id,
+             input.user_id,
+             input.share_type,
+             opts
+           ) do
+        {:ok, friend} ->
+          _ = maybe_update_location(input, user)
+          {:ok, friend}
+
+        error ->
+          error
+      end
     end
   end
 
@@ -233,11 +250,36 @@ defmodule WockyAPI.Resolvers.Friend do
   def notify_location(user, location) do
     user
     |> Friends.get_location_share_targets()
-    |> Enum.each(&do_notify_location(&1, user, location))
+    |> Enum.each(&maybe_notify_location(&1, user, location))
   end
 
-  defp do_notify_location(share_target_id, user, location) do
-    topic = location_subscription_topic(share_target_id)
+  defp maybe_notify_location(
+         %CachedFriend{share_type: :always} = share_target,
+         user,
+         location
+       ),
+       do: do_notify_location(share_target, user, location)
+
+  defp maybe_notify_location(
+         %CachedFriend{share_type: :nearby} = share_target,
+         user,
+         location
+       ) do
+    target_loc = Current.get(share_target.contact_id)
+
+    if target_loc &&
+         Geocalc.within?(
+           share_target.nearby_distance,
+           Location.to_point(target_loc),
+           Location.to_point(location)
+         ) do
+      do_notify_location(share_target, user, location)
+      maybe_notify_start(user, share_target)
+    end
+  end
+
+  defp do_notify_location(share_target, user, location) do
+    topic = location_subscription_topic(share_target.contact_id)
     data = make_location_data(user, location)
 
     Subscription.publish(Endpoint, data, [{:shared_locations, topic}])
@@ -245,6 +287,32 @@ defmodule WockyAPI.Resolvers.Friend do
 
   defp make_location_data(user, location),
     do: %{user: user, location: location}
+
+  defp maybe_notify_start(
+         user,
+         %CachedFriend{nearby_last_start_notification: nil} = target
+       ),
+       do: notify_start(user, target)
+
+  defp maybe_notify_start(user, target) do
+    result =
+      target.nearby_last_start_notification
+      |> DateTime.add(target.nearby_cooldown, :millisecond)
+      |> DateTime.compare(DateTime.utc_now())
+
+    if result == :lt, do: notify_start(user, target)
+  end
+
+  defp notify_start(user, target) do
+    %NearbyStart{
+      to: User.hydrate(target.contact_id),
+      from: user
+    }
+    |> Notifier.notify()
+
+    {:ok, _} = Friends.update_last_start_notification(user, target.contact_id)
+    Friends.refresh_share_cache(user.id)
+  end
 
   def location_catchup(user) do
     result =
@@ -262,6 +330,21 @@ defmodule WockyAPI.Resolvers.Friend do
       [make_location_data(share.user, location) | acc]
     else
       acc
+    end
+  end
+
+  defp check_share_opts(opts) do
+    min_distance = Confex.get_env(:wocky, :min_nearby_distance)
+
+    cond do
+      opts[:nearby_distance] && opts[:nearby_distance] < min_distance ->
+        {:error, "nearbyDistance must be at least #{min_distance}"}
+
+      opts[:nearby_cooldown] && opts[:nearby_cooldown] < 0 ->
+        {:error, "nearbyCooldown must be at least 0"}
+
+      true ->
+        :ok
     end
   end
 end

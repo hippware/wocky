@@ -14,6 +14,7 @@ defmodule Wocky.Friends do
   alias Wocky.Friends.Invitation
   alias Wocky.Friends.Share
   alias Wocky.Friends.Share.Cache
+  alias Wocky.Friends.Share.CachedFriend
   alias Wocky.Notifier
   alias Wocky.Repo
 
@@ -167,10 +168,24 @@ defmodule Wocky.Friends do
 
   @spec update_sharing(User.tid(), User.tid(), share_type(), Keyword.t()) ::
           Repo.result(Friend.t())
-  def update_sharing(user, friend, share_type, _opts \\ []) do
-    # TODO The `opts` parameter exists to support extended options for
-    # "nearby" sharing
-    do_update_item(user, friend, %{share_type: share_type})
+  def update_sharing(user, friend, share_type, opts \\ []) do
+    params =
+      opts
+      |> Enum.into(%{})
+      |> Map.take([:nearby_distance, :nearby_cooldown])
+      |> Map.put(:share_type, share_type)
+
+    do_update_item(user, friend, params)
+  end
+
+  @spec update_last_start_notification(User.tid(), User.tid()) ::
+          Repo.result(Friend.t())
+  def update_last_start_notification(user, friend) do
+    {User.id(user), User.id(friend)}
+    |> Friend.update_changeset(%{
+      nearby_last_start_notification: DateTime.utc_now()
+    })
+    |> Repo.update()
   end
 
   defp do_update_item(user, friend, changes) do
@@ -235,7 +250,7 @@ defmodule Wocky.Friends do
   @spec invited_by?(User.t(), User.t()) :: boolean
   def invited_by?(user, target), do: invited?(target, user)
 
-  @spec refresh_share_cache(User.id()) :: [User.id()]
+  @spec refresh_share_cache(User.id()) :: [CachedFriend.t()]
   def refresh_share_cache(user_id), do: Cache.refresh(user_id)
 
   # ----------------------------------------------------------------------
@@ -283,7 +298,7 @@ defmodule Wocky.Friends do
     end)
   end
 
-  @spec get_location_share_targets(User.tid()) :: [User.id()]
+  @spec get_location_share_targets(User.tid()) :: [CachedFriend.t()]
   def get_location_share_targets(user), do: Cache.get(User.id(user))
 
   @spec get_location_shares(User.tid()) :: [Share.t()]
