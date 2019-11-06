@@ -12,7 +12,7 @@ config :wocky,
   slack_token: {{:via, VaultAdapter}, "slack-token"},
   client_jwt_signing_key: {{:via, VaultAdapter}, "client-jwt-signing-key"},
   server_jwt_signing_key: {{:via, VaultAdapter}, "server-jwt-signing-key"},
-  location_share_end_self: false
+  location_share_end_self: true
 
 config :wocky, Wocky.Repo, password: {{:via, VaultAdapter}, "db-password"}
 
