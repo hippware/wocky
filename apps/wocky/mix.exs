@@ -73,7 +73,9 @@ defmodule Wocky.Mixfile do
       {:configparser_ex, "~> 4.0", only: [:dev, :test]},
       {:dataloader, "~> 1.0.0"},
       {:dawdle, "~> 0.7"},
-      {:dawdle_db, "~> 0.7"},
+      # TODO: Move back to hex version of dawdle_db once postgrex 0.15.3 is released
+      {:dawdle_db,
+       github: "hippware/dawdle_db", branch: "postgrex-notify-reconnect"},
       {:distillery, "~> 2.0"},
       {:ecto_enum, "~> 1.4"},
       {:ecto_sql, "~> 3.0"},
@@ -116,7 +118,9 @@ defmodule Wocky.Mixfile do
       {:pigeon, "~> 1.4"},
       {:plug, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:postgrex, ">= 0.0.0"},
+      # TODO: This can be removed once postgrex 0.15.3 is released
+      {:postgrex,
+       github: "elixir-ecto/postgrex", branch: "master", override: true},
       {:prometheus_ecto, "~> 1.4"},
       {:prometheus_ex, "~> 3.0"},
       {:prometheus_process_collector, "~> 1.4"},
