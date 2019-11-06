@@ -6,6 +6,7 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Block
+  alias Wocky.Friends
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Token
   alias Wocky.Repo
@@ -155,6 +156,343 @@ defmodule WockyAPI.GraphQL.UserTest do
 
       assert result.data == %{"user" => nil}
     end
+  end
+
+  describe "userBulkLookup query" do
+    setup do
+      users = Factory.insert_list(5, :user)
+      phone_numbers = Enum.map(users, & &1.phone_number)
+
+      {:ok, users: users, phone_numbers: phone_numbers}
+    end
+
+    @query """
+    query ($phone_numbers: [String!]) {
+      userBulkLookup(phone_numbers: $phone_numbers) {
+        phone_number
+        e164_phone_number
+        user { id }
+        relationship
+      }
+    }
+    """
+    test "should return a list of supplied users", ctx do
+      result =
+        run_query(@query, ctx.user, %{"phone_numbers" => ctx.phone_numbers})
+
+      refute has_errors(result)
+
+      assert %{
+               "userBulkLookup" => results
+             } = result.data
+
+      expected =
+        ctx.users
+        |> Enum.map(
+          &%{
+            "phone_number" => &1.phone_number,
+            "e164_phone_number" => &1.phone_number,
+            "user" => %{"id" => &1.id},
+            "relationship" => "NONE"
+          }
+        )
+        |> Enum.sort()
+
+      assert expected == Enum.sort(results)
+    end
+
+    test "should return an empty user result set for unused numbers", ctx do
+      numbers = unused_numbers(ctx.phone_numbers)
+      result = run_query(@query, ctx.user, %{"phone_numbers" => numbers})
+
+      refute has_errors(result)
+
+      assert %{
+               "userBulkLookup" => results
+             } = result.data
+
+      expected =
+        numbers
+        |> Enum.map(
+          &%{
+            "phone_number" => &1,
+            "e164_phone_number" => &1,
+            "user" => nil,
+            "relationship" => nil
+          }
+        )
+        |> Enum.sort()
+
+      assert expected == Enum.sort(results)
+    end
+
+    test """
+         should return a combination when some numbers are used and some unused
+         """,
+         ctx do
+      unused_numbers = unused_numbers(ctx.phone_numbers)
+      numbers = unused_numbers ++ ctx.phone_numbers
+      result = run_query(@query, ctx.user, %{"phone_numbers" => numbers})
+
+      refute has_errors(result)
+
+      assert %{
+               "userBulkLookup" => results
+             } = result.data
+
+      expected =
+        Enum.map(
+          unused_numbers,
+          &%{
+            "phone_number" => &1,
+            "e164_phone_number" => &1,
+            "user" => nil,
+            "relationship" => nil
+          }
+        ) ++
+          Enum.map(
+            ctx.users,
+            &%{
+              "phone_number" => &1.phone_number,
+              "e164_phone_number" => &1.phone_number,
+              "user" => %{"id" => &1.id},
+              "relationship" => "NONE"
+            }
+          )
+
+      assert Enum.sort(expected) == Enum.sort(results)
+    end
+
+    test "should handle an empty request", ctx do
+      result = run_query(@query, ctx.user, %{"phone_numbers" => []})
+
+      refute has_errors(result)
+
+      assert %{
+               "userBulkLookup" => []
+             } = result.data
+    end
+
+    test "should work when requestor's number is included", ctx do
+      result =
+        run_query(@query, ctx.user, %{
+          "phone_numbers" => [ctx.user.phone_number]
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userBulkLookup" => [
+                 %{
+                   "phone_number" => ctx.user.phone_number,
+                   "e164_phone_number" => ctx.user.phone_number,
+                   "user" => %{"id" => ctx.user.id},
+                   "relationship" => "SELF"
+                 }
+               ]
+             } == result.data
+    end
+
+    test "should not return blocked users", ctx do
+      blocked = hd(ctx.users)
+      Block.block(blocked, ctx.user)
+
+      result =
+        run_query(@query, ctx.user, %{"phone_numbers" => [blocked.phone_number]})
+
+      refute has_errors(result)
+
+      assert %{
+               "userBulkLookup" => [
+                 %{
+                   "phone_number" => blocked.phone_number,
+                   "e164_phone_number" => blocked.phone_number,
+                   "user" => nil,
+                   "relationship" => nil
+                 }
+               ]
+             } == result.data
+    end
+
+    test "should normalise phone number to E.164", ctx do
+      full_number = hd(ctx.phone_numbers)
+      {"+1", number} = String.split_at(full_number, 2)
+
+      result = run_query(@query, ctx.user, %{"phone_numbers" => [number]})
+
+      refute has_errors(result)
+
+      assert %{
+               "userBulkLookup" => [
+                 %{
+                   "phone_number" => number,
+                   "e164_phone_number" => full_number,
+                   "user" => %{
+                     "id" => hd(ctx.users).id
+                   },
+                   "relationship" => "NONE"
+                 }
+               ]
+             } == result.data
+    end
+
+    test "should return the correct relationship for target users", ctx do
+      [friend, inviter, invitee] = Enum.slice(ctx.users, 0..2)
+      Friends.befriend(ctx.user, friend)
+      Friends.make_friends(inviter, ctx.user, :disabled)
+      Friends.make_friends(ctx.user, invitee, :disabled)
+
+      result =
+        run_query(@query, ctx.user, %{
+          "phone_numbers" => [
+            friend.phone_number,
+            inviter.phone_number,
+            invitee.phone_number,
+            ctx.user.phone_number
+          ]
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userBulkLookup" => results
+             } = result.data
+
+      expected = [
+        %{
+          "phone_number" => friend.phone_number,
+          "e164_phone_number" => friend.phone_number,
+          "user" => %{
+            "id" => friend.id
+          },
+          "relationship" => "FRIEND"
+        },
+        %{
+          "phone_number" => inviter.phone_number,
+          "e164_phone_number" => inviter.phone_number,
+          "user" => %{
+            "id" => inviter.id
+          },
+          "relationship" => "INVITED_BY"
+        },
+        %{
+          "phone_number" => invitee.phone_number,
+          "e164_phone_number" => invitee.phone_number,
+          "user" => %{
+            "id" => invitee.id
+          },
+          "relationship" => "INVITED"
+        },
+        %{
+          "phone_number" => ctx.user.phone_number,
+          "e164_phone_number" => ctx.user.phone_number,
+          "user" => %{
+            "id" => ctx.user.id
+          },
+          "relationship" => "SELF"
+        }
+      ]
+
+      assert Enum.sort(expected) == Enum.sort(results)
+    end
+
+    test "should fail when too many numbers are requested", ctx do
+      result =
+        run_query(@query, ctx.user, %{
+          "phone_numbers" => unused_numbers(ctx.phone_numbers, 101)
+        })
+
+      assert has_errors(result)
+
+      assert error_msg(result) =~ "Maximum bulk operation"
+    end
+
+    test "duplicate numbers with different formats should succeed", ctx do
+      numbers = ["(580) 334-9474", "580-334-9474"]
+
+      result =
+        run_query(@query, ctx.user, %{
+          "phone_numbers" => numbers
+        })
+
+      refute has_errors(result)
+
+      e164 = "+15803349474"
+
+      expected =
+        numbers
+        |> Enum.map(
+          &%{
+            "e164_phone_number" => e164,
+            "phone_number" => &1,
+            "user" => nil,
+            "relationship" => nil
+          }
+        )
+        |> Enum.sort()
+
+      assert expected == Enum.sort(result.data["userBulkLookup"])
+    end
+
+    test "non-normalisable numbers should return empty results", ctx do
+      numbers = ["xxxxx", hd(ctx.phone_numbers)]
+      target = hd(ctx.users)
+
+      result =
+        run_query(@query, ctx.user, %{
+          "phone_numbers" => numbers
+        })
+
+      refute has_errors(result)
+
+      expected =
+        [
+          %{
+            "e164_phone_number" => target.phone_number,
+            "phone_number" => target.phone_number,
+            "user" => %{"id" => target.id},
+            "relationship" => "NONE"
+          },
+          %{
+            "phone_number" => "xxxxx",
+            "e164_phone_number" => nil,
+            "user" => nil,
+            "relationship" => nil
+          }
+        ]
+        |> Enum.sort()
+
+      assert expected == Enum.sort(result.data["userBulkLookup"])
+    end
+
+    test "should not produce errors on multiple idential input", ctx do
+      [n] = unused_numbers(ctx.phone_numbers, 1)
+
+      result =
+        run_query(@query, ctx.user, %{
+          "phone_numbers" => [n, n]
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userBulkLookup" => [
+                 %{
+                   "e164_phone_number" => n,
+                   "phone_number" => n,
+                   "user" => nil,
+                   "relationship" => nil
+                 }
+               ]
+             } == result.data
+    end
+  end
+
+  defp unused_numbers(phone_numbers, count \\ 5) do
+    1..count
+    |> Enum.map(fn _ -> Factory.phone_number() end)
+    |> Enum.uniq()
+    |> Kernel.--(phone_numbers)
   end
 
   # -------------------------------------------------------------------
@@ -323,55 +661,6 @@ defmodule WockyAPI.GraphQL.UserTest do
       refute has_errors(result)
       assert result.data == %{"userDelete" => %{"result" => true}}
       assert Account.get_user(user.id) == nil
-    end
-  end
-
-  # -------------------------------------------------------------------
-  # User invitation mutations
-
-  describe "userInviteMakeCode mutation" do
-    @query """
-    mutation {
-      userInviteMakeCode {
-        successful
-        result
-      }
-    }
-    """
-
-    test "get invitation code", %{user: user} do
-      result = run_query(@query, user)
-
-      refute has_errors(result)
-
-      assert %{
-               "userInviteMakeCode" => %{
-                 "successful" => true,
-                 "result" => code
-               }
-             } = result.data
-
-      assert is_binary(code)
-      assert byte_size(code) > 1
-    end
-  end
-
-  describe "userInviteRedeemCode mutation" do
-    @query """
-    mutation ($code: String!) {
-      userInviteRedeemCode(input: {code: $code}) {
-        result
-      }
-    }
-    """
-
-    test "redeem invitation code", %{user: user} do
-      inviter = Factory.insert(:user)
-      code = Account.make_invite_code(inviter)
-
-      result = run_query(@query, user, %{"code" => code})
-      refute has_errors(result)
-      assert result.data == %{"userInviteRedeemCode" => %{"result" => true}}
     end
   end
 

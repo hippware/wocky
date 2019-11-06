@@ -1,9 +1,9 @@
-defmodule Wocky.DynamicLink.Firebase do
+defmodule Wocky.UserInvite.DynamicLink.Firebase do
   @moduledoc """
   Module for generating dynamic links using firebase
   """
 
-  @behaviour Wocky.DynamicLink
+  @behaviour Wocky.UserInvite.DynamicLink
 
   alias FirebaseAdminEx.DynamicLink, as: FirebaseDynamicLink
 

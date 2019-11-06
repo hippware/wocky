@@ -4,7 +4,6 @@ defmodule Wocky.Account.User do
   use Wocky.Repo.Schema
 
   alias Wocky.Account.Avatar
-  alias Wocky.Account.InviteCode
   alias Wocky.Friends.Friend
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.POI.Bot
@@ -13,6 +12,7 @@ defmodule Wocky.Account.User do
   alias Wocky.Relation.Subscription
   alias Wocky.Repo
   alias Wocky.TROS.Metadata, as: TROSMetadata
+  alias Wocky.UserInvite.InviteCode
 
   @primary_key {:id, :binary_id, autogenerate: false}
   schema "users" do

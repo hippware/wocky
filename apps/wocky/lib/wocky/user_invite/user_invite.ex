@@ -1,16 +1,72 @@
-defmodule Wocky.Friends.BulkInvitation do
+defmodule Wocky.UserInvite do
   @moduledoc """
   Module for sending bulk invitations, both SMS (external) and internal
   """
 
+  import Ecto.Query
+
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.DynamicLink
+  alias Wocky.Block
   alias Wocky.Friends
   alias Wocky.PhoneNumber
+  alias Wocky.Repo
   alias Wocky.SMS.Messenger
+  alias Wocky.UserInvite.DynamicLink
+  alias Wocky.UserInvite.InviteCode
 
   @type results :: [map()]
+
+  @invite_code_expire_days 30
+
+  # ----------------------------------------------------------------------
+  # Invite codes
+
+  @spec make_code(User.t()) :: binary()
+  def make_code(user) do
+    code = InviteCode.generate()
+
+    user
+    |> Ecto.build_assoc(:invite_codes)
+    |> InviteCode.changeset(%{code: code})
+    |> Repo.insert!()
+
+    code
+  end
+
+  @spec redeem_code(User.t(), binary()) :: boolean()
+  def redeem_code(redeemer, code) do
+    invitation =
+      InviteCode
+      |> where(code: ^code)
+      |> preload(:user)
+      |> Block.object_visible_query(redeemer)
+      |> Repo.one()
+
+    do_redeem_invite_code(redeemer, invitation)
+  end
+
+  defp do_redeem_invite_code(_, nil), do: false
+
+  defp do_redeem_invite_code(redeemer, %InviteCode{user: inviter} = invitation),
+    do: do_redeem_invite_code(redeemer, inviter, invitation)
+
+  defp do_redeem_invite_code(%User{id: id}, %User{id: id}, _), do: true
+
+  defp do_redeem_invite_code(redeemer, inviter, invitation) do
+    ts = Timex.shift(invitation.created_at, days: @invite_code_expire_days)
+
+    if Timex.after?(DateTime.utc_now(), ts) do
+      # Code has expired
+      false
+    else
+      :ok = Friends.befriend(redeemer, inviter)
+      true
+    end
+  end
+
+  # ----------------------------------------------------------------------
+  # SMS invitations
 
   @spec send([PhoneNumber.t()], User.t()) :: results()
   def send(numbers, user) do
@@ -124,7 +180,9 @@ defmodule Wocky.Friends.BulkInvitation do
   end
 
   defp sms_invitation_body(user) do
-    with {:ok, link} <- DynamicLink.invitation_link(user) do
+    code = make_code(user)
+
+    with {:ok, link} <- DynamicLink.invitation_link(code) do
       {:ok,
        "@#{user.handle} " <>
          maybe_name(user) <>

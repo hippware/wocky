@@ -1,4 +1,4 @@
-defmodule Wocky.Account.InviteCode do
+defmodule Wocky.UserInvite.InviteCode do
   @moduledoc false
 
   use Wocky.Repo.Schema

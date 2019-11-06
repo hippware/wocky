@@ -3,8 +3,6 @@ defmodule Wocky.Repo.CleanerTest do
 
   import Ecto.Query
 
-  alias Wocky.Account
-  alias Wocky.Account.InviteCode
   alias Wocky.Account.User
   alias Wocky.Location.BotEvent
   alias Wocky.Notifier.Push.Token, as: PushToken
@@ -17,6 +15,8 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.Repo.Timestamp
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
+  alias Wocky.UserInvite
+  alias Wocky.UserInvite.InviteCode
 
   setup do
     Repo.delete_all(User)
@@ -83,8 +83,8 @@ defmodule Wocky.Repo.CleanerTest do
 
   describe "clean_expired_invite_codes" do
     setup %{user: user} do
-      old_code = Account.make_invite_code(user)
-      new_code = Account.make_invite_code(user)
+      old_code = UserInvite.make_code(user)
+      new_code = UserInvite.make_code(user)
 
       invitation = Repo.get_by(InviteCode, code: old_code)
       ts = Timex.shift(invitation.created_at, weeks: -6)

@@ -4,18 +4,14 @@ defmodule Wocky.Account do
   import Ecto.Query
 
   alias Wocky.Account.Auth
-  alias Wocky.Account.InviteCode
   alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.Events.NewUser
-  alias Wocky.Friends
   alias Wocky.Notifier
   alias Wocky.Repo
   alias Wocky.TROS
 
   require Logger
-
-  @invite_code_expire_days 30
 
   # ----------------------------------------------------------------------
   # Authentication
@@ -154,52 +150,6 @@ defmodule Wocky.Account do
     |> Repo.update()
 
     :ok
-  end
-
-  # ----------------------------------------------------------------------
-  # Invite codes
-
-  @spec make_invite_code(User.t()) :: binary()
-  def make_invite_code(user) do
-    code = InviteCode.generate()
-
-    user
-    |> Ecto.build_assoc(:invite_codes)
-    |> InviteCode.changeset(%{code: code})
-    |> Repo.insert!()
-
-    code
-  end
-
-  @spec redeem_invite_code(User.t(), binary()) :: boolean()
-  def redeem_invite_code(redeemer, code) do
-    invitation =
-      InviteCode
-      |> where(code: ^code)
-      |> preload(:user)
-      |> Block.object_visible_query(redeemer)
-      |> Repo.one()
-
-    do_redeem_invite_code(redeemer, invitation)
-  end
-
-  defp do_redeem_invite_code(_, nil), do: false
-
-  defp do_redeem_invite_code(redeemer, %InviteCode{user: inviter} = invitation),
-    do: do_redeem_invite_code(redeemer, inviter, invitation)
-
-  defp do_redeem_invite_code(%User{id: id}, %User{id: id}, _), do: true
-
-  defp do_redeem_invite_code(redeemer, inviter, invitation) do
-    ts = Timex.shift(invitation.created_at, days: @invite_code_expire_days)
-
-    if Timex.after?(DateTime.utc_now(), ts) do
-      # Code has expired
-      false
-    else
-      :ok = Friends.befriend(redeemer, inviter)
-      true
-    end
   end
 
   # ----------------------------------------------------------------------

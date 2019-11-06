@@ -3,7 +3,6 @@ defmodule Wocky.Repo.Cleaner do
 
   import Ecto.Query
 
-  alias Wocky.Account.InviteCode
   alias Wocky.Account.User
   alias Wocky.Location.BotEvent
   alias Wocky.Notifier.Push.Token, as: PushToken
@@ -13,6 +12,7 @@ defmodule Wocky.Repo.Cleaner do
   alias Wocky.Repo.Timestamp
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
+  alias Wocky.UserInvite.InviteCode
 
   require Logger
 

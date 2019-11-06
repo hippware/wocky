@@ -222,6 +222,21 @@ defmodule WockyAPI.Schema.UserTypes do
   # -------------------------------------------------------------------
   # Queries
 
+  @desc "Single result for userBulkLookup"
+  object :user_bulk_lookup_result do
+    @desc "The original input phone number for which this is the result set"
+    field :phone_number, non_null(:string)
+
+    @desc "The E.164 normalised form of the phone number"
+    field :e164_phone_number, :string
+
+    @desc "The user, if any, currently associated with the phone number"
+    field :user, :user
+
+    @desc "The relationship of the requestor to the returned user"
+    field :relationship, :user_contact_relationship
+  end
+
   object :user_queries do
     @desc "Retrive the currently authenticated user"
     field :current_user, :current_user do
@@ -243,6 +258,19 @@ defmodule WockyAPI.Schema.UserTypes do
       arg :limit, :integer
 
       resolve &User.get_users/2
+    end
+
+    @desc """
+    Lookup users by phone number. Numbers not already in E.164 format will be
+    attempted to be parsed and normalised based on the user's country (which
+    in turn is inferred from their phone number as received from Firebase).
+
+    Bypass numbers will be treated as being in the US.
+    """
+    field :user_bulk_lookup, type: list_of(:user_bulk_lookup_result) do
+      @desc "The list of phone numbers to lookup"
+      arg :phone_numbers, non_null(list_of(non_null(:string)))
+      resolve &User.get_user_bulk_lookup/2
     end
   end
 
@@ -307,31 +335,6 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &User.user_delete/2
       middleware WockyAPI.Middleware.RefreshCurrentUser
       changeset_mutation_middleware()
-    end
-  end
-
-  # -------------------------------------------------------------------
-  # User invitation mutations
-
-  payload_object(:user_invite_make_code_payload, :string)
-
-  input_object :user_invite_redeem_code_input do
-    @desc "The invite code to redeem"
-    field :code, non_null(:string)
-  end
-
-  payload_object(:user_invite_redeem_code_payload, :boolean)
-
-  object :user_invite_code_mutations do
-    @desc "Generate a user invite code"
-    field :user_invite_make_code, type: :user_invite_make_code_payload do
-      resolve &User.user_invite_make_code/2
-    end
-
-    @desc "Redeem a user invite code"
-    field :user_invite_redeem_code, type: :user_invite_redeem_code_payload do
-      arg :input, non_null(:user_invite_redeem_code_input)
-      resolve &User.user_invite_redeem_code/2
     end
   end
 

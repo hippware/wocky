@@ -55,7 +55,8 @@ config :wocky,
 
   # Dynamic links
   dynamic_link_backend:
-    {:system, :module, "WOCKY_DYN_LINK_BACKEND", Wocky.DynamicLink.Sandbox},
+    {:system, :module, "WOCKY_DYN_LINK_BACKEND",
+     Wocky.UserInvite.DynamicLink.Sandbox},
   app_store_id: {:system, :string, "WOCKY_APP_STORE_ID", "1295678402"},
   ios_bundle_id:
     {:system, :string, "WOCKY_IOS_BUNDLE_ID", "com.hippware.tinyrobot"},

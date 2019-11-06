@@ -5,7 +5,8 @@ alias Wocky.Config.VaultAdapter
 config :wocky,
   tros_backend: {:system, :module, "WOCKY_TROS_STORE", Wocky.TROS.Store.S3},
   dynamic_link_backend:
-    {:system, :module, "WOCKY_DYN_LINK_BACKEND", Wocky.DynamicLink.Firebase},
+    {:system, :module, "WOCKY_DYN_LINK_BACKEND",
+     Wocky.UserInvite.DynamicLink.Firebase},
   country_code_lookup_method:
     {:system, :atom, "WOCKY_CC_LOOKUP_METHOD", :twilio},
   goth_private_key: {{:via, VaultAdapter}, "firebase-private-key"},

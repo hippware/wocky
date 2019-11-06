@@ -1,53 +1,32 @@
-defmodule WockyAPI.Schema.BulkUserTypes do
+defmodule WockyAPI.Schema.UserInviteTypes do
   @moduledoc """
-  Absinthe types for wocky bulk invitations
+  Absinthe types for inviting non-users to join the service and become
+  friends.
   """
 
   use WockyAPI.Schema.Notation
 
-  alias WockyAPI.Resolvers.BulkUser
+  alias WockyAPI.Resolvers.UserInvite
 
   # -------------------------------------------------------------------
-  # Queries - bulk user lookup
+  # Mutations
 
-  @desc "Single result for userBulkLookup"
-  object :user_bulk_lookup_result do
-    @desc "The original input phone number for which this is the result set"
-    field :phone_number, non_null(:string)
+  payload_object(:user_invite_make_code_payload, :string)
 
-    @desc "The E.164 normalised form of the phone number"
-    field :e164_phone_number, :string
-
-    @desc "The user, if any, currently associated with the phone number"
-    field :user, :user
-
-    @desc "The relationship of the requestor to the returned user"
-    field :relationship, :user_contact_relationship
+  input_object :user_invite_redeem_code_input do
+    @desc "The invite code to redeem"
+    field :code, non_null(:string)
   end
 
-  object :bulk_user_queries do
-    @desc """
-    Lookup users by phone number. Numbers not already in E.164 format will be
-    attempted to be parsed and normalised based on the user's country (which
-    in turn is inferred from their phone number as received from Firebase).
+  payload_object(:user_invite_redeem_code_payload, :boolean)
 
-    Bypass numbers will be treated as being in the US.
-    """
-    field :user_bulk_lookup, type: list_of(:user_bulk_lookup_result) do
-      @desc "The list of phone numbers to lookup"
-      arg :phone_numbers, non_null(list_of(non_null(:string)))
-      resolve &BulkUser.get_user_bulk_lookup/2
-    end
-  end
-
-  # -------------------------------------------------------------------
-  # Mutations - bulk friend invite
-
+  # DEPRECATED
   input_object :friend_bulk_invite_input do
     @desc "A list of phone numbers to which to send invitations"
     field :phone_numbers, non_null(list_of(non_null(:string)))
   end
 
+  # DEPRECATED
   enum :bulk_invite_result do
     @desc "An invitation was sent externally (e.g. SMS)"
     value :external_invitation_sent
@@ -72,6 +51,7 @@ defmodule WockyAPI.Schema.BulkUserTypes do
     value :sms_error
   end
 
+  # DEPRECATED
   @desc "Single result for friendBulkInvite"
   object :friend_bulk_invite_result do
     @desc "The original input phone number for which this is the result set"
@@ -90,15 +70,27 @@ defmodule WockyAPI.Schema.BulkUserTypes do
     field :error, :string
   end
 
+  # DEPRECATED
   payload_object(
     :friend_bulk_invite_payload,
     list_of(:friend_bulk_invite_result)
   )
 
-  object :bulk_user_mutations do
+  object :user_invite_mutations do
+    @desc "Generate a user invite code"
+    field :user_invite_make_code, type: :user_invite_make_code_payload do
+      resolve &UserInvite.user_invite_make_code/2
+    end
+
+    @desc "Redeem a user invite code"
+    field :user_invite_redeem_code, type: :user_invite_redeem_code_payload do
+      arg :input, non_null(:user_invite_redeem_code_input)
+      resolve &UserInvite.user_invite_redeem_code/2
+    end
+
     @desc """
-    Send invitations to all the phone numbers supplied. Numbers are normalised
-    as per userBulkLookup.
+    DEPRECATED Send invitations to all the phone numbers supplied. Numbers are
+    normalised as per `userBulkLookup`.
 
     Where a number already has an associated user, and the user is not already
     the requestor's friend or invitee, an in-system invitation will be sent.
@@ -107,9 +99,10 @@ defmodule WockyAPI.Schema.BulkUserTypes do
     the owner to join the app.
     """
     field :friend_bulk_invite, type: :friend_bulk_invite_payload do
+      deprecate "This API will be removed in a future version"
       @desc "The list of phone numbers to invite"
       arg :input, non_null(:friend_bulk_invite_input)
-      resolve &BulkUser.friend_bulk_invite/2
+      resolve &UserInvite.friend_bulk_invite/2
       middleware &build_payload/2
       middleware WockyAPI.Middleware.RefreshCurrentUser
     end
