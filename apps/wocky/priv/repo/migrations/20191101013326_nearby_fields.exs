@@ -6,7 +6,7 @@ defmodule Wocky.Repo.Migrations.NearbyFields do
   def up do
     alter table("roster_items") do
       add :nearby_distance, :integer, default: 2000, null: false
-      add :nearby_cooldown, :bigint, default: :timer.hours(24), null: false
+      add :nearby_cooldown, :bigint, default: :timer.hours(2), null: false
       add :nearby_last_start_notification, :timestamptz
     end
 

@@ -29,7 +29,7 @@ defmodule Wocky.Friends.Friend do
     field :share_migrated, :boolean, null: false, default: true
     field :share_changed_at, :utc_datetime_usec
     field :nearby_distance, :integer, default: 2000
-    field :nearby_cooldown, :integer, default: :timer.hours(24)
+    field :nearby_cooldown, :integer, default: :timer.hours(2)
     field :nearby_last_start_notification, :utc_datetime_usec
 
     belongs_to :user, User
