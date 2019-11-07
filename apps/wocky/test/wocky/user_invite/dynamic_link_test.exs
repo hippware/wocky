@@ -1,11 +1,11 @@
 defmodule Wocky.UserInvite.DynamicLinkTest do
   use Wocky.DataCase, async: false
 
+  alias Wocky.Repo.Factory
   alias Wocky.UserInvite
   alias Wocky.UserInvite.DynamicLink
   alias Wocky.UserInvite.DynamicLink.Sandbox
   alias Wocky.UserInvite.InviteCode
-  alias Wocky.Repo.Factory
 
   setup do
     user = Factory.insert(:user)
@@ -16,7 +16,7 @@ defmodule Wocky.UserInvite.DynamicLinkTest do
     test "should return a link with the invite code", %{user: user} do
       Sandbox.set_result(:ok)
 
-      code = UserInvite.make_code(user)
+      {:ok, code} = UserInvite.make_code(user)
       assert {:ok, link} = DynamicLink.invitation_link(code)
 
       invite = Repo.get_by(InviteCode, user_id: user.id)

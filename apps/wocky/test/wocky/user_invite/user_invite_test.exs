@@ -13,25 +13,36 @@ defmodule Wocky.UserInvite.UserInviteTest do
   end
 
   describe "make_code/1" do
-    setup %{user: user} do
-      code = UserInvite.make_code(user)
-      {:ok, code: code}
+    test "should generate a string code", ctx do
+      assert {:ok, code} = UserInvite.make_code(ctx.user)
+      assert is_binary(code)
     end
 
-    test "it should generate a string code", ctx do
-      assert is_binary(ctx.code)
+    test "should store the invitation in the database", ctx do
+      assert {:ok, code} = UserInvite.make_code(ctx.user, "5551112222", :always)
+
+      assert invitation =
+               Repo.get_by(InviteCode, user_id: ctx.user.id, code: code)
+
+      assert invitation.phone_number == "+15551112222"
+      assert invitation.share_type == :always
     end
 
-    test "it should store the code in the database", ctx do
-      assert Repo.get_by(InviteCode, user_id: ctx.user.id, code: ctx.code)
+    test "should return an error with bad phone number", ctx do
+      assert {:error, changeset} =
+               UserInvite.make_code(ctx.user, "bad", :always)
+
+      assert errors_on(changeset).phone_number == ["invalid"]
     end
   end
 
   describe "redeem_code/2" do
     setup %{user: user} do
-      code = UserInvite.make_code(user)
-      user = Factory.insert(:user)
-      {:ok, code: code, redeemer: user}
+      redeemer = Factory.insert(:user)
+
+      {:ok, code} = UserInvite.make_code(user, redeemer.phone_number, :always)
+
+      {:ok, code: code, redeemer: redeemer}
     end
 
     test "it should friend the current user and the owner of the code", ctx do

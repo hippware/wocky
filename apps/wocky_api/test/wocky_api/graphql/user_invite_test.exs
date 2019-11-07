@@ -1,4 +1,4 @@
-defmodule WockyAPI.GraphQL.InvitationTest do
+defmodule WockyAPI.GraphQL.UserInviteTest do
   use WockyAPI.GraphQLCase, async: true
 
   import Mock
@@ -63,7 +63,7 @@ defmodule WockyAPI.GraphQL.InvitationTest do
 
     test "redeem invitation code", %{user: user} do
       inviter = Factory.insert(:user)
-      code = UserInvite.make_code(inviter)
+      {:ok, code} = UserInvite.make_code(inviter, user.phone_number, :always)
 
       result = run_query(@query, user, %{"code" => code})
       refute has_errors(result)

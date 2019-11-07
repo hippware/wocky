@@ -83,8 +83,8 @@ defmodule Wocky.Repo.CleanerTest do
 
   describe "clean_expired_invite_codes" do
     setup %{user: user} do
-      old_code = UserInvite.make_code(user)
-      new_code = UserInvite.make_code(user)
+      {:ok, old_code} = UserInvite.make_code(user)
+      {:ok, new_code} = UserInvite.make_code(user)
 
       invitation = Repo.get_by(InviteCode, code: old_code)
       ts = Timex.shift(invitation.created_at, weeks: -6)

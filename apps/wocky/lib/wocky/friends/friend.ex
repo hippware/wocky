@@ -62,6 +62,8 @@ defmodule Wocky.Friends.Friend do
   ]
   @insert_fields [:user_id, :contact_id | @update_fields]
 
+  def share_types, do: @share_types
+
   @spec get(User.tid(), User.tid()) :: t() | nil
   def get(user, friend) do
     user_id = User.id(user)
@@ -71,6 +73,13 @@ defmodule Wocky.Friends.Friend do
     |> where(user_id: ^user_id)
     |> where(contact_id: ^friend_id)
     |> Repo.one()
+  end
+
+  @spec to_cached(t()) :: CachedFriend.t()
+  def to_cached(friend) do
+    Enum.reduce(CachedFriend.fields(), %CachedFriend{}, fn field, acc ->
+      Map.put(acc, field, Map.get(friend, field))
+    end)
   end
 
   @spec insert_changeset(map()) :: Changeset.t()
@@ -87,12 +96,6 @@ defmodule Wocky.Friends.Friend do
 
   def update_changeset(%__MODULE__{} = struct, params),
     do: changeset(struct, @update_fields, params)
-
-  def to_cached(friend) do
-    Enum.reduce(CachedFriend.fields(), %CachedFriend{}, fn field, acc ->
-      Map.put(acc, field, Map.get(friend, field))
-    end)
-  end
 
   defp error_changeset(uid, fid, params) do
     %__MODULE__{user_id: uid, contact_id: fid}

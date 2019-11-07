@@ -9,6 +9,7 @@ defmodule Wocky.UserInvite do
   alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.Friends
+  alias Wocky.Friends.Friend
   alias Wocky.PhoneNumber
   alias Wocky.Repo
   alias Wocky.SMS.Messenger
@@ -22,20 +23,23 @@ defmodule Wocky.UserInvite do
   # ----------------------------------------------------------------------
   # Invite codes
 
-  @spec make_code(User.t()) :: binary()
-  def make_code(user) do
-    code = InviteCode.generate()
-
-    user
-    |> Ecto.build_assoc(:invite_codes)
-    |> InviteCode.changeset(%{code: code})
-    |> Repo.insert!()
-
-    code
+  @spec make_code(User.t(), PhoneNumber.t() | nil, Friend.share_type()) ::
+          Repo.result(binary())
+  def make_code(user, phone_number \\ nil, share_type \\ :disabled) do
+    case do_insert_code(user, phone_number, share_type) do
+      {:ok, invitation} -> {:ok, invitation.code}
+      {:error, _} = error -> error
+    end
   end
 
-  @spec redeem_code(User.t(), binary()) :: boolean()
-  def redeem_code(redeemer, code) do
+  defp do_insert_code(user, phone_number, share_type) do
+    user
+    |> InviteCode.changeset(phone_number, share_type)
+    |> Repo.insert()
+  end
+
+  @spec redeem_code(User.t(), binary(), Friend.share_type()) :: boolean()
+  def redeem_code(redeemer, code, share_type \\ :disabled) do
     invitation =
       InviteCode
       |> where(code: ^code)
@@ -43,27 +47,44 @@ defmodule Wocky.UserInvite do
       |> Block.object_visible_query(redeemer)
       |> Repo.one()
 
-    do_redeem_invite_code(redeemer, invitation)
+    do_redeem_invite_code(redeemer, invitation, share_type)
   end
 
-  defp do_redeem_invite_code(_, nil), do: false
+  defp do_redeem_invite_code(_, nil, _), do: false
 
-  defp do_redeem_invite_code(redeemer, %InviteCode{user: inviter} = invitation),
-    do: do_redeem_invite_code(redeemer, inviter, invitation)
+  defp do_redeem_invite_code(
+         redeemer,
+         %InviteCode{user: inviter} = invitation,
+         share_type
+       ),
+       do: do_redeem_invite_code(redeemer, inviter, invitation, share_type)
 
-  defp do_redeem_invite_code(%User{id: id}, %User{id: id}, _), do: true
+  defp do_redeem_invite_code(%User{id: id}, %User{id: id}, _, _), do: true
 
-  defp do_redeem_invite_code(redeemer, inviter, invitation) do
-    ts = Timex.shift(invitation.created_at, days: @invite_code_expire_days)
+  defp do_redeem_invite_code(redeemer, inviter, invitation, share_type) do
+    if !code_expired?(invitation) && target_user?(redeemer, invitation) do
+      inviter_stype = invitation.share_type
 
-    if Timex.after?(DateTime.utc_now(), ts) do
-      # Code has expired
-      false
+      with {:ok, _} <- Friends.make_friends(inviter, redeemer, inviter_stype),
+           {:ok, _} <- Friends.make_friends(redeemer, inviter, share_type) do
+        true
+      else
+        {:error, _} ->
+          false
+      end
     else
-      :ok = Friends.befriend(redeemer, inviter)
-      true
+      false
     end
   end
+
+  defp code_expired?(invitation) do
+    Timex.diff(Timex.now(), invitation.created_at, :days) >
+      @invite_code_expire_days
+  end
+
+  defp target_user?(%{phone_number: pn}, %{phone_number: pn}), do: true
+
+  defp target_user?(_, _), do: false
 
   # ----------------------------------------------------------------------
   # SMS invitations
@@ -180,9 +201,8 @@ defmodule Wocky.UserInvite do
   end
 
   defp sms_invitation_body(user) do
-    code = make_code(user)
-
-    with {:ok, link} <- DynamicLink.invitation_link(code) do
+    with {:ok, code} <- make_code(user),
+         {:ok, link} <- DynamicLink.invitation_link(code) do
       {:ok,
        "@#{user.handle} " <>
          maybe_name(user) <>

@@ -9,7 +9,7 @@ defmodule WockyAPI.Resolvers.UserInvite do
   # Mutations
 
   def user_invite_make_code(_args, %{context: %{current_user: user}}) do
-    code = UserInvite.make_code(user)
+    {:ok, code} = UserInvite.make_code(user)
     {:ok, %{successful: true, result: code}}
   end
 
