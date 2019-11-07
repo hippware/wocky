@@ -5,6 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: absinthe (PR #2911), postgres and dawdle_db (PR #2912)
+* Fix: Absinthe.Phase.Document.Complexity.Result.describe_node/1 (#2909)
+* Support 'nearby' mode (#2873, PR #2910)
+* Enable location share end notification to self (PR #2915)
+
+
+# 2019.11.5+rc1ef34f
+
 * Remove more deprecated stuff (PR #2901)
 * Implement new sharing model in GQL API (#2872)
 * Update: ecto and ecto_enum (PR #2905), ecto_sql (PR #2907)
