@@ -9,6 +9,7 @@ defmodule Wocky.Application do
   """
   use Application
 
+  alias Wocky.DawdleMetrics
   alias Wocky.Location.Supervisor, as: LocationSupervisor
   alias Wocky.Notifier.Email.Mailer
   alias Wocky.Notifier.Push.Backend.Sandbox, as: PushSandbox
@@ -27,6 +28,8 @@ defmodule Wocky.Application do
   defp start_full do
     Logger.info("Starting wocky in full mode")
     Prometheus.Registry.register_collector(:prometheus_process_collector)
+
+    DawdleMetrics.init()
 
     Mailer.init()
 
