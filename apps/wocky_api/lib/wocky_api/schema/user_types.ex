@@ -272,7 +272,7 @@ defmodule WockyAPI.Schema.UserTypes do
     field :values, non_null(:user_params)
   end
 
-  payload_object(:user_update_payload, :user)
+  payload_object(:user_update_payload, :current_user)
 
   # This definition is an almost straight copy from the payload_object macro.
   # However we need to make the scope public because the object permissions
