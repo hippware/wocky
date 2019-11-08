@@ -1,5 +1,5 @@
 defmodule Wocky.Repo.CleanerTest do
-  use Wocky.DataCase, async: true
+  use Wocky.DataCase, async: false
 
   import Ecto.Query
 
@@ -19,6 +19,7 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.TROS.Metadata
 
   setup do
+    Repo.delete_all(User)
     user = Factory.insert(:user)
     {:ok, user: user}
   end
