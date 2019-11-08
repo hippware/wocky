@@ -9,6 +9,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Fix: Absinthe.Phase.Document.Complexity.Result.describe_node/1 (#2909)
 * Support 'nearby' mode (#2873, PR #2910)
 * Enable location share end notification to self (PR #2915)
+* Add BLNS tests (PR #2916)
+* Expose new Dawdle metrics via Prometheus (#2710)
 
 
 # 2019.11.5+rc1ef34f
