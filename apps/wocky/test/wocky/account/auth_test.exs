@@ -14,8 +14,8 @@ defmodule Wocky.Account.AuthTest do
     {:ok, id: user.id, user: user}
   end
 
-  defp make_client_token(sub) do
-    {:ok, token, _} = ClientJWT.encode_and_sign(sub, %{"dvc" => "testing"})
+  defp make_client_token(sub, dvc \\ "testing") do
+    {:ok, token, _} = ClientJWT.encode_and_sign(sub, %{"dvc" => dvc})
     token
   end
 
@@ -84,6 +84,12 @@ defmodule Wocky.Account.AuthTest do
 
       signed = JOSE.JWT.sign(jwk, jws, jwt)
       {_, token} = JOSE.JWS.compact(signed)
+
+      assert {:error, _} = Account.authenticate(token)
+    end
+
+    test "empty device", %{user: user} do
+      token = make_client_token(user, "")
 
       assert {:error, _} = Account.authenticate(token)
     end

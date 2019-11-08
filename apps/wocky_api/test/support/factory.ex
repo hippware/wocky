@@ -82,8 +82,8 @@ defmodule WockyAPI.Factory do
 
   def image_url(image), do: TROS.make_url(image.id)
 
-  def get_test_token(user) do
-    {:ok, token, _} = ClientJWT.encode_and_sign(user)
+  def get_test_token(user, claims \\ %{}) do
+    {:ok, token, _} = ClientJWT.encode_and_sign(user, claims)
     token
   end
 

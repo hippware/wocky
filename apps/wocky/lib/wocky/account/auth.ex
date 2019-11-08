@@ -109,8 +109,8 @@ defmodule Wocky.Account.Auth do
   end
 
   defp find_or_create(method, id, phone, opts) do
-    with {:ok, {user, _}} <- Register.find_or_create(method, id, phone) do
-      maybe_record_client_version(user, opts)
+    with {:ok, {user, _}} <- Register.find_or_create(method, id, phone),
+         {:ok, _} <- maybe_record_client_version(user, opts) do
       {:ok, %{user: user, device: opts["dvc"]}}
     end
   end
@@ -118,7 +118,7 @@ defmodule Wocky.Account.Auth do
   defp maybe_record_client_version(user, %{"dvc" => device, "iss" => agent}),
     do: ClientVersion.record(user, device, agent)
 
-  defp maybe_record_client_version(_, _), do: :ok
+  defp maybe_record_client_version(_, _), do: {:ok, nil}
 
   defp provider_error(p), do: {:error, "Unsupported provider: #{p}"}
 
