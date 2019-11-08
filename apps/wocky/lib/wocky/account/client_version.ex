@@ -30,7 +30,7 @@ defmodule Wocky.Account.ClientVersion do
         version: version,
         attributes: attrs
       })
-      |> Repo.insert!(
+      |> Repo.insert(
         on_conflict: :replace_all,
         conflict_target: [:user_id, :device]
       )

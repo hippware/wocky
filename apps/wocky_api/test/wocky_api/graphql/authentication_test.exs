@@ -31,6 +31,7 @@ defmodule WockyAPI.GraphQL.AuthenticationTest do
 
     test "re-authentication should not be permitted", %{user: user, jwt: jwt} do
       result = run_query(@query, user, %{"token" => jwt})
+
       assert error_count(result) == 1
       assert error_msg(result) =~ "already authenticated"
       assert result.data == %{"authenticate" => nil}
@@ -41,6 +42,15 @@ defmodule WockyAPI.GraphQL.AuthenticationTest do
 
       assert error_count(result) == 1
       assert error_msg(result) =~ "invalid user"
+      assert result.data == %{"authenticate" => nil}
+    end
+
+    test "empty device", %{user: user} do
+      jwt = APIFactory.get_test_token(user, %{"dvc" => ""})
+      result = run_query(@query, nil, %{"token" => jwt})
+
+      assert error_count(result) == 1
+      assert error_msg(result) =~ "invalid user token"
       assert result.data == %{"authenticate" => nil}
     end
   end
