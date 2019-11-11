@@ -11,6 +11,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Enable location share end notification to self (PR #2915)
 * Add BLNS tests (PR #2916)
 * Expose new Dawdle metrics via Prometheus (#2710)
+* Fix occasional cleaner test failures (PR #2919)
+* Fix crash when client supplies an empty device string (PR #2918)
 
 
 # 2019.11.5+rc1ef34f
