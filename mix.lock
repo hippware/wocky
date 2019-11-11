@@ -45,7 +45,7 @@
   "eliver": {:hex, :eliver, "2.0.3", "ddfb3a9e77028298dd8cb9d91bfe16a39db67a1f43830bb8f1c3ad085a9c96fe", [:mix], [{:enquirer, "~> 0.1.0", [hex: :enquirer, repo: "hexpm", optional: false]}], "hexpm"},
   "elixir_make": {:hex, :elixir_make, "0.5.2", "96a28c79f5b8d34879cd95ebc04d2a0d678cfbbd3e74c43cb63a76adf0ee8054", [:mix], [], "hexpm"},
   "elixometer": {:git, "https://github.com/hippware/elixometer.git", "c5f294bc04192d93a057d55ac1734facd81e2063", [branch: "working"]},
-  "email_checker": {:hex, :email_checker, "0.1.2", "05b3121c71b69f1ab5df7d8b4844046898bf218031998ef53f20c6b8bfd219e9", [:mix], [{:socket, "~> 0.3.1", [hex: :socket, repo: "hexpm", optional: false]}], "hexpm"},
+  "email_checker": {:hex, :email_checker, "0.1.3", "2d18a9ab7b37aa452022173e92db5f355feb17c33c3da11434deb95049db8ed0", [:mix], [{:socket, "~> 0.3.1", [hex: :socket, repo: "hexpm", optional: false]}], "hexpm"},
   "enquirer": {:hex, :enquirer, "0.1.0", "96ca1a330c919652db4baed6cf572d8c9957a8a305365c54490262c337996a18", [:mix], [], "hexpm"},
   "erlex": {:hex, :erlex, "0.2.5", "e51132f2f472e13d606d808f0574508eeea2030d487fc002b46ad97e738b0510", [:mix], [], "hexpm"},
   "eventually": {:hex, :eventually, "1.1.0", "d07725b29008eaad708e1252be026530278913e7d8db39bd6b09de060b241f37", [:mix], [], "hexpm"},
