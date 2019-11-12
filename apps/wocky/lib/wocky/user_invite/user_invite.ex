@@ -16,7 +16,8 @@ defmodule Wocky.UserInvite do
   alias Wocky.UserInvite.DynamicLink
   alias Wocky.UserInvite.InviteCode
 
-  @type results :: [map()]
+  @type result :: map()
+  @type results :: [result()]
 
   @invite_code_expire_days 30
 
@@ -89,15 +90,13 @@ defmodule Wocky.UserInvite do
   # ----------------------------------------------------------------------
   # SMS invitations
 
-  @spec send([PhoneNumber.t()], User.t()) :: results()
-  def send(numbers, user) do
+  @spec send(PhoneNumber.t(), Friend.share_type(), User.t()) :: result()
+  def send(number, share_type, user) do
     with {:ok, cc} <- PhoneNumber.country_code(user.phone_number) do
-      numbers
-      |> Enum.uniq()
-      |> Enum.map(&normalise_number(&1, cc))
-      |> lookup_users(user)
-      |> Enum.map_reduce(%{}, &maybe_send_invitation(&1, &2, user))
-      |> elem(0)
+      number
+      |> normalise_number(cc)
+      |> lookup_user(user)
+      |> maybe_invite(user, share_type)
     end
   end
 
@@ -113,6 +112,91 @@ defmodule Wocky.UserInvite do
           result: :could_not_parse_number,
           error: inspect(e)
         }
+    end
+  end
+
+  defp lookup_user(record, requestor) do
+    if record.e164_phone_number do
+      case Account.get_by_phone_number([record.e164_phone_number], requestor) do
+        [user] ->
+          Map.put(record, :user, user)
+
+        [] ->
+          record
+      end
+    else
+      record
+    end
+  end
+
+  defp maybe_invite(%{e164_phone_number: nil} = r, _, _), do: r
+
+  # We found an unblocked user for this number - send an invite
+  defp maybe_invite(%{user: user} = r, requestor, share_type)
+       when not is_nil(user) do
+    send_internal_invitation(r, user, requestor, share_type)
+  end
+
+  # We didn't find a user for this number - fire an SMS invitation
+  defp maybe_invite(%{e164_phone_number: number} = r, requestor, share_type)
+       when not is_nil(number) do
+    send_sms_invitation(r, number, requestor, share_type)
+  end
+
+  defp send_internal_invitation(r, user, requestor, share_type) do
+    result =
+      case Friends.make_friends(requestor, user, share_type) do
+        {:ok, :invited} -> :internal_invitation_sent
+        {:ok, :friend} -> :already_friends
+        {:error, _} -> :self
+      end
+
+    Map.put(r, :result, result)
+  end
+
+  defp send_sms_invitation(r, number, requestor, share_type) do
+    with {:ok, body} <- sms_invitation_body(requestor, number, share_type),
+         :ok <- Messenger.send(number, body, requestor) do
+      Map.put(r, :result, :external_invitation_sent)
+    else
+      {:error, e} ->
+        r
+        |> Map.put(:result, :sms_error)
+        |> Map.put(:error, inspect(e))
+
+      {:error, e, code} ->
+        r
+        |> Map.put(:result, :sms_error)
+        |> Map.put(:error, "#{inspect(e)}, #{inspect(code)}")
+    end
+  end
+
+  defp sms_invitation_body(user, number, share_type) do
+    with {:ok, code} <- make_code(user, number, share_type),
+         {:ok, link} <- DynamicLink.invitation_link(code) do
+      {:ok,
+       "@#{user.handle} " <>
+         maybe_name(user) <>
+         "has invited you to tinyrobot." <> " Please visit #{link} to join."}
+    end
+  end
+
+  defp maybe_name(user) do
+    case String.trim("#{user.name}") do
+      "" -> ""
+      name -> "(#{name}) "
+    end
+  end
+
+  @spec send_multi([PhoneNumber.t()], User.t()) :: results()
+  def send_multi(numbers, user) do
+    with {:ok, cc} <- PhoneNumber.country_code(user.phone_number) do
+      numbers
+      |> Enum.uniq()
+      |> Enum.map(&normalise_number(&1, cc))
+      |> lookup_users(user)
+      |> Enum.map_reduce(%{}, &maybe_send_invitation(&1, &2, user))
+      |> elem(0)
     end
   end
 
@@ -163,15 +247,9 @@ defmodule Wocky.UserInvite do
 
   # We found an unblocked user for this number - send an invite
   defp send_invitation(%{user: user} = r, sent_numbers, requestor) do
-    result =
-      case Friends.make_friends(requestor, user, :disabled) do
-        {:ok, :invited} -> :internal_invitation_sent
-        {:ok, :friend} -> :already_friends
-        {:error, _} -> :self
-      end
+    r = send_internal_invitation(r, user, requestor, :disabled)
 
-    {Map.put(r, :result, result),
-     Map.put(sent_numbers, r.e164_phone_number, {result, nil})}
+    {r, Map.put(sent_numbers, r.e164_phone_number, {r.result, nil})}
   end
 
   # We didn't find a user for this number - fire an SMS invitation
@@ -181,39 +259,8 @@ defmodule Wocky.UserInvite do
          requestor
        )
        when not is_nil(number) do
-    r =
-      with {:ok, body} <- sms_invitation_body(requestor),
-           :ok <- Messenger.send(number, body, requestor) do
-        Map.put(r, :result, :external_invitation_sent)
-      else
-        {:error, e} ->
-          r
-          |> Map.put(:result, :sms_error)
-          |> Map.put(:error, inspect(e))
-
-        {:error, e, code} ->
-          r
-          |> Map.put(:result, :sms_error)
-          |> Map.put(:error, "#{inspect(e)}, #{inspect(code)}")
-      end
+    r = send_sms_invitation(r, number, requestor, :disabled)
 
     {r, Map.put(sent_numbers, number, {r[:result], r[:error]})}
-  end
-
-  defp sms_invitation_body(user) do
-    with {:ok, code} <- make_code(user),
-         {:ok, link} <- DynamicLink.invitation_link(code) do
-      {:ok,
-       "@#{user.handle} " <>
-         maybe_name(user) <>
-         "has invited you to tinyrobot." <> " Please visit #{link} to join."}
-    end
-  end
-
-  defp maybe_name(user) do
-    case String.trim("#{user.name}") do
-      "" -> ""
-      name -> "(#{name}) "
-    end
   end
 end

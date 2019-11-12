@@ -19,6 +19,6 @@ defmodule WockyAPI.Resolvers.UserInvite do
   end
 
   def friend_bulk_invite(args, %{context: %{current_user: user}}) do
-    {:ok, UserInvite.send(args[:input][:phone_numbers], user)}
+    {:ok, UserInvite.send_multi(args[:input][:phone_numbers], user)}
   end
 end
