@@ -6,6 +6,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: absinthe (PR #2911), postgres and dawdle_db (PR #2912)
+  * exometer (PR #2920), phoenix (PR #2921), phoenix_ecto (PR #2922)
+  * httpoison (PR #2923), postgrex (PR #2924), email_checker (PR #2925)
 * Fix: Absinthe.Phase.Document.Complexity.Result.describe_node/1 (#2909)
 * Support 'nearby' mode (#2873, PR #2910)
 * Enable location share end notification to self (PR #2915)
