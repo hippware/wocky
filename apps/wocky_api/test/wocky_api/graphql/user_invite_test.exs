@@ -13,18 +13,223 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
   alias Wocky.UserInvite.DynamicLink.Sandbox, as: DLSandbox
 
   setup do
-    DLSandbox.set_result(:ok)
-    SMSSandbox.set_result(:ok)
+    user = Factory.insert(:user)
 
-    [user | users] = Factory.insert_list(6, :user)
-    phone_numbers = Enum.map(users, & &1.phone_number)
-
-    {:ok, user: user, users: users, phone_numbers: phone_numbers}
+    {:ok, user: user}
   end
 
   # -------------------------------------------------------------------
   # Mutations
 
+  describe "userInviteSend mutation" do
+    @query """
+    mutation ($input: UserInviteSendInput!) {
+      userInviteSend(input: $input) {
+        successful
+        result {
+          phone_number
+          e164_phone_number
+          user { id }
+          result
+          error
+        }
+      }
+    }
+    """
+
+    setup do
+      DLSandbox.set_result(:ok)
+      SMSSandbox.set_result(:ok)
+
+      :ok
+    end
+
+    test "should send a standard invitation for existing users", ctx do
+      other_user = Factory.insert(:user)
+      phone_number = other_user.phone_number
+      user_id = other_user.id
+
+      result =
+        run_query(@query, ctx.user, %{
+          "input" => %{
+            "phone_number" => phone_number,
+            "share_type" => "ALWAYS"
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userInviteSend" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "phone_number" => ^phone_number,
+                   "e164_phone_number" => ^phone_number,
+                   "user" => %{"id" => ^user_id},
+                   "result" => "INTERNAL_INVITATION_SENT"
+                 }
+               }
+             } = result.data
+    end
+
+    test "should send SMS invitations to non-existant users", ctx do
+      phone_number = Factory.phone_number()
+
+      result =
+        run_query(@query, ctx.user, %{
+          "input" => %{
+            "phone_number" => phone_number,
+            "share_type" => "ALWAYS"
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userInviteSend" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "phone_number" => ^phone_number,
+                   "e164_phone_number" => ^phone_number,
+                   "user" => nil,
+                   "result" => "EXTERNAL_INVITATION_SENT"
+                 }
+               }
+             } = result.data
+    end
+
+    test "should produce errors for unparsable numbers", ctx do
+      phone_number = Name.first_name()
+
+      result =
+        run_query(@query, ctx.user, %{
+          "input" => %{
+            "phone_number" => phone_number,
+            "share_type" => "ALWAYS"
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userInviteSend" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "phone_number" => ^phone_number,
+                   "e164_phone_number" => nil,
+                   "user" => nil,
+                   "result" => "COULD_NOT_PARSE_NUMBER"
+                 }
+               }
+             } = result.data
+    end
+
+    test "should return error for user's own number", ctx do
+      phone_number = ctx.user.phone_number
+      user_id = ctx.user.id
+
+      result =
+        run_query(@query, ctx.user, %{
+          "input" => %{
+            "phone_number" => phone_number,
+            "share_type" => "ALWAYS"
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userInviteSend" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "phone_number" => ^phone_number,
+                   "e164_phone_number" => ^phone_number,
+                   "user" => %{"id" => ^user_id},
+                   "result" => "SELF"
+                 }
+               }
+             } = result.data
+    end
+
+    test "should report an error when sending via SMS fails", ctx do
+      SMSSandbox.set_result({:error, "Failed to send SMS"})
+
+      phone_number = Factory.phone_number()
+
+      result =
+        run_query(@query, ctx.user, %{
+          "input" => %{
+            "phone_number" => phone_number,
+            "share_type" => "ALWAYS"
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userInviteSend" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "phone_number" => ^phone_number,
+                   "e164_phone_number" => ^phone_number,
+                   "user" => nil,
+                   "result" => "SMS_ERROR",
+                   "error" => ~s|"Failed to send SMS"|
+                 }
+               }
+             } = result.data
+    end
+
+    test "should report an error when link generation fails", ctx do
+      DLSandbox.set_result({:error, "Failed to generate link"})
+
+      phone_number = Factory.phone_number()
+
+      result =
+        run_query(@query, ctx.user, %{
+          "input" => %{
+            "phone_number" => phone_number,
+            "share_type" => "ALWAYS"
+          }
+        })
+
+      refute has_errors(result)
+
+      assert %{
+               "userInviteSend" => %{
+                 "successful" => true,
+                 "result" => %{
+                   "phone_number" => ^phone_number,
+                   "e164_phone_number" => ^phone_number,
+                   "user" => nil,
+                   "result" => "SMS_ERROR",
+                   "error" => ~s|"Failed to generate link"|
+                 }
+               }
+             } = result.data
+    end
+  end
+
+  describe "userInviteRedeemCode mutation" do
+    @query """
+    mutation ($code: String!) {
+      userInviteRedeemCode(input: {code: $code}) {
+        result
+      }
+    }
+    """
+
+    test "redeem invitation code", %{user: user} do
+      inviter = Factory.insert(:user)
+      {:ok, code} = UserInvite.make_code(inviter, user.phone_number, :always)
+
+      result = run_query(@query, user, %{"code" => code})
+      refute has_errors(result)
+      assert result.data == %{"userInviteRedeemCode" => %{"result" => true}}
+    end
+  end
+
+  # DEPRECATED
   describe "userInviteMakeCode mutation" do
     @query """
     mutation {
@@ -52,45 +257,31 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
     end
   end
 
-  describe "userInviteRedeemCode mutation" do
+  # DEPRECATED
+  describe "friendBulkInvite mutation" do
     @query """
-    mutation ($code: String!) {
-      userInviteRedeemCode(input: {code: $code}) {
-        result
+    mutation ($input: FriendBulkInviteInput!) {
+      friendBulkInvite(input: $input) {
+        successful
+        result {
+          phone_number
+          e164_phone_number
+          user { id }
+          result
+          error
+        }
       }
     }
     """
 
-    test "redeem invitation code", %{user: user} do
-      inviter = Factory.insert(:user)
-      {:ok, code} = UserInvite.make_code(inviter, user.phone_number, :always)
+    setup do
+      DLSandbox.set_result(:ok)
+      SMSSandbox.set_result(:ok)
 
-      result = run_query(@query, user, %{"code" => code})
-      refute has_errors(result)
-      assert result.data == %{"userInviteRedeemCode" => %{"result" => true}}
-    end
-  end
+      users = Factory.insert_list(5, :user)
+      phone_numbers = Enum.map(users, & &1.phone_number)
 
-  @query """
-  mutation ($input: FriendBulkInviteInput!) {
-    friendBulkInvite(input: $input) {
-      successful
-      result {
-        phone_number
-        e164_phone_number
-        user { id }
-        result
-        error
-      }
-    }
-  }
-  """
-
-  describe "friendBulkInvite mutation" do
-    setup_with_mocks([
-      {SMSSandbox, [:passthrough], [send: fn _, _ -> :ok end]}
-    ]) do
-      :ok
+      {:ok, users: users, phone_numbers: phone_numbers}
     end
 
     test "should send a standard invitation for existing users", ctx do
@@ -117,27 +308,31 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
     end
 
     test "should send SMS invitations to non-existant users", ctx do
-      numbers = unused_numbers(ctx.users)
+      with_mock(SMSSandbox, [:passthrough], send: fn _, _ -> :ok end) do
+        numbers = unused_numbers(ctx.users)
 
-      result =
-        run_query(@query, ctx.user, %{"input" => %{"phone_numbers" => numbers}})
+        result =
+          run_query(@query, ctx.user, %{
+            "input" => %{"phone_numbers" => numbers}
+          })
 
-      refute has_errors(result)
+        refute has_errors(result)
 
-      results = assert_results(result)
+        results = assert_results(result)
 
-      assert length(results) == length(numbers)
+        assert length(results) == length(numbers)
 
-      Enum.each(
-        numbers,
-        fn u -> assert has_result(results, u, "EXTERNAL_INVITATION_SENT") end
-      )
+        Enum.each(
+          numbers,
+          fn u -> assert has_result(results, u, "EXTERNAL_INVITATION_SENT") end
+        )
 
-      Enum.each(numbers, fn n ->
-        assert_called(SMSSandbox.send(n, :_))
-      end)
+        Enum.each(numbers, fn n ->
+          assert_called(SMSSandbox.send(n, :_))
+        end)
 
-      assert Repo.get(User, ctx.user.id).smss_sent == length(numbers)
+        assert Repo.get(User, ctx.user.id).smss_sent == length(numbers)
+      end
     end
 
     test "should produce errors for unparsable numbers", ctx do
@@ -184,72 +379,73 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
          should send one invitation if numbers parse to the same non-user number
          """,
          ctx do
-      n = hd(unused_numbers(ctx.users))
-      {"+1", n2} = String.split_at(n, 2)
-      n3 = n |> String.split_at(5) |> Tuple.to_list() |> Enum.join(" ")
+      with_mock(SMSSandbox, [:passthrough], send: fn _, _ -> :ok end) do
+        n = hd(unused_numbers(ctx.users))
+        {"+1", n2} = String.split_at(n, 2)
+        n3 = n |> String.split_at(5) |> Tuple.to_list() |> Enum.join(" ")
 
-      result =
-        run_query(@query, ctx.user, %{
-          "input" => %{"phone_numbers" => [n, n2, n3]}
-        })
+        result =
+          run_query(@query, ctx.user, %{
+            "input" => %{"phone_numbers" => [n, n2, n3]}
+          })
 
-      refute has_errors(result)
+        refute has_errors(result)
 
-      results = assert_results(result)
+        results = assert_results(result)
 
-      assert length(results) == 3
+        assert length(results) == 3
 
-      Enum.each([n, n2, n3], fn x ->
-        assert has_result(results, x, n, nil, nil, "EXTERNAL_INVITATION_SENT")
-      end)
+        Enum.each([n, n2, n3], fn x ->
+          assert has_result(results, x, n, nil, nil, "EXTERNAL_INVITATION_SENT")
+        end)
 
-      assert_called(SMSSandbox.send(n, :_))
-      assert not called(SMSSandbox.send(n2, :_))
+        assert_called(SMSSandbox.send(n, :_))
+        assert not called(SMSSandbox.send(n2, :_))
 
-      assert Repo.get(User, ctx.user.id).smss_sent == 1
+        assert Repo.get(User, ctx.user.id).smss_sent == 1
+      end
     end
 
-    test """
-         should work for multiple invitation types in one request
-         """,
-         ctx do
-      n = hd(unused_numbers(ctx.users))
-      {"+1", n2} = String.split_at(n, 2)
-      u = hd(ctx.users)
-      n3 = u.phone_number
-      n4 = Name.first_name()
+    test "should work for multiple invitation types in one request", ctx do
+      with_mock(SMSSandbox, [:passthrough], send: fn _, _ -> :ok end) do
+        n = hd(unused_numbers(ctx.users))
+        {"+1", n2} = String.split_at(n, 2)
+        u = hd(ctx.users)
+        n3 = u.phone_number
+        n4 = Name.first_name()
 
-      result =
-        run_query(@query, ctx.user, %{
-          "input" => %{"phone_numbers" => [n, n2, n3, n4]}
-        })
+        result =
+          run_query(@query, ctx.user, %{
+            "input" => %{"phone_numbers" => [n, n2, n3, n4]}
+          })
 
-      refute has_errors(result)
+        refute has_errors(result)
 
-      results = assert_results(result)
+        results = assert_results(result)
 
-      assert length(results) == 4
+        assert length(results) == 4
 
-      # SMS result
-      assert has_result(results, n, n, nil, nil, "EXTERNAL_INVITATION_SENT")
-      assert has_result(results, n2, n, nil, nil, "EXTERNAL_INVITATION_SENT")
-      assert_called(SMSSandbox.send(n, :_))
-      assert not called(SMSSandbox.send(n2, :_))
-      assert Repo.get(User, ctx.user.id).smss_sent == 1
+        # SMS result
+        assert has_result(results, n, n, nil, nil, "EXTERNAL_INVITATION_SENT")
+        assert has_result(results, n2, n, nil, nil, "EXTERNAL_INVITATION_SENT")
+        assert_called(SMSSandbox.send(n, :_))
+        assert not called(SMSSandbox.send(n2, :_))
+        assert Repo.get(User, ctx.user.id).smss_sent == 1
 
-      # Internal invitation result
-      assert has_result(results, n3, n3, u, nil, "INTERNAL_INVITATION_SENT")
-      assert Friends.relationship(ctx.user, u) == :invited
+        # Internal invitation result
+        assert has_result(results, n3, n3, u, nil, "INTERNAL_INVITATION_SENT")
+        assert Friends.relationship(ctx.user, u) == :invited
 
-      # Bad number
-      assert has_result(
-               results,
-               n4,
-               nil,
-               nil,
-               "\"The string supplied did not seem to be a phone number\"",
-               "COULD_NOT_PARSE_NUMBER"
-             )
+        # Bad number
+        assert has_result(
+                 results,
+                 n4,
+                 nil,
+                 nil,
+                 "\"The string supplied did not seem to be a phone number\"",
+                 "COULD_NOT_PARSE_NUMBER"
+               )
+      end
     end
 
     test "should return error for user's own number", ctx do
@@ -273,44 +469,10 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
                "SELF"
              )
     end
-  end
-
-  describe "failure of external dynamic link service" do
-    setup do
-      DLSandbox.set_result({:error, "Failed to generate link"})
-    end
-
-    test "should report an error when link generation fails", ctx do
-      number = hd(unused_numbers(ctx.users))
-
-      result =
-        run_query(@query, ctx.user, %{
-          "input" => %{"phone_numbers" => [number]}
-        })
-
-      refute has_errors(result)
-
-      results = assert_results(result)
-
-      assert length(results) == 1
-
-      assert has_result(
-               results,
-               number,
-               number,
-               nil,
-               "\"Failed to generate link\"",
-               "SMS_ERROR"
-             )
-    end
-  end
-
-  describe "failures of external SMS service" do
-    setup do
-      SMSSandbox.set_result({:error, "Failed to send SMS"})
-    end
 
     test "should report an error when sending via SMS fails", ctx do
+      SMSSandbox.set_result({:error, "Failed to send SMS"})
+
       number = hd(unused_numbers(ctx.users))
 
       result =
@@ -330,6 +492,32 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
                number,
                nil,
                "\"Failed to send SMS\"",
+               "SMS_ERROR"
+             )
+    end
+
+    test "should report an error when link generation fails", ctx do
+      DLSandbox.set_result({:error, "Failed to generate link"})
+
+      number = hd(unused_numbers(ctx.users))
+
+      result =
+        run_query(@query, ctx.user, %{
+          "input" => %{"phone_numbers" => [number]}
+        })
+
+      refute has_errors(result)
+
+      results = assert_results(result)
+
+      assert length(results) == 1
+
+      assert has_result(
+               results,
+               number,
+               number,
+               nil,
+               "\"Failed to generate link\"",
                "SMS_ERROR"
              )
     end
