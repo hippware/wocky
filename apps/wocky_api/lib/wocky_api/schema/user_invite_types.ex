@@ -12,7 +12,7 @@ defmodule WockyAPI.Schema.UserInviteTypes do
   # Mutations
 
   input_object :user_invite_send_input do
-    @desc "A list of phone numbers to which to send invitations"
+    @desc "The phone number to which to send the invitation"
     field :phone_number, non_null(:string)
 
     @desc "The preferred sharing mode with the target user"
