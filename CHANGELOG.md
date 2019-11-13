@@ -15,6 +15,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Expose new Dawdle metrics via Prometheus (#2710)
 * Fix occasional cleaner test failures (PR #2919)
 * Fix crash when client supplies an empty device string (PR #2918)
+* New user invitation APIs with sharing preferences (#2885, PR #2926)
+* Note likely abandoned deps (PR #2928)
 
 
 # 2019.11.5+rc1ef34f
