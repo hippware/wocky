@@ -2,7 +2,7 @@ defmodule Wocky.Waiter do
   @moduledoc """
   Allows processes to do a semaphore-style wait on a given event
   """
-  @type event() :: binary()
+  @type event() :: String.t()
 
   @doc """
   Wait on an event. The `skip_callback` function is called after the wait

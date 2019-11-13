@@ -38,7 +38,7 @@ defmodule Wocky.Friends.Friend do
     timestamps()
   end
 
-  @type name :: binary()
+  @type name :: String.t()
   @type share_type :: LocationShareTypeEnum.t()
 
   @type t :: %__MODULE__{

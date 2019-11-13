@@ -3,7 +3,7 @@ defmodule Wocky.Account.JWT.SigningKey do
   Fetch JWT signing keys from the environment.
   """
 
-  @spec fetch(:client | :server) :: binary()
+  @spec fetch(:client | :server) :: String.t()
   def fetch(key_id) do
     varname = varname(key_id)
 

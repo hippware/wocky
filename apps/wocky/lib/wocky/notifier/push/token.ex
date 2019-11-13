@@ -31,7 +31,7 @@ defmodule Wocky.Notifier.Push.Token do
     belongs_to :user, User
   end
 
-  @type token :: binary()
+  @type token :: String.t()
   @type platform :: :apns | :platform
 
   @type t :: %__MODULE__{

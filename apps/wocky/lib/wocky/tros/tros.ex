@@ -11,10 +11,10 @@ defmodule Wocky.TROS do
   alias Wocky.Repo.ID
   alias Wocky.TROS.Metadata
 
-  @type owner :: binary()
-  @type file_id :: binary()
-  @type file_name :: binary()
-  @type url :: binary()
+  @type owner :: String.t()
+  @type file_id :: String.t()
+  @type file_name :: String.t()
+  @type url :: String.t()
   @type metadata :: map()
   @type file_type :: Metadata.FileTypeEnum.t()
 

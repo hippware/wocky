@@ -126,7 +126,7 @@ defmodule Wocky.POI do
     |> Repo.one()
   end
 
-  @spec put_item(Bot.t(), Item.id(), binary(), binary(), User.t()) ::
+  @spec put_item(Bot.t(), Item.id(), String.t(), String.t(), User.t()) ::
           {:ok, Item.t()} | {:error, any()}
   def put_item(
         %{id: bot_id} = bot,
