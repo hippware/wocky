@@ -110,7 +110,10 @@ defmodule Wocky.Mixfile do
       {:module_config, "~> 1.0"},
       {:observer_cli, "~> 1.5"},
       # TODO: Move back to release when new release is built
+      # ABANDONED: Paginator appears to be abandoned.
       {:paginator, github: "duffelhq/paginator", branch: "master"},
+      # ABANDONED: peerage appears to be abandoned. Consider libcluster
+      # to replace it
       {:peerage, "~> 1.0"},
       {:phoenix_pubsub, "~> 1.0"},
       {:phoenix_pubsub_redis, "~> 2.1.5"},
@@ -128,6 +131,7 @@ defmodule Wocky.Mixfile do
       {:redlock, "~> 1.0.9"},
       {:rexbug, ">= 1.0.0"},
       # TODO: go back to hex version once changes are merged
+      # ABANDONED: slack_ex appears to be abandoned.
       {:slack_ex, github: "hippware/slack_ex", branch: "master"},
       {:stringprep, "~> 1.0"},
       {:swarm, "~> 3.0"},
