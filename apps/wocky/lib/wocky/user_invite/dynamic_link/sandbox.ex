@@ -1,9 +1,9 @@
-defmodule Wocky.DynamicLink.Sandbox do
+defmodule Wocky.UserInvite.DynamicLink.Sandbox do
   @moduledoc """
   Sandbox module for testing dynamic links
   """
 
-  @behaviour Wocky.DynamicLink
+  @behaviour Wocky.UserInvite.DynamicLink
 
   def invitation_link(invitation_code) do
     case Confex.get_env(:wocky, :invitation_link_result, :ok) do

@@ -212,7 +212,8 @@ defmodule Wocky.Friends do
     :ok
   end
 
-  defp get_relationship(user, contact) do
+  @spec get_relationship(User.tid(), User.tid()) :: {atom(), struct() | nil}
+  def get_relationship(user, contact) do
     cond do
       User.id(user) == User.id(contact) -> {:self, nil}
       item = Friend.get(user, contact) -> {:friend, item}

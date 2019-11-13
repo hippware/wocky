@@ -5,12 +5,15 @@ defmodule WockyAPI.Resolvers.User do
 
   alias Wocky.Account
   alias Wocky.Events.LocationRequest
+  alias Wocky.Friends
   alias Wocky.Location
   alias Wocky.Location.UserLocation
   alias Wocky.Notifier
   alias Wocky.Notifier.Push
+  alias Wocky.PhoneNumber
 
   @default_search_results 50
+  @max_lookups 100
 
   # -------------------------------------------------------------------
   # Queries
@@ -51,6 +54,86 @@ defmodule WockyAPI.Resolvers.User do
     {:ok, Account.search_by_name(search_term, current_user, limit)}
   end
 
+  def get_user_bulk_lookup(args, %{context: %{current_user: user}}) do
+    numbers = args[:phone_numbers]
+
+    with :ok <- check_lookup_count(numbers),
+         {:ok, cc} <- PhoneNumber.country_code(user.phone_number) do
+      {prepared_numbers, failed_numbers} =
+        numbers
+        |> Enum.uniq()
+        |> Enum.reduce({%{}, []}, &maybe_prepare_number(&1, cc, &2))
+
+      lookup_results =
+        prepared_numbers
+        |> Map.keys()
+        |> Account.get_by_phone_number(user)
+        |> Enum.flat_map_reduce(
+          prepared_numbers,
+          &build_lookup_result(&1, &2, user)
+        )
+        |> merge_non_user_results()
+        |> merge_failed_results(failed_numbers)
+
+      {:ok, lookup_results}
+    end
+  end
+
+  defp check_lookup_count(numbers) do
+    if length(numbers) <= @max_lookups do
+      :ok
+    else
+      {:error, "Maximum bulk operation size is #{@max_lookups}"}
+    end
+  end
+
+  defp maybe_prepare_number(number, country_code, {acc, failed}) do
+    case PhoneNumber.normalise(number, country_code) do
+      {:ok, n} ->
+        {Map.update(acc, n, [number], &[number | &1]), failed}
+
+      {:error, _} ->
+        {acc, [number | failed]}
+    end
+  end
+
+  defp build_lookup_result(user, numbers, requestor) do
+    request_numbers = Map.get(numbers, user.phone_number)
+    relationship = Friends.relationship(requestor, user)
+
+    {
+      Enum.map(
+        request_numbers,
+        &%{
+          phone_number: &1,
+          e164_phone_number: user.phone_number,
+          user: user,
+          relationship: relationship
+        }
+      ),
+      Map.delete(numbers, user.phone_number)
+    }
+  end
+
+  defp merge_non_user_results({lookup_results, leftover_numbers}) do
+    leftover_numbers
+    |> Enum.flat_map(&build_non_user_result/1)
+    |> Enum.concat(lookup_results)
+  end
+
+  defp build_non_user_result({e164_phone_number, numbers}) do
+    Enum.map(
+      numbers,
+      &%{phone_number: &1, e164_phone_number: e164_phone_number}
+    )
+  end
+
+  defp merge_failed_results(results, failed_numbers) do
+    failed_numbers
+    |> Enum.map(&%{phone_number: &1})
+    |> Enum.concat(results)
+  end
+
   # -------------------------------------------------------------------
   # User mutations
 
@@ -84,19 +167,6 @@ defmodule WockyAPI.Resolvers.User do
   def user_delete(_args, %{context: %{current_user: user}}) do
     Account.delete(user.id)
     {:ok, true}
-  end
-
-  # -------------------------------------------------------------------
-  # User invitation mutations
-
-  def user_invite_make_code(_args, %{context: %{current_user: user}}) do
-    code = Account.make_invite_code(user)
-    {:ok, %{successful: true, result: code}}
-  end
-
-  def user_invite_redeem_code(args, %{context: %{current_user: user}}) do
-    result = Account.redeem_invite_code(user, args[:input][:code])
-    {:ok, %{successful: result, result: result}}
   end
 
   # -------------------------------------------------------------------

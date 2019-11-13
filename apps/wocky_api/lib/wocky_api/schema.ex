@@ -13,20 +13,19 @@ defmodule WockyAPI.Schema do
   import_types WockyAPI.Schema.AuthTypes
   import_types WockyAPI.Schema.BlockTypes
   import_types WockyAPI.Schema.BotTypes
-  import_types WockyAPI.Schema.BulkUserTypes
   import_types WockyAPI.Schema.FriendTypes
   import_types WockyAPI.Schema.MediaTypes
   import_types WockyAPI.Schema.MessageTypes
   import_types WockyAPI.Schema.NotificationTypes
   import_types WockyAPI.Schema.PresenceTypes
   import_types WockyAPI.Schema.TestingTypes
+  import_types WockyAPI.Schema.UserInviteTypes
   import_types WockyAPI.Schema.UserTypes
   import_types WockyAPI.Types.AInt
   import_types WockyAPI.Types.UUID
 
   query do
     import_fields :bot_queries
-    import_fields :bulk_user_queries
     import_fields :media_queries
     import_fields :notification_queries
     import_fields :user_queries
@@ -36,7 +35,6 @@ defmodule WockyAPI.Schema do
     import_fields :auth_mutations
     import_fields :block_mutations
     import_fields :bot_mutations
-    import_fields :bulk_user_mutations
     import_fields :friend_mutations
     import_fields :location_mutations
     import_fields :media_mutations
@@ -45,7 +43,7 @@ defmodule WockyAPI.Schema do
     import_fields :presence_mutations
     import_fields :push_notifications_mutations
     import_fields :testing_mutations
-    import_fields :user_invite_code_mutations
+    import_fields :user_invite_mutations
     import_fields :user_mutations
   end
 
