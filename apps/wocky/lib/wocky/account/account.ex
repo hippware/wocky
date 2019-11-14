@@ -155,7 +155,7 @@ defmodule Wocky.Account do
   # ----------------------------------------------------------------------
   # Searching
 
-  @spec search_by_name(binary(), User.t(), non_neg_integer()) :: [User.t()]
+  @spec search_by_name(String.t(), User.t(), non_neg_integer()) :: [User.t()]
   def search_by_name("", _, _), do: []
 
   def search_by_name(search_prefix, user, limit) do

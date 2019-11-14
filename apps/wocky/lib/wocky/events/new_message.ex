@@ -15,9 +15,9 @@ defmodule Wocky.Events.NewMessage do
   @type t :: %__MODULE__{
           to: User.t(),
           from: User.t(),
-          content: nil | binary(),
-          image_url: nil | binary(),
-          conversation_id: binary(),
+          content: nil | String.t(),
+          image_url: nil | String.t(),
+          conversation_id: String.t(),
           unread_count: non_neg_integer()
         }
 

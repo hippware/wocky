@@ -33,5 +33,5 @@ defmodule Wocky.Notifier.Push.Backend do
   @doc """
   Produce a pretty string representation of a backend-specific error
   """
-  @callback error_msg(Push.response()) :: binary()
+  @callback error_msg(Push.response()) :: String.t()
 end

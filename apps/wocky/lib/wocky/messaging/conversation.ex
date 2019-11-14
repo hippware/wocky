@@ -32,10 +32,10 @@ defmodule Wocky.Messaging.Conversation do
           id: integer,
           user_id: User.id(),
           other_user_id: User.id(),
-          content: binary(),
-          image_url: binary(),
+          content: String.t(),
+          image_url: String.t(),
           read: boolean(),
-          client_data: binary(),
+          client_data: String.t(),
           direction: MessageDirectionEnum.t(),
           created_at: DateTime.t(),
           updated_at: DateTime.t()

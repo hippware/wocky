@@ -23,7 +23,7 @@ defmodule Wocky.Notifier.Push.Utils do
   def blank?(_), do: false
 
   @doc false
-  @spec get_handle(User.t()) :: binary()
+  @spec get_handle(User.t()) :: String.t()
   def get_handle(obj) do
     case do_get_handle(obj) do
       nil -> "Someone"

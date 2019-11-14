@@ -53,7 +53,7 @@ defmodule Wocky.UserInvite.InviteCode do
     end
   end
 
-  @spec generate :: binary()
+  @spec generate :: String.t()
   def generate do
     Base.encode64(UUID.bingenerate())
   end

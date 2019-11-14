@@ -25,7 +25,7 @@ defmodule Wocky.UserInvite do
   # Invite codes
 
   @spec make_code(User.t(), PhoneNumber.t() | nil, Friend.share_type()) ::
-          Repo.result(binary())
+          Repo.result(String.t())
   def make_code(user, phone_number \\ nil, share_type \\ :disabled) do
     case do_insert_code(user, phone_number, share_type) do
       {:ok, invitation} -> {:ok, invitation.code}
@@ -39,7 +39,7 @@ defmodule Wocky.UserInvite do
     |> Repo.insert()
   end
 
-  @spec redeem_code(User.t(), binary(), Friend.share_type()) :: boolean()
+  @spec redeem_code(User.t(), String.t(), Friend.share_type()) :: boolean()
   def redeem_code(redeemer, code, share_type \\ :disabled) do
     invitation =
       InviteCode

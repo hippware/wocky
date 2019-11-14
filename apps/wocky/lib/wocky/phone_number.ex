@@ -6,8 +6,8 @@ defmodule Wocky.PhoneNumber do
   alias ExTwilio.Lookup
   alias Faker.Address
 
-  @type t() :: binary()
-  @type country_code() :: binary()
+  @type t() :: String.t()
+  @type country_code() :: String.t()
 
   @spec normalise(t(), country_code()) :: {:ok, t()} | {:error, term()}
   def normalise(input_number, country_code) do

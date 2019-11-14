@@ -17,7 +17,7 @@ defmodule Wocky.Account.Auth do
 
   require Logger
 
-  @type token :: binary()
+  @type token :: String.t()
 
   @type auth_data :: %{user: User.t() | nil, device: User.device() | nil}
 

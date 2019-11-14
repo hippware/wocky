@@ -47,13 +47,13 @@ defmodule Wocky.Location.BotEvent do
           | :deactivate
 
   @type t :: %__MODULE__{
-          id: binary(),
+          id: String.t(),
           user_id: User.id(),
           device: User.device(),
           bot_id: Bot.id(),
           event: event(),
           occurred_at: DateTime.t(),
-          location_id: binary()
+          location_id: String.t()
         }
 
   @type bot_event_map() :: %{required(Bot.id()) => t()}

@@ -18,12 +18,12 @@ defmodule Wocky.Audit.PushLog do
   @type t :: %__MODULE__{
           user_id: User.id() | nil,
           device: User.device() | nil,
-          token: binary() | nil,
-          message_id: binary() | nil,
+          token: String.t() | nil,
+          message_id: String.t() | nil,
           payload: map() | nil,
-          payload_string: binary() | nil,
-          response: binary() | nil,
-          details: binary() | nil,
+          payload_string: String.t() | nil,
+          response: String.t() | nil,
+          details: String.t() | nil,
           created_at: DateTime.t() | nil
         }
 end

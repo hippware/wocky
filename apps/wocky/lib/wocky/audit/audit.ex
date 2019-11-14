@@ -51,7 +51,7 @@ defmodule Wocky.Audit do
 
   @doc "Write a location record to the database"
   @spec log_location(UserLocation.t(), User.t(), Keyword.t()) ::
-          {:ok, binary() | nil}
+          {:ok, String.t() | nil}
   def log_location(location, user, opts \\ []) do
     config = config(opts)
 
