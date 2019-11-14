@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.11.13+r39dd56a
+
 * Update: absinthe (PR #2911), postgres and dawdle_db (PR #2912)
   * exometer (PR #2920), phoenix (PR #2921), phoenix_ecto (PR #2922)
   * httpoison (PR #2923), postgrex (PR #2924), email_checker (PR #2925)
