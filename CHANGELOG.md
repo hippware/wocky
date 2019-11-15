@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: firebase_admin_ex (PR #2931)
+* Change binary() to String.t() (PR #2929)
+
+
 # 2019.11.13+r39dd56a
 
 * Update: absinthe (PR #2911), postgres and dawdle_db (PR #2912)
