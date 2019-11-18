@@ -42,7 +42,7 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
 
     params.on_response.(notif)
 
-    notif
+    :ok
   end
 
   @impl true
