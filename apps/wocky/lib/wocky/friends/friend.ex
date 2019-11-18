@@ -64,8 +64,17 @@ defmodule Wocky.Friends.Friend do
 
   def share_types, do: @share_types
 
+  @spec exists?(User.tid(), User.tid()) :: boolean()
+  def exists?(user, friend) do
+    Repo.exists?(get_query(user, friend))
+  end
+
   @spec get(User.tid(), User.tid()) :: t() | nil
   def get(user, friend) do
+    Repo.one(get_query(user, friend))
+  end
+
+  defp get_query(user, friend) do
     user_id = User.id(user)
     friend_id = User.id(friend)
 

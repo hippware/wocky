@@ -65,7 +65,7 @@ defmodule Wocky.Block do
       (b.blocker_id == ^u1_id and b.blockee_id == ^u2_id) or
         (b.blocker_id == ^u2_id and b.blockee_id == ^u1_id)
     )
-    |> Repo.all() != []
+    |> Repo.exists?()
   end
 
   @spec blocks_query(User.id()) :: Queryable.t()
