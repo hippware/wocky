@@ -17,7 +17,7 @@ defmodule Wocky.POI.Item do
     belongs_to :user, Wocky.Account.User
   end
 
-  @type id :: binary
+  @type id :: String.t()
   @type t :: %__MODULE__{}
 
   @spec changeset(t(), map()) :: Changeset.t()

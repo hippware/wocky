@@ -37,7 +37,7 @@ defmodule Wocky.Notifier.Push do
     resp: nil
   ]
 
-  @type message :: binary
+  @type message :: String.t()
   @type notification :: APNSNotification.t() | FCMNotification.t()
   @type id :: String.t() | nil
   @type payload :: map()

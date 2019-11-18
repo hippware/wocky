@@ -1,12 +1,12 @@
 defmodule Wocky.SMS.Messenger do
   @moduledoc "Behavior for modules providing SMS messaging capabilities."
 
-  @callback send(binary, binary) :: :ok
+  @callback send(String.t(), String.t()) :: :ok | {:error, any()}
 
   alias Wocky.Account
   alias Wocky.Account.User
 
-  @spec send(binary, binary, User.t()) :: :ok | {:error, term()}
+  @spec send(String.t(), String.t(), User.t()) :: :ok | {:error, any()}
   def send(recipient, body, sender) do
     if Account.sms_allowed_inc?(sender) do
       backend = Confex.get_env(:wocky, :sms_backend)

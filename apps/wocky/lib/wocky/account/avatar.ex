@@ -8,7 +8,7 @@ defmodule Wocky.Account.Avatar do
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
 
-  @type url :: binary
+  @type url :: String.t()
   @type t :: TROS.file_id()
 
   @spec validate(User.t(), url()) :: {:ok, t()} | {:error, atom()}

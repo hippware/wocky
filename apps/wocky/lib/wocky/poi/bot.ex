@@ -48,7 +48,7 @@ defmodule Wocky.POI.Bot do
     many_to_many(:subscribers, User, join_through: Subscription)
   end
 
-  @type id :: binary
+  @type id :: String.t()
   @type not_loaded :: %NotLoaded{}
 
   @type t :: %Bot{

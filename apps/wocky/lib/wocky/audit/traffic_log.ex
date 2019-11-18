@@ -15,16 +15,16 @@ defmodule Wocky.Audit.TrafficLog do
     :created_at
   ]
 
-  @type ip :: binary
-  @type packet :: binary
+  @type ip :: String.t()
+  @type packet :: String.t()
 
   @type t :: %__MODULE__{
           user_id: User.id(),
           device: User.device(),
-          host: binary,
+          host: String.t(),
           ip: ip(),
-          incoming: boolean,
-          packet: packet,
+          incoming: boolean(),
+          packet: packet(),
           created_at: DateTime.t()
         }
 end
