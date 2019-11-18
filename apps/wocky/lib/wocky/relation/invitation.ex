@@ -18,7 +18,7 @@ defmodule Wocky.Relation.Invitation do
     timestamps()
   end
 
-  @type id :: integer
+  @type id :: integer()
   @type t :: %__MODULE__{}
 
   @spec changeset(t(), map()) :: Changeset.t()

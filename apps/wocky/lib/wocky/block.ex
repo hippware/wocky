@@ -78,7 +78,7 @@ defmodule Wocky.Block do
   Composable query fragment to filter out objects with owners that are blocking/
   blocked by the supplied user.
   """
-  @spec object_visible_query(Queryable.t(), User.t(), atom) :: Queryable.t()
+  @spec object_visible_query(Queryable.t(), User.t(), atom()) :: Queryable.t()
   def object_visible_query(query, requester, owner_field \\ :user_id) do
     query
     |> join(

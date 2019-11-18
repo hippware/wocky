@@ -64,7 +64,7 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
   Records the notification. This is used to record
   requests and responses.
   """
-  @spec record_notification(%Notification{}, pid) :: :ok
+  @spec record_notification(%Notification{}, pid()) :: :ok
   def record_notification(notification, pid) do
     GenServer.call(__MODULE__, {:record_notification, notification, pid})
   end
@@ -73,10 +73,10 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
   Wait until a notification arrives.
   """
   @spec wait_notifications(
-          pid: pid,
-          global: boolean,
-          timeout: non_neg_integer,
-          count: non_neg_integer
+          pid: pid(),
+          global: boolean(),
+          timeout: non_neg_integer(),
+          count: non_neg_integer()
         ) :: [%Notification{}]
   def wait_notifications(opts \\ []) do
     timeout = opts[:timeout] || 100
@@ -98,7 +98,7 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
   @doc """
   List recorded notifications keeping their order of arrival.
   """
-  @spec list_notifications(pid: pid, global: boolean) :: [%Notification{}]
+  @spec list_notifications(pid: pid(), global: boolean()) :: [%Notification{}]
   def list_notifications(opts \\ []) do
     pid = opts[:pid] || self()
     GenServer.call(__MODULE__, {:list_notifications, pid, opts[:global]})
@@ -107,7 +107,7 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
   @doc """
   Clear all the recorded notifications.
   """
-  @spec clear_notifications(pid: pid, global: boolean) :: :ok
+  @spec clear_notifications(pid: pid(), global: boolean()) :: :ok
   def clear_notifications(opts \\ []) do
     pid = opts[:pid] || self()
     GenServer.call(__MODULE__, {:clear_notifications, pid, opts[:global]})

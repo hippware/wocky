@@ -25,7 +25,7 @@ defmodule Wocky.Relation.Subscription do
   @type t :: %__MODULE__{}
   @type state :: nil | :subscribed | :visiting
 
-  @spec changeset(t, map) :: Changeset.t()
+  @spec changeset(t(), map()) :: Changeset.t()
   def changeset(struct, params) do
     struct
     |> cast(params, [:user_id, :bot_id])

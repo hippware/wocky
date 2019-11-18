@@ -47,7 +47,7 @@ defmodule Wocky.Notifier.InBand.Notification do
 
   @type t() :: %__MODULE__{}
 
-  @spec put(map, atom, [atom]) :: {:ok, t()} | {:error, any()}
+  @spec put(map(), atom(), [atom()]) :: {:ok, t()} | {:error, any()}
   def put(params, type, required) do
     params = Map.put(params, :type, type)
 

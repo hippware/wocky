@@ -18,10 +18,10 @@ defmodule Wocky.TROS do
   @type metadata :: map()
   @type file_type :: Metadata.FileTypeEnum.t()
 
-  @callback delete(file_id) :: :ok
-  @callback make_upload_response(User.t(), file_id, integer, metadata) ::
-              {list, list}
-  @callback get_download_url(metadata, file_name) :: url()
+  @callback delete(file_id()) :: :ok
+  @callback make_upload_response(User.t(), file_id(), integer(), metadata()) ::
+              {list(), list()}
+  @callback get_download_url(metadata(), file_name()) :: url()
 
   @thumbnail_suffix "-thumbnail"
   @aspect_thumbnail_suffix "-aspect_thumbnail"
@@ -34,7 +34,7 @@ defmodule Wocky.TROS do
   # ----------------------------------------------------------------------
   # Names and URLs
 
-  @spec parse_url(url) :: {:ok, file_id} | {:error, :invalid_url}
+  @spec parse_url(url()) :: {:ok, file_id()} | {:error, :invalid_url}
   def parse_url("tros:" <> jid) do
     jid(lserver: url_server, lresource: resource) = JID.from_binary(jid)
     server = Wocky.host()
@@ -47,11 +47,11 @@ defmodule Wocky.TROS do
 
   def parse_url(_), do: {:error, :invalid_url}
 
-  @spec make_url(User.t(), file_id) :: url()
+  @spec make_url(User.t(), file_id()) :: url()
   def make_url(owner, file_id),
     do: file_id |> make_jid(owner.id) |> url_from_jid()
 
-  @spec make_url(file_id) :: url()
+  @spec make_url(file_id()) :: url()
   def make_url(file_id), do: file_id |> make_jid("") |> url_from_jid()
 
   defp make_jid(file_id, owner_id),
@@ -59,13 +59,13 @@ defmodule Wocky.TROS do
 
   defp url_from_jid(jid), do: "tros:#{JID.to_binary(jid)}"
 
-  @spec get_base_id(file_name) :: file_id
+  @spec get_base_id(file_name()) :: file_id()
   def get_base_id(file_name) do
     [@thumbnail_suffix, @aspect_thumbnail_suffix, @original_suffix]
     |> Enum.reduce(file_name, &String.replace_suffix(&2, &1, ""))
   end
 
-  @spec variants(file_id) :: [binary]
+  @spec variants(file_id()) :: [String.t()]
   def variants(file_id) do
     Enum.map(
       [:full, :thumbnail, :aspect_thumbnail, :original],
@@ -76,7 +76,7 @@ defmodule Wocky.TROS do
   # ----------------------------------------------------------------------
   # Data management
 
-  @spec get_metadata(file_id) :: {:ok, Metadata.t()} | {:error, any}
+  @spec get_metadata(file_id()) :: {:ok, Metadata.t()} | {:error, any()}
   def get_metadata(id) do
     if ID.valid?(id) do
       case Repo.get(Metadata, id) do
@@ -88,7 +88,7 @@ defmodule Wocky.TROS do
     end
   end
 
-  @spec delete(file_id, User.t()) :: {:ok, Metadata.t()}
+  @spec delete(file_id(), User.t()) :: {:ok, Metadata.t()}
   def delete(file_id, requestor) do
     user_id = requestor.id
 
@@ -122,8 +122,14 @@ defmodule Wocky.TROS do
     end
   end
 
-  @spec make_upload_response(User.t(), file_id, integer, binary, metadata) ::
-          {:ok, {list, list}} | {:error, term}
+  @spec make_upload_response(
+          User.t(),
+          file_id(),
+          integer(),
+          String.t(),
+          metadata()
+        ) ::
+          {:ok, {list(), list()}} | {:error, any()}
   def make_upload_response(owner, file_id, size, access, meta) do
     with true <- meta.content_type in @valid_content_types,
          {:ok, _} <- put_metadata(file_id, owner.id, access) do

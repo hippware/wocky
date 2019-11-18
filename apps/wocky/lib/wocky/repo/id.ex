@@ -8,11 +8,11 @@ defmodule Wocky.Repo.ID do
   @type t :: <<_::288>>
 
   @doc "Generates a UUID in canonical text format for use as an id."
-  @spec new :: t
+  @spec new :: t()
   def new, do: UUID.generate()
 
   @doc "Returns true if the ID is a valid UUID."
-  @spec valid?(t) :: boolean
+  @spec valid?(t()) :: boolean()
   def valid?(id) do
     case UUID.dump(id) do
       {:ok, _} -> true

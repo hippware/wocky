@@ -78,14 +78,14 @@ defmodule Wocky.Location.BotEvent do
     |> Enum.into(%{})
   end
 
-  @spec get_last_event(User.id(), Bot.id()) :: t | nil
+  @spec get_last_event(User.id(), Bot.id()) :: t() | nil
   def get_last_event(user_id, bot_id) do
     user_id
     |> get_last_event_query(bot_id)
     |> Repo.one()
   end
 
-  @spec get_last_event_type(User.id(), Bot.id()) :: event | nil
+  @spec get_last_event_type(User.id(), Bot.id()) :: event() | nil
   def get_last_event_type(user_id, bot_id) do
     user_id
     |> get_last_event_query(bot_id)
@@ -118,12 +118,12 @@ defmodule Wocky.Location.BotEvent do
   Insert a system-generated event; i.e., one that is not tied to the user
   changing location.
   """
-  @spec insert_system(User.t(), Bot.t(), event, String.t()) :: t
+  @spec insert_system(User.t(), Bot.t(), event, String.t()) :: t()
   def insert_system(user, bot, event, reason),
     do: insert(user, "System/#{reason}", bot, nil, event)
 
   @spec insert(User.t(), User.device(), Bot.t(), UserLocation.t() | nil, event) ::
-          t
+          t()
   def insert(user, device, bot, loc \\ nil, event) do
     user
     |> new(device, bot, loc, event)
