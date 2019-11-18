@@ -22,7 +22,7 @@ defmodule Wocky.Friends do
 
   @type share_type :: Friend.share_type()
   @type relationship :: :self | :friend | :invited | :invited_by | :none
-  @type error :: {:error, term()}
+  @type error :: {:error, any()}
 
   @spec get_friend(User.tid(), User.tid()) :: Friend.t() | nil
   def get_friend(user, friend), do: Friend.get(user, friend)
