@@ -30,7 +30,6 @@ defmodule Wocky.Account.Register do
       nil ->
         external_id = Factory.external_id()
 
-        # TODO Is there a better way to handle this error?
         {:ok, _} =
           Account.update(user, %{
             provider: provider,
@@ -45,7 +44,6 @@ defmodule Wocky.Account.Register do
   end
 
   defp find_by_phone_or_external_id(phone_number, external_id, provider) do
-    # TODO Use expression syntax for consistency?
     query =
       from u in User,
         where:
