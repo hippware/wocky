@@ -10,10 +10,12 @@ defmodule Wocky.TROS.Store.Simple do
 
   @behaviour TROS
 
+  @impl true
   def delete(_file_id) do
     :ok
   end
 
+  @impl true
   def make_upload_response(reference_url, file_id, _size, _metadata) do
     resp_fields = resp_fields(:put, url(file_id), reference_url)
 
@@ -30,6 +32,7 @@ defmodule Wocky.TROS.Store.Simple do
     |> Repo.update!()
   end
 
+  @impl true
   def get_download_url(_metadata, file_name) do
     url(TROS.get_base_id(file_name))
   end

@@ -10,6 +10,7 @@ defmodule Wocky.Account.JWT.Firebase do
   alias Wocky.Account.Register
   alias Wocky.Account.User
 
+  @impl true
   def subject_for_token(%User{} = user, _claims) do
     {:ok, Register.get_external_id(user)}
   end
@@ -18,6 +19,7 @@ defmodule Wocky.Account.JWT.Firebase do
     {:error, :unknown_resource}
   end
 
+  @impl true
   def resource_from_claims(%{"sub" => external_id, "phone_number" => phone}) do
     Register.find(:firebase, external_id, phone)
   end
@@ -26,6 +28,7 @@ defmodule Wocky.Account.JWT.Firebase do
     {:error, :not_possible}
   end
 
+  @impl true
   def build_claims(claims, %User{} = user, _opts) do
     {:ok, Map.put(claims, "phone_number", user.phone_number)}
   end

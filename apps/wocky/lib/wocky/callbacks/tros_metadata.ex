@@ -8,6 +8,7 @@ defmodule Wocky.Callbacks.TROSMetadata do
   alias Wocky.TROS
   alias Wocky.Waiter
 
+  @impl true
   def handle_update(%{ready: true, id: id}, %{ready: false}) do
     id
     |> TROS.file_ready_event()

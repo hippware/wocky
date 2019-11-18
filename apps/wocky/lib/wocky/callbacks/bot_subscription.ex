@@ -10,6 +10,7 @@ defmodule Wocky.Callbacks.BotSubscription do
   alias Wocky.Repo.Hydrator
   alias Wocky.Waiter
 
+  @impl true
   def handle_insert(new) do
     Hydrator.with_assocs(new, [:user, :bot], fn rec ->
       if rec.user_id == rec.bot.user_id do

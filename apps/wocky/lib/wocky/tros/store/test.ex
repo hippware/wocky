@@ -11,11 +11,13 @@ defmodule Wocky.TROS.Store.Test do
     end
   end
 
+  @impl true
   def delete(file_id) do
     record(file_id)
     :ok
   end
 
+  @impl true
   def make_upload_response(reference_url, file_id, _size, _metadata) do
     record(file_id)
     url = "http://localhost/some/file/location"
@@ -25,6 +27,7 @@ defmodule Wocky.TROS.Store.Test do
     {[], resp_fields}
   end
 
+  @impl true
   def get_download_url(%{ready: false}, _file_name), do: ""
 
   def get_download_url(_metadata, file_name) do

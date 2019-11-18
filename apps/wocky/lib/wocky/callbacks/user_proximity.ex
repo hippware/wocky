@@ -5,17 +5,14 @@ defmodule Wocky.Callbacks.UserProximity do
 
   alias Wocky.Location
 
-  def handle_insert(new) do
-    call_updates(new)
-  end
+  @impl true
+  def handle_insert(new), do: call_updates(new)
 
-  def handle_update(new, _old) do
-    call_updates(new)
-  end
+  @impl true
+  def handle_update(new, _old), do: call_updates(new)
 
-  def handle_delete(old) do
-    call_updates(old)
-  end
+  @impl true
+  def handle_delete(old), do: call_updates(old)
 
   defp call_updates(sub) do
     Location.refresh_proximity_subscriptions(sub.user_id)

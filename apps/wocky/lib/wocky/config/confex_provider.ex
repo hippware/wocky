@@ -12,6 +12,7 @@ defmodule Wocky.Config.ConfexProvider do
 
   use Distillery.Releases.Config.Provider
 
+  @impl true
   def init(_) do
     _ = Confex.resolve_env!(:ex_aws)
     _ = Confex.resolve_env!(:vaultex)

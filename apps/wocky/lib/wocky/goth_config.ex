@@ -5,6 +5,7 @@ defmodule Wocky.GothConfig do
 
   use Goth.Config
 
+  @impl true
   def init(config) do
     key = Confex.get_env(:wocky, :goth_private_key)
 

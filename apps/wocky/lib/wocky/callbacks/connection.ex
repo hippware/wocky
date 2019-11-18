@@ -11,6 +11,7 @@ defmodule Wocky.Callbacks.Connection do
 
   @stale_location_seconds 15
 
+  @impl true
   def handle_event(%{user: user, status: status}) do
     user
     |> Friends.get_location_sharers()

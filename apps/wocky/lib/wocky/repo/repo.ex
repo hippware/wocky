@@ -15,6 +15,7 @@ defmodule Wocky.Repo do
   @doc """
   Dynamically loads the repository configuration from the environment variables.
   """
+  @impl true
   def init(_, opts) do
     # The application isn't started when we are running migrations, so we have
     # to ensure that PrometheusEx is started and setup the Ecto instrumenter's

@@ -14,6 +14,9 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
   alias Pigeon.APNS.Notification
   alias Wocky.Notifier.Push.Backend.APNS
 
+  @behaviour Wocky.Notifier.Push.Backend
+
+  @impl true
   def push(params) do
     n = APNS.build_notification(params.event, params.token)
     retries = params.retries
@@ -42,14 +45,19 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
     notif
   end
 
+  @impl true
   defdelegate get_response(resp), to: APNS
 
+  @impl true
   defdelegate get_id(notification), to: APNS
 
+  @impl true
   defdelegate get_payload(notification), to: APNS
 
+  @impl true
   defdelegate error_msg(resp), to: APNS
 
+  @impl true
   defdelegate handle_error(resp), to: APNS
 
   @doc """

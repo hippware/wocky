@@ -6,7 +6,9 @@ defmodule Wocky.Account.JWT.Verify do
   alias Guardian.Token.Jwt.Verify, as: Base
   alias Guardian.Token.Verify
 
-  @doc false
+  @behaviour Guardian.Token.Verify
+
+  @impl true
   def verify_claim(_mod, "iat", %{"iat" => nil} = claims, _opts),
     do: {:ok, claims}
 

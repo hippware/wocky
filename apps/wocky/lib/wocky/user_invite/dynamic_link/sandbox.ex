@@ -5,6 +5,7 @@ defmodule Wocky.UserInvite.DynamicLink.Sandbox do
 
   @behaviour Wocky.UserInvite.DynamicLink
 
+  @impl true
   def invitation_link(invitation_code) do
     case Confex.get_env(:wocky, :invitation_link_result, :ok) do
       :ok -> {:ok, "https://tinyrobot.com/?invitation" <> invitation_code}
