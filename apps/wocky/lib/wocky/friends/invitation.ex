@@ -49,10 +49,8 @@ defmodule Wocky.Friends.Invitation do
     user_id = User.id(user)
     contact_id = User.id(contact)
 
-    __MODULE__
-    |> where(user_id: ^user_id)
-    |> where(invitee_id: ^contact_id)
-    |> Repo.one()
+    from i in __MODULE__,
+      where: i.user_id == ^user_id and i.invitee_id == ^contact_id
   end
 
   @spec add(User.tid(), User.tid(), Friend.share_type()) :: Repo.result(t())

@@ -78,10 +78,8 @@ defmodule Wocky.Friends.Friend do
     user_id = User.id(user)
     friend_id = User.id(friend)
 
-    __MODULE__
-    |> where(user_id: ^user_id)
-    |> where(contact_id: ^friend_id)
-    |> Repo.one()
+    from f in __MODULE__,
+      where: f.user_id == ^user_id and f.contact_id == ^friend_id
   end
 
   @spec to_cached(t()) :: CachedFriend.t()
