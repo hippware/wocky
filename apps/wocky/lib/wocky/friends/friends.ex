@@ -213,14 +213,15 @@ defmodule Wocky.Friends do
     :ok
   end
 
-  @spec get_relationship(User.tid(), User.tid()) :: {atom(), struct() | nil}
+  @spec get_relationship(User.tid(), User.tid()) ::
+          {relationship() | :blocked, struct() | nil}
   def get_relationship(user, contact) do
     cond do
-      User.id(user) == User.id(contact) -> {:self, nil}
+      self?(user, contact) -> {:self, nil}
       item = Friend.get(user, contact) -> {:friend, item}
       invitation = Invitation.get(user, contact) -> {:invited, invitation}
       invitation = Invitation.get(contact, user) -> {:invited_by, invitation}
-      Block.blocked?(User.id(user), User.id(contact)) -> {:blocked, nil}
+      Block.blocked?(user, contact) -> {:blocked, nil}
       true -> {:none, nil}
     end
   end
@@ -228,25 +229,29 @@ defmodule Wocky.Friends do
   @doc "Returns the relationship of user to target"
   @spec relationship(User.tid(), User.tid()) :: relationship()
   def relationship(user, contact) do
-    case get_relationship(user, contact) do
-      {:blocked, _} -> {:none, nil}
-      {relationship, _} -> relationship
+    cond do
+      self?(user, contact) -> :self
+      friend?(user, contact) -> :friend
+      invited?(user, contact) -> :invited
+      invited_by?(user, contact) -> :invited_by
+      true -> :none
     end
   end
 
+  defp self?(user, contact), do: User.id(user) == User.id(contact)
+
   @doc "Returns true if the two users are friends or the same person"
   @spec self_or_friend?(User.tid(), User.tid()) :: boolean
-  def self_or_friend?(%User{id: id}, %User{id: id}), do: true
-  def self_or_friend?(user_id, user_id), do: true
-  def self_or_friend?(a, b), do: friend?(a, b)
+  def self_or_friend?(user, contact),
+    do: self?(user, contact) || friend?(user, contact)
 
   @doc "Returns true if the two users are friends"
   @spec friend?(User.tid(), User.tid()) :: boolean
-  def friend?(user, contact), do: !is_nil(Friend.get(user, contact))
+  def friend?(user, contact), do: Friend.exists?(user, contact)
 
   @doc "Returns true if the first user has invited the second to be friends"
   @spec invited?(User.tid(), User.tid()) :: boolean
-  def invited?(user, contact), do: !is_nil(Invitation.get(user, contact))
+  def invited?(user, contact), do: Invitation.exists?(user, contact)
 
   @doc "Returns true if the first user has been invited by the second to be friends"
   @spec invited_by?(User.t(), User.t()) :: boolean

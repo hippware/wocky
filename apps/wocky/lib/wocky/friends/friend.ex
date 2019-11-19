@@ -64,15 +64,22 @@ defmodule Wocky.Friends.Friend do
 
   def share_types, do: @share_types
 
+  @spec exists?(User.tid(), User.tid()) :: boolean()
+  def exists?(user, friend) do
+    Repo.exists?(get_query(user, friend))
+  end
+
   @spec get(User.tid(), User.tid()) :: t() | nil
   def get(user, friend) do
+    Repo.one(get_query(user, friend))
+  end
+
+  defp get_query(user, friend) do
     user_id = User.id(user)
     friend_id = User.id(friend)
 
-    __MODULE__
-    |> where(user_id: ^user_id)
-    |> where(contact_id: ^friend_id)
-    |> Repo.one()
+    from f in __MODULE__,
+      where: f.user_id == ^user_id and f.contact_id == ^friend_id
   end
 
   @spec to_cached(t()) :: CachedFriend.t()

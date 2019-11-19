@@ -35,15 +35,22 @@ defmodule Wocky.Friends.Invitation do
 
   @change_fields [:user_id, :invitee_id, :share_type]
 
+  @spec exists?(User.tid(), User.tid()) :: boolean()
+  def exists?(user, contact) do
+    Repo.exists?(get_query(user, contact))
+  end
+
   @spec get(User.tid(), User.tid()) :: t() | nil
   def get(user, contact) do
+    Repo.one(get_query(user, contact))
+  end
+
+  defp get_query(user, contact) do
     user_id = User.id(user)
     contact_id = User.id(contact)
 
-    __MODULE__
-    |> where(user_id: ^user_id)
-    |> where(invitee_id: ^contact_id)
-    |> Repo.one()
+    from i in __MODULE__,
+      where: i.user_id == ^user_id and i.invitee_id == ^contact_id
   end
 
   @spec add(User.tid(), User.tid(), Friend.share_type()) :: Repo.result(t())

@@ -54,18 +54,18 @@ defmodule Wocky.Block do
     :ok
   end
 
-  @spec blocked?(User.t(), User.t()) :: boolean
-  def blocked?(%User{id: id1}, %User{id: id2}), do: blocked?(id1, id2)
+  @spec blocked?(User.tid(), User.tid()) :: boolean()
+  def blocked?(u1, u2) do
+    u1_id = User.id(u1)
+    u2_id = User.id(u2)
 
-  @spec blocked?(User.id(), User.id()) :: boolean
-  def blocked?(u1_id, u2_id) do
     Block
     |> where(
       [b],
       (b.blocker_id == ^u1_id and b.blockee_id == ^u2_id) or
         (b.blocker_id == ^u2_id and b.blockee_id == ^u1_id)
     )
-    |> Repo.all() != []
+    |> Repo.exists?()
   end
 
   @spec blocks_query(User.id()) :: Queryable.t()
