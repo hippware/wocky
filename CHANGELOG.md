@@ -5,8 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: firebase_admin_ex (PR #2931)
+* Update: firebase_admin_ex (PR #2931), mix_test_watch (PR #2934)
+  * postgrex (PR #2933)
 * Change binary() to String.t() (PR #2929)
+* Misc typespec fixes (#2935)
+* Don't pull a full object just to see if it exists (#2936)
 
 
 # 2019.11.13+r39dd56a
