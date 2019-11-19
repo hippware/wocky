@@ -29,14 +29,14 @@ defmodule Wocky.TROS.Metadata do
     timestamps()
   end
 
-  @type id :: binary
-  @type access :: binary
+  @type id :: String.t()
+  @type access :: String.t()
 
   @type t :: %Metadata{
-          id: id,
+          id: id(),
           user_id: User.id(),
-          access: access,
-          ready: boolean,
+          access: access(),
+          ready: boolean(),
           available_formats: [FileTypeEnum.t()]
         }
 

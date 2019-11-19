@@ -24,7 +24,7 @@ defmodule Wocky.Account.Register do
     :pass_details
   ]
 
-  @spec get_external_id(User.t(), binary) :: binary
+  @spec get_external_id(User.t(), String.t()) :: String.t()
   def get_external_id(user, provider \\ "firebase") do
     case user.external_id do
       nil ->
@@ -53,7 +53,8 @@ defmodule Wocky.Account.Register do
     Repo.one(query)
   end
 
-  @spec find(binary | atom, binary, binary) :: {:ok, User.t()} | {:error, any}
+  @spec find(String.t() | atom(), String.t(), String.t()) ::
+          {:ok, User.t()} | {:error, any()}
   def find(provider, external_id, phone_number) do
     provider = to_string(provider)
 
@@ -70,7 +71,7 @@ defmodule Wocky.Account.Register do
     end
   end
 
-  @spec create(map()) :: {:ok, User.t()} | {:error, any}
+  @spec create(map()) :: {:ok, User.t()} | {:error, any()}
   def create(user_data) do
     user_data =
       %{
@@ -91,8 +92,8 @@ defmodule Wocky.Account.Register do
     end
   end
 
-  @spec find_or_create(atom | binary, binary, binary) ::
-          {:ok, {User.t(), boolean}}
+  @spec find_or_create(atom() | String.t(), String.t(), String.t()) ::
+          {:ok, {User.t(), boolean()}}
   def find_or_create(provider, external_id, phone_number) do
     find_or_create(provider, external_id, phone_number, 0)
   end

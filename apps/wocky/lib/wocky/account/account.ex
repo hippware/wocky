@@ -73,7 +73,8 @@ defmodule Wocky.Account do
   Update the data on an existing user.
   Fields is a map containing fields to update.
   """
-  @spec update(User.id() | User.t(), map) :: {:ok, User.t()} | {:error, term}
+  @spec update(User.id() | User.t(), map()) ::
+          {:ok, User.t()} | {:error, any()}
   def update(%User{} = user, fields) do
     changeset = User.changeset(user, fields)
 

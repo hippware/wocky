@@ -9,6 +9,7 @@ defmodule Wocky.Callbacks.Bot do
   alias Wocky.POI.Bot
   alias Wocky.Repo
 
+  @impl true
   def handle_update(%Bot{location: new} = bot, %Bot{location: old})
       when new != old do
     bot_with_subs = Repo.preload(bot, [:subscribers])

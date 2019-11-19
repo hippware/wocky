@@ -29,7 +29,7 @@ defmodule Wocky.Messaging.Conversation do
   end
 
   @type t :: %__MODULE__{
-          id: integer,
+          id: integer(),
           user_id: User.id(),
           other_user_id: User.id(),
           content: String.t(),

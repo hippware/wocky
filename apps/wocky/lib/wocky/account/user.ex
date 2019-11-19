@@ -64,30 +64,30 @@ defmodule Wocky.Account.User do
     many_to_many(:bot_subscriptions, Bot, join_through: Subscription)
   end
 
-  @type id :: binary
-  @type device :: binary
-  @type provider :: binary
-  @type external_id :: binary
-  @type phone_number :: binary
-  @type handle :: binary
-  @type role :: binary
+  @type id :: String.t()
+  @type device :: String.t()
+  @type provider :: String.t()
+  @type external_id :: String.t()
+  @type phone_number :: String.t()
+  @type handle :: String.t()
+  @type role :: String.t()
 
   @type t :: %User{
           id: id,
-          handle: nil | handle,
-          image_url: nil | binary,
-          name: binary,
-          email: nil | binary,
-          tagline: nil | binary,
-          provider: nil | provider,
-          external_id: nil | external_id,
-          phone_number: nil | phone_number,
-          roles: [role],
-          welcome_sent: boolean,
-          smss_sent: integer,
-          bot_created: boolean,
+          handle: nil | handle(),
+          image_url: nil | String.t(),
+          name: String.t(),
+          email: nil | String.t(),
+          tagline: nil | String.t(),
+          provider: nil | provider(),
+          external_id: nil | external_id(),
+          phone_number: nil | phone_number(),
+          roles: [role()],
+          welcome_sent: boolean(),
+          smss_sent: integer(),
+          bot_created: boolean(),
           presence: nil | Presence.t(),
-          transient: boolean
+          transient: boolean()
         }
 
   @type tid :: t() | id()

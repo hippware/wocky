@@ -20,6 +20,7 @@ defmodule Wocky.Account.JWT.Client do
 
   def signing_key, do: SigningKey.fetch(:client)
 
+  @impl true
   def subject_for_token(%User{} = user, _claims) do
     {:ok, Register.get_external_id(user, "bypass")}
   end
@@ -32,6 +33,7 @@ defmodule Wocky.Account.JWT.Client do
     {:error, :unknown_resource}
   end
 
+  @impl true
   def resource_from_claims(%{"typ" => "firebase", "sub" => token}) do
     {:ok, user, _claims} = Firebase.resource_from_token(token)
     {:ok, user}
@@ -45,6 +47,7 @@ defmodule Wocky.Account.JWT.Client do
     {:error, :not_possible}
   end
 
+  @impl true
   def build_claims(claims, %User{} = user, _opts) do
     claims =
       claims
@@ -66,6 +69,7 @@ defmodule Wocky.Account.JWT.Client do
 
   def build_claims(claims, _resource, _opts), do: {:ok, claims}
 
+  @impl true
   def verify_claims(claims, _opts) do
     with :ok <- verify_aud(claims["aud"]),
          :ok <- verify_typ(claims["typ"]),

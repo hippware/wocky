@@ -7,6 +7,7 @@ defmodule Wocky.UserInvite.DynamicLink.Firebase do
 
   alias FirebaseAdminEx.DynamicLink, as: FirebaseDynamicLink
 
+  @impl true
   def invitation_link(invitation_code) do
     params = %{
       "iosInfo" => %{

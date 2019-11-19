@@ -11,6 +11,7 @@ defmodule Wocky.Callbacks.BotInvitation do
   alias Wocky.Relation.Invitation
   alias Wocky.Repo.Hydrator
 
+  @impl true
   def handle_insert(new) do
     Hydrator.with_assocs(new, [:user, :invitee, :bot], fn rec ->
       %BotInvitation{
@@ -23,6 +24,7 @@ defmodule Wocky.Callbacks.BotInvitation do
     end)
   end
 
+  @impl true
   def handle_update(
         %Invitation{accepted: accepted?} = new,
         %Invitation{accepted: nil}

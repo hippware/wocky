@@ -9,14 +9,14 @@ defmodule Wocky.PhoneNumber do
   @type t() :: String.t()
   @type country_code() :: String.t()
 
-  @spec normalise(t(), country_code()) :: {:ok, t()} | {:error, term()}
+  @spec normalise(t(), country_code()) :: {:ok, t()} | {:error, any()}
   def normalise(input_number, country_code) do
     with {:ok, phone_number} <- ExPhoneNumber.parse(input_number, country_code) do
       {:ok, ExPhoneNumber.format(phone_number, :e164)}
     end
   end
 
-  @spec country_code(t()) :: {:ok, country_code()} | {:error, term()}
+  @spec country_code(t()) :: {:ok, country_code()} | {:error, any()}
   def country_code(phone_number) do
     :wocky
     |> Confex.get_env(:country_code_lookup_method)

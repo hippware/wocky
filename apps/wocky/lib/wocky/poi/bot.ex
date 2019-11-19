@@ -48,27 +48,27 @@ defmodule Wocky.POI.Bot do
     many_to_many(:subscribers, User, join_through: Subscription)
   end
 
-  @type id :: binary
+  @type id :: String.t()
   @type not_loaded :: %NotLoaded{}
 
   @type t :: %Bot{
-          id: nil | id,
-          title: binary,
-          pending: nil | boolean,
-          shortname: nil | binary,
-          description: binary,
-          image_url: nil | binary,
-          type: binary,
-          icon: nil | binary,
-          address: binary,
-          address_data: binary,
+          id: nil | id(),
+          title: String.t(),
+          pending: nil | boolean(),
+          shortname: nil | String.t(),
+          description: String.t(),
+          image_url: nil | String.t(),
+          type: String.t(),
+          icon: nil | String.t(),
+          address: String.t(),
+          address_data: String.t(),
           location: nil | Geo.Point.t(),
-          radius: nil | float,
-          tags: nil | [binary],
-          user: not_loaded | User.t(),
-          items: not_loaded | [Item.t()],
-          invitations: not_loaded | [Invitation.t()],
-          subscribers: not_loaded | [User.t()]
+          radius: nil | float(),
+          tags: nil | [String.t()],
+          user: not_loaded() | User.t(),
+          items: not_loaded() | [Item.t()],
+          invitations: not_loaded() | [Invitation.t()],
+          subscribers: not_loaded() | [User.t()]
         }
 
   @change_fields [

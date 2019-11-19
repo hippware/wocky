@@ -18,6 +18,7 @@ defmodule Wocky.Application do
   require Logger
   require Prometheus.Registry
 
+  @impl true
   def start(_type, _args) do
     case Confex.get_env(:wocky, :db_only_mode, false) do
       false -> start_full()

@@ -15,6 +15,7 @@ defmodule Wocky.Account.JWT.Server do
 
   def default_token_type, do: "location"
 
+  @impl true
   def subject_for_token(%User{} = user, _claims) do
     {:ok, user.id}
   end
@@ -23,6 +24,7 @@ defmodule Wocky.Account.JWT.Server do
     {:error, :unknown_resource}
   end
 
+  @impl true
   def resource_from_claims(%{"sub" => user_id} = _claims) do
     case Repo.get(User, user_id) do
       nil -> {:error, :not_found}
@@ -34,5 +36,6 @@ defmodule Wocky.Account.JWT.Server do
     {:error, :not_possible}
   end
 
+  @impl true
   def build_claims(claims, _resource, _opts), do: {:ok, claims}
 end

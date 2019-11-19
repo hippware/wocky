@@ -11,6 +11,7 @@ defmodule Wocky.TROS.Store.S3 do
   # 10 minute expiry on upload/download links.
   @link_expiry 60 * 10
 
+  @impl true
   def delete(file_id) do
     for file <- TROS.variants(file_id) do
       # TODO Do we really want to ignore this return value?
@@ -61,12 +62,14 @@ defmodule Wocky.TROS.Store.S3 do
     {:error, {:retrieve_error, text}}
   end
 
+  @impl true
   def get_download_url(%{ready: false}, _file_name), do: ""
 
   def get_download_url(_metadata, file_name) do
     s3_url(bucket(), file_name, :get)
   end
 
+  @impl true
   def make_upload_response(reference_url, file_id, size, metadata) do
     headers = [
       {"x-amz-content-sha256", "UNSIGNED-PAYLOAD"},

@@ -9,7 +9,7 @@ defmodule Wocky.Relation.Cluster do
   ]
 
   @type t :: %__MODULE__{
-          count: integer,
+          count: integer(),
           location: Geo.Point.t()
         }
 end

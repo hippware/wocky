@@ -9,6 +9,7 @@ defmodule Wocky.Callbacks.FriendInvitation do
   alias Wocky.Notifier
   alias Wocky.Repo.Hydrator
 
+  @impl true
   def handle_insert(new) do
     Hydrator.with_assocs(new, [:user, :invitee], fn rec ->
       %UserInvitation{

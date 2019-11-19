@@ -11,11 +11,13 @@ defmodule Wocky.Callbacks.Friend do
   alias Wocky.Notifier
   alias Wocky.Repo.Hydrator
 
+  @impl true
   def handle_insert(%{share_type: stype} = new) when stype == :always,
     do: notify_share_start(new)
 
   def handle_insert(new), do: Friends.refresh_share_cache(new.user_id)
 
+  @impl true
   def handle_update(%{share_type: stype} = new, %{share_type: stype}),
     do: Friends.refresh_share_cache(new.user_id)
 
@@ -27,6 +29,7 @@ defmodule Wocky.Callbacks.Friend do
 
   def handle_update(new, _old), do: Friends.refresh_share_cache(new.user_id)
 
+  @impl true
   def handle_delete(%{share_type: stype} = old) when stype != :disabled,
     do: notify_share_end(old)
 

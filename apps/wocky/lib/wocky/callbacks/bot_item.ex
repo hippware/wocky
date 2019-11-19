@@ -10,6 +10,7 @@ defmodule Wocky.Callbacks.BotItem do
   alias Wocky.Repo
   alias Wocky.Repo.Hydrator
 
+  @impl true
   def handle_insert(new) do
     Hydrator.with_assocs(new, [:user, :bot], fn rec ->
       rec.bot

@@ -5,6 +5,7 @@ defmodule Wocky.SMS.Sandbox do
 
   require Logger
 
+  @impl true
   def send(recipient, body) do
     result = Confex.get_env(:wocky, :sms_send_result, :ok)
 
