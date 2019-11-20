@@ -145,6 +145,7 @@ defmodule Wocky.Account.AuthTest do
   defmodule TestException do
     defexception [:foo]
 
+    @impl true
     def message(_), do: "testing"
   end
 

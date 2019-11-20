@@ -65,6 +65,9 @@ end
 defimpl Geocalc.Point, for: Geo.Point do
   alias Wocky.GeoUtils
 
+  @impl true
   def latitude(p), do: GeoUtils.get_lat(p)
+
+  @impl true
   def longitude(p), do: GeoUtils.get_lon(p)
 end

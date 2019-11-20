@@ -21,26 +21,35 @@ end
 defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.LocationShare do
   import Wocky.Notifier.Push.Utils
 
+  @impl true
   def notify?(_), do: true
 
+  @impl true
   def recipient(%{to: to}), do: to
 
+  @impl true
   def message(%{from: from} = _event) do
     get_handle(from) <> " is sharing their location with you"
   end
 
+  @impl true
   def uri(%{from: from} = _event), do: make_uri(:livelocation, from.id)
 
+  @impl true
   def ignore_block?(_event), do: false
 
+  @impl true
   def opts(_), do: []
 end
 
 defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShare do
+  @impl true
   def notify?(_), do: true
 
+  @impl true
   def event_type(_), do: :location_share
 
+  @impl true
   def required_fields(_),
     do: [
       :expires_at,
@@ -49,6 +58,7 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShare do
       :user_id
     ]
 
+  @impl true
   def transform(event),
     do: %{
       expires_at: event.expires_at,
@@ -57,5 +67,6 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShare do
       user_id: event.to.id
     }
 
+  @impl true
   def ignore_block?(_event), do: false
 end

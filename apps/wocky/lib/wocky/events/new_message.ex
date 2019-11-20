@@ -27,10 +27,13 @@ end
 defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.NewMessage do
   import Wocky.Notifier.Push.Utils
 
+  @impl true
   def notify?(_), do: true
 
+  @impl true
   def recipient(%{to: to}), do: to
 
+  @impl true
   def message(%{from: from, content: content}) do
     if blank?(content) do
       get_handle(from) <> " sent you an image"
@@ -39,10 +42,13 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.NewMessage do
     end
   end
 
+  @impl true
   def uri(%{from: from}), do: make_uri(:conversation, from.id)
 
+  @impl true
   def ignore_block?(_event), do: false
 
+  @impl true
   def opts(%{unread_count: unread}) do
     [sound: "default", android_channel_id: "chat", badge: unread]
   end

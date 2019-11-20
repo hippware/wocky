@@ -208,10 +208,12 @@ defmodule Wocky.Account.User do
 end
 
 defimpl FunWithFlags.Actor, for: Wocky.Account.User do
+  @impl true
   def id(%Wocky.Account.User{id: id}), do: "user:#{id}"
 end
 
 defimpl FunWithFlags.Group, for: Wocky.Account.User do
+  @impl true
   def in?(%Wocky.Account.User{email: email}, :hippware) do
     email && String.ends_with?(email, "@hippware.com")
   end

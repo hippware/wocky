@@ -23,6 +23,7 @@ defmodule Wocky.Callbacks.BotSubscription do
     end)
   end
 
+  @impl true
   def handle_delete(old) do
     Hydrator.with_assocs(old, [:user], fn rec ->
       Location.refresh_bot_subscriptions(rec.user)
