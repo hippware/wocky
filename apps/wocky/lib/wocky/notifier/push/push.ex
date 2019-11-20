@@ -179,7 +179,7 @@ defmodule Wocky.Notifier.Push do
     |> backend.push()
   end
 
-  def handle_response(notification, timeout_pid, params) do
+  defp handle_response(notification, timeout_pid, params) do
     send(timeout_pid, :push_complete)
     resp = params.backend.get_response(notification)
     update_metric(resp)
