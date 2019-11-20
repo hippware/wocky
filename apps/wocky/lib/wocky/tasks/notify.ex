@@ -3,10 +3,12 @@ defmodule Wocky.Tasks.Notify do
 
   alias Slack.Chat
 
+  @spec start :: :ok
   def start do
     do_notify("Beginning deployment of #{wocky_version_and_target()}...")
   end
 
+  @spec complete(String.t(), String.t()) :: :ok
   def complete(result, extra \\ "") do
     msg! = "Deployment of Wocky to #{instance_name()} "
 

@@ -16,6 +16,7 @@ defmodule Wocky.Repo.Cleaner do
 
   require Logger
 
+  @spec clean_all :: {:ok, non_neg_integer()}
   def clean_all do
     {:ok, d1} = clean_pending_users()
     {:ok, d2} = clean_pending_bots()
@@ -29,6 +30,7 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, d1 + d2 + d3 + d4 + d5 + d6 + d7 + d8}
   end
 
+  @spec clean_pending_bots :: {:ok, non_neg_integer()}
   def clean_pending_bots do
     expire_date = Timestamp.shift(days: -1)
 
@@ -43,6 +45,7 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, deleted}
   end
 
+  @spec clean_invalid_push_tokens :: {:ok, non_neg_integer()}
   def clean_invalid_push_tokens do
     expire_date = Timestamp.shift(weeks: -2)
 
@@ -59,6 +62,7 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, deleted}
   end
 
+  @spec clean_expired_invite_codes :: {:ok, non_neg_integer()}
   def clean_expired_invite_codes do
     expire_date = Timestamp.shift(weeks: -5)
 
@@ -72,6 +76,7 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, deleted}
   end
 
+  @spec clean_pending_tros_files :: {:ok, non_neg_integer()}
   def clean_pending_tros_files do
     expire_date = Timestamp.shift(weeks: -1)
 
@@ -88,6 +93,7 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, deleted}
   end
 
+  @spec clean_dead_tros_links(boolean()) :: {:ok, non_neg_integer()}
   def clean_dead_tros_links(do_clean \\ false) do
     {:ok, d1} = clean_bot_item_image_links(do_clean)
     {:ok, d2} = clean_bot_image_links(do_clean)
@@ -96,6 +102,7 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, d1 + d2 + d3}
   end
 
+  @spec clean_bot_item_image_links(boolean()) :: {:ok, non_neg_integer()}
   def clean_bot_item_image_links(do_clean) do
     {:ok, cleaned} =
       Repo.transaction(
@@ -149,6 +156,7 @@ defmodule Wocky.Repo.Cleaner do
     :ok
   end
 
+  @spec clean_bot_image_links(boolean()) :: {:ok, non_neg_integer()}
   def clean_bot_image_links(do_clean) do
     {:ok, nillified} =
       Repo.transaction(
@@ -177,6 +185,7 @@ defmodule Wocky.Repo.Cleaner do
     |> Repo.update!()
   end
 
+  @spec clean_user_avatar_links(boolean()) :: {:ok, non_neg_integer()}
   def clean_user_avatar_links(do_clean) do
     {:ok, nillified} =
       Repo.transaction(
@@ -205,6 +214,7 @@ defmodule Wocky.Repo.Cleaner do
     |> Repo.update!()
   end
 
+  @spec clean_pending_users :: {:ok, non_neg_integer()}
   def clean_pending_users do
     expire_date = Timestamp.shift(days: -1)
 
@@ -221,6 +231,7 @@ defmodule Wocky.Repo.Cleaner do
     {:ok, deleted}
   end
 
+  @spec clean_transient_users :: {:ok, non_neg_integer()}
   def clean_transient_users do
     case Confex.get_env(:wocky, :expire_transient_users_after_days) do
       nil ->
@@ -245,6 +256,7 @@ defmodule Wocky.Repo.Cleaner do
     end
   end
 
+  @spec clean_stale_bot_events :: {:ok, non_neg_integer()}
   def clean_stale_bot_events do
     expire_date = Timestamp.shift(months: -6)
 

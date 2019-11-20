@@ -25,6 +25,7 @@ defmodule Wocky.Callbacks do
     TROSMetadata
   ]
 
+  @spec register :: :ok
   def register do
     Enum.each(@modules, fn m -> m.register() end)
   end

@@ -8,6 +8,7 @@ defmodule Wocky.Relation do
   import Ecto.Query
 
   alias Ecto.Queryable
+  alias Geo.Point
   alias Wocky.Account.User
   alias Wocky.Block
   alias Wocky.Events.GeofenceEvent
@@ -116,9 +117,12 @@ defmodule Wocky.Relation do
     |> order_by([..., a], desc: a.visited_at)
   end
 
+  @spec max_local_bots_search_radius :: float()
   def max_local_bots_search_radius,
     do: Confex.get_env(:wocky, :max_local_bots_search_radius)
 
+  @spec get_local_bots(User.t(), Point.t(), Point.t(), pos_integer()) ::
+          {:ok, [Bot.t()]} | {:error, :area_too_large}
   def get_local_bots(user, point_a, point_b, limit) do
     with :ok <- check_area(point_a, point_b) do
       bots =
@@ -133,6 +137,14 @@ defmodule Wocky.Relation do
     end
   end
 
+  @spec get_local_bots_clustered(
+          User.t(),
+          Point.t(),
+          Point.t(),
+          pos_integer(),
+          pos_integer()
+        ) ::
+          {:ok, [Bot.t()], [Cluster.t()]} | {:error, :area_too_large}
   def get_local_bots_clustered(user, point_a, point_b, lat_divs, lon_divs) do
     with :ok <- check_area(point_a, point_b) do
       results = ClusterSearch.search(point_a, point_b, lat_divs, lon_divs, user)
@@ -147,6 +159,7 @@ defmodule Wocky.Relation do
     end
   end
 
+  @spec filter_by_location(Queryable.t(), Point.t(), Point.t()) :: Queryable.t()
   def filter_by_location(query, point_a, point_b) do
     query
     |> where(

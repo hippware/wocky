@@ -43,6 +43,7 @@ defmodule Wocky.TROS.Metadata do
   @change_fields [:id, :user_id, :access, :ready]
 
   @doc false
+  @spec changeset(struct(), map()) :: Changeset.t()
   def changeset(struct, params) do
     struct
     |> cast(params, @change_fields)

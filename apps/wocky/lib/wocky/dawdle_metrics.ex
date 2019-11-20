@@ -13,6 +13,7 @@ defmodule Wocky.DawdleMetrics do
     {:handle, :handler, []}
   ]
 
+  @spec init :: :ok
   def init do
     Enum.each(@events, &attach/1)
   end

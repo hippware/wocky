@@ -13,6 +13,7 @@ defmodule Wocky.UserInvite.DynamicLink.Sandbox do
     end
   end
 
+  @spec set_result(any()) :: :ok
   def set_result(result),
     do: Application.put_env(:wocky, :invitation_link_result, result)
 end

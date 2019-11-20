@@ -9,6 +9,7 @@ defmodule Wocky.Notifier.Push.Utils do
 
   @message_limit 512
 
+  @spec maybe_truncate_message(String.t()) :: String.t()
   def maybe_truncate_message(message) do
     if byte_size(message) > @message_limit do
       String.slice(message, 0, @message_limit - 3) <> "..."
@@ -18,6 +19,7 @@ defmodule Wocky.Notifier.Push.Utils do
   end
 
   @doc false
+  @spec blank?(String.t() | nil) :: boolean()
   def blank?(nil), do: true
   def blank?(""), do: true
   def blank?(_), do: false
@@ -36,6 +38,7 @@ defmodule Wocky.Notifier.Push.Utils do
   defp do_get_handle(user), do: user.handle
 
   @doc false
+  @spec get_title(Bot.t() | nil) :: String.t()
   def get_title(obj) do
     case do_get_title(obj) do
       nil -> "Somewhere"
@@ -48,6 +51,7 @@ defmodule Wocky.Notifier.Push.Utils do
   defp do_get_title(%Bot{} = bot), do: bot.title
 
   @doc false
+  @spec make_uri(atom(), String.t() | nil, String.t()) :: String.t()
   def make_uri(type, id \\ nil, suffix \\ "") do
     "#{uri_prefix()}://#{type}"
     |> maybe_append(id)

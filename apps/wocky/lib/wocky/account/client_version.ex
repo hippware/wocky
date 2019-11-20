@@ -19,8 +19,11 @@ defmodule Wocky.Account.ClientVersion do
     belongs_to :user, User, define_field: false
   end
 
+  @type t :: %__MODULE__{}
+
   @record_fields [:user_id, :device, :version, :attributes]
 
+  @spec record(User.t(), String.t(), String.t()) :: Repo.result(t())
   def record(user, device, agent_str) do
     with {:ok, version, attrs} <- parse_agent(agent_str) do
       %ClientVersion{}
@@ -37,6 +40,7 @@ defmodule Wocky.Account.ClientVersion do
     end
   end
 
+  @spec changeset(t(), map()) :: Changeset.t()
   def changeset(struct, params) do
     struct
     |> cast(params, @record_fields)
@@ -44,6 +48,7 @@ defmodule Wocky.Account.ClientVersion do
     |> unique_constraint(:device, name: :PRIMARY)
   end
 
+  @spec supported?(String.t() | nil) :: boolean()
   def supported?(nil), do: false
 
   def supported?(agent_str) do

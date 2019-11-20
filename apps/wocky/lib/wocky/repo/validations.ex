@@ -3,6 +3,9 @@ defmodule Wocky.Repo.Validations do
 
   import Ecto.Changeset
 
+  alias Ecto.Changeset
+
+  @spec validate_required_inclusion(Changeset.t(), [atom()]) :: Changeset.t()
   def validate_required_inclusion(changeset, fields) do
     if Enum.any?(fields, &present?(changeset, &1)) do
       changeset
@@ -22,6 +25,7 @@ defmodule Wocky.Repo.Validations do
     value && value != ""
   end
 
+  @spec validate_not_nil(Changeset.t(), [atom()]) :: Changeset.t()
   def validate_not_nil(changeset, fields) when is_list(fields) do
     Enum.reduce(fields, changeset, fn field, changeset ->
       if get_field(changeset, field) == nil do

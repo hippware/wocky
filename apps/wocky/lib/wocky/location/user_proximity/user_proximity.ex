@@ -62,6 +62,8 @@ defmodule Wocky.Location.UserProximity do
     end
   end
 
+  @spec check_for_notify(User.t(), UserLocation.t(), Subscription.t()) ::
+          Subscription.t()
   def check_for_notify(user, notified_location, subscription) do
     case should_check?(subscription) do
       false ->

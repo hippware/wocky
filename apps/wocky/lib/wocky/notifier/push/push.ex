@@ -45,7 +45,7 @@ defmodule Wocky.Notifier.Push do
           APNSNotification.response()
           | FCMNotification.status()
           | FCMNotification.regid_error_response()
-  @type on_response :: (notification() -> no_return)
+  @type on_response :: (notification() -> no_return())
 
   @type t :: %__MODULE__{
           token: Token.token(),
@@ -66,8 +66,8 @@ defmodule Wocky.Notifier.Push do
           User.t(),
           User.device(),
           Token.token(),
-          binary | nil,
-          boolean | nil
+          String.t() | nil,
+          boolean() | nil
         ) :: :ok
   def enable(user, device, token, platform \\ nil, dev_mode \\ nil) do
     %{
@@ -118,7 +118,7 @@ defmodule Wocky.Notifier.Push do
     notify_all(Event.recipient(event), event)
   end
 
-  @spec notify_all(User.t(), any) :: :ok
+  @spec notify_all(User.t(), Event.t()) :: :ok
   def notify_all(user, event) do
     config = config()
 
@@ -179,7 +179,7 @@ defmodule Wocky.Notifier.Push do
     |> backend.push()
   end
 
-  def handle_response(notification, timeout_pid, params) do
+  defp handle_response(notification, timeout_pid, params) do
     send(timeout_pid, :push_complete)
     resp = params.backend.get_response(notification)
     update_metric(resp)
@@ -268,7 +268,7 @@ defmodule Wocky.Notifier.Push do
       token: token,
       message_id: "",
       payload_string: payload_string(event),
-      payload: Event.message(event),
+      payload: %{message: Event.message(event)},
       response: "timeout",
       details: "Timeout waiting for response from Pigeon"
     }
@@ -289,7 +289,7 @@ defmodule Wocky.Notifier.Push do
       token: token,
       message_id: "",
       payload_string: payload_string(event),
-      payload: Event.message(event),
+      payload: %{message: Event.message(event)},
       response: "max retries reached",
       details:
         "Maximum number of #{@max_retries} retries sending push notification."

@@ -92,28 +92,28 @@ defmodule Wocky.Location.Handler do
     |> GenServer.cast({:set_proximity_location, source_user, location})
   end
 
-  @spec refresh_proximity_subscriptions(User.t() | User.id()) :: :ok
+  @spec refresh_proximity_subscriptions(User.tid()) :: :ok
   def refresh_proximity_subscriptions(user) do
     user
     |> get_handler_if_exists()
     |> maybe_call(:refresh_proximity_subscriptions)
   end
 
-  @spec inc_watcher_count(User.t() | User.id()) :: :ok
+  @spec inc_watcher_count(User.tid()) :: :ok
   def inc_watcher_count(user) do
     user
     |> get_handler()
     |> GenServer.cast(:inc_watcher_count)
   end
 
-  @spec dec_watcher_count(User.t() | User.id()) :: :ok
+  @spec dec_watcher_count(User.tid()) :: :ok
   def dec_watcher_count(user) do
     user
     |> get_handler()
     |> GenServer.cast(:dec_watcher_count)
   end
 
-  @spec get_watched_status(User.t() | User.id()) :: watched_status()
+  @spec get_watched_status(User.tid()) :: watched_status()
   def get_watched_status(user) do
     user
     |> get_handler()
@@ -129,6 +129,7 @@ defmodule Wocky.Location.Handler do
     |> maybe_stop()
   end
 
+  @spec stop_all :: :ok
   def stop_all do
     @swarm_group
     |> Swarm.members()

@@ -606,7 +606,7 @@ defmodule Wocky.Relation.RelationTest do
   # -------------------------------------------------------------------
   # Subsriptions
 
-  def create_subscription(ctx) do
+  defp create_subscription(ctx) do
     [user, visitor, stranger] = Factory.insert_list(3, :user)
     Friends.befriend(ctx.user, user)
     Friends.befriend(ctx.user, visitor)

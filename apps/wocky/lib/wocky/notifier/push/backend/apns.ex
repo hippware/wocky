@@ -11,6 +11,7 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
   alias Pigeon.APNS.Error
   alias Pigeon.APNS.Notification
   alias Wocky.Notifier.Push.Event
+  alias Wocky.Notifier.Push.Token
   alias Wocky.Notifier.Push.Utils
 
   require Logger
@@ -25,6 +26,7 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
     :ok
   end
 
+  @spec build_notification(Event.t(), Token.token()) :: Notification.t()
   def build_notification(event, token) do
     uri = Event.uri(event)
     opts = Event.opts(event)

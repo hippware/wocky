@@ -5,8 +5,10 @@ defmodule Wocky.Test.FakeSocket do
   test socket registration without the rigmorole of setting up a full websocket.
   """
 
+  alias Wocky.Account.User
   alias Wocky.Presence
 
+  @spec open(User.t()) :: pid()
   def open(user) do
     self = self()
 
@@ -24,6 +26,7 @@ defmodule Wocky.Test.FakeSocket do
     pid
   end
 
+  @spec close(pid()) :: :ok
   def close(pid) do
     send(pid, :exit)
     ref = Process.monitor(pid)

@@ -27,10 +27,13 @@ end
 defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.GeofenceEvent do
   import Wocky.Notifier.Push.Utils
 
+  @impl true
   def notify?(_), do: true
 
+  @impl true
   def recipient(%{to: to}), do: to
 
+  @impl true
   def message(%{from: from, bot: bot, event: event}) do
     case event do
       :enter -> "#{get_handle(from)} is at #{get_title(bot)}"
@@ -38,18 +41,24 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.GeofenceEvent do
     end
   end
 
+  @impl true
   def uri(%{bot: bot}), do: make_uri(:bot, bot.id, "visitors")
 
+  @impl true
   def ignore_block?(_event), do: false
 
+  @impl true
   def opts(_), do: [android_channel_id: "geofence"]
 end
 
 defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.GeofenceEvent do
+  @impl true
   def notify?(_), do: true
 
+  @impl true
   def event_type(_), do: :geofence_event
 
+  @impl true
   def required_fields(_),
     do: [
       :bot_id,
@@ -58,6 +67,7 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.GeofenceEvent do
       :user_id
     ]
 
+  @impl true
   def transform(event),
     do: %{
       bot_id: event.bot.id,
@@ -66,5 +76,6 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.GeofenceEvent do
       user_id: event.to.id
     }
 
+  @impl true
   def ignore_block?(_event), do: false
 end

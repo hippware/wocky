@@ -17,6 +17,7 @@ defmodule Wocky.SMS.Sandbox do
     result
   end
 
+  @spec set_result(any()) :: :ok
   def set_result(result),
     do: Application.put_env(:wocky, :sms_send_result, result)
 end

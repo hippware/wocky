@@ -3,10 +3,12 @@ defmodule Wocky.Presence.TestHelper do
 
   # Helper functions for testing presence.
   # Not intended for production use.
-  #
+
+  alias Wocky.Account.User
   alias Wocky.Presence
 
   @doc false
+  @spec connect(User.t()) :: {pid(), [User.t()]}
   def connect(user) do
     self = self()
 
@@ -26,5 +28,6 @@ defmodule Wocky.Presence.TestHelper do
   end
 
   @doc false
+  @spec disconnect(pid()) :: :ok
   def disconnect(pid), do: send(pid, :exit)
 end

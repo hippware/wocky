@@ -28,6 +28,8 @@ defmodule Wocky.Messaging do
     end
   end
 
+  @spec mark_read(Message.t(), User.t(), boolean()) ::
+          :ok | {:error, :invalid_id}
   def mark_read(id, requestor, read \\ true) do
     case id |> received_message_query(requestor) |> Repo.one() do
       nil ->
@@ -68,6 +70,7 @@ defmodule Wocky.Messaging do
     |> where(user_id: ^user_id)
   end
 
+  @spec received_message_query(Message.t(), User.t()) :: Queryable.t()
   def received_message_query(id, requestor) do
     Message
     |> where([m], m.id == ^id and m.recipient_id == ^requestor.id)

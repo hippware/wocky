@@ -33,6 +33,7 @@ defmodule Wocky.Location.UserProximity.Subscription do
     :last_notification
   ]
 
+  @spec changeset(t(), map()) :: Changeset.t()
   def changeset(subscription, params) do
     subscription
     |> cast(params, @update_fields)

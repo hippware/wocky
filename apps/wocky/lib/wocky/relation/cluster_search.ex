@@ -12,9 +12,8 @@ defmodule Wocky.Relation.ClusterSearch do
   alias Wocky.Relation.Cluster
   alias Wocky.Repo
 
-  @spec search(Point.t(), Point.t(), pos_integer, pos_integer, User.t()) :: [
-          Bot.t() | Cluster.t()
-        ]
+  @spec search(Point.t(), Point.t(), pos_integer(), pos_integer(), User.t()) ::
+          [Bot.t() | Cluster.t()]
   def search(point_a, point_b, lat_divs, lon_divs, user) do
     lat_a = GeoUtils.get_lat(point_a)
     lon_a = GeoUtils.get_lon(point_a)

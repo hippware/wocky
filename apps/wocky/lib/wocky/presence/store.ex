@@ -62,7 +62,7 @@ defmodule Wocky.Presence.Store do
     transaction(user_id, fn -> do_get_manager(user_id) end)
   end
 
-  def do_get_manager(user_id) do
+  defp do_get_manager(user_id) do
     case Redix.command(Redix, ["GET", key(user_id)]) do
       {:ok, nil} ->
         nil
@@ -79,7 +79,7 @@ defmodule Wocky.Presence.Store do
     transaction(user_id, fn -> do_get_online(user_id) end)
   end
 
-  def do_get_online(user_id) do
+  defp do_get_online(user_id) do
     case Redix.command(Redix, ["GET", key(user_id)]) do
       {:ok, nil} ->
         nil
@@ -133,6 +133,7 @@ defmodule Wocky.Presence.Store do
 
   defp check_valid_online(_), do: nil
 
+  @spec transaction(User.id(), fun()) :: any()
   def transaction(user_id, fun) do
     case Process.get(:in_transaction) do
       true ->

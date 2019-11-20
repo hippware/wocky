@@ -114,6 +114,7 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
   end
 
   @doc false
+  @spec start_link(Keyword.t()) :: GenServer.on_start()
   def start_link(args \\ []) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end

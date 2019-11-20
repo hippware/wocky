@@ -45,6 +45,7 @@ defmodule Wocky.TROS.Store.Simple do
     ]
   end
 
+  @spec url(TROS.file_id()) :: String.t()
   def url(file_id),
     do: "http://localhost:4569/files/#{Wocky.host()}-#{file_id}?token=1234"
 end

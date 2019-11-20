@@ -81,6 +81,7 @@ defmodule Wocky.PresenceTest do
     @moduledoc false
     use Dawdle.Handler, only: [PresenceEvent]
 
+    @impl true
     def handle_event(%{contact: u, recipient_id: c_id}) do
       Agent.update(:presence_proxy, fn _ -> {u.id, u.presence.status, c_id} end)
     end

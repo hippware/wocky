@@ -72,6 +72,7 @@ defmodule Wocky.Location.UserLocation do
   ]
 
   @doc false
+  @spec changeset(struct(), map()) :: Changeset.t()
   def changeset(struct, params) do
     struct
     |> cast(params, @fields)
@@ -105,6 +106,7 @@ defmodule Wocky.Location.UserLocation do
     |> apply_changes()
   end
 
+  @spec validate(t()) :: :ok | {:error, Changeset.t()}
   def validate(location) do
     fields = Map.from_struct(location)
     changeset = changeset(%__MODULE__{}, fields)

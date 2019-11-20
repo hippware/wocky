@@ -17,14 +17,19 @@ defmodule Wocky.Events.LocationRequest do
 end
 
 defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.LocationRequest do
+  @impl true
   def notify?(_), do: true
 
+  @impl true
   def recipient(%{to: to}), do: to
 
+  @impl true
   def message(_), do: ""
 
+  @impl true
   def uri(_), do: ""
 
+  @impl true
   def opts(_) do
     [
       priority: :high,
@@ -33,5 +38,6 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.LocationRequest do
     ]
   end
 
+  @impl true
   def ignore_block?(_event), do: false
 end
