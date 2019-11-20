@@ -268,7 +268,7 @@ defmodule Wocky.Notifier.Push do
       token: token,
       message_id: "",
       payload_string: payload_string(event),
-      payload: Event.message(event),
+      payload: %{message: Event.message(event)},
       response: "timeout",
       details: "Timeout waiting for response from Pigeon"
     }
@@ -289,7 +289,7 @@ defmodule Wocky.Notifier.Push do
       token: token,
       message_id: "",
       payload_string: payload_string(event),
-      payload: Event.message(event),
+      payload: %{message: Event.message(event)},
       response: "max retries reached",
       details:
         "Maximum number of #{@max_retries} retries sending push notification."
