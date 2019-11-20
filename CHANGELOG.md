@@ -6,7 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: firebase_admin_ex (PR #2931), mix_test_watch (PR #2934)
-  * postgrex (PR #2933)
+  * postgrex (PR #2933), dawdle_db (PR #2937)
 * Change binary() to String.t() (PR #2929)
 * Misc typespec fixes (#2935)
 * Don't pull a full object just to see if it exists (#2936)
