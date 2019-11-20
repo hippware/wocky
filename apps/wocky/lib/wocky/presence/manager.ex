@@ -48,6 +48,7 @@ defmodule Wocky.Presence.Manager do
   alias Wocky.Presence.Supervisor
   alias Wocky.Repo
 
+  @spec acquire(User.t()) :: {:ok, pid()} | {:error, any()}
   def acquire(user) do
     Store.transaction(user.id, fn -> get_or_create(user) end)
   end
@@ -62,6 +63,7 @@ defmodule Wocky.Presence.Manager do
     end
   end
 
+  @spec start_link(User.t()) :: GenServer.on_start()
   def start_link(user), do: GenServer.start_link(__MODULE__, user)
 
   @spec stop(User.t()) :: :ok

@@ -133,6 +133,7 @@ defmodule Wocky.Presence.Store do
 
   defp check_valid_online(_), do: nil
 
+  @spec transaction(User.id(), fun()) :: any()
   def transaction(user_id, fun) do
     case Process.get(:in_transaction) do
       true ->

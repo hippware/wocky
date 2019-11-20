@@ -54,6 +54,7 @@ defmodule Wocky.Friends.Share.Cache do
 
   # Public for testing purposes
   @doc false
+  @spec put(User.id(), any()) :: :ok
   def put(user_id, values) do
     {:ok, _} =
       Redix.command(Redix, [
@@ -68,6 +69,7 @@ defmodule Wocky.Friends.Share.Cache do
   end
 
   @doc false
+  @spec key(User.id()) :: String.t()
   def key(user_id), do: "location_shares:" <> user_id
 
   defp encode(values), do: :erlang.term_to_binary(values)

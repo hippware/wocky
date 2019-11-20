@@ -39,6 +39,7 @@ defmodule Wocky.Presence do
     Manager.get_presence(manager, user)
   end
 
+  @spec set_status(User.t(), status()) :: :ok
   def set_status(user, status) do
     {:ok, manager} = Manager.acquire(user)
     Manager.set_status(manager, status)

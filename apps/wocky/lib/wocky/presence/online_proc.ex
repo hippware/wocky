@@ -4,11 +4,14 @@ defmodule Wocky.Presence.OnlineProc do
   not. Allows other users to monitor this process to see when a user goes
   offline
   """
+
+  @spec start_link :: {:ok, pid()}
   def start_link do
     self = self()
     Task.start_link(fn -> init(self) end)
   end
 
+  @spec go_offline(pid()) :: :ok
   def go_offline(pid), do: send(pid, :go_offline)
 
   defp init(parent) do

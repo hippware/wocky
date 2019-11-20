@@ -149,6 +149,7 @@ defmodule Wocky.TROS do
     end
   end
 
+  @spec put_metadata(file_id(), User.id(), atom()) :: Repo.result(Metadata.t())
   def put_metadata(id, user_id, access) do
     %Metadata{}
     |> Metadata.changeset(%{
@@ -169,6 +170,7 @@ defmodule Wocky.TROS do
     |> Enum.into(%{})
   end
 
+  @spec file_ready_event(file_id()) :: String.t()
   def file_ready_event(file_id), do: @file_ready_event_prefix <> file_id
 
   defp full_name(file_id, :full), do: file_id

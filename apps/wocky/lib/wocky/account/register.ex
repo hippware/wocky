@@ -5,6 +5,7 @@ defmodule Wocky.Account.Register do
   import Ecto.Changeset
   import Ecto.Query, only: [from: 2]
 
+  alias Ecto.Changeset
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Repo
@@ -139,6 +140,7 @@ defmodule Wocky.Account.Register do
   end
 
   @doc false
+  @spec changeset(map()) :: Changeset.t()
   def changeset(attrs) do
     %User{}
     |> cast(attrs, @changeset_fields)

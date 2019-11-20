@@ -120,6 +120,7 @@ defmodule Wocky.Account.User do
   def hydrate(%__MODULE__{} = user), do: user
   def hydrate(id), do: Repo.get(User, id)
 
+  @spec changeset(t(), map()) :: Changeset.t()
   def changeset(user, params) do
     user
     |> cast(params, @update_fields)

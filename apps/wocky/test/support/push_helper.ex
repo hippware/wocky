@@ -5,11 +5,13 @@ defmodule Wocky.PushHelper do
 
   alias Wocky.Notifier.Push.Backend.Sandbox
 
+  @spec no_more_push_notifications :: boolean()
   def no_more_push_notifications do
     msgs = Sandbox.wait_notifications(global: true)
     Enum.empty?(msgs)
   end
 
+  @spec clear_expected_notifications(non_neg_integer()) :: boolean()
   def clear_expected_notifications(count) do
     result =
       length(

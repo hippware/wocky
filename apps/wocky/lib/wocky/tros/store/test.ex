@@ -54,6 +54,7 @@ defmodule Wocky.TROS.Store.Test do
     )
   end
 
+  @spec get_actions :: [String.t()]
   def get_actions do
     __MODULE__
     |> :ets.tab2list()

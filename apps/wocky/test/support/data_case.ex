@@ -50,6 +50,7 @@ defmodule Wocky.DataCase do
       assert %{password: ["password is too short"]} = errors_on(changeset)
 
   """
+  @spec errors_on(Changeset.t()) :: map()
   def errors_on(changeset) do
     Changeset.traverse_errors(changeset, fn {message, opts} ->
       Enum.reduce(opts, message, fn {key, value}, acc ->

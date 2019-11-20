@@ -18,6 +18,7 @@ defmodule Wocky.Account.JWT.Client do
 
   @audience "Wocky"
 
+  @spec signing_key :: String.t()
   def signing_key, do: SigningKey.fetch(:client)
 
   @impl true

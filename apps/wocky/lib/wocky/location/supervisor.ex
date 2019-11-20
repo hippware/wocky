@@ -4,10 +4,14 @@ defmodule Wocky.Location.Supervisor do
   """
   use DynamicSupervisor
 
+  alias Wocky.Account.User
+
+  @spec start_link(any()) :: Supervisor.on_start()
   def start_link(args) do
     DynamicSupervisor.start_link(__MODULE__, args, name: __MODULE__)
   end
 
+  @spec start_child(User.t()) :: {:ok, pid()}
   def start_child(user) do
     spec = {Wocky.Location.Handler, user}
     {:ok, _pid} = DynamicSupervisor.start_child(__MODULE__, spec)

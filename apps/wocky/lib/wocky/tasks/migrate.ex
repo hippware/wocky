@@ -11,6 +11,7 @@ defmodule Wocky.Tasks.Migrate do
 
   @repos Application.get_env(:wocky, :ecto_repos, [])
 
+  @spec migrate(any()) :: :ok
   def migrate(_argv) do
     start_services()
 

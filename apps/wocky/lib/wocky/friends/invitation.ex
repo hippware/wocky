@@ -67,6 +67,14 @@ defmodule Wocky.Friends.Invitation do
     )
   end
 
+  @spec make_error(
+          User.tid(),
+          User.tid(),
+          Friend.share_type(),
+          atom(),
+          String.t()
+        ) ::
+          Changeset.t()
   def make_error(user, target, share_type, field, message) do
     %__MODULE__{}
     |> cast(

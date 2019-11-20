@@ -24,14 +24,15 @@ defmodule Wocky.Account.Auth do
   # ====================================================================
   # JWT generation
 
-  @spec get_location_jwt(User.t()) :: {:ok, binary} | {:error, any}
+  @spec get_location_jwt(User.t()) :: {:ok, String.t()} | {:error, any()}
   def get_location_jwt(%User{} = user) do
     with {:ok, token, _claims} <- ServerJWT.encode_and_sign(user) do
       {:ok, token}
     end
   end
 
-  @spec authenticate_for_location(binary) :: {:ok, User.id()} | {:error, any}
+  @spec authenticate_for_location(String.t()) ::
+          {:ok, User.id()} | {:error, any()}
   def authenticate_for_location(token) do
     case JOSE.JWT.peek_payload(token).fields do
       %{"typ" => "location"} ->
@@ -53,7 +54,7 @@ defmodule Wocky.Account.Auth do
   # ====================================================================
   # Authentication
 
-  @spec authenticate(binary) :: {:ok, auth_data()} | {:error, any}
+  @spec authenticate(String.t()) :: {:ok, auth_data()} | {:error, any()}
   def authenticate(token) do
     case ClientJWT.decode_and_verify(token) do
       {:ok, %{"typ" => "firebase", "sub" => new_token} = claims} ->
@@ -123,6 +124,7 @@ defmodule Wocky.Account.Auth do
   defp provider_error(p), do: {:error, "Unsupported provider: #{p}"}
 
   @doc false
+  @spec error_to_string(any()) :: String.t()
   def error_to_string(%{message: reason}), do: reason
   def error_to_string(reason) when is_atom(reason), do: to_string(reason)
   def error_to_string(reason) when is_binary(reason), do: reason

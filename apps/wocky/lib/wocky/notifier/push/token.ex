@@ -51,6 +51,7 @@ defmodule Wocky.Notifier.Push.Token do
   @register_attrs @required_attrs ++ [:platform, :dev_mode]
 
   @doc false
+  @spec register_changeset(map()) :: Changeset.t()
   def register_changeset(attrs) do
     attrs =
       attrs

@@ -4,6 +4,7 @@ defmodule Wocky.PigeonConfig do
   alias Pigeon.APNS.JWTConfig, as: APNS
   alias Pigeon.FCM.Config, as: FCM
 
+  @spec apns_config :: APNS.t()
   def apns_config do
     :wocky
     |> Confex.get_env(:pigeon)
@@ -12,6 +13,7 @@ defmodule Wocky.PigeonConfig do
     |> APNS.new()
   end
 
+  @spec fcm_config :: FCM.t()
   def fcm_config do
     :wocky
     |> Confex.get_env(:pigeon)

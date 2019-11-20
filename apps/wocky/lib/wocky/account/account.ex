@@ -16,18 +16,24 @@ defmodule Wocky.Account do
   # ----------------------------------------------------------------------
   # Authentication
 
+  @spec get_location_jwt(User.t()) :: {:ok, String.t()} | {:error, any()}
   defdelegate get_location_jwt(user), to: Auth
 
+  @spec authenticate_for_location(String.t()) ::
+          {:ok, User.id()} | {:error, any()}
   defdelegate authenticate_for_location(token), to: Auth
 
+  @spec authenticate(String.t()) :: {:ok, Auth.auth_data()} | {:error, any()}
   defdelegate authenticate(token), to: Auth
 
   # ----------------------------------------------------------------------
   # Utilities
 
+  @spec first_name(User.t()) :: String.t()
   def first_name(%User{name: name}),
     do: name |> split_name() |> elem(0)
 
+  @spec last_name(User.t()) :: String.t()
   def last_name(%User{name: name}),
     do: name |> split_name() |> elem(1)
 

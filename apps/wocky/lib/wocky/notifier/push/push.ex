@@ -45,7 +45,7 @@ defmodule Wocky.Notifier.Push do
           APNSNotification.response()
           | FCMNotification.status()
           | FCMNotification.regid_error_response()
-  @type on_response :: (notification() -> no_return)
+  @type on_response :: (notification() -> no_return())
 
   @type t :: %__MODULE__{
           token: Token.token(),
@@ -66,8 +66,8 @@ defmodule Wocky.Notifier.Push do
           User.t(),
           User.device(),
           Token.token(),
-          binary | nil,
-          boolean | nil
+          String.t() | nil,
+          boolean() | nil
         ) :: :ok
   def enable(user, device, token, platform \\ nil, dev_mode \\ nil) do
     %{
@@ -118,7 +118,7 @@ defmodule Wocky.Notifier.Push do
     notify_all(Event.recipient(event), event)
   end
 
-  @spec notify_all(User.t(), any) :: :ok
+  @spec notify_all(User.t(), Event.t()) :: :ok
   def notify_all(user, event) do
     config = config()
 

@@ -13,6 +13,8 @@ defmodule Wocky.Account.JWT.Server do
   alias Wocky.Account.User
   alias Wocky.Repo
 
+  # This is an overridable function from Guardian that isn't part of
+  # the behavior. Any added typespec will be ignored.
   def default_token_type, do: "location"
 
   @impl true

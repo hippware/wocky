@@ -21,9 +21,11 @@ defmodule Wocky.Messaging.Message do
   end
 
   @type t :: %__MODULE__{}
+  @type id :: integer()
 
   @fields [:sender_id, :recipient_id, :content, :image_url, :client_data, :read]
 
+  @spec changeset(t(), map()) :: Changeset.t()
   def changeset(struct \\ %Message{}, params) do
     struct
     |> cast(params, @fields)

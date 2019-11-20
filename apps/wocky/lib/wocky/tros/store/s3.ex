@@ -21,6 +21,7 @@ defmodule Wocky.TROS.Store.S3 do
     :ok
   end
 
+  @spec do_delete(TROS.file_id()) :: {:ok, [String.t()]} | {:error, any()}
   def do_delete(file_id) do
     case do_request(file_id, :delete) do
       {:ok, result} ->
@@ -114,18 +115,23 @@ defmodule Wocky.TROS.Store.S3 do
     url
   end
 
+  @spec upload_bucket :: String.t()
   def upload_bucket, do: "#{bucket()}-quarantine"
 
+  @spec bucket :: String.t()
   def bucket, do: get_opt(:tros_s3_bucket)
 
+  @spec s3_server :: String.t()
   def s3_server, do: get_opt(:tros_s3_server)
 
+  @spec region :: String.t()
   def region, do: get_opt(:tros_s3_region, "us-east-1")
 
   defp get_opt(opt, default \\ nil), do: Confex.get_env(:wocky, opt, default)
 
   defp path(file_id), do: "#{Wocky.host()}-#{hash_prefix(file_id)}/#{file_id}"
 
+  @spec hash_prefix(TROS.file_id()) :: String.t()
   def hash_prefix(file_id) do
     file_id
     |> TROS.get_base_id()

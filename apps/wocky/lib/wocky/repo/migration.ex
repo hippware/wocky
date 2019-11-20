@@ -17,12 +17,14 @@ defmodule Wocky.Repo.Migration do
 
   import Ecto.Migration, except: [timestamps: 0]
 
+  @spec timestamps(Keyword.t()) :: :ok | nil
   def timestamps(overrides \\ []) do
     [inserted_at: :created_at, type: :timestamptz]
     |> Keyword.merge(overrides)
     |> Migration.timestamps()
   end
 
+  @spec reset_enum(any(), [String.t()]) :: :ok
   def reset_enum(enum, table_cols) do
     execute "ALTER TYPE #{enum.schemaless_type()} RENAME TO #{
               enum.schemaless_type()

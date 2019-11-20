@@ -12,8 +12,10 @@ defmodule Wocky.Location do
   # ----------------------------------------------------------------------
   # Subscription Cache Management
 
+  @spec refresh_bot_subscriptions(User.t()) :: :ok
   defdelegate refresh_bot_subscriptions(user), to: Handler
 
+  @spec refresh_proximity_subscriptions(User.tid()) :: :ok
   defdelegate refresh_proximity_subscriptions(user), to: Handler
 
   # ----------------------------------------------------------------------
@@ -49,6 +51,7 @@ defmodule Wocky.Location do
     to: Current,
     as: :delete_when_not_shared
 
+  @spec exit_bot(User.t(), Bot.t(), String.t()) :: :ok
   defdelegate exit_bot(user, bot, reason), to: GeoFence
 
   @spec inc_watcher_count(User.t() | User.id()) :: :ok

@@ -32,6 +32,7 @@ defmodule Wocky.POI do
   end
 
   @doc false
+  @spec get_query(Bot.id(), boolean()) :: Queryable.t()
   def get_query(id, include_pending \\ false) do
     Bot
     |> where(id: ^id)
@@ -39,6 +40,7 @@ defmodule Wocky.POI do
   end
 
   @doc false
+  @spec maybe_filter_pending(Queryable.t(), boolean()) :: Queryable.t()
   def maybe_filter_pending(queryable, false), do: queryable
 
   def maybe_filter_pending(queryable, true),

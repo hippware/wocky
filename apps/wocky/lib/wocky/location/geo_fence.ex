@@ -39,6 +39,8 @@ defmodule Wocky.Location.GeoFence do
   # This shim exists mostly to avoid having to redo all of the tests.
   # Use check_for_bot_event/4 instead.
   @doc false
+  @spec check_for_bot_event(Bot.t(), UserLocation.t(), User.t()) ::
+          {:ok, UserLocation.t(), events()}
   def check_for_bot_event(bot, loc, user) do
     events = BotEvent.get_last_events(user.id)
 
@@ -66,6 +68,8 @@ defmodule Wocky.Location.GeoFence do
   # This shim exists mostly to avoid having to redo all of the tests.
   # Use check_for_bot_events/4 instead.
   @doc false
+  @spec check_for_bot_events(UserLocation.t(), User.t()) ::
+          {:ok, UserLocation.t(), events()}
   def check_for_bot_events(%UserLocation{} = loc, user) do
     subs = Relation.get_subscribed_bots(user)
     events = BotEvent.get_last_events(user.id)

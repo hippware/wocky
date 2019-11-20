@@ -8,6 +8,7 @@ defmodule Wocky.Repo.Schema do
       import Ecto.Changeset
       import Wocky.Repo.Validations
 
+      alias Ecto.Changeset
       alias __MODULE__
 
       @timestamps_opts [

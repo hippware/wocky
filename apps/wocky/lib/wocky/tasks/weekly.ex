@@ -3,6 +3,7 @@ defmodule Wocky.Tasks.Weekly do
 
   alias Wocky.Repo.Cleaner
 
+  @spec run :: :ok
   def run do
     {:ok, _} = Wocky.start_db_only()
 

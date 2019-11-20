@@ -11,6 +11,7 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
   alias Pigeon.FCM.Notification
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Event
+  alias Wocky.Notifier.Push.Token
   alias Wocky.Notifier.Push.Utils
 
   @impl true
@@ -26,6 +27,7 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
     :ok
   end
 
+  @spec build_notification(Event.t(), Token.token()) :: Notification.t()
   def build_notification(event, token) do
     background = Keyword.get(Event.opts(event), :background, false)
 
@@ -35,6 +37,8 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
     |> Notification.put_priority(Event.opts(event)[:priority])
   end
 
+  @spec build_notification(Token.token(), Event.t(), boolean()) ::
+          Notification.t()
   # Foreground notification
   def build_notification(token, event, false) do
     opts = Event.opts(event)
