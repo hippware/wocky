@@ -28,11 +28,11 @@ defmodule Wocky.Block do
   @type t :: %Block{}
 
   @doc "Blocker initiates a block on blockee"
-  @spec block(User.t(), User.t()) :: :ok
+  @spec block(User.tid(), User.tid()) :: :ok
   def block(blocker, blockee) do
     %Block{
-      blocker_id: blocker.id,
-      blockee_id: blockee.id
+      blocker_id: User.id(blocker),
+      blockee_id: User.id(blockee)
     }
     |> Repo.insert(on_conflict: :nothing)
 
@@ -43,10 +43,10 @@ defmodule Wocky.Block do
     :ok
   end
 
-  @spec unblock(User.t(), User.t()) :: :ok
+  @spec unblock(User.tid(), User.tid()) :: :ok
   def unblock(blocker, blockee) do
     Block
-    |> where(blocker_id: ^blocker.id, blockee_id: ^blockee.id)
+    |> where(blocker_id: ^User.id(blocker), blockee_id: ^User.id(blockee))
     |> Repo.delete_all()
 
     update_counter("blocking.unblocked", 1)
@@ -68,17 +68,16 @@ defmodule Wocky.Block do
     |> Repo.exists?()
   end
 
-  @spec blocks_query(User.id()) :: Queryable.t()
-  def blocks_query(user_id) do
-    Block
-    |> where(blocker_id: ^user_id)
+  @spec blocks_query(User.tid()) :: Queryable.t()
+  def blocks_query(user) do
+    where(Block, blocker_id: ^User.id(user))
   end
 
   @doc """
   Composable query fragment to filter out objects with owners that are blocking/
   blocked by the supplied user.
   """
-  @spec object_visible_query(Queryable.t(), User.t(), atom()) :: Queryable.t()
+  @spec object_visible_query(Queryable.t(), User.tid(), atom()) :: Queryable.t()
   def object_visible_query(query, requester, owner_field \\ :user_id) do
     query
     |> join(
@@ -87,9 +86,9 @@ defmodule Wocky.Block do
       b in Block,
       on:
         (field(o, ^owner_field) == b.blocker_id and
-           b.blockee_id == ^requester.id) or
+           b.blockee_id == ^User.id(requester)) or
           (field(o, ^owner_field) == b.blockee_id and
-             b.blocker_id == ^requester.id)
+             b.blocker_id == ^User.id(requester))
     )
     |> where([..., b], is_nil(b.blocker_id))
   end

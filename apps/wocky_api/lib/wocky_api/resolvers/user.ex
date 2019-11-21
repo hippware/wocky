@@ -165,7 +165,7 @@ defmodule WockyAPI.Resolvers.User do
   defp do_fix_name(_m, _user), do: nil
 
   def user_delete(_args, %{context: %{current_user: user}}) do
-    Account.delete(user.id)
+    Account.delete(user)
     {:ok, true}
   end
 

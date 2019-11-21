@@ -58,14 +58,14 @@ defmodule Wocky.Account do
   # ----------------------------------------------------------------------
   # Database interaction
 
-  @spec get_user(User.id(), User.t() | nil) :: User.t() | nil
+  @spec get_user(User.id(), User.tid() | nil) :: User.t() | nil
   def get_user(id, requestor \\ nil) do
-    if is_nil(requestor) || !Block.blocked?(requestor.id, id) do
+    if is_nil(requestor) || !Block.blocked?(requestor, id) do
       Repo.get(User, id)
     end
   end
 
-  @spec get_by_phone_number([String.t()], User.t()) :: [User.t()]
+  @spec get_by_phone_number([String.t()], User.tid()) :: [User.t()]
   def get_by_phone_number(phone_numbers, requestor) do
     User
     |> where([u], u.phone_number in ^phone_numbers)
@@ -73,31 +73,21 @@ defmodule Wocky.Account do
     |> Repo.all()
   end
 
-  # TODO The clause that takes an ID in the first parameter appears to be
-  # extraneous at this point
   @doc """
   Update the data on an existing user.
   Fields is a map containing fields to update.
   """
-  @spec update(User.id() | User.t(), map()) ::
-          {:ok, User.t()} | {:error, any()}
-  def update(%User{} = user, fields) do
+  @spec update(User.t(), map()) :: Repo.result(User.t())
+  def update(user, fields) do
     changeset = User.changeset(user, fields)
 
     with {:ok, updated_user} <- Repo.update(changeset) do
       maybe_send_welcome(updated_user)
       {:ok, updated_user}
     end
-  end
-
-  def update(id, fields) do
-    case Repo.get(User, id) do
-      nil ->
-        {:error, :user_not_found}
-
-      struct ->
-        __MODULE__.update(struct, fields)
-    end
+  rescue
+    e in Ecto.StaleEntryError ->
+      {:error, Exception.message(e)}
   end
 
   @doc """
@@ -112,7 +102,7 @@ defmodule Wocky.Account do
 
       u ->
         if u.smss_sent < Confex.get_env(:wocky, :max_sms_per_user) do
-          {:ok, _} = __MODULE__.update(user.id, %{smss_sent: u.smss_sent + 1})
+          {:ok, _} = __MODULE__.update(user, %{smss_sent: u.smss_sent + 1})
           true
         else
           allowed_unlimited_smss?(user)
@@ -134,17 +124,16 @@ defmodule Wocky.Account do
   end
 
   @doc "Removes the user from the database"
-  @spec delete(User.id()) :: :ok
-  def delete(id) do
-    user = Repo.get(User, id)
-
-    if user do
-      TROS.delete_all(user)
-      Auth.cleanup(user)
-      Repo.delete!(user)
-    end
+  @spec delete(User.t()) :: :ok
+  def delete(user) do
+    TROS.delete_all(user)
+    Auth.cleanup(user)
+    Repo.delete!(user)
 
     :ok
+  rescue
+    Ecto.StaleEntryError ->
+      :ok
   end
 
   @doc "Mark the user as having created a bot at some point in their life"

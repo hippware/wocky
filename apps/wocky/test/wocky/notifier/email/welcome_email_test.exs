@@ -36,11 +36,7 @@ defmodule Wocky.Notifier.Email.WelcomeEmailTest do
     test "should be sent on user update" do
       user = Factory.insert(:user)
 
-      fields = %{
-        name: Name.name()
-      }
-
-      Account.update(user.id, fields)
+      Account.update(user, %{name: Name.name()})
 
       assert :meck.validate(WelcomeEmail)
       assert :meck.called(WelcomeEmail, :send, :_)
@@ -52,11 +48,7 @@ defmodule Wocky.Notifier.Email.WelcomeEmailTest do
     test "should not be resent to an already welcomed user" do
       user = Factory.insert(:user, %{welcome_sent: true})
 
-      fields = %{
-        email: Internet.email()
-      }
-
-      Account.update(user.id, fields)
+      Account.update(user, %{email: Internet.email()})
 
       refute :meck.called(WelcomeEmail, :send, :_)
     end
@@ -64,11 +56,7 @@ defmodule Wocky.Notifier.Email.WelcomeEmailTest do
     test "should not be sent to an unwelcomed user that has no email" do
       user = Factory.insert(:user, %{email: nil})
 
-      fields = %{
-        name: Name.name()
-      }
-
-      Account.update(user.id, fields)
+      Account.update(user, %{name: Name.name()})
 
       refute :meck.called(WelcomeEmail, :send, :_)
     end

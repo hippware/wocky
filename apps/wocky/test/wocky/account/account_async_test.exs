@@ -31,14 +31,14 @@ defmodule Wocky.Account.AccountAsyncTest do
 
     test "should delete user's firebase account if they have one" do
       user = Factory.insert(:user, provider: "firebase")
-      assert Account.delete(user.id) == :ok
+      assert Account.delete(user) == :ok
 
       assert_called(FirebaseAdminEx.Auth.delete_user(user.external_id))
     end
 
     test "should not delete user's firebase account if they don't have one" do
       user = Factory.insert(:user)
-      assert Account.delete(user.id) == :ok
+      assert Account.delete(user) == :ok
 
       refute called(FirebaseAdminEx.Auth.delete_user(user.external_id))
     end

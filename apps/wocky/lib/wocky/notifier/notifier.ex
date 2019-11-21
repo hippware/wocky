@@ -25,7 +25,7 @@ defmodule Wocky.Notifier do
   end
 
   defp deliverable?(type, %{to: to, from: from} = event) do
-    type.ignore_block?(event) || !Block.blocked?(to.id, from.id)
+    type.ignore_block?(event) || !Block.blocked?(to, from)
   end
 
   defp deliverable?(_, _), do: true

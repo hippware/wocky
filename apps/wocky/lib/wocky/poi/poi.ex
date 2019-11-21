@@ -46,9 +46,9 @@ defmodule Wocky.POI do
   def maybe_filter_pending(queryable, true),
     do: where(queryable, pending: false)
 
-  @spec preallocate(User.t()) :: Bot.t() | no_return()
+  @spec preallocate(User.tid()) :: Bot.t() | no_return()
   def preallocate(user) do
-    params = %{id: ID.new(), user_id: user.id, pending: true}
+    params = %{id: ID.new(), user_id: User.id(user), pending: true}
 
     %Bot{}
     |> cast(params, [:id, :user_id, :pending])
@@ -128,17 +128,12 @@ defmodule Wocky.POI do
     |> Repo.one()
   end
 
-  @spec put_item(Bot.t(), Item.id(), String.t(), String.t(), User.t()) ::
+  @spec put_item(Bot.t(), Item.id(), String.t(), String.t(), User.tid()) ::
           {:ok, Item.t()} | {:error, any()}
-  def put_item(
-        %{id: bot_id} = bot,
-        id,
-        content,
-        image_url,
-        %{id: user_id} = user
-      ) do
+  def put_item(%{id: bot_id} = bot, id, content, image_url, user) do
     id_valid? = ID.valid?(id)
     id = if id_valid?, do: id, else: ID.new()
+    user_id = User.id(user)
 
     case id_valid? && Repo.get(Item, id) do
       x when is_nil(x) or x == false ->
@@ -167,7 +162,7 @@ defmodule Wocky.POI do
     |> Item.changeset(%{
       id: id,
       bot_id: bot.id,
-      user_id: user.id,
+      user_id: User.id(user),
       content: content,
       image_url: image_url
     })
@@ -184,9 +179,11 @@ defmodule Wocky.POI do
 
   defp maybe_update_bot(result, _), do: result
 
-  @spec delete_item(Bot.t(), Item.id(), User.t()) ::
+  @spec delete_item(Bot.t(), Item.id(), User.tid()) ::
           :ok | {:error, :not_found | :permission_denied}
-  def delete_item(%Bot{user_id: user_id} = bot, id, %User{id: user_id}) do
+  def delete_item(bot, id, user), do: do_delete_item(bot, id, User.id(user))
+
+  defp do_delete_item(%Bot{user_id: user_id} = bot, id, user_id) do
     {deleted, _} =
       bot
       |> Ecto.assoc(:items)
@@ -199,7 +196,7 @@ defmodule Wocky.POI do
     end
   end
 
-  def delete_item(bot, id, %User{id: user_id}) do
+  defp do_delete_item(bot, id, user_id) do
     case get_item(bot, id) do
       %Item{user_id: ^user_id} = item ->
         Repo.delete(item)
@@ -213,11 +210,11 @@ defmodule Wocky.POI do
     end
   end
 
-  @spec delete_items(Bot.t(), User.t()) :: :ok
-  def delete_items(bot, %User{id: user_id}) do
+  @spec delete_items(Bot.t(), User.tid()) :: :ok
+  def delete_items(bot, user) do
     bot
     |> Ecto.assoc(:items)
-    |> where(user_id: ^user_id)
+    |> where(user_id: ^User.id(user))
     |> Repo.delete_all()
 
     :ok

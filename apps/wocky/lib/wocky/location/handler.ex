@@ -5,7 +5,6 @@ defmodule Wocky.Location.Handler do
 
   use GenServer, restart: :temporary
 
-  alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Audit
   alias Wocky.Location.BotEvent
@@ -52,25 +51,20 @@ defmodule Wocky.Location.Handler do
           changed_at: DateTime.t() | nil
         }
 
-  @spec start_link(User.t() | User.id()) :: {:ok, pid()}
-
-  def start_link(%User{} = user), do: GenServer.start_link(__MODULE__, user)
-
-  def start_link(user_id) do
-    user_id
-    |> Account.get_user()
-    |> start_link()
+  @spec start_link(User.tid()) :: {:ok, pid()}
+  def start_link(user) do
+    GenServer.start_link(__MODULE__, User.hydrate(user))
   end
 
-  @spec set_location(User.t() | User.id(), UserLocation.t(), boolean()) ::
+  @spec set_location(User.tid(), UserLocation.t(), boolean()) ::
           {:ok, UserLocation.t()} | {:error, any()}
-  def set_location(user_or_id, location, current? \\ true) do
-    user_or_id
+  def set_location(user, location, current? \\ true) do
+    user
     |> get_handler()
     |> GenServer.call({:set_location, location, current?})
   end
 
-  @spec set_location_for_bot(User.t(), UserLocation.t(), Bot.t()) ::
+  @spec set_location_for_bot(User.tid(), UserLocation.t(), Bot.t()) ::
           {:ok, UserLocation.t()} | {:error, any()}
   def set_location_for_bot(user, location, bot) do
     user
@@ -78,14 +72,14 @@ defmodule Wocky.Location.Handler do
     |> GenServer.call({:set_location_for_bot, location, bot})
   end
 
-  @spec refresh_bot_subscriptions(User.t()) :: :ok
+  @spec refresh_bot_subscriptions(User.tid()) :: :ok
   def refresh_bot_subscriptions(user) do
     user
     |> get_handler_if_exists()
     |> maybe_call(:refresh_bot_subscriptions)
   end
 
-  @spec set_proximity_location(User.t(), User.t(), UserLocation.t()) :: :ok
+  @spec set_proximity_location(User.tid(), User.t(), UserLocation.t()) :: :ok
   def set_proximity_location(user, source_user, location) do
     user
     |> get_handler()
@@ -122,7 +116,7 @@ defmodule Wocky.Location.Handler do
 
   # Shutdown an existing handler, if present. Used only in testing to release
   # DB checkouts
-  @spec stop(User.t()) :: :ok
+  @spec stop(User.tid()) :: :ok
   def stop(user) do
     user
     |> get_handler_if_exists()
@@ -136,20 +130,17 @@ defmodule Wocky.Location.Handler do
     |> Enum.each(&maybe_stop/1)
   end
 
-  # Always returns a handler, creating a new one if one does not already exist.
+  @doc """
+  Always returns a handler, creating a new one if one does not already exist.
+  """
   @spec get_handler(User.tid()) :: pid()
-  def get_handler(%User{id: user_id} = user), do: do_get_handler(user_id, user)
-
-  def get_handler(user_id) when is_binary(user_id),
-    do: do_get_handler(user_id, user_id)
-
-  defp do_get_handler(user_id, arg) do
+  def get_handler(user) do
     {:ok, pid} =
       Swarm.whereis_or_register_name(
-        handler_name(user_id),
+        handler_name(user),
         Supervisor,
         :start_child,
-        [arg],
+        [user],
         5000
       )
 
@@ -158,13 +149,10 @@ defmodule Wocky.Location.Handler do
     pid
   end
 
-  # Gets a handler if one exists, otherwise returns nil
-  @spec get_handler_if_exists(User.t() | User.id()) :: pid() | nil
-  def get_handler_if_exists(%User{id: user_id}),
-    do: get_handler_if_exists(user_id)
-
-  def get_handler_if_exists(user_id) when is_binary(user_id) do
-    case Swarm.whereis_name(handler_name(user_id)) do
+  @doc "Gets a handler if one exists, otherwise returns nil."
+  @spec get_handler_if_exists(User.tid()) :: pid() | nil
+  def get_handler_if_exists(user) do
+    case Swarm.whereis_name(handler_name(user)) do
       :undefined -> nil
       pid -> pid
     end
@@ -187,8 +175,8 @@ defmodule Wocky.Location.Handler do
     {:ok,
      %State{
        user: user,
-       bot_subscriptions: bot_subscriptions,
        events: events,
+       bot_subscriptions: bot_subscriptions,
        proximity_subscriptions: proximity_subscriptions,
        proximity_subscribers: proximity_subscribers
      }, @timeout}
@@ -363,7 +351,7 @@ defmodule Wocky.Location.Handler do
 
   defp watchers_expired?(_count, _changed_at), do: false
 
-  defp handler_name(user_id), do: "location_handler_" <> user_id
+  defp handler_name(user), do: "location_handler_" <> User.id(user)
 
   defp prepare_location(user, location, current?) do
     with :ok <- UserLocation.validate(location) do

@@ -19,13 +19,13 @@ defmodule Wocky.Friends.Share.Cache do
                |> Duration.to_seconds(truncate: true)
                |> to_string()
 
-  @spec get(User.id()) :: [CachedFriend.t()]
-  def get(user_id) do
-    {:ok, cache} = Redix.command(Redix, ["GET", key(user_id)])
+  @spec get(User.tid()) :: [CachedFriend.t()]
+  def get(user) do
+    {:ok, cache} = Redix.command(Redix, ["GET", key(user)])
 
     case cache do
       nil ->
-        refresh(user_id)
+        refresh(user)
 
       _ ->
         case decode(cache) do
@@ -34,32 +34,32 @@ defmodule Wocky.Friends.Share.Cache do
 
           # Older cache format
           x when is_list(x) ->
-            refresh(user_id)
+            refresh(user)
         end
     end
   end
 
-  @spec refresh(User.id()) :: [CachedFriend.t()]
-  def refresh(user_id) do
+  @spec refresh(User.tid()) :: [CachedFriend.t()]
+  def refresh(user) do
     values =
       Friend
-      |> where([i], i.user_id == ^user_id)
+      |> where([i], i.user_id == ^User.id(user))
       |> where([i], i.share_type != "disabled")
       |> Repo.all()
 
-    put(user_id, {@cache_version, Enum.map(values, &struct_to_cache/1)})
+    put(user, {@cache_version, Enum.map(values, &struct_to_cache/1)})
 
     Enum.map(values, &Friend.to_cached/1)
   end
 
   # Public for testing purposes
   @doc false
-  @spec put(User.id(), any()) :: :ok
-  def put(user_id, values) do
+  @spec put(User.tid(), any()) :: :ok
+  def put(user, values) do
     {:ok, _} =
       Redix.command(Redix, [
         "SET",
-        key(user_id),
+        key(user),
         encode(values),
         "EX",
         @expire_secs
@@ -69,8 +69,8 @@ defmodule Wocky.Friends.Share.Cache do
   end
 
   @doc false
-  @spec key(User.id()) :: String.t()
-  def key(user_id), do: "location_shares:" <> user_id
+  @spec key(User.tid()) :: String.t()
+  def key(user), do: "location_shares:" <> User.id(user)
 
   defp encode(values), do: :erlang.term_to_binary(values)
 

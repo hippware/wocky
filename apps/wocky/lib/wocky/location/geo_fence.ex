@@ -20,10 +20,10 @@ defmodule Wocky.Location.GeoFence do
     config().save_locations
   end
 
-  @spec exit_bot(User.t(), Bot.t(), String.t()) :: :ok
+  @spec exit_bot(User.tid(), Bot.t(), String.t()) :: :ok
   def exit_bot(user, bot, reason) do
     config = config()
-    last_event = BotEvent.get_last_event_type(user.id, bot.id)
+    last_event = BotEvent.get_last_event_type(user, bot.id)
 
     if inside?(last_event) do
       _ = BotEvent.insert_system(user, bot, :exit, reason)

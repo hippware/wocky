@@ -113,7 +113,7 @@ defmodule WockyAPI.GraphQL.WebsocketTest do
     end
 
     test "socket closes on user deletion via DB", ctx do
-      Account.delete(ctx.user.id)
+      Account.delete(ctx.user)
 
       assert_receive :disconnected, 500
     end

@@ -306,7 +306,7 @@ defmodule Wocky.Friends do
   end
 
   @spec get_location_share_targets(User.tid()) :: [CachedFriend.t()]
-  def get_location_share_targets(user), do: Cache.get(User.id(user))
+  def get_location_share_targets(user), do: Cache.get(user)
 
   @spec get_location_shares(User.tid()) :: [Share.t()]
   def get_location_shares(user) do

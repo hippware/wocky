@@ -63,7 +63,7 @@ defmodule Wocky.Notifier.Push do
   # Push Token API
 
   @spec enable(
-          User.t(),
+          User.tid(),
           User.device(),
           Token.token(),
           String.t() | nil,
@@ -71,7 +71,7 @@ defmodule Wocky.Notifier.Push do
         ) :: :ok
   def enable(user, device, token, platform \\ nil, dev_mode \\ nil) do
     %{
-      user_id: user.id,
+      user_id: User.id(user),
       device: device,
       token: token,
       platform: platform,
@@ -84,7 +84,7 @@ defmodule Wocky.Notifier.Push do
     )
 
     Token
-    |> where([t], t.user_id == ^user.id)
+    |> where([t], t.user_id == ^User.id(user))
     |> where([t], t.device == ^device)
     |> where([t], t.token != ^token)
     |> Repo.update_all(set: [valid: false, disabled_at: DateTime.utc_now()])
@@ -100,10 +100,10 @@ defmodule Wocky.Notifier.Push do
     [dev_mode: dev_mode] ++ conflict_updates()
   end
 
-  @spec disable(User.t(), User.device()) :: :ok
+  @spec disable(User.tid(), User.device()) :: :ok
   def disable(user, device) do
     Repo.update_all(
-      from(Token, where: [user_id: ^user.id, device: ^device, valid: true]),
+      from(Token, where: [user_id: ^User.id(user), device: ^device, valid: true]),
       set: [valid: false, disabled_at: DateTime.utc_now()]
     )
 

@@ -53,12 +53,9 @@ defmodule Wocky.UserInvite do
 
   defp do_redeem_invite_code(_, nil, _), do: false
 
-  defp do_redeem_invite_code(
-         redeemer,
-         %InviteCode{user: inviter} = invitation,
-         share_type
-       ),
-       do: do_redeem_invite_code(redeemer, inviter, invitation, share_type)
+  defp do_redeem_invite_code(redeemer, invitation, share_type) do
+    do_redeem_invite_code(redeemer, invitation.user, invitation, share_type)
+  end
 
   defp do_redeem_invite_code(%User{id: id}, %User{id: id}, _, _), do: true
 
