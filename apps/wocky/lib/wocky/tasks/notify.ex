@@ -41,7 +41,10 @@ defmodule Wocky.Tasks.Notify do
   end
 
   defp do_notify(message) do
-    {:ok, _} = Application.ensure_all_started(:slack_ex)
+    for app <- [:slack_ex, :vaultex] do
+      {:ok, _} = Application.ensure_all_started(app)
+    end
+
     client = :wocky |> Confex.get_env(:slack_token) |> Slack.client()
 
     :wocky
