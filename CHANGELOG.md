@@ -6,6 +6,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Add missing typespecs (PR #2941)
+* Ensure vaultex is started for deploy notify (PR #2942)
+* Use User.tid() more often (PR #2943)
 
 
 # 2019.11.20+rbeee91a
