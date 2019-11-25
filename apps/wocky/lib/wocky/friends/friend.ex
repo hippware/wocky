@@ -75,11 +75,8 @@ defmodule Wocky.Friends.Friend do
   end
 
   defp get_query(user, friend) do
-    user_id = User.id(user)
-    friend_id = User.id(friend)
-
     from f in __MODULE__,
-      where: f.user_id == ^user_id and f.contact_id == ^friend_id
+      where: f.user_id == ^User.id(user) and f.contact_id == ^User.id(friend)
   end
 
   @spec to_cached(t()) :: CachedFriend.t()

@@ -43,9 +43,8 @@ defmodule Wocky.Notifier.InBand.Notification do
     timestamps()
   end
 
-  @type id() :: non_neg_integer()
-
-  @type t() :: %__MODULE__{}
+  @type id :: non_neg_integer()
+  @type t :: %__MODULE__{}
 
   @spec put(map(), atom(), [atom()]) :: {:ok, t()} | {:error, any()}
   def put(params, type, required) do
@@ -57,14 +56,14 @@ defmodule Wocky.Notifier.InBand.Notification do
   end
 
   @spec user_query(
-          User.t(),
+          User.tid(),
           id() | nil,
           id() | nil,
           [NotificationTypeEnum.t()] | nil
         ) :: Queryable.t()
   def user_query(user, before_id, after_id, types \\ nil) do
     Notification
-    |> where(user_id: ^user.id)
+    |> where(user_id: ^User.id(user))
     |> maybe_add_type_filter(types)
     |> maybe_add_before_id(before_id)
     |> maybe_add_after_id(after_id)

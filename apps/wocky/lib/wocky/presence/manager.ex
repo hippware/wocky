@@ -48,13 +48,13 @@ defmodule Wocky.Presence.Manager do
   alias Wocky.Presence.Supervisor
   alias Wocky.Repo
 
-  @spec acquire(User.t()) :: {:ok, pid()} | {:error, any()}
+  @spec acquire(User.tid()) :: {:ok, pid()} | {:error, any()}
   def acquire(user) do
-    Store.transaction(user.id, fn -> get_or_create(user) end)
+    Store.transaction(user, fn -> get_or_create(user) end)
   end
 
   defp get_or_create(user) do
-    case Store.get_manager(user.id) do
+    case Store.get_manager(user) do
       nil ->
         Supervisor.start_child(user)
 
@@ -63,12 +63,12 @@ defmodule Wocky.Presence.Manager do
     end
   end
 
-  @spec start_link(User.t()) :: GenServer.on_start()
+  @spec start_link(User.tid()) :: GenServer.on_start()
   def start_link(user), do: GenServer.start_link(__MODULE__, user)
 
-  @spec stop(User.t()) :: :ok
+  @spec stop(User.tid()) :: :ok
   def stop(user) do
-    case Store.get_manager(user.id) do
+    case Store.get_manager(User.id(user)) do
       nil ->
         :ok
 
@@ -89,7 +89,7 @@ defmodule Wocky.Presence.Manager do
   @impl true
   def init(user) do
     _ = PubSub.subscribe(:presence, pubsub_topic(user))
-    Store.add_self(user.id)
+    Store.add_self(user)
 
     {:ok, contact_refs} =
       Repo.transaction(fn ->
@@ -99,10 +99,10 @@ defmodule Wocky.Presence.Manager do
         |> Enum.reduce(BiMap.new(), &maybe_monitor/2)
       end)
 
-    {:ok, %State{user: user, contact_refs: contact_refs}}
+    {:ok, %State{user: User.hydrate(user), contact_refs: contact_refs}}
   end
 
-  @spec register_handler(User.t()) :: pid()
+  @spec register_handler(User.tid()) :: pid()
   def register_handler(user), do: do_register_handler(user, 0)
 
   @spec register_socket(pid(), pid()) :: :ok
@@ -147,12 +147,12 @@ defmodule Wocky.Presence.Manager do
   end
 
   @doc "Get the online/offline status of a contact"
-  @spec get_presence(pid(), User.t()) :: Presence.t()
+  @spec get_presence(pid(), User.tid()) :: Presence.t()
   def get_presence(manager, user),
     do:
       safe_call(
         manager,
-        {:get_presence, user.id},
+        {:get_presence, user},
         Presence.make_presence(:offline)
       )
 
@@ -184,12 +184,12 @@ defmodule Wocky.Presence.Manager do
   # One of our friends has come online
   def handle_info({:online, contact, pid}, s) do
     new_refs =
-      case BiMap.get(s.contact_refs, contact.id) do
+      case BiMap.get(s.contact_refs, User.id(contact)) do
         nil ->
           # We had them marked as offline - set up tracking for their presence
           ref = Process.monitor(pid)
-          Presence.publish(s.user.id, contact, :online)
-          BiMap.put(s.contact_refs, contact.id, ref)
+          Presence.publish(s.user, contact, :online)
+          BiMap.put(s.contact_refs, User.id(contact), ref)
 
         _ref ->
           # We already had them marked as online - do nothing
@@ -239,25 +239,15 @@ defmodule Wocky.Presence.Manager do
     {:reply, BiMap.keys(contact_refs), s}
   end
 
-  def handle_call(
-        {:get_presence, user_id},
-        _from,
-        %{online_pid: online_pid, user: %User{id: user_id}} = s
-      ) do
-    status = if online_pid, do: :online, else: :offline
-    {:reply, Presence.make_presence(status), s}
-  end
-
-  def handle_call(
-        {:get_presence, contact_id},
-        _from,
-        %{contact_refs: contact_refs} = s
-      ) do
-    status =
-      case BiMap.get(contact_refs, contact_id) do
-        nil -> :offline
-        _ -> :online
+  def handle_call({:get_presence, contact}, _from, %{user: user} = s) do
+    online? =
+      if User.id(contact) == User.id(user) do
+        s.online_pid
+      else
+        BiMap.get(s.contact_refs, User.id(contact))
       end
+
+    status = if online?, do: :online, else: :offline
 
     {:reply, Presence.make_presence(status), s}
   end
@@ -269,8 +259,8 @@ defmodule Wocky.Presence.Manager do
       ) do
     {:ok, online_pid} = OnlineProc.start_link()
 
-    Store.set_self_online(user.id, online_pid)
-    Presence.publish(user.id, user, :online)
+    Store.set_self_online(user, online_pid)
+    Presence.publish(user, user, :online)
 
     Repo.transaction(fn ->
       user
@@ -305,8 +295,8 @@ defmodule Wocky.Presence.Manager do
         %{online_pid: online_pid, user: user} = s
       ) do
     OnlineProc.go_offline(online_pid)
-    Store.add_self(user.id)
-    Presence.publish(user.id, user, :offline)
+    Store.add_self(user)
+    Presence.publish(user, user, :offline)
     {:reply, :ok, %{s | online_pid: nil}}
   end
 
@@ -315,22 +305,22 @@ defmodule Wocky.Presence.Manager do
   end
 
   defp maybe_monitor(target, acc) do
-    case Store.get_online(target.id) do
+    case Store.get_online(target) do
       nil ->
         acc
 
       pid when is_pid(pid) ->
         ref = Process.monitor(pid)
-        BiMap.put(acc, target.id, ref)
+        BiMap.put(acc, User.id(target), ref)
     end
   end
 
-  defp pubsub_topic(user), do: "user:" <> user.id
+  defp pubsub_topic(user), do: "user:" <> User.id(user)
 
   defp delete_own_handler(ref, %{handler_mon_refs: handler_mon_refs} = s) do
     case Map.delete(handler_mon_refs, ref) do
       m when m == %{} ->
-        Store.remove(s.user.id)
+        Store.remove(s.user)
         # No need to publish to ourselves here - by definition we can't have any
         # live connections to receive the message on
         %{s | handler_mon_refs: m}
@@ -365,7 +355,7 @@ defmodule Wocky.Presence.Manager do
         :ok
 
       contact ->
-        Presence.publish(user.id, contact, :offline)
+        Presence.publish(user, contact, :offline)
     end
   end
 

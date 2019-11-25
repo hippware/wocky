@@ -260,7 +260,9 @@ defmodule Wocky.Account.AccountTest do
   end
 
   describe "update/2" do
-    test "should fail when the user does not exist" do
+    test "should fail when the user does not exist", ctx do
+      Repo.delete(ctx.user)
+
       fields = %{
         device: ID.new(),
         handle: Factory.handle(),
@@ -269,7 +271,7 @@ defmodule Wocky.Account.AccountTest do
         tagline: Lorem.sentence()
       }
 
-      assert {:error, _} = Account.update(ID.new(), fields)
+      assert {:error, _} = Account.update(ctx.user, fields)
     end
 
     test "should update the user's attributes", ctx do
@@ -281,7 +283,7 @@ defmodule Wocky.Account.AccountTest do
         tagline: Lorem.sentence()
       }
 
-      assert {:ok, _} = Account.update(ctx.id, fields)
+      assert {:ok, _} = Account.update(ctx.user, fields)
 
       new_user = Repo.get(User, ctx.id)
       assert new_user.handle == fields.handle
@@ -307,7 +309,7 @@ defmodule Wocky.Account.AccountTest do
     end
 
     test "and the user does not have an existing avatar", ctx do
-      assert {:ok, _} = Account.update(ctx.id, %{image_url: ctx.avatar_url})
+      assert {:ok, _} = Account.update(ctx.user, %{image_url: ctx.avatar_url})
 
       new_user = Repo.get(User, ctx.id)
       assert new_user.image_url == ctx.avatar_url
@@ -318,7 +320,7 @@ defmodule Wocky.Account.AccountTest do
       |> cast(%{image_url: ctx.avatar_url}, [:image_url])
       |> Repo.update!()
 
-      assert {:ok, _} = Account.update(ctx.id, %{image_url: ctx.avatar_url})
+      assert {:ok, _} = Account.update(ctx.user, %{image_url: ctx.avatar_url})
 
       new_user = Repo.get(User, ctx.id)
       assert new_user.image_url == ctx.avatar_url
@@ -338,13 +340,14 @@ defmodule Wocky.Account.AccountTest do
       })
       |> Repo.insert!()
 
-      ctx.user
-      |> cast(%{image_url: old_avatar_url}, [:image_url])
-      |> Repo.update!()
+      {:ok, user} =
+        ctx.user
+        |> cast(%{image_url: old_avatar_url}, [:image_url])
+        |> Repo.update()
 
-      assert {:ok, _} = Account.update(ctx.id, %{image_url: ctx.avatar_url})
+      assert {:ok, new_user} =
+               Account.update(user, %{image_url: ctx.avatar_url})
 
-      new_user = Repo.get(User, ctx.id)
       assert new_user.image_url == ctx.avatar_url
 
       refute Repo.get(Metadata, old_avatar_id)
@@ -360,21 +363,20 @@ defmodule Wocky.Account.AccountTest do
     end
 
     test "should not delete the avatar when a new one is set", ctx do
-      assert {:ok, _} =
-               Account.update(ctx.user.id, %{image_url: ctx.avatar_url})
+      assert {:ok, _} = Account.update(ctx.user, %{image_url: ctx.avatar_url})
 
       assert Repo.get(Metadata, ctx.avatar.id)
     end
 
     test "should not delete the avatar when a new one is not set", ctx do
-      assert {:ok, _} = Account.update(ctx.user.id, %{name: Name.name()})
+      assert {:ok, _} = Account.update(ctx.user, %{name: Name.name()})
 
       assert Repo.get(Metadata, ctx.avatar.id)
     end
 
     test "should not delete the avatar when the same one is set", ctx do
       assert {:ok, _} =
-               Account.update(ctx.user.id, %{image_url: ctx.user.image_url})
+               Account.update(ctx.user, %{image_url: ctx.user.image_url})
 
       assert Repo.get(Metadata, ctx.avatar.id)
     end
@@ -386,12 +388,12 @@ defmodule Wocky.Account.AccountTest do
       avatar = Factory.insert(:tros_metadata, user: user)
       avatar_url = TROS.make_url(avatar.id)
 
-      Account.update(user.id, %{image_url: avatar_url})
+      {:ok, updated_user} = Account.update(user, %{image_url: avatar_url})
 
       new_avatar = Factory.insert(:tros_metadata, user: user)
 
       {:ok,
-       user: user,
+       user: updated_user,
        avatar: avatar,
        new_avatar: new_avatar,
        avatar_url: avatar_url,
@@ -400,20 +402,20 @@ defmodule Wocky.Account.AccountTest do
 
     test "should delete the avatar when a new one is set", ctx do
       assert {:ok, _} =
-               Account.update(ctx.user.id, %{image_url: ctx.new_avatar_url})
+               Account.update(ctx.user, %{image_url: ctx.new_avatar_url})
 
       refute Repo.get(Metadata, ctx.avatar.id)
     end
 
     test "should not delete the avatar when one is not set", ctx do
-      assert {:ok, _} = Account.update(ctx.user.id, %{name: Name.name()})
+      assert {:ok, _} = Account.update(ctx.user, %{name: Name.name()})
 
       assert Repo.get(Metadata, ctx.avatar.id)
     end
 
     test "should not delete the avatar when the same one is set", ctx do
       assert {:ok, _} =
-               Account.update(ctx.user.id, %{image_url: ctx.user.image_url})
+               Account.update(ctx.user, %{image_url: ctx.user.image_url})
 
       assert Repo.get(Metadata, ctx.avatar.id)
     end
@@ -421,14 +423,14 @@ defmodule Wocky.Account.AccountTest do
 
   describe "delete/1" do
     test "should remove the user from the database", ctx do
-      assert Account.delete(ctx.id) == :ok
+      assert Account.delete(ctx.user) == :ok
       refute Repo.get(User, ctx.id)
     end
 
     test "should delete the user's TROS files", ctx do
       files = Factory.insert_list(5, :tros_metadata, user: ctx.user)
 
-      assert Account.delete(ctx.id) == :ok
+      assert Account.delete(ctx.user) == :ok
 
       actions = TROS.Store.Test.get_actions() |> Enum.sort()
       expected = files |> Enum.map(&{:delete, &1.id}) |> Enum.sort()
@@ -437,7 +439,8 @@ defmodule Wocky.Account.AccountTest do
     end
 
     test "should succeed if the user does not exist" do
-      assert Account.delete(ID.new()) == :ok
+      new_user = Factory.build(:user)
+      assert Account.delete(new_user) == :ok
     end
   end
 

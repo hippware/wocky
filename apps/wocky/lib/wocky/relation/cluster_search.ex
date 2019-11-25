@@ -12,7 +12,7 @@ defmodule Wocky.Relation.ClusterSearch do
   alias Wocky.Relation.Cluster
   alias Wocky.Repo
 
-  @spec search(Point.t(), Point.t(), pos_integer(), pos_integer(), User.t()) ::
+  @spec search(Point.t(), Point.t(), pos_integer(), pos_integer(), User.tid()) ::
           [Bot.t() | Cluster.t()]
   def search(point_a, point_b, lat_divs, lon_divs, user) do
     lat_a = GeoUtils.get_lat(point_a)
@@ -62,7 +62,7 @@ defmodule Wocky.Relation.ClusterSearch do
       FROM counts WHERE loc_count > 1
     """
 
-    {:ok, user_id} = UUID.dump(user.id)
+    {:ok, user_id} = user |> User.id() |> UUID.dump()
 
     result =
       SQL.query!(Repo, query, [

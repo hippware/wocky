@@ -17,12 +17,12 @@ defmodule Wocky.Presence.Store do
   @doc """
   Add the calling presence-tracking process to the records for a user
   """
-  @spec add_self(User.id()) :: :ok
-  def add_self(user_id) do
+  @spec add_self(User.tid()) :: :ok
+  def add_self(user) do
     {:ok, _} =
       Redix.command(Redix, [
         "SET",
-        key(user_id),
+        key(user),
         value(self()),
         "EX",
         @expire_secs
@@ -31,12 +31,12 @@ defmodule Wocky.Presence.Store do
     :ok
   end
 
-  @spec set_self_online(User.id(), pid()) :: :ok
-  def set_self_online(user_id, online_pid) do
+  @spec set_self_online(User.tid(), pid()) :: :ok
+  def set_self_online(user, online_pid) do
     {:ok, _} =
       Redix.command(Redix, [
         "SET",
-        key(user_id),
+        key(user),
         value(self(), online_pid),
         "EX",
         @expire_secs
@@ -48,39 +48,39 @@ defmodule Wocky.Presence.Store do
   @doc """
   Remove the presence-tracking pid for a given user
   """
-  @spec remove(User.id()) :: :ok
-  def remove(user_id) do
-    {:ok, _} = Redix.command(Redix, ["DEL", key(user_id)])
+  @spec remove(User.tid()) :: :ok
+  def remove(user) do
+    {:ok, _} = Redix.command(Redix, ["DEL", key(user)])
     :ok
   end
 
   @doc """
   Get the active, presence-tracking pid for a given user
   """
-  @spec get_manager(User.id()) :: pid() | nil
-  def get_manager(user_id) do
-    transaction(user_id, fn -> do_get_manager(user_id) end)
+  @spec get_manager(User.tid()) :: pid() | nil
+  def get_manager(user) do
+    transaction(user, fn -> do_get_manager(user) end)
   end
 
-  defp do_get_manager(user_id) do
-    case Redix.command(Redix, ["GET", key(user_id)]) do
+  defp do_get_manager(user) do
+    case Redix.command(Redix, ["GET", key(user)]) do
       {:ok, nil} ->
         nil
 
       {:ok, pid_bin} ->
         pid_bin
         |> :erlang.binary_to_term()
-        |> check_valid_manager(user_id)
+        |> check_valid_manager(user)
     end
   end
 
-  @spec get_online(User.id()) :: pid() | nil
-  def get_online(user_id) do
-    transaction(user_id, fn -> do_get_online(user_id) end)
+  @spec get_online(User.tid()) :: pid() | nil
+  def get_online(user) do
+    transaction(user, fn -> do_get_online(user) end)
   end
 
-  defp do_get_online(user_id) do
-    case Redix.command(Redix, ["GET", key(user_id)]) do
+  defp do_get_online(user) do
+    case Redix.command(Redix, ["GET", key(user)]) do
       {:ok, nil} ->
         nil
 
@@ -91,16 +91,16 @@ defmodule Wocky.Presence.Store do
     end
   end
 
-  defp key(user_id), do: "presence_pid:" <> user_id
+  defp key(user), do: "presence_pid:" <> User.id(user)
 
   defp value(pid), do: :erlang.term_to_binary(pid)
 
   defp value(pid, online_pid), do: :erlang.term_to_binary({pid, online_pid})
 
-  defp check_valid_manager({pid, _online_pid}, user_id),
-    do: check_valid_manager(pid, user_id)
+  defp check_valid_manager({pid, _online_pid}, user),
+    do: check_valid_manager(pid, user)
 
-  defp check_valid_manager(pid, user_id) when is_pid(pid) do
+  defp check_valid_manager(pid, user) when is_pid(pid) do
     case remote_alive?(pid) do
       true ->
         pid
@@ -108,7 +108,7 @@ defmodule Wocky.Presence.Store do
       _ ->
         # Process is dead or node is unreachable;
         # take the opportunity to remove it
-        remove(user_id)
+        remove(user)
         nil
     end
   end
@@ -116,8 +116,8 @@ defmodule Wocky.Presence.Store do
   # process_id could not be parsed back to a valid pid - maybe a node died or
   # there was a version upgrade or a bug. Whatever, we can't do anything with
   # it besides clean up.
-  defp check_valid_manager(_, user_id) do
-    remove(user_id)
+  defp check_valid_manager(_, user) do
+    remove(user)
     nil
   end
 
@@ -133,8 +133,8 @@ defmodule Wocky.Presence.Store do
 
   defp check_valid_online(_), do: nil
 
-  @spec transaction(User.id(), fun()) :: any()
-  def transaction(user_id, fun) do
+  @spec transaction(User.tid(), fun()) :: any()
+  def transaction(user, fun) do
     case Process.get(:in_transaction) do
       true ->
         fun.()
@@ -144,7 +144,7 @@ defmodule Wocky.Presence.Store do
 
         {:ok, result} =
           Redlock.transaction(
-            "presence_manager:#{user_id}",
+            "presence_manager:#{User.id(user)}",
             @lock_timeout_secs,
             fn -> {:ok, fun.()} end
           )

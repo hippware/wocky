@@ -67,44 +67,44 @@ defmodule Wocky.Location.BotEvent do
     :location_id
   ]
 
-  @spec get_last_events(User.id()) :: bot_event_map()
-  def get_last_events(user_id) do
+  @spec get_last_events(User.tid()) :: bot_event_map()
+  def get_last_events(user) do
     BotEvent
     |> distinct(:bot_id)
-    |> where(user_id: ^user_id)
+    |> where(user_id: ^User.id(user))
     |> order_by(desc: :created_at)
     |> Repo.all()
     |> Enum.map(fn e -> {e.bot_id, e} end)
     |> Enum.into(%{})
   end
 
-  @spec get_last_event(User.id(), Bot.id()) :: t() | nil
-  def get_last_event(user_id, bot_id) do
-    user_id
+  @spec get_last_event(User.tid(), Bot.id()) :: t() | nil
+  def get_last_event(user, bot_id) do
+    user
     |> get_last_event_query(bot_id)
     |> Repo.one()
   end
 
-  @spec get_last_event_type(User.id(), Bot.id()) :: event() | nil
-  def get_last_event_type(user_id, bot_id) do
-    user_id
+  @spec get_last_event_type(User.tid(), Bot.id()) :: event() | nil
+  def get_last_event_type(user, bot_id) do
+    user
     |> get_last_event_query(bot_id)
     |> select([e], e.event)
     |> Repo.one()
   end
 
-  defp get_last_event_query(user_id, bot_id) do
+  defp get_last_event_query(user, bot_id) do
     BotEvent
-    |> where(user_id: ^user_id, bot_id: ^bot_id)
+    |> where(user_id: ^User.id(user), bot_id: ^bot_id)
     |> order_by(desc: :created_at)
     |> limit(1)
   end
 
-  @spec new(User.t(), User.device(), Bot.t(), UserLocation.t() | nil, event) ::
+  @spec new(User.tid(), User.device(), Bot.t(), UserLocation.t() | nil, event) ::
           map()
   def new(user, device, bot, loc \\ nil, event) do
     %{
-      user_id: user.id,
+      user_id: User.id(user),
       device: device,
       bot_id: bot.id,
       event: event,
@@ -118,12 +118,17 @@ defmodule Wocky.Location.BotEvent do
   Insert a system-generated event; i.e., one that is not tied to the user
   changing location.
   """
-  @spec insert_system(User.t(), Bot.t(), event, String.t()) :: t()
+  @spec insert_system(User.tid(), Bot.t(), event, String.t()) :: t()
   def insert_system(user, bot, event, reason),
     do: insert(user, "System/#{reason}", bot, nil, event)
 
-  @spec insert(User.t(), User.device(), Bot.t(), UserLocation.t() | nil, event) ::
-          t()
+  @spec insert(
+          User.tid(),
+          User.device(),
+          Bot.t(),
+          UserLocation.t() | nil,
+          event
+        ) :: t()
   def insert(user, device, bot, loc \\ nil, event) do
     user
     |> new(device, bot, loc, event)

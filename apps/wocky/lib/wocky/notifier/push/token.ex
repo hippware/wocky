@@ -66,10 +66,10 @@ defmodule Wocky.Notifier.Push.Token do
     |> put_change(:valid, true)
   end
 
-  @spec all_for_user(User.t()) :: [Token]
+  @spec all_for_user(User.tid()) :: [Token]
   def all_for_user(user) do
     __MODULE__
-    |> where(user_id: ^user.id)
+    |> where(user_id: ^User.id(user))
     |> where(valid: true)
     |> Repo.all()
   end

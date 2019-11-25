@@ -19,7 +19,7 @@ defmodule Wocky.TROS do
   @type file_type :: Metadata.FileTypeEnum.t()
 
   @callback delete(file_id()) :: :ok
-  @callback make_upload_response(User.t(), file_id(), integer(), metadata()) ::
+  @callback make_upload_response(String.t(), file_id(), integer(), metadata()) ::
               {list(), list()}
   @callback get_download_url(metadata(), file_name()) :: url()
 
@@ -88,9 +88,9 @@ defmodule Wocky.TROS do
     end
   end
 
-  @spec delete(file_id(), User.t()) :: {:ok, Metadata.t()}
+  @spec delete(file_id(), User.tid()) :: {:ok, Metadata.t()}
   def delete(file_id, requestor) do
-    user_id = requestor.id
+    user_id = User.id(requestor)
 
     case Repo.get(Metadata, file_id) do
       %Metadata{user_id: ^user_id} = metadata ->
@@ -104,11 +104,11 @@ defmodule Wocky.TROS do
     end
   end
 
-  @spec delete_all(User.t()) :: :ok
+  @spec delete_all(User.tid()) :: :ok
   def delete_all(user) do
     Repo.transaction(fn ->
       Metadata
-      |> where(user_id: ^user.id)
+      |> where(user_id: ^User.id(user))
       |> Repo.stream()
       |> Stream.each(&do_delete/1)
       |> Stream.run()
@@ -123,16 +123,15 @@ defmodule Wocky.TROS do
   end
 
   @spec make_upload_response(
-          User.t(),
+          User.tid(),
           file_id(),
           integer(),
           String.t(),
           metadata()
-        ) ::
-          {:ok, {list(), list()}} | {:error, any()}
+        ) :: {:ok, {list(), list()}} | {:error, any()}
   def make_upload_response(owner, file_id, size, access, meta) do
     with true <- meta.content_type in @valid_content_types,
-         {:ok, _} <- put_metadata(file_id, owner.id, access) do
+         {:ok, _} <- put_metadata(file_id, User.id(owner), access) do
       reference_url = make_url(owner, file_id)
 
       result =
@@ -149,12 +148,12 @@ defmodule Wocky.TROS do
     end
   end
 
-  @spec put_metadata(file_id(), User.id(), atom()) :: Repo.result(Metadata.t())
-  def put_metadata(id, user_id, access) do
+  @spec put_metadata(file_id(), User.tid(), atom()) :: Repo.result(Metadata.t())
+  def put_metadata(id, user, access) do
     %Metadata{}
     |> Metadata.changeset(%{
       id: id,
-      user_id: user_id,
+      user_id: User.id(user),
       access: access,
       ready: false
     })
