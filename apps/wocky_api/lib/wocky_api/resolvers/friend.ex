@@ -19,50 +19,6 @@ defmodule WockyAPI.Resolvers.Friend do
   # -------------------------------------------------------------------
   # Connections
 
-  # DEPRECATED
-  def get_contacts(_, %{relationship: :none}, _) do
-    {:error, :unsupported}
-  end
-
-  def get_contacts(user, args, %{context: %{current_user: requestor}}) do
-    with {:query, query} <- contacts_query(user, args, requestor) do
-      case query do
-        {:error, _} = error -> error
-        _ -> Utils.connection_from_query(query, user, args)
-      end
-    end
-  end
-
-  defp contacts_query(user, args, requestor) do
-    case args[:relationship] do
-      nil ->
-        {:query, Friends.friends_query(user, requestor)}
-
-      :friend ->
-        {:query, Friends.friends_query(user, requestor)}
-
-      :invited ->
-        {:query, Friends.sent_invitations_query(user, requestor)}
-
-      :invited_by ->
-        {:query, Friends.received_invitations_query(user, requestor)}
-    end
-  end
-
-  def get_contact_relationship(_root, _args, %{
-        source: %{node: target_user, parent: parent}
-      }) do
-    {:ok, Friends.relationship(parent, target_user)}
-  end
-
-  # DEPRECATED
-  def get_contact_created_at(_root, _args, %{
-        source: %{node: target_user, parent: parent}
-      }) do
-    friend = Friends.get_friend(parent, target_user)
-    {:ok, friend.created_at}
-  end
-
   def get_friends(user, args, %{context: %{current_user: requestor}}),
     do: friends_query(user, args, requestor, &Friends.friend_entries_query/2)
 

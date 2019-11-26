@@ -91,15 +91,6 @@ defmodule WockyAPI.Schema.UserTypes do
       resolve &Bot.get_bots/3
     end
 
-    @desc """
-    The user's contacts optionally filtered by relationship
-    """
-    connection field :contacts, node_type: :contacts do
-      connection_complexity()
-      arg :relationship, :user_contact_relationship
-      resolve &Friend.get_contacts/3
-    end
-
     @desc "The user's current presence status"
     field :presence_status,
           :presence_status,
@@ -180,21 +171,6 @@ defmodule WockyAPI.Schema.UserTypes do
     connection field :conversations, node_type: :conversations do
       connection_complexity()
       resolve &Message.get_conversations/3
-    end
-
-    @desc """
-    The user's contacts (ie the XMPP roster) optionally filtered by relationship
-    DEPRECATED. Use "friends" connection instead.
-    """
-    connection field :contacts,
-                 node_type: :contacts,
-                 deprecate: """
-                 Use the 'friends', 'sent_invitations',
-                 and 'received_invitations' fields instead
-                 """ do
-      connection_complexity()
-      arg :relationship, :user_contact_relationship
-      resolve &Friend.get_contacts/3
     end
 
     connection field :friends, node_type: :friends do
