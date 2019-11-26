@@ -165,20 +165,6 @@ defmodule WockyAPI.Schema.FriendTypes do
   # -------------------------------------------------------------------
   # Connections
 
-  connection :contacts, node_type: :user do
-    total_count_field()
-
-    edge do
-      @desc "The relationship between the parent and child users"
-      field :relationship, :user_contact_relationship,
-        do: resolve(&Friend.get_contact_relationship/3)
-
-      @desc "When the relationship was created"
-      field :created_at, non_null(:datetime),
-        do: resolve(&Friend.get_contact_created_at/3)
-    end
-  end
-
   connection :friends, node_type: :friend do
     total_count_field()
 
