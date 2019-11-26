@@ -5,6 +5,9 @@ defmodule Wocky.Callbacks.Bot do
 
   use DawdleDB.Handler, type: Wocky.POI.Bot
 
+  import Ecto.Query
+
+  alias Wocky.Account.User
   alias Wocky.Location
   alias Wocky.POI.Bot
   alias Wocky.Repo
@@ -12,10 +15,11 @@ defmodule Wocky.Callbacks.Bot do
   @impl true
   def handle_update(%Bot{location: new} = bot, %Bot{location: old})
       when new != old do
-    bot_with_subs = Repo.preload(bot, [:subscribers])
+    bot_with_sub_ids =
+      Repo.preload(bot, subscribers: from(u in User, select: u.id))
 
-    for user <- bot_with_subs.subscribers do
-      Location.refresh_bot_subscriptions(user)
+    for user_id <- bot_with_sub_ids.subscribers do
+      Location.refresh_bot_subscriptions(user_id)
     end
   end
 
