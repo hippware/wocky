@@ -20,6 +20,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Change binary() to String.t() (PR #2929)
 * Misc typespec fixes (PR #2935)
 * Don't pull a full object just to see if it exists (PR #2936)
+* Message notifications not arriving via subscription (#2939)
 
 
 # 2019.11.13+r39dd56a
