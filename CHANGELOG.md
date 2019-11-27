@@ -8,6 +8,9 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add missing typespecs (PR #2941)
 * Ensure vaultex is started for deploy notify (PR #2942)
 * Use User.tid() more often (PR #2943)
+* Update: excoveralls (PR #2944), ecto_sql (PR #2945), postgrex (PR #2946)
+* Remove the deprecated contacts connections (PR #2947)
+* Minor optimization: Only pull user IDs in callback (PR #2948)
 
 
 # 2019.11.20+rbeee91a
