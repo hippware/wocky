@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.11.26+rfa031e5
+
 * Add missing typespecs (PR #2941)
 * Ensure vaultex is started for deploy notify (PR #2942)
 * Use User.tid() more often (PR #2943)
