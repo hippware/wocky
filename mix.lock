@@ -128,7 +128,7 @@
   "pobox": {:hex, :pobox, "1.0.4", "e695bc3b2b547dd6c8e5a19cb743396e6670e306ad3ff498844738f9418bd686", [:rebar3], [], "hexpm"},
   "poison": {:hex, :poison, "3.1.0", "d9eb636610e096f86f25d9a46f35a9facac35609a7591b3be3326e99a0484665", [:mix], [], "hexpm"},
   "poolboy": {:hex, :poolboy, "1.5.2", "392b007a1693a64540cead79830443abf5762f5d30cf50bc95cb2c1aaafa006b", [:rebar3], [], "hexpm"},
-  "postgrex": {:git, "https://github.com/elixir-ecto/postgrex.git", "7889e6c3fb58494dca560cf253b6d56c44819d92", [branch: "master"]},
+  "postgrex": {:git, "https://github.com/elixir-ecto/postgrex.git", "672d6f5f751eca7a35fd4be9d1b63866a59ffdfc", [branch: "master"]},
   "prometheus": {:hex, :prometheus, "4.4.1", "1e96073b3ed7788053768fea779cbc896ddc3bdd9ba60687f2ad50b252ac87d6", [:mix, :rebar3], [], "hexpm"},
   "prometheus_ecto": {:hex, :prometheus_ecto, "1.4.3", "3dd4da1812b8e0dbee81ea58bb3b62ed7588f2eae0c9e97e434c46807ff82311", [:mix], [{:ecto, "~> 2.0 or ~> 3.0", [hex: :ecto, repo: "hexpm", optional: false]}, {:prometheus_ex, "~> 1.1 or ~> 2.0 or ~> 3.0", [hex: :prometheus_ex, repo: "hexpm", optional: false]}], "hexpm"},
   "prometheus_ex": {:hex, :prometheus_ex, "3.0.5", "fa58cfd983487fc5ead331e9a3e0aa622c67232b3ec71710ced122c4c453a02f", [:mix], [{:prometheus, "~> 4.0", [hex: :prometheus, repo: "hexpm", optional: false]}], "hexpm"},
