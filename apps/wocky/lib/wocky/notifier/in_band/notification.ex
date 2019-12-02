@@ -50,7 +50,7 @@ defmodule Wocky.Notifier.InBand.Notification do
   def put(params, type, required) do
     params = Map.put(params, :type, type)
 
-    %Notification{}
+    %__MODULE__{}
     |> changeset(params, required)
     |> Repo.insert()
   end
@@ -62,7 +62,7 @@ defmodule Wocky.Notifier.InBand.Notification do
           [NotificationTypeEnum.t()] | nil
         ) :: Queryable.t()
   def user_query(user, before_id, after_id, types \\ nil) do
-    Notification
+    __MODULE__
     |> where(user_id: ^User.id(user))
     |> maybe_add_type_filter(types)
     |> maybe_add_before_id(before_id)
@@ -71,7 +71,7 @@ defmodule Wocky.Notifier.InBand.Notification do
 
   @spec delete(id() | User.t(), User.t()) :: :ok
   def delete(id, requestor) when is_integer(id) do
-    Notification
+    __MODULE__
     |> where([i], i.user_id == ^requestor.id and i.id == ^id)
     |> Repo.delete_all()
 
@@ -79,7 +79,7 @@ defmodule Wocky.Notifier.InBand.Notification do
   end
 
   def delete(%User{} = user, other_user) do
-    Notification
+    __MODULE__
     |> where([i], i.user_id == ^user.id and i.other_user_id == ^other_user.id)
     |> Repo.delete_all()
 

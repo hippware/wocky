@@ -20,7 +20,7 @@ defmodule Wocky.UserInvite.InviteCode do
     belongs_to :user, User
   end
 
-  @type t :: %InviteCode{}
+  @type t :: %__MODULE__{}
 
   @spec changeset(User.t(), PhoneNumber.t() | nil, Friend.share_type()) ::
           Changeset.t()

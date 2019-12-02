@@ -49,7 +49,7 @@ defmodule Wocky.POI.Bot do
 
   @type id :: String.t()
 
-  @type t :: %Bot{
+  @type t :: %__MODULE__{
           id: nil | id(),
           title: String.t(),
           pending: nil | boolean(),

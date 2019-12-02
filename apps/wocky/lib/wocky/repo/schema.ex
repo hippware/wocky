@@ -9,7 +9,6 @@ defmodule Wocky.Repo.Schema do
       import Wocky.Repo.Validations
 
       alias Ecto.Changeset
-      alias __MODULE__
 
       @timestamps_opts [
         inserted_at: :created_at,

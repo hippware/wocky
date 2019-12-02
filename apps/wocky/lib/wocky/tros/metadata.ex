@@ -32,7 +32,7 @@ defmodule Wocky.TROS.Metadata do
   @type id :: String.t()
   @type access :: String.t()
 
-  @type t :: %Metadata{
+  @type t :: %__MODULE__{
           id: id(),
           user_id: User.id(),
           access: access(),

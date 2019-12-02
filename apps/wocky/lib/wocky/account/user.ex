@@ -72,7 +72,7 @@ defmodule Wocky.Account.User do
   @type handle :: String.t()
   @type role :: String.t()
 
-  @type t :: %User{
+  @type t :: %__MODULE__{
           id: id,
           handle: nil | handle(),
           image_url: nil | String.t(),
@@ -118,7 +118,7 @@ defmodule Wocky.Account.User do
 
   @spec hydrate(tid()) :: t()
   def hydrate(%__MODULE__{} = user), do: user
-  def hydrate(id), do: Repo.get(User, id)
+  def hydrate(id), do: Repo.get(__MODULE__, id)
 
   @spec changeset(t(), map()) :: Changeset.t()
   def changeset(user, params) do

@@ -26,7 +26,7 @@ defmodule Wocky.Messaging.Message do
   @fields [:sender_id, :recipient_id, :content, :image_url, :client_data, :read]
 
   @spec changeset(t(), map()) :: Changeset.t()
-  def changeset(struct \\ %Message{}, params) do
+  def changeset(struct \\ %__MODULE__{}, params) do
     struct
     |> cast(params, @fields)
     |> validate_required([:sender_id, :recipient_id])

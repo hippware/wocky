@@ -69,7 +69,7 @@ defmodule Wocky.Location.BotEvent do
 
   @spec get_last_events(User.tid()) :: bot_event_map()
   def get_last_events(user) do
-    BotEvent
+    __MODULE__
     |> distinct(:bot_id)
     |> where(user_id: ^User.id(user))
     |> order_by(desc: :created_at)
@@ -94,7 +94,7 @@ defmodule Wocky.Location.BotEvent do
   end
 
   defp get_last_event_query(user, bot_id) do
-    BotEvent
+    __MODULE__
     |> where(user_id: ^User.id(user), bot_id: ^bot_id)
     |> order_by(desc: :created_at)
     |> limit(1)
@@ -137,7 +137,7 @@ defmodule Wocky.Location.BotEvent do
   end
 
   defp changeset(params) do
-    %BotEvent{}
+    %__MODULE__{}
     |> cast(params, @insert_fields)
     |> validate_required([:user_id, :device, :bot_id, :event])
     |> foreign_key_constraint(:user_id)
