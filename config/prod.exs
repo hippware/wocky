@@ -13,8 +13,13 @@ config :logger, :console,
   format: {ExJsonLogger, :format},
   metadata: :all
 
-config :peerage,
-  via: Peerage.Via.Dns,
-  dns_name: "wocky-private.${KUBE_POD_NS}.svc.cluster.local",
-  app_name: "wocky",
-  interval: 5
+config :libcluster,
+  topologies: [
+    k8s_wocky: [
+      strategy: Cluster.Strategy.Kubernetes.DNS,
+      config: [
+        service: "wocky-private",
+        application_name: "wocky"
+      ]
+    ]
+  ]
