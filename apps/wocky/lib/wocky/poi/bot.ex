@@ -3,7 +3,6 @@ defmodule Wocky.POI.Bot do
 
   use Wocky.Repo.Schema
 
-  alias Ecto.Association.NotLoaded
   alias Ecto.Changeset
   alias Wocky.Account.User
   alias Wocky.POI.Item
@@ -49,7 +48,6 @@ defmodule Wocky.POI.Bot do
   end
 
   @type id :: String.t()
-  @type not_loaded :: %NotLoaded{}
 
   @type t :: %Bot{
           id: nil | id(),
@@ -65,10 +63,10 @@ defmodule Wocky.POI.Bot do
           location: nil | Geo.Point.t(),
           radius: nil | float(),
           tags: nil | [String.t()],
-          user: not_loaded() | User.t(),
-          items: not_loaded() | [Item.t()],
-          invitations: not_loaded() | [Invitation.t()],
-          subscribers: not_loaded() | [User.t()]
+          user: Repo.not_loaded() | User.t(),
+          items: Repo.not_loaded() | [Item.t()],
+          invitations: Repo.not_loaded() | [Invitation.t()],
+          subscribers: Repo.not_loaded() | [User.t()]
         }
 
   @change_fields [
