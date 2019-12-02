@@ -9,7 +9,8 @@ defmodule Wocky.Repo.Migrations.TrosImageFlags do
     FileTypeEnum.create_type()
 
     alter table(:tros_metadatas) do
-      add :available_formats, {:array, FileTypeEnum.type()}, default: ["full", "original", "thumbnail"]
+      add :available_formats, {:array, FileTypeEnum.type()},
+        default: ["full", "original", "thumbnail"]
     end
   end
 end

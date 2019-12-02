@@ -10,6 +10,8 @@ defmodule Wocky.Repo.Migrations.AddLocShareEndSelfNotification do
       add :share_id, :bigint
     end
 
-    Migration.reset_enum(NotificationTypeEnum, [{"notifications", "type", "bot_invitation"}])
+    reset_enum(NotificationTypeEnum, [
+      {"notifications", "type", "bot_invitation"}
+    ])
   end
 end
