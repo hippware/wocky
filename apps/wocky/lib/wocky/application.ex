@@ -35,8 +35,10 @@ defmodule Wocky.Application do
     Mailer.init()
 
     redis_config = redis_config()
+    topologies = Confex.get_env(:libcluster, :topologies)
 
     children = [
+      {Cluster.Supervisor, [topologies, [name: Wocky.ClusterSupervisor]]},
       {Redix, redis_config},
       {Redlock, Confex.get_env(:wocky, :redlock)},
       %{

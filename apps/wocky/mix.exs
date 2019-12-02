@@ -107,14 +107,12 @@ defmodule Wocky.Mixfile do
       {:guardian_firebase, "~> 0.2.1"},
       {:honeybadger, "~> 0.13"},
       {:kadabra, "~> 0.3"},
+      {:libcluster, "~> 3.1"},
       {:module_config, "~> 1.0"},
       {:observer_cli, "~> 1.5"},
       # TODO: Move back to release when new release is built
       # ABANDONED: Paginator appears to be abandoned.
       {:paginator, github: "duffelhq/paginator", branch: "master"},
-      # ABANDONED: peerage appears to be abandoned. Consider libcluster
-      # to replace it
-      {:peerage, "~> 1.0"},
       {:phoenix_pubsub, "~> 1.0"},
       {:phoenix_pubsub_redis, "~> 2.1.5"},
       {:pigeon, "~> 1.4"},
