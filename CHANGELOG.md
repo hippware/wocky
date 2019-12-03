@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: ex_twilio (PR #2949), mock (PR #2951), postgrex (PR #2952)
+* Move from peerage to libcluster (PR #2950)
+
+
 # 2019.11.26+rfa031e5
 
 * Add missing typespecs (PR #2941)
