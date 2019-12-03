@@ -12,7 +12,7 @@ defmodule Wocky.Callbacks.Message do
 
   @impl true
   def handle_insert(new) do
-    Hydrator.with_assocs(new, [:sender, :recipient], &send_push(&1))
+    Hydrator.with_assocs(new, [:sender, :recipient], &send_push/1)
   end
 
   defp send_push(msg) do

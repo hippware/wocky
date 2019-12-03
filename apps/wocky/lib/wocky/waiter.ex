@@ -2,16 +2,10 @@ defmodule Wocky.Waiter do
   @moduledoc """
   Allows processes to do a semaphore-style wait on a given event
   """
-  @type event() :: String.t()
-
-  @doc """
-  Wait on an event. The `skip_callback` function is called after the wait
-  is established. If it returns `true`, the wait will immediately be aborted
-  and :ok will be returned. If the event is fired within the timeout, :ok
-  is returned; otherwise :timeout is returned.
-  """
 
   alias Timex.Duration
+
+  @type event() :: String.t()
 
   # If a wait hasn't happened after a day then we can probably safely assume
   # it isn't going to happen. Let the redis entry expire at that point.
@@ -19,7 +13,13 @@ defmodule Wocky.Waiter do
                |> Duration.to_seconds(truncate: true)
                |> to_string()
 
-  @spec wait(event(), non_neg_integer | :infinity, (() -> boolean())) ::
+  @doc """
+  Wait on an event. The `skip_callback` function is called after the wait
+  is established. If it returns `true`, the wait will immediately be aborted
+  and :ok will be returned. If the event is fired within the timeout, :ok
+  is returned; otherwise :timeout is returned.
+  """
+  @spec wait(event(), non_neg_integer() | :infinity, (() -> boolean())) ::
           :ok | :timeout
   def wait(event, timeout, skip_callback) do
     ref = make_ref()
