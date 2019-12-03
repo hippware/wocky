@@ -4,7 +4,11 @@ defmodule Wocky.Account.User do
   use Wocky.Repo.Schema
 
   alias Wocky.Account.Avatar
+  alias Wocky.Account.ClientVersion
+  alias Wocky.Block
   alias Wocky.Friends.Friend
+  alias Wocky.Messaging.Conversation
+  alias Wocky.Messaging.Message
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.POI.Bot
   alias Wocky.Presence
@@ -52,16 +56,25 @@ defmodule Wocky.Account.User do
 
     timestamps()
 
+    has_many :blocks, Block, foreign_key: :blocker_id
+    has_many :blockers, Block, foreign_key: :blockee_id
     has_many :bots, Bot
-    has_many :push_tokens, PushToken
-    has_many :roster_contacts, Friend, foreign_key: :contact_id
-    has_many :roster_items, Friend
-    has_many :tros_metadatas, TROSMetadata
+    has_many :client_versions, ClientVersion
+    has_many :conversations, Conversation
+    has_many :friendships, Friend
     has_many :invite_codes, InviteCode
+    has_many :push_tokens, PushToken
+    has_many :tros_metadatas, TROSMetadata
     has_many :sent_invitations, Invitation
+    has_many :sent_messages, Message, foreign_key: :sender_id
     has_many :received_invitations, Invitation, foreign_key: :invitee_id
+    has_many :received_messages, Message, foreign_key: :recipient_id
 
-    many_to_many(:bot_subscriptions, Bot, join_through: Subscription)
+    many_to_many :bot_subscriptions, Bot, join_through: Subscription
+
+    many_to_many :friends, __MODULE__,
+      join_through: Friendship,
+      join_keys: [user_id: :id, contact_id: :id]
   end
 
   @type id :: String.t()
