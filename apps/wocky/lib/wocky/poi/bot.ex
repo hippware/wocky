@@ -8,6 +8,7 @@ defmodule Wocky.POI.Bot do
   alias Wocky.POI.Item
   alias Wocky.Relation.Invitation
   alias Wocky.Relation.Subscription
+  alias Wocky.Repo
 
   @foreign_key_type :binary_id
   @primary_key {:id, :binary_id, autogenerate: false}

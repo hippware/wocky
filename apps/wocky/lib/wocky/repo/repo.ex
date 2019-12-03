@@ -5,8 +5,8 @@ defmodule Wocky.Repo do
 
   use Paginator
 
-  alias Ecto.Association.NotLoaded
   alias Confex.Resolver
+  alias Ecto.Association.NotLoaded
   alias Wocky.Repo.Instrumenter, as: RepoInstrumenter
 
   @type error :: {:error, Ecto.Changeset.t()}
