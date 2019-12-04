@@ -116,7 +116,6 @@ defmodule Wocky.Repo.Factory do
     %Friend{
       user: build(:user),
       contact: build(:user),
-      name: Name.first_name(),
       share_type: :always
     }
   end

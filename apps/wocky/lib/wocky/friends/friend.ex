@@ -21,7 +21,6 @@ defmodule Wocky.Friends.Friend do
 
   @foreign_key_type :binary_id
   schema "roster_items" do
-    field :name, :binary, default: ""
     # TODO The share_id field is used to support the legacy sharing API. It
     # should be removed when that API is decommissioned.
     field :share_id, :integer
@@ -44,7 +43,6 @@ defmodule Wocky.Friends.Friend do
   @type t :: %__MODULE__{
           user_id: User.id(),
           contact_id: User.id(),
-          name: name(),
           share_type: share_type(),
           share_migrated: boolean(),
           updated_at: DateTime.t(),
@@ -54,7 +52,6 @@ defmodule Wocky.Friends.Friend do
         }
 
   @update_fields [
-    :name,
     :share_type,
     :nearby_distance,
     :nearby_cooldown,

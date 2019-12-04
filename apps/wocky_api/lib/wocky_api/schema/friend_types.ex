@@ -58,9 +58,6 @@ defmodule WockyAPI.Schema.FriendTypes do
     field :relationship, :user_contact_relationship,
       deprecate: "Always returns FRIEND."
 
-    @desc "The current user's nickname for the other user"
-    field :name, :string
-
     @desc "The current user's share level with the other user"
     field :share_type, non_null(:friend_share_type)
 
@@ -120,9 +117,6 @@ defmodule WockyAPI.Schema.FriendTypes do
 
     @desc "The current user's relationship with the other user"
     field :relationship, :user_contact_relationship
-
-    @desc "The current user's nickname for the other user"
-    field :name, :string, deprecate: "This field will be removed."
 
     @desc "The creation time of the contact"
     field :created_at, non_null(:datetime),
@@ -199,25 +193,6 @@ defmodule WockyAPI.Schema.FriendTypes do
 
   payload_object(:friend_invite_payload, :user_contact_relationship)
 
-  @desc "DEPRECATED"
-  input_object :friend_name_input do
-    @desc "The ID of the user to whom to assign a name"
-    field :user_id, non_null(:uuid)
-
-    @desc "The name to assign to the specified user"
-    field :name, non_null(:string)
-  end
-
-  payload_object(:friend_name_payload, :boolean)
-
-  input_object :friend_name_update_input do
-    @desc "The ID of the user to whom to assign a name"
-    field :user_id, non_null(:uuid)
-
-    @desc "The name to assign to the specified user"
-    field :name, non_null(:string)
-  end
-
   input_object :friend_share_config_input do
     @desc "Range in meters within which 'nearby' sharing will activate"
     field :nearby_distance, :integer
@@ -282,21 +257,6 @@ defmodule WockyAPI.Schema.FriendTypes do
     field :friend_invite, type: :friend_invite_payload do
       arg :input, non_null(:friend_invite_input)
       resolve &Friend.friend_invite/2
-      changeset_mutation_middleware()
-    end
-
-    @desc "DEPRECATED Sets the nickname for a friend"
-    field :friend_name, type: :friend_name_payload do
-      deprecate "use friendNameUpdate instead"
-      arg :input, non_null(:friend_name_input)
-      resolve &Friend.friend_name/2
-      changeset_mutation_middleware()
-    end
-
-    @desc "Sets the nickname for a friend"
-    field :friend_name_update, type: :friend_update_payload do
-      arg :input, non_null(:friend_name_update_input)
-      resolve &Friend.friend_name_update/2
       changeset_mutation_middleware()
     end
 
