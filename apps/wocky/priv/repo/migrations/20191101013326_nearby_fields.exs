@@ -10,6 +10,8 @@ defmodule Wocky.Repo.Migrations.NearbyFields do
       add :nearby_last_start_notification, :timestamptz
     end
 
-    Migration.reset_enum(NotificationTypeEnum, [{"notifications", "type", "bot_invitation"}])
+    reset_enum(NotificationTypeEnum, [
+      {"notifications", "type", "bot_invitation"}
+    ])
   end
 end

@@ -1,12 +1,13 @@
 defmodule Wocky.Repo.Migration do
   @moduledoc "Helper module to make migrations easier"
 
-  alias Ecto.Migration
+  import Ecto.Migration, except: [timestamps: 0, timestamps: 1]
 
   defmacro __using__(_) do
     quote do
-      import Ecto.Migration, except: [timestamps: 0]
+      import Ecto.Migration, except: [timestamps: 0, timestamps: 1]
       import Wocky.Repo.Migration
+
       @disable_ddl_transaction false
       @disable_migration_lock false
       @before_compile Ecto.Migration
@@ -15,13 +16,11 @@ defmodule Wocky.Repo.Migration do
     end
   end
 
-  import Ecto.Migration, except: [timestamps: 0]
-
   @spec timestamps(Keyword.t()) :: :ok | nil
   def timestamps(overrides \\ []) do
     [inserted_at: :created_at, type: :timestamptz]
     |> Keyword.merge(overrides)
-    |> Migration.timestamps()
+    |> Ecto.Migration.timestamps()
   end
 
   @spec reset_enum(any(), [String.t()]) :: :ok

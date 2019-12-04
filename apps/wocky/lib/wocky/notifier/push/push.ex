@@ -234,11 +234,7 @@ defmodule Wocky.Notifier.Push do
     end
   end
 
-  defp log_msg(n, %__MODULE__{
-         device: device,
-         token: token,
-         backend: backend
-       }) do
+  defp log_msg(n, %__MODULE__{device: device, token: token, backend: backend}) do
     resp = backend.get_response(n)
 
     %PushLog{

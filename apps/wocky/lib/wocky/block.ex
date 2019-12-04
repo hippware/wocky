@@ -25,16 +25,18 @@ defmodule Wocky.Block do
     belongs_to :blockee, User, define_field: false
   end
 
-  @type t :: %Block{}
+  @type t :: %__MODULE__{}
 
   @doc "Blocker initiates a block on blockee"
   @spec block(User.tid(), User.tid()) :: :ok
   def block(blocker, blockee) do
-    %Block{
-      blocker_id: User.id(blocker),
-      blockee_id: User.id(blockee)
-    }
-    |> Repo.insert(on_conflict: :nothing)
+    Repo.insert(
+      %__MODULE__{
+        blocker_id: User.id(blocker),
+        blockee_id: User.id(blockee)
+      },
+      on_conflict: :nothing
+    )
 
     Friends.unfriend(blocker, blockee)
 
@@ -45,7 +47,7 @@ defmodule Wocky.Block do
 
   @spec unblock(User.tid(), User.tid()) :: :ok
   def unblock(blocker, blockee) do
-    Block
+    __MODULE__
     |> where(blocker_id: ^User.id(blocker), blockee_id: ^User.id(blockee))
     |> Repo.delete_all()
 
@@ -59,7 +61,7 @@ defmodule Wocky.Block do
     u1_id = User.id(u1)
     u2_id = User.id(u2)
 
-    Block
+    __MODULE__
     |> where(
       [b],
       (b.blocker_id == ^u1_id and b.blockee_id == ^u2_id) or
@@ -70,7 +72,7 @@ defmodule Wocky.Block do
 
   @spec blocks_query(User.tid()) :: Queryable.t()
   def blocks_query(user) do
-    where(Block, blocker_id: ^User.id(user))
+    where(__MODULE__, blocker_id: ^User.id(user))
   end
 
   @doc """
@@ -83,7 +85,7 @@ defmodule Wocky.Block do
     |> join(
       :left,
       [..., o],
-      b in Block,
+      b in __MODULE__,
       on:
         (field(o, ^owner_field) == b.blocker_id and
            b.blockee_id == ^User.id(requester)) or

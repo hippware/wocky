@@ -6,11 +6,13 @@ defmodule Wocky.Repo do
   use Paginator
 
   alias Confex.Resolver
+  alias Ecto.Association.NotLoaded
   alias Wocky.Repo.Instrumenter, as: RepoInstrumenter
 
   @type error :: {:error, Ecto.Changeset.t()}
   @type success(schema_type) :: {:ok, schema_type}
   @type result(schema_type) :: success(schema_type) | error()
+  @type not_loaded :: %NotLoaded{}
 
   @doc """
   Dynamically loads the repository configuration from the environment variables.

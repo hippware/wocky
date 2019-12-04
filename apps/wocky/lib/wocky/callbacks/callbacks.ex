@@ -3,26 +3,16 @@ defmodule Wocky.Callbacks do
   Initialisation for wocky DB watcher callbacks
   """
 
-  alias Wocky.Callbacks.Bot
-  alias Wocky.Callbacks.BotInvitation
-  alias Wocky.Callbacks.BotItem
-  alias Wocky.Callbacks.BotSubscription
-  alias Wocky.Callbacks.Connection
-  alias Wocky.Callbacks.Friend
-  alias Wocky.Callbacks.FriendInvitation
-  alias Wocky.Callbacks.Message
-  alias Wocky.Callbacks.TROSMetadata
-
   @modules [
-    Bot,
-    BotInvitation,
-    BotItem,
-    BotSubscription,
-    Connection,
-    Friend,
-    FriendInvitation,
-    Message,
-    TROSMetadata
+    Wocky.Callbacks.Bot,
+    Wocky.Callbacks.BotInvitation,
+    Wocky.Callbacks.BotItem,
+    Wocky.Callbacks.BotSubscription,
+    Wocky.Callbacks.Connection,
+    Wocky.Callbacks.Friend,
+    Wocky.Callbacks.FriendInvitation,
+    Wocky.Callbacks.Message,
+    Wocky.Callbacks.TROSMetadata
   ]
 
   @spec register :: :ok

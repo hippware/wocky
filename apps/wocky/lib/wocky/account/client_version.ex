@@ -26,7 +26,7 @@ defmodule Wocky.Account.ClientVersion do
   @spec record(User.t(), String.t(), String.t()) :: Repo.result(t())
   def record(user, device, agent_str) do
     with {:ok, version, attrs} <- parse_agent(agent_str) do
-      %ClientVersion{}
+      %__MODULE__{}
       |> changeset(%{
         user_id: user.id,
         device: device,

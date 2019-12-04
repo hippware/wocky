@@ -9,8 +9,14 @@ defmodule Wocky.Repo.Migrations.UserProximity do
 
   def up do
     create table("user_proximity_subscriptions", primary_key: false) do
-      add :user_id, references(:users, on_delete: :delete_all, type: :uuid), null: false, primary_key: true
-      add :target_id, references(:users, on_delete: :delete_all, type: :uuid), null: false, primary_key: true
+      add :user_id, references(:users, on_delete: :delete_all, type: :uuid),
+        null: false,
+        primary_key: true
+
+      add :target_id, references(:users, on_delete: :delete_all, type: :uuid),
+        null: false,
+        primary_key: true
+
       add :range, :integer, default: 1000, null: false
       add :cooldown, :bigint, default: :timer.hours(24), null: false
       add :last_notification, :timestamptz
@@ -23,6 +29,8 @@ defmodule Wocky.Repo.Migrations.UserProximity do
 
     update_notify("user_proximity_subscriptions", [:insert, :delete, :update])
 
-    Migration.reset_enum(NotificationTypeEnum, [{"notifications", "type", "bot_invitation"}])
+    reset_enum(NotificationTypeEnum, [
+      {"notifications", "type", "bot_invitation"}
+    ])
   end
 end
