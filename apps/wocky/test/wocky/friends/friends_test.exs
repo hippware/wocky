@@ -2,7 +2,6 @@ defmodule Wocky.Friends.FriendsTest do
   use Wocky.DataCase, async: true
 
   alias Faker.Code
-  alias Faker.Name
   alias Wocky.Block
   alias Wocky.Friends
   alias Wocky.Friends.Friend
@@ -68,28 +67,24 @@ defmodule Wocky.Friends.FriendsTest do
     end
 
     test "befriend/2 when there is an existing relationship", ctx do
-      name = Name.first_name()
-      name2 = Name.first_name()
-
       Factory.insert(
         :friend,
-        name: name,
         user: ctx.user,
         contact: ctx.stranger,
-        name: name
+        share_type: :always
       )
 
       Factory.insert(
         :friend,
         user: ctx.stranger,
         contact: ctx.user,
-        name: name2
+        share_type: :always
       )
 
-      assert :ok = Friends.befriend(ctx.user, ctx.stranger)
+      assert :ok = Friends.befriend(ctx.user, ctx.stranger, share_type: :nearby)
       assert Friends.friend?(ctx.user, ctx.stranger)
-      assert Friends.get_friend(ctx.user, ctx.stranger).name == name
-      assert Friends.get_friend(ctx.stranger, ctx.user).name == name2
+      assert Friends.get_friend(ctx.user, ctx.stranger).share_type == :nearby
+      assert Friends.get_friend(ctx.stranger, ctx.user).share_type == :nearby
     end
   end
 
@@ -195,27 +190,6 @@ defmodule Wocky.Friends.FriendsTest do
       Friends.unfriend(ctx.user, ctx.contact)
 
       assert Friends.get_location_shares(ctx.user) == []
-    end
-  end
-
-  describe "update_name/3" do
-    test "should update the existing contact name", ctx do
-      new_name = Name.first_name()
-
-      assert {:ok, %Friend{}} =
-               Friends.update_name(ctx.user, ctx.contact, new_name)
-
-      new_friend = Friends.get_friend(ctx.user, ctx.contact)
-      assert new_friend.contact_id == ctx.contact.id
-      assert new_friend.name == new_name
-    end
-
-    test "should fail when users aren't friends", ctx do
-      stranger = Factory.insert(:user)
-      new_name = Name.first_name()
-
-      assert {:error, cs} = Friends.update_name(ctx.user, stranger, new_name)
-      assert errors_on(cs).contact_id == ["must be a friend"]
     end
   end
 

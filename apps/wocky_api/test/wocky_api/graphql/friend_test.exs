@@ -1,7 +1,6 @@
 defmodule WockyAPI.GraphQL.FriendTest do
   use WockyAPI.GraphQLCase, async: true
 
-  alias Faker.Name
   alias Wocky.Block
   alias Wocky.Friends
   alias Wocky.Notifier.Push
@@ -27,7 +26,6 @@ defmodule WockyAPI.GraphQL.FriendTest do
           edges {
             node {
               user { id }
-              name
               createdAt
             }
           }
@@ -38,9 +36,6 @@ defmodule WockyAPI.GraphQL.FriendTest do
 
     test "get friends", %{user: user, user2: user2} do
       Friends.befriend(user, user2)
-
-      name = Name.name()
-      Friends.update_name(user, user2, name)
 
       id2 = user2.id
 
@@ -55,7 +50,6 @@ defmodule WockyAPI.GraphQL.FriendTest do
                      %{
                        "node" => %{
                          "user" => %{"id" => ^id2},
-                         "name" => ^name,
                          "createdAt" => _
                        }
                      }
@@ -373,165 +367,6 @@ defmodule WockyAPI.GraphQL.FriendTest do
                  ]
                }
              } = result.data
-    end
-  end
-
-  # DEPRECATED
-  describe "friendName mutation" do
-    @query """
-    mutation ($user_id: UUID!, $name: String!) {
-      friendName (input: {user_id: $user_id, name: $name}) {
-        successful
-        result
-        messages {
-          field
-          message
-        }
-      }
-    }
-    """
-
-    test "assign a name to a friend", %{user: user, user2: user2} do
-      Friends.befriend(user, user2)
-      new_name = Name.name()
-
-      result =
-        run_query(@query, user, %{"user_id" => user2.id, "name" => new_name})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "friendName" => %{
-                 "successful" => true,
-                 "result" => true,
-                 "messages" => []
-               }
-             }
-
-      assert Friends.get_friend(user, user2).name == new_name
-    end
-
-    test "should fail when the user doesn't exist", %{user: user} do
-      new_name = Name.name()
-
-      result =
-        run_query(@query, user, %{"user_id" => ID.new(), "name" => new_name})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "friendName" => %{
-                 "successful" => false,
-                 "result" => nil,
-                 "messages" => [
-                   %{"field" => "contactId", "message" => "must be a friend"}
-                 ]
-               }
-             }
-    end
-
-    test "should fail when the user is not a friend", %{
-      user: user,
-      user2: user2
-    } do
-      new_name = Name.name()
-
-      result =
-        run_query(@query, user, %{"user_id" => user2.id, "name" => new_name})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "friendName" => %{
-                 "successful" => false,
-                 "result" => nil,
-                 "messages" => [
-                   %{"field" => "contactId", "message" => "must be a friend"}
-                 ]
-               }
-             }
-    end
-  end
-
-  describe "friendNameUpdate mutation" do
-    @query """
-    mutation ($user_id: UUID!, $name: String!) {
-      friendNameUpdate (input: {user_id: $user_id, name: $name}) {
-        successful
-        result {
-          user { id }
-          name
-        }
-        messages {
-          field
-          message
-        }
-      }
-    }
-    """
-
-    test "assign a name to a friend", %{user: user, user2: user2} do
-      Friends.befriend(user, user2)
-      new_name = Name.name()
-
-      result =
-        run_query(@query, user, %{"user_id" => user2.id, "name" => new_name})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "friendNameUpdate" => %{
-                 "successful" => true,
-                 "result" => %{
-                   "user" => %{"id" => user2.id},
-                   "name" => new_name
-                 },
-                 "messages" => []
-               }
-             }
-
-      assert Friends.get_friend(user, user2).name == new_name
-    end
-
-    test "should fail when the user doesn't exist", %{user: user} do
-      new_name = Name.name()
-
-      result =
-        run_query(@query, user, %{"user_id" => ID.new(), "name" => new_name})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "friendNameUpdate" => %{
-                 "successful" => false,
-                 "result" => nil,
-                 "messages" => [
-                   %{"field" => "contactId", "message" => "must be a friend"}
-                 ]
-               }
-             }
-    end
-
-    test "should fail when the user is not a friend", %{
-      user: user,
-      user2: user2
-    } do
-      new_name = Name.name()
-
-      result =
-        run_query(@query, user, %{"user_id" => user2.id, "name" => new_name})
-
-      refute has_errors(result)
-
-      assert result.data == %{
-               "friendNameUpdate" => %{
-                 "successful" => false,
-                 "result" => nil,
-                 "messages" => [
-                   %{"field" => "contactId", "message" => "must be a friend"}
-                 ]
-               }
-             }
     end
   end
 

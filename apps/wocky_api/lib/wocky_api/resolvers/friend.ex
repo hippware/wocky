@@ -80,18 +80,6 @@ defmodule WockyAPI.Resolvers.Friend do
     Friends.make_friends(user, input.user_id, share_type)
   end
 
-  # DEPRECATED
-  def friend_name(%{input: input}, %{context: %{current_user: user}}) do
-    case Friends.update_name(user, input.user_id, input.name) do
-      {:ok, _} -> {:ok, true}
-      error -> error
-    end
-  end
-
-  def friend_name_update(%{input: input}, %{context: %{current_user: user}}) do
-    Friends.update_name(user, input.user_id, input.name)
-  end
-
   def friend_share_update(%{input: input}, %{context: %{current_user: user}}) do
     opts =
       input[:share_config] ||
@@ -168,7 +156,6 @@ defmodule WockyAPI.Resolvers.Friend do
     notification = %{
       user: item.contact,
       relationship: relationship,
-      name: item.name,
       created_at: item.created_at
     }
 

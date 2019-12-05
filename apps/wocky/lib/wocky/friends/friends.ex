@@ -161,12 +161,6 @@ defmodule Wocky.Friends do
           (r.user_id == ^b_id and r.contact_id == ^a_id)
   end
 
-  @spec update_name(User.tid(), User.tid(), String.t()) ::
-          Repo.result(Friend.t())
-  def update_name(user, friend, name) do
-    do_update_item(user, friend, %{name: name})
-  end
-
   @spec update_sharing(User.tid(), User.tid(), share_type(), Keyword.t()) ::
           Repo.result(Friend.t())
   def update_sharing(user, friend, share_type, opts \\ []) do
