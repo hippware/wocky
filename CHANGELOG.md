@@ -5,8 +5,16 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: absinthe_phoenix (PR #2954), postgrex (PR #2955)
+  * absinthe (PR #2956)
+* Remove the nickname field for friends (PR #2957)
+
+
+# 2019.12.4+r17c24f6
+
 * Update: ex_twilio (PR #2949), mock (PR #2951), postgrex (PR #2952)
 * Move from peerage to libcluster (PR #2950)
+* Refactor base (PR #2953)
 
 
 # 2019.11.26+rfa031e5
