@@ -61,7 +61,7 @@ defmodule WockyAPI.Schema.FriendTypes do
     @desc "DEPRECATED Always returns an empty string"
     field :name, :string,
       deprecate: "Always returns an empty string",
-      resolve: fn _, _ -> "" end
+      resolve: fn _, _ -> {:ok, ""} end
 
     @desc "The current user's share level with the other user"
     field :share_type, non_null(:friend_share_type)
@@ -126,7 +126,7 @@ defmodule WockyAPI.Schema.FriendTypes do
     @desc "DEPRECATED Always returns an empty string"
     field :name, :string,
       deprecate: "Always returns an empty string",
-      resolve: fn _, _ -> "" end
+      resolve: fn _, _ -> {:ok, ""} end
 
     @desc "The creation time of the contact"
     field :created_at, non_null(:datetime),
