@@ -7,7 +7,11 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Update: absinthe_phoenix (PR #2954), postgrex (PR #2955)
   * absinthe (PR #2956)
-* Remove the nickname field for friends (PR #2957)
+* Nickname field changes
+  * Remove the nickname field for friends (PR #2957)
+  * Add back in the 'nickname' field (#2958)
+  * Absinthe.ExecutionError: Invalid value returned from resolver. (#2961)
+  * Fix nickname stubs (PR #2962)
 
 
 # 2019.12.4+r17c24f6
