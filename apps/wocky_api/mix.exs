@@ -45,23 +45,18 @@ defmodule WockyAPI.Mixfile do
   defp deps do
     [
       {:wocky, in_umbrella: true},
-
-      # TODO: Move these back to the offical absinthe repo once all the changes
-      # are merged.
-      {:absinthe,
-       github: "hippware/absinthe", branch: "working", override: true},
+      {:absinthe, "~> 1.5.0-beta.2", organization: "hippware", override: true},
       {:absinthe_error_payload, "~> 1.0"},
-      {:absinthe_metrics, "~> 1.0.0"},
-      {:absinthe_phoenix,
-       github: "hippware/absinthe_phoenix", branch: "working"},
-      {:absinthe_plug, "~> 1.5.0-alpha.0", override: true},
-      {:absinthe_relay, github: "hippware/absinthe_relay", branch: "working"},
+      {:absinthe_metrics, "~> 1.0.0", organization: "hippware"},
+      {:absinthe_phoenix, "~> 1.5.0-alpha.0", organization: "hippware"},
+      {:absinthe_plug, "~> 1.5.0-beta.0",
+       organization: "hippware", override: true},
+      {:absinthe_relay, "~> 1.5.0-alpha.0", organization: "hippware"},
       {:apollo_tracing, "~> 0.4.0"},
       {:cors_plug, "~> 2.0"},
-      {:ecto_sql, "~> 3.0"},
       {:health_checkup, "~> 0.1.0"},
       {:honeybadger, "~> 0.6"},
-      {:httpoison, "~> 1.4"},
+      {:httpoison, "~> 1.6", override: true},
       {:jason, "~> 1.0"},
       {:phoenix, "~> 1.4"},
       {:phoenix_ecto, "~> 4.0"},
@@ -71,13 +66,8 @@ defmodule WockyAPI.Mixfile do
       {:prometheus_phoenix, "~> 1.2"},
       {:prometheus_plugs, "~> 1.1"},
       # Non-prod
-      # TODO Back to upstream once merged
-      {:absinthe_websocket,
-       github: "hippware/absinthe_websocket",
-       branch: "disconnect_callback",
-       only: :test,
-       runtime: false,
-       override: true},
+      {:absinthe_websocket, "~> 0.2",
+       organization: "hippware", only: :test, runtime: false, override: true},
       {:common_graphql_client, "~> 0.2", only: :test, runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_guard, "~> 1.1", only: :dev, runtime: false},
