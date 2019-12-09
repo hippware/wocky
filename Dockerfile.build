@@ -1,12 +1,14 @@
 FROM hippware/alpine-elixir-dev:1.9.1
 
 ENV MIX_ENV=test
+ARG HEX_ORG_KEY=""
 
 # Cache elixir deps
 COPY mix.exs mix.lock version.exs ./
 COPY apps/wocky/mix.exs apps/wocky/
 COPY apps/wocky_api/mix.exs apps/wocky_api/
 
+RUN mix hex.organization auth hippware --key $HEX_ORG_KEY
 RUN mix do deps.get, deps.compile && \
     MIX_ENV=prod mix deps.compile
 

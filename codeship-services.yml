@@ -3,6 +3,7 @@ wocky-build:
     context: .
     dockerfile: Dockerfile.build
     image: hippware/wocky:build
+    encrypted_args_file: codeship/build.env.encrypted
   cached: true
   volumes:
     - ./tmp/artifacts:/artifacts
@@ -11,6 +12,7 @@ wocky-test:
     context: .
     dockerfile: Dockerfile.build
     image: hippware/wocky:build
+    encrypted_args_file: codeship/build.env.encrypted
   cached: true
   environment:
     WOCKY_DB_HOST: "postgres"
