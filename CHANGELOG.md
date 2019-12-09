@@ -6,7 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: absinthe_phoenix (PR #2954), postgrex (PR #2955)
-  * absinthe (PR #2956)
+  * absinthe (PR #2956), ex_twilio (PR #2963)
 * Nickname field changes
   * Remove the nickname field for friends (PR #2957)
   * Add back in the 'nickname' field (#2958)
