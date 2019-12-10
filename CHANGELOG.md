@@ -12,6 +12,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * Add back in the 'nickname' field (#2958)
   * Absinthe.ExecutionError: Invalid value returned from resolver. (#2961)
   * Fix nickname stubs (PR #2962)
+* Move to hex organisation for all custom deps (PR #2964)
 
 
 # 2019.12.4+r17c24f6
