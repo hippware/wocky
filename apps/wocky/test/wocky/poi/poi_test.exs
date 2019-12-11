@@ -43,7 +43,7 @@ defmodule Wocky.POI.POITest do
 
   describe "preallocate/2" do
     setup ctx do
-      preallocated = POI.preallocate(ctx.user)
+      {:ok, preallocated} = POI.preallocate(ctx.user)
 
       {:ok, preallocated: preallocated}
     end
@@ -58,10 +58,8 @@ defmodule Wocky.POI.POITest do
       assert db_bot.user_id == preallocated.user_id
     end
 
-    test "raises on error" do
-      assert_raise Ecto.InvalidChangesetError, fn ->
-        POI.preallocate(Factory.build(:user))
-      end
+    test "should return an error when the user doesn't exist" do
+      assert {:error, _} = POI.preallocate(Factory.build(:user))
     end
   end
 

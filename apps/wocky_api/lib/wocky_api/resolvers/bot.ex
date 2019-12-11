@@ -172,7 +172,7 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def bot_create(%{}, %{context: %{current_user: user}}),
-    do: {:ok, POI.preallocate(user)}
+    do: POI.preallocate(user)
 
   def bot_update(%{input: input}, %{context: %{current_user: requestor}}) do
     case Relation.get_owned_bot(input[:id], requestor, true) do

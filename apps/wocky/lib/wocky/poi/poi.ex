@@ -46,14 +46,14 @@ defmodule Wocky.POI do
   def maybe_filter_pending(queryable, true),
     do: where(queryable, pending: false)
 
-  @spec preallocate(User.tid()) :: Bot.t() | no_return()
+  @spec preallocate(User.tid()) :: Repo.result(Bot.t())
   def preallocate(user) do
     params = %{id: ID.new(), user_id: User.id(user), pending: true}
 
     %Bot{}
     |> cast(params, [:id, :user_id, :pending])
     |> foreign_key_constraint(:user_id)
-    |> Repo.insert!()
+    |> Repo.insert()
   end
 
   @spec insert(map(), User.t()) :: {:ok, Bot.t()} | {:error, any()}
