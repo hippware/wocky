@@ -3,8 +3,8 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
   import Eventually
 
-  alias Wocky.Friends
-  alias Wocky.Friends.Share.Cache
+  alias Wocky.Contacts
+  alias Wocky.Contacts.Share.Cache
   alias Wocky.Location
   alias Wocky.Location.Handler
   alias Wocky.Presence.Manager
@@ -118,7 +118,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       bot: bot,
       subscription_id: subscription_id
     } do
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
       Relation.visit(user2, bot, true)
 
@@ -136,7 +136,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       bot: bot,
       subscription_id: subscription_id
     } do
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
       Relation.depart(user2, bot, true)
 
@@ -154,7 +154,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       subscription_id: subscription_id
     } do
       bot2 = Factory.insert(:bot, user: user2)
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
       {:ok, invitation} = Relation.invite(user, bot2, user2)
 
       assert_notification_update(subscription_id, %{
@@ -190,7 +190,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Friends.make_friends(user2, user, :disabled)
+      Contacts.make_friends(user2, user, :disabled)
 
       assert_notification_update(subscription_id, %{
         "__typename" => "UserInvitationNotification",
@@ -223,9 +223,9 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
-      {:ok, %{share_id: id}} = Friends.update_sharing(user2, user, :always)
+      {:ok, %{share_id: id}} = Contacts.update_sharing(user2, user, :always)
 
       assert_location_update(subscription_id, user2.id, to_string(id))
     end
@@ -235,13 +235,13 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
-      {:ok, %{share_id: id}} = Friends.update_sharing(user2, user, :always)
+      {:ok, %{share_id: id}} = Contacts.update_sharing(user2, user, :always)
 
       assert_location_update(subscription_id, user2.id, to_string(id))
 
-      Friends.update_sharing(user2, user, :disabled)
+      Contacts.update_sharing(user2, user, :disabled)
 
       assert_notification_update(subscription_id, %{
         "__typename" => "LocationShareEndNotification",
@@ -255,7 +255,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Friends.befriend(user, user2, share_type: :nearby)
+      Contacts.befriend(user, user2, :nearby)
       assert_eventually(hd(Cache.get(user2.id)).share_type == :nearby)
 
       now = DateTime.utc_now()
@@ -288,7 +288,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
            user2: user2,
            subscription_id: subscription_id
          } do
-      Friends.befriend(user, user2, share_type: :nearby)
+      Contacts.befriend(user, user2, :nearby)
       assert_eventually(hd(Cache.get(user2.id)).share_type == :nearby)
 
       now = DateTime.utc_now()
@@ -326,10 +326,10 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
            user2: user2,
            subscription_id: subscription_id
          } do
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
       {:ok, _} =
-        Friends.update_sharing(user2, user, :nearby, nearby_cooldown: 1)
+        Contacts.update_sharing(user2, user, :nearby, nearby_cooldown: 1)
 
       assert_eventually(hd(Cache.get(user2.id)).share_type == :nearby)
 
@@ -366,11 +366,11 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
-      {:ok, %{share_id: id}} = Friends.update_sharing(user, user2, :always)
+      {:ok, %{share_id: id}} = Contacts.update_sharing(user, user2, :always)
 
-      Friends.update_sharing(user, user2, :disabled)
+      Contacts.update_sharing(user, user2, :disabled)
 
       assert_notification_update(subscription_id, %{
         "__typename" => "LocationShareEndSelfNotification",

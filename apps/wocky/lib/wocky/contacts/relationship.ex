@@ -1,35 +1,36 @@
-defmodule Wocky.Friends.Friend do
+defmodule Wocky.Contacts.Relationship do
   @moduledoc """
   DB interface module for roster items
   """
 
   use Wocky.Repo.Schema
 
-  import Ecto.Changeset
-  import Ecto.Query
   import EctoEnum
 
-  alias Ecto.Changeset
   alias Wocky.Account.User
-  alias Wocky.Friends.Share.CachedFriend
-  alias Wocky.Repo
   alias Wocky.Repo.Timestamp
 
   @share_types [:disabled, :always, :nearby]
 
   defenum(LocationShareTypeEnum, :location_share_type, @share_types)
 
+  @states [:invited, :friend, :blocked]
+
+  defenum(ContactStateEnum, :state, @states)
+
   @foreign_key_type :binary_id
   schema "roster_items" do
-    # TODO The share_id field is used to support the legacy sharing API. It
-    # should be removed when that API is decommissioned.
-    field :share_id, :integer
+    field :state, ContactStateEnum, null: false
     field :share_type, LocationShareTypeEnum, null: false, default: :disabled
-    field :share_migrated, :boolean, null: false, default: true
     field :share_changed_at, :utc_datetime_usec
     field :nearby_distance, :integer, default: 2000
     field :nearby_cooldown, :integer, default: :timer.hours(2)
     field :nearby_last_start_notification, :utc_datetime_usec
+
+    # TODO These fields are used to support the legacy sharing API. They
+    # should be removed when that API is decommissioned.
+    field :share_id, :integer
+    field :share_migrated, :boolean, null: false, default: true
 
     belongs_to :user, User
     belongs_to :contact, User
@@ -37,11 +38,13 @@ defmodule Wocky.Friends.Friend do
     timestamps()
   end
 
+  @type state :: ContactStateEnum.t()
   @type share_type :: LocationShareTypeEnum.t()
 
   @type t :: %__MODULE__{
           user_id: User.id(),
           contact_id: User.id(),
+          state: state(),
           share_type: share_type(),
           share_migrated: boolean(),
           updated_at: DateTime.t(),
@@ -50,65 +53,47 @@ defmodule Wocky.Friends.Friend do
           nearby_last_start_notification: DateTime.t()
         }
 
-  @update_fields [
+  @fields [
+    :user_id,
+    :contact_id,
+    :state,
     :share_type,
     :nearby_distance,
     :nearby_cooldown,
     :nearby_last_start_notification
   ]
-  @insert_fields [:user_id, :contact_id | @update_fields]
 
   def share_types, do: @share_types
 
-  @spec exists?(User.tid(), User.tid()) :: boolean()
-  def exists?(user, friend) do
-    Repo.exists?(get_query(user, friend))
+  defp build_assoc(user, contact) do
+    Ecto.build_assoc(user, :relationships, %{contact_id: User.id(contact)})
   end
 
-  @spec get(User.tid(), User.tid()) :: t() | nil
-  def get(user, friend) do
-    Repo.one(get_query(user, friend))
+  @spec error_changeset(User.t(), User.tid(), map(), String.t()) ::
+          Changeset.t()
+  def error_changeset(user, contact, params, message) do
+    user
+    |> build_assoc(contact)
+    |> cast(params, @fields)
+    |> add_error(:contact_id, message)
   end
 
-  defp get_query(user, friend) do
-    from f in __MODULE__,
-      where: f.user_id == ^User.id(user) and f.contact_id == ^User.id(friend)
+  @spec upsert_changeset(User.t(), User.tid(), state(), share_type()) ::
+          Changeset.t()
+  def upsert_changeset(user, contact, state, share_type) do
+    user
+    |> build_assoc(contact)
+    |> changeset(%{state: state, share_type: share_type})
   end
 
-  @spec to_cached(t()) :: CachedFriend.t()
-  def to_cached(friend) do
-    Enum.reduce(CachedFriend.fields(), %CachedFriend{}, fn field, acc ->
-      Map.put(acc, field, Map.get(friend, field))
-    end)
-  end
-
-  @spec insert_changeset(map()) :: Changeset.t()
-  def insert_changeset(params),
-    do: changeset(%__MODULE__{}, @insert_fields, params)
-
-  @spec update_changeset({User.id(), User.id()} | t(), map()) :: Changeset.t()
-  def update_changeset({uid, fid}, params) do
-    case get(uid, fid) do
-      nil -> error_changeset(uid, fid, params)
-      item -> update_changeset(item, params)
-    end
-  end
-
-  def update_changeset(%__MODULE__{} = struct, params),
-    do: changeset(struct, @update_fields, params)
-
-  defp error_changeset(uid, fid, params) do
-    %__MODULE__{user_id: uid, contact_id: fid}
-    |> cast(params, @update_fields)
-    |> add_error(:contact_id, "must be a friend")
-  end
-
-  defp changeset(struct, fields, params) do
+  @spec changeset(t(), map()) :: Changeset.t()
+  def changeset(struct, params) do
     struct
-    |> cast(params, fields)
+    |> cast(params, @fields)
+    |> validate_inclusion(:state, @states)
     |> validate_inclusion(:share_type, @share_types)
-    |> foreign_key_constraint(:user_id)
-    |> foreign_key_constraint(:contact_id)
+    |> assoc_constraint(:user)
+    |> assoc_constraint(:contact)
     |> maybe_set_share_id(struct)
     |> maybe_set_share_metadata()
   end

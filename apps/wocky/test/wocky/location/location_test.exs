@@ -1,7 +1,7 @@
 defmodule Wocky.Location.LocationTest do
   use Wocky.DataCase, async: false
 
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Location
   alias Wocky.Location.BotEvent
   alias Wocky.Location.UserLocation
@@ -20,7 +20,7 @@ defmodule Wocky.Location.LocationTest do
       user2 = Factory.insert(:user)
       bot = Factory.insert(:bot, user: user2)
 
-      Friends.befriend(ctx.user, user2)
+      Contacts.befriend(ctx.user, user2)
       Relation.subscribe(ctx.user, bot)
 
       {:ok, bot: bot, lat: POI.lat(bot), lon: POI.lon(bot)}
@@ -45,7 +45,7 @@ defmodule Wocky.Location.LocationTest do
       user2 = Factory.insert(:user)
       bot = Factory.insert(:bot, user: user2)
 
-      Friends.befriend(ctx.user, user2)
+      Contacts.befriend(ctx.user, user2)
       Relation.subscribe(ctx.user, bot)
 
       location =

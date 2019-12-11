@@ -1,39 +1,45 @@
-defmodule Wocky.Callbacks.Friend do
+defmodule Wocky.Callbacks.Relationship do
   @moduledoc "DB callback handler for location shares"
 
-  use DawdleDB.Handler, type: Wocky.Friends.Friend
+  use DawdleDB.Handler, type: Wocky.Contacts.Relationship
 
+  alias Wocky.Contacts
+  alias Wocky.Contacts.Share
   alias Wocky.Events.LocationShare
   alias Wocky.Events.LocationShareEnd
   alias Wocky.Events.LocationShareEndSelf
-  alias Wocky.Friends
-  alias Wocky.Friends.Share
   alias Wocky.Notifier
   alias Wocky.Repo.Hydrator
 
   @impl true
-  def handle_insert(%{share_type: stype} = new) when stype == :always,
-    do: notify_share_start(new)
+  def handle_insert(new) do
+    if new.share_type == :always do
+      notify_share_start(new)
+    end
 
-  def handle_insert(new), do: Friends.refresh_share_cache(new.user_id)
-
-  @impl true
-  def handle_update(%{share_type: stype} = new, %{share_type: stype}),
-    do: Friends.refresh_share_cache(new.user_id)
-
-  def handle_update(%{share_type: :always} = new, _old),
-    do: notify_share_start(new)
-
-  def handle_update(%{share_type: :disabled} = new, _old),
-    do: notify_share_end(new)
-
-  def handle_update(new, _old), do: Friends.refresh_share_cache(new.user_id)
+    Contacts.refresh_share_cache(new.user_id)
+  end
 
   @impl true
-  def handle_delete(%{share_type: stype} = old) when stype != :disabled,
-    do: notify_share_end(old)
+  def handle_update(new, old) do
+    case {new.share_type, old.share_type} do
+      {stype, stype} -> :ok
+      {_, :disabled} -> notify_share_start(new)
+      {:disabled, _} -> notify_share_end(new)
+      {_, _} -> :ok
+    end
 
-  def handle_delete(old), do: Friends.refresh_share_cache(old.user_id)
+    Contacts.refresh_share_cache(new.user_id)
+  end
+
+  @impl true
+  def handle_delete(old) do
+    if old.share_type != :disabled do
+      notify_share_end(old)
+    end
+
+    Contacts.refresh_share_cache(old.user_id)
+  end
 
   defp notify_share_start(share) do
     Hydrator.with_assocs(share, [:user, :contact], fn rec ->
@@ -45,8 +51,6 @@ defmodule Wocky.Callbacks.Friend do
       }
       |> Notifier.notify()
     end)
-
-    Friends.refresh_share_cache(share.user_id)
   end
 
   defp notify_share_end(share) do
@@ -67,7 +71,5 @@ defmodule Wocky.Callbacks.Friend do
         |> Notifier.notify()
       end
     end)
-
-    Friends.refresh_share_cache(share.user_id)
   end
 end

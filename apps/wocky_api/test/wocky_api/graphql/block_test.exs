@@ -1,7 +1,7 @@
 defmodule WockyAPI.GraphQL.BlockTest do
   use WockyAPI.GraphQLCase, async: true
 
-  alias Wocky.Block
+  alias Wocky.Contacts
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
@@ -26,20 +26,20 @@ defmodule WockyAPI.GraphQL.BlockTest do
 
       refute has_errors(result)
 
-      assert Block.blocked?(user1, user2)
+      assert Contacts.blocked?(user1, user2)
     end
 
     test "should have no effect on a blocked user", %{
       user1: user1,
       user2: user2
     } do
-      Block.block(user1, user2)
+      Contacts.block(user1, user2)
 
       result = run_query(@query, user1, %{"input" => %{"user_id" => user2.id}})
 
       refute has_errors(result)
 
-      assert Block.blocked?(user1, user2)
+      assert Contacts.blocked?(user1, user2)
     end
 
     test "should fail to block a non-existant user", %{user1: user1} do
@@ -62,13 +62,13 @@ defmodule WockyAPI.GraphQL.BlockTest do
     """
 
     test "should unblock a blocked user", %{user1: user1, user2: user2} do
-      Block.block(user1, user2)
+      Contacts.block(user1, user2)
 
       result = run_query(@query, user1, %{"input" => %{"user_id" => user2.id}})
 
       refute has_errors(result)
 
-      refute Block.blocked?(user1, user2)
+      refute Contacts.blocked?(user1, user2)
     end
 
     test "should have no effect on an unblocked user", %{
@@ -79,7 +79,7 @@ defmodule WockyAPI.GraphQL.BlockTest do
 
       refute has_errors(result)
 
-      refute Block.blocked?(user1, user2)
+      refute Contacts.blocked?(user1, user2)
     end
 
     test "should fail for a non-existant user", %{user1: user1} do
@@ -113,8 +113,8 @@ defmodule WockyAPI.GraphQL.BlockTest do
 
       user3 = Factory.insert(:user)
 
-      Block.block(user1, user2)
-      Block.block(user1, user3)
+      Contacts.block(user1, user2)
+      Contacts.block(user1, user3)
 
       result = run_query(query, user1)
 

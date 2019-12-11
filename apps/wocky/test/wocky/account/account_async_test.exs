@@ -4,7 +4,7 @@ defmodule Wocky.Account.AccountAsyncTest do
   import Mock
 
   alias Wocky.Account
-  alias Wocky.Block
+  alias Wocky.Contacts
   alias Wocky.Repo.Factory
 
   setup do
@@ -111,7 +111,7 @@ defmodule Wocky.Account.AccountAsyncTest do
     test "should not return a blocking user", ctx do
       # Alice Sanders
       blocking_user = hd(ctx.users)
-      Block.block(blocking_user, ctx.user)
+      Contacts.block(blocking_user, ctx.user)
 
       result = Account.search_by_name("a", ctx.user, 50)
 

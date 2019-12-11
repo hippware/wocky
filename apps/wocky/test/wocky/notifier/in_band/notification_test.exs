@@ -1,7 +1,7 @@
 defmodule Wocky.Notifier.InBand.NotificationTest do
   use Wocky.DataCase, async: true
 
-  alias Wocky.Block
+  alias Wocky.Contacts
   alias Wocky.Events.BotInvitation
   alias Wocky.Events.BotInvitationResponse
   alias Wocky.Events.BotItem
@@ -124,7 +124,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
 
   describe "blocked user notification should fail" do
     setup ctx do
-      Block.block(ctx.user, ctx.user2)
+      Contacts.block(ctx.user, ctx.user2)
       :ok
     end
 

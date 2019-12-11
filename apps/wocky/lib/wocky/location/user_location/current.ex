@@ -1,14 +1,11 @@
 defmodule Wocky.Location.UserLocation.Current do
   @moduledoc false
 
-  import Ecto.Query
-
   alias Timex.Duration
   alias Wocky.Account.User
-  alias Wocky.Friends.Friend
+  alias Wocky.Contacts
   alias Wocky.Location.UserLocation
   alias Wocky.Location.UserLocation.LocationChangedEvent
-  alias Wocky.Repo
 
   # Expire current location after 2 days
   @expire_secs Duration.from_days(2)
@@ -52,13 +49,7 @@ defmodule Wocky.Location.UserLocation.Current do
 
   @spec delete_when_not_shared([User.id()]) :: non_neg_integer()
   def delete_when_not_shared(user_ids) do
-    have_shares =
-      Friend
-      |> select([i], i.user_id)
-      |> where([i], i.user_id in ^user_ids)
-      |> where([i], i.share_type != "disabled")
-      |> distinct(true)
-      |> Repo.all()
+    have_shares = Contacts.have_shares(user_ids)
 
     (user_ids -- have_shares)
     |> Enum.map(&delete/1)

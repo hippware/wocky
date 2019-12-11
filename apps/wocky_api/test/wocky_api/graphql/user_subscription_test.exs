@@ -4,14 +4,14 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   import WockyAPI.GraphQLHelper
 
   alias Wocky.Account
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Presence.Manager
   alias Wocky.Repo.Factory
 
   setup_all do
     require_watcher()
 
-    WockyAPI.Callbacks.Friend.register()
+    WockyAPI.Callbacks.Relationship.register()
     WockyAPI.Callbacks.User.register()
   end
 
@@ -53,7 +53,7 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
     setup %{user: user, socket: socket} do
       [friend, stranger] = Factory.insert_list(2, :user)
 
-      Friends.befriend(friend, user)
+      Contacts.befriend(friend, user)
 
       ref = push_doc(socket, @query)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150

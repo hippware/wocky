@@ -8,10 +8,10 @@ defmodule WockyAPI.Callbacks.User do
   alias Phoenix.Socket.Broadcast
   alias Wocky.Account.User
   alias Wocky.Presence
-  alias WockyAPI.Resolvers.Friend
+  alias WockyAPI.Resolvers.Contact
 
   def handle_update(%User{} = user, _old) do
-    Friend.notify_friends(user)
+    Contact.notify_friends(user)
   end
 
   def handle_update(_new, _old), do: :ok

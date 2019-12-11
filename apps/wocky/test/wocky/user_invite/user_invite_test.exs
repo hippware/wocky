@@ -4,8 +4,7 @@ defmodule Wocky.UserInvite.UserInviteTest do
   import Mock
 
   alias Wocky.Account.User
-  alias Wocky.Block
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.SMS.Sandbox, as: SMSSandbox
@@ -54,7 +53,7 @@ defmodule Wocky.UserInvite.UserInviteTest do
 
     test "it should friend the current user and the owner of the code", ctx do
       assert UserInvite.redeem_code(ctx.redeemer, ctx.code)
-      assert Friends.friend?(ctx.user, ctx.redeemer)
+      assert Contacts.friend?(ctx.user, ctx.redeemer)
     end
 
     test "it should return true if the redeemer created the code", ctx do
@@ -80,7 +79,7 @@ defmodule Wocky.UserInvite.UserInviteTest do
     end
 
     test "it should return false if the redeemer is blocked", ctx do
-      Block.block(ctx.user, ctx.redeemer)
+      Contacts.block(ctx.user, ctx.redeemer)
       refute UserInvite.redeem_code(ctx.redeemer, ctx.code)
     end
   end
@@ -100,8 +99,8 @@ defmodule Wocky.UserInvite.UserInviteTest do
 
       assert result.result == :internal_invitation_sent
 
-      assert {:invited, invitation} =
-               Friends.get_relationship(ctx.user, other_user)
+      assert {:invited, invitation, _} =
+               Contacts.get_relationship(ctx.user, other_user)
 
       assert invitation.share_type == :always
     end
@@ -114,15 +113,15 @@ defmodule Wocky.UserInvite.UserInviteTest do
 
       assert result.result == :internal_invitation_sent
 
-      assert {:invited, invitation} =
-               Friends.get_relationship(ctx.user, other_user)
+      assert {:invited, invitation, _} =
+               Contacts.get_relationship(ctx.user, other_user)
 
       assert invitation.share_type == :always
     end
 
     test "should not send an invitation to an existing friend", ctx do
       other_user = Factory.insert(:user)
-      :ok = Friends.befriend(ctx.user, other_user)
+      :ok = Contacts.befriend(ctx.user, other_user)
 
       result = UserInvite.send(other_user.phone_number, :always, ctx.user)
 
@@ -227,8 +226,8 @@ defmodule Wocky.UserInvite.UserInviteTest do
 
       assert result.result == :internal_invitation_sent
 
-      assert {:invited, invitation} =
-               Friends.get_relationship(ctx.user, other_user)
+      assert {:invited, invitation, _} =
+               Contacts.get_relationship(ctx.user, other_user)
 
       assert invitation.share_type == :disabled
     end
@@ -242,15 +241,15 @@ defmodule Wocky.UserInvite.UserInviteTest do
       assert r1.result == :internal_invitation_sent
       assert r2.result == :internal_invitation_sent
 
-      assert {:invited, invitation} =
-               Friends.get_relationship(ctx.user, other_user)
+      assert {:invited, invitation, _} =
+               Contacts.get_relationship(ctx.user, other_user)
 
       assert invitation.share_type == :disabled
     end
 
     test "should not send an invitation to an existing friend", ctx do
       other_user = Factory.insert(:user)
-      :ok = Friends.befriend(ctx.user, other_user)
+      :ok = Contacts.befriend(ctx.user, other_user)
 
       assert [result] =
                UserInvite.send_multi([other_user.phone_number], ctx.user)
@@ -366,7 +365,7 @@ defmodule Wocky.UserInvite.UserInviteTest do
       friend = Factory.insert(:user)
       {"+1", denormalised} = String.split_at(phone_number, 2)
 
-      :ok = Friends.befriend(ctx.user, friend)
+      :ok = Contacts.befriend(ctx.user, friend)
 
       numbers = [
         phone_number,

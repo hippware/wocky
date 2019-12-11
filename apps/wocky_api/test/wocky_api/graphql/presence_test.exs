@@ -5,7 +5,7 @@ defmodule WockyAPI.GraphQL.PresenceTest do
   import Wocky.Presence.TestHelper
   import WockyAPI.GraphQLHelper
 
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Presence
   alias Wocky.Repo.Factory
 
@@ -24,7 +24,7 @@ defmodule WockyAPI.GraphQL.PresenceTest do
   setup ctx do
     [friend, stranger] = Factory.insert_list(2, :user)
 
-    Friends.befriend(ctx.user, friend)
+    Contacts.befriend(ctx.user, friend)
 
     {:ok, friend: friend, stranger: stranger}
   end

@@ -40,7 +40,7 @@ defmodule Wocky.Presence.Manager do
   alias Phoenix.PubSub
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Presence
   alias Wocky.Presence.ConnectionEvent
   alias Wocky.Presence.OnlineProc
@@ -94,7 +94,7 @@ defmodule Wocky.Presence.Manager do
     {:ok, contact_refs} =
       Repo.transaction(fn ->
         user
-        |> Friends.friends_query(user)
+        |> Contacts.friends_query(user)
         |> Repo.stream()
         |> Enum.reduce(BiMap.new(), &maybe_monitor/2)
       end)
@@ -264,7 +264,7 @@ defmodule Wocky.Presence.Manager do
 
     Repo.transaction(fn ->
       user
-      |> Friends.friends_query(user)
+      |> Contacts.friends_query(user)
       |> Repo.stream()
       |> Stream.each(fn u ->
         PubSub.broadcast(

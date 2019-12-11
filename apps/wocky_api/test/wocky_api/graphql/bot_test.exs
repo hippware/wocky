@@ -3,8 +3,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   alias Faker.Lorem
   alias Wocky.Account.User
-  alias Wocky.Block
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.GeoUtils
   alias Wocky.POI
   alias Wocky.POI.Bot
@@ -751,7 +750,7 @@ defmodule WockyAPI.GraphQL.BotTest do
   describe "local bots" do
     setup %{user: user, user2: user2} do
       Repo.delete_all(Bot)
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
       {owned, subscribed, unrelated} =
         Enum.reduce(1..4, {[], [], []}, fn x, {o, s, u} ->
@@ -1111,7 +1110,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     """
 
     setup ctx do
-      Friends.befriend(ctx.user, ctx.user2)
+      Contacts.befriend(ctx.user, ctx.user2)
       unsubbed_bot = Factory.insert(:bot, user: ctx.user2)
 
       Factory.insert(:bot_invitation,
@@ -1595,7 +1594,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   describe "sending invitations" do
     setup ctx do
-      Friends.befriend(ctx.user, ctx.user3)
+      Contacts.befriend(ctx.user, ctx.user3)
 
       :ok
     end
@@ -1650,7 +1649,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "invite a blocked user", %{bot: bot, user: user, user3: user3} do
-      Block.block(user3, user)
+      Contacts.block(user3, user)
 
       result =
         run_query(@query, user, %{
@@ -1664,7 +1663,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
     test "multiple invitations", %{bot: bot, user: user, user3: user3} do
       user4 = Factory.insert(:user)
-      Block.block(user4, user)
+      Contacts.block(user4, user)
 
       result =
         run_query(@query, user, %{
@@ -1698,7 +1697,7 @@ defmodule WockyAPI.GraphQL.BotTest do
 
   describe "responding to invitations" do
     setup shared do
-      Friends.befriend(shared.user, shared.user3)
+      Contacts.befriend(shared.user, shared.user3)
 
       %{id: id} =
         Factory.insert(:bot_invitation,

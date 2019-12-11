@@ -2,7 +2,7 @@ defmodule Wocky.Callbacks.BotSubscriptionTest do
   use Wocky.WatcherCase
 
   alias Wocky.Callbacks.BotSubscription, as: Callback
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Location.Handler
   alias Wocky.POI
   alias Wocky.Relation
@@ -19,7 +19,7 @@ defmodule Wocky.Callbacks.BotSubscriptionTest do
 
       bot = Factory.insert(:bot, user: owner)
 
-      Friends.befriend(owner, user)
+      Contacts.befriend(owner, user)
 
       pid = Handler.get_handler(user)
 

@@ -5,7 +5,7 @@ defmodule Wocky.PresenceTest do
   import Wocky.Presence.TestHelper
 
   alias Wocky.Account.User
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Presence
   alias Wocky.Presence.Manager
   alias Wocky.Presence.PresenceEvent
@@ -14,7 +14,7 @@ defmodule Wocky.PresenceTest do
 
   setup do
     [user, requestor] = Factory.insert_list(2, :user)
-    Friends.befriend(user, requestor)
+    Contacts.befriend(user, requestor)
 
     {:ok, requestor: requestor, user: user}
   end

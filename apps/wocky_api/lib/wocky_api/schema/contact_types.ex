@@ -1,11 +1,11 @@
-defmodule WockyAPI.Schema.FriendTypes do
+defmodule WockyAPI.Schema.ContactTypes do
   @moduledoc """
   Absinthe types for user friends
   """
 
   use WockyAPI.Schema.Notation
 
-  alias WockyAPI.Resolvers.Friend
+  alias WockyAPI.Resolvers.Contact
 
   # -------------------------------------------------------------------
   # Objects
@@ -52,7 +52,7 @@ defmodule WockyAPI.Schema.FriendTypes do
   @desc "Another user with whom a friendship exists"
   object :friend do
     @desc "The friend"
-    field :user, non_null(:user), resolve: &Friend.get_contact_user/3
+    field :user, non_null(:user), resolve: &Contact.get_contact_user/3
 
     @desc "DEPRECATED Always returns FRIEND"
     field :relationship, :user_contact_relationship,
@@ -79,7 +79,7 @@ defmodule WockyAPI.Schema.FriendTypes do
     field :sender, :user, resolve: dataloader(Wocky, :user)
 
     @desc "The recipient"
-    field :recipient, :user, resolve: dataloader(Wocky, :invitee)
+    field :recipient, :user, resolve: dataloader(Wocky, :contact)
 
     @desc "Share mode"
     field :share_type, non_null(:friend_share_type)
@@ -118,7 +118,7 @@ defmodule WockyAPI.Schema.FriendTypes do
   @desc "Describes a relationship change with another user"
   object :contact_relationship_change do
     @desc "The other user"
-    field :user, non_null(:user), resolve: &Friend.get_contact_user/3
+    field :user, non_null(:user), resolve: &Contact.get_contact_user/3
 
     @desc "The current user's relationship with the other user"
     field :relationship, :user_contact_relationship
@@ -266,14 +266,14 @@ defmodule WockyAPI.Schema.FriendTypes do
     """
     field :friend_invite, type: :friend_invite_payload do
       arg :input, non_null(:friend_invite_input)
-      resolve &Friend.friend_invite/2
+      resolve &Contact.friend_invite/2
       changeset_mutation_middleware()
     end
 
     @desc "Update the location sharing settings of a friendship"
     field :friend_share_update, type: :friend_update_payload do
       arg :input, non_null(:friend_share_update_input)
-      resolve &Friend.friend_share_update/2
+      resolve &Contact.friend_share_update/2
       changeset_mutation_middleware()
     end
 
@@ -283,7 +283,7 @@ defmodule WockyAPI.Schema.FriendTypes do
     """
     field :friend_delete, type: :friend_delete_payload do
       arg :input, non_null(:friend_delete_input)
-      resolve &Friend.friend_delete/2
+      resolve &Contact.friend_delete/2
       changeset_mutation_middleware()
     end
 
@@ -291,7 +291,7 @@ defmodule WockyAPI.Schema.FriendTypes do
     field :user_location_live_share, type: :user_location_live_share_payload do
       deprecate "Set sharing options via friendShareUpdate"
       arg :input, non_null(:user_location_live_share_input)
-      resolve &Friend.live_share_location/2
+      resolve &Contact.live_share_location/2
       changeset_mutation_middleware()
     end
 
@@ -299,7 +299,7 @@ defmodule WockyAPI.Schema.FriendTypes do
     field :user_location_cancel_share, type: :user_location_cancel_share_payload do
       deprecate "Set sharing options via friendShareUpdate"
       arg :input, non_null(:user_location_cancel_share_input)
-      resolve &Friend.cancel_location_share/2
+      resolve &Contact.cancel_location_share/2
       changeset_mutation_middleware()
     end
 
@@ -307,7 +307,7 @@ defmodule WockyAPI.Schema.FriendTypes do
     field :user_location_cancel_all_shares,
       type: :user_location_cancel_share_payload do
       deprecate "Set sharing options via friendShareUpdate"
-      resolve &Friend.cancel_all_location_shares/2
+      resolve &Contact.cancel_all_location_shares/2
       changeset_mutation_middleware()
     end
   end
@@ -320,14 +320,14 @@ defmodule WockyAPI.Schema.FriendTypes do
     Receive an update when a contact's state (friended/unfriended) changes
     """
     field :contacts, non_null(:contact_relationship_change) do
-      user_subscription_config(&Friend.contacts_subscription_topic/1)
+      user_subscription_config(&Contact.contacts_subscription_topic/1)
     end
 
     @desc """
     Receive an update when a friend's data (eg name, handle) changes
     """
     field :friends, non_null(:user) do
-      user_subscription_config(&Friend.friends_subscription_topic/1)
+      user_subscription_config(&Contact.friends_subscription_topic/1)
     end
 
     @desc """
@@ -337,8 +337,8 @@ defmodule WockyAPI.Schema.FriendTypes do
       config fn
         _, %{context: %{current_user: user}} ->
           {:ok,
-           topic: Friend.location_subscription_topic(user.id),
-           catchup: fn -> Friend.location_catchup(user) end}
+           topic: Contact.location_subscription_topic(user.id),
+           catchup: fn -> Contact.location_catchup(user) end}
 
         _, _ ->
           {:error, "This operation requires an authenticated user"}

@@ -3,17 +3,17 @@ defmodule WockyAPI.GraphQL.LocationSharingTest do
 
   import Eventually
 
-  alias Wocky.Friends
-  alias Wocky.Friends.Share.Cache
+  alias Wocky.Contacts
+  alias Wocky.Contacts.Share.Cache
   alias Wocky.Location
   alias Wocky.Repo.Factory
 
   setup_all do
     require_watcher()
 
-    Wocky.Callbacks.Friend.register()
+    Wocky.Callbacks.Relationship.register()
     WockyAPI.Callbacks.LocationChanged.register()
-    WockyAPI.Callbacks.Friend.register()
+    WockyAPI.Callbacks.Relationship.register()
     WockyAPI.Callbacks.User.register()
   end
 
@@ -42,7 +42,7 @@ defmodule WockyAPI.GraphQL.LocationSharingTest do
     setup %{user: user} do
       friend = Factory.insert(:user)
 
-      Friends.befriend(friend, user, share_type: :always)
+      Contacts.befriend(friend, user, :always)
 
       # Wait for the cache to catch up
       assert_eventually(length(Cache.get(friend.id)) == 1)
@@ -90,7 +90,7 @@ defmodule WockyAPI.GraphQL.LocationSharingTest do
       user: user,
       friend: friend
     } do
-      Friends.update_sharing(friend, user, :nearby)
+      Contacts.update_sharing(friend, user, :nearby)
       assert_eventually(hd(Cache.get(friend.id)).share_type == :nearby)
 
       ref = push_doc(socket, @query)
@@ -136,7 +136,7 @@ defmodule WockyAPI.GraphQL.LocationSharingTest do
 
     test "updating location does not send a message in `nearby` mode when outside the nearby range",
          %{socket: socket, user: user, friend: friend} do
-      Friends.update_sharing(friend, user, :nearby)
+      Contacts.update_sharing(friend, user, :nearby)
       assert_eventually(hd(Cache.get(friend.id)).share_type == :nearby)
 
       ref = push_doc(socket, @query)
@@ -168,7 +168,7 @@ defmodule WockyAPI.GraphQL.LocationSharingTest do
 
     test "updating location does not send a message in `nearby` mode when other user has no registered location",
          %{socket: socket, user: user, friend: friend} do
-      Friends.update_sharing(friend, user, :nearby)
+      Contacts.update_sharing(friend, user, :nearby)
       assert_eventually(hd(Cache.get(friend.id)).share_type == :nearby)
 
       ref = push_doc(socket, @query)

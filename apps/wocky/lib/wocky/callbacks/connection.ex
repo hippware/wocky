@@ -4,8 +4,8 @@ defmodule Wocky.Callbacks.Connection do
   use Dawdle.Handler, only: [Wocky.Presence.ConnectionEvent]
 
   alias Wocky.Account.User
+  alias Wocky.Contacts
   alias Wocky.Events.LocationRequest
-  alias Wocky.Friends
   alias Wocky.Location
   alias Wocky.Notifier
 
@@ -14,7 +14,7 @@ defmodule Wocky.Callbacks.Connection do
   @impl true
   def handle_event(%{user: user, status: status}) do
     user
-    |> Friends.get_location_sharers()
+    |> Contacts.get_location_sharers()
     |> Enum.each(fn %{user: %User{} = sharer} ->
       case status do
         :connected ->

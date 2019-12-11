@@ -5,8 +5,7 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Faker.Name
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.Block
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Token
   alias Wocky.Repo
@@ -137,7 +136,7 @@ defmodule WockyAPI.GraphQL.UserTest do
     end
 
     test "get user info for blocked user", %{user: user, user2: user2} do
-      Block.block(user2, user)
+      Contacts.block(user2, user)
 
       result = run_query(@query, user, %{"id" => user2.id})
 
@@ -295,7 +294,7 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "should not return blocked users", ctx do
       blocked = hd(ctx.users)
-      Block.block(blocked, ctx.user)
+      Contacts.block(blocked, ctx.user)
 
       result =
         run_query(@query, ctx.user, %{"phone_numbers" => [blocked.phone_number]})
@@ -338,9 +337,9 @@ defmodule WockyAPI.GraphQL.UserTest do
 
     test "should return the correct relationship for target users", ctx do
       [friend, inviter, invitee] = Enum.slice(ctx.users, 0..2)
-      Friends.befriend(ctx.user, friend)
-      Friends.make_friends(inviter, ctx.user, :disabled)
-      Friends.make_friends(ctx.user, invitee, :disabled)
+      Contacts.befriend(ctx.user, friend)
+      Contacts.make_friends(inviter, ctx.user, :disabled)
+      Contacts.make_friends(ctx.user, invitee, :disabled)
 
       result =
         run_query(@query, ctx.user, %{

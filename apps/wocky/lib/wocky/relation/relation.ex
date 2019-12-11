@@ -10,9 +10,8 @@ defmodule Wocky.Relation do
   alias Ecto.Queryable
   alias Geo.Point
   alias Wocky.Account.User
-  alias Wocky.Block
+  alias Wocky.Contacts
   alias Wocky.Events.GeofenceEvent
-  alias Wocky.Friends
   alias Wocky.GeoUtils
   alias Wocky.Location
   alias Wocky.Notifier
@@ -244,29 +243,18 @@ defmodule Wocky.Relation do
     |> order_by([..., s], desc: s.visited_at)
   end
 
-  @spec is_visible_query(Queryable.t(), User.tid()) :: Queryable.t()
+  @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
   def is_visible_query(queryable, user) do
     user_id = User.id(user)
 
-    queryable
-    |> Block.object_visible_query(user)
-    |> join(
-      :left,
-      [b, ...],
-      invitation in Invitation,
-      on: b.id == invitation.bot_id and invitation.invitee_id == ^user_id
-    )
-    |> join(
-      :left,
-      [b, ...],
-      sub in Subscription,
-      on: b.id == sub.bot_id and sub.user_id == ^user_id
-    )
-    |> where(
-      [b, ..., invitation, sub],
-      b.user_id == ^user_id or not is_nil(sub.user_id) or
-        not is_nil(invitation.user_id)
-    )
+    from b in Contacts.object_visible_query(queryable, user),
+      left_join: invitation in Invitation,
+      on: b.id == invitation.bot_id and invitation.invitee_id == ^user_id,
+      left_join: sub in Subscription,
+      on: b.id == sub.bot_id and sub.user_id == ^user_id,
+      where:
+        b.user_id == ^user_id or not is_nil(sub.user_id) or
+          not is_nil(invitation.user_id)
   end
 
   # ----------------------------------------------------------------------
@@ -318,7 +306,7 @@ defmodule Wocky.Relation do
 
     friends =
       sender
-      |> Friends.friends_query(sender)
+      |> Contacts.friends_query(sender)
       |> Repo.all()
       |> MapSet.new()
       |> MapSet.put(sender)
@@ -388,7 +376,9 @@ defmodule Wocky.Relation do
 
   @spec subscribe(User.tid(), Bot.t()) :: :ok | {:error, :permission_denied}
   def subscribe(user, bot) do
-    if Friends.self_or_friend?(user, bot.user_id) do
+    contact_id = bot.user_id
+
+    if Contacts.self?(user, contact_id) || Contacts.friend?(user, contact_id) do
       %Subscription{}
       |> Subscription.changeset(%{user_id: User.id(user), bot_id: bot.id})
       |> Repo.insert!(
@@ -498,7 +488,7 @@ defmodule Wocky.Relation do
   @spec invite(User.tid(), Bot.t(), User.tid()) ::
           {:ok, Invitation.t()} | {:error, any()}
   def invite(invitee, bot, user) do
-    if owned?(user, bot) && Friends.friend?(invitee, user) do
+    if owned?(user, bot) && Contacts.friend?(invitee, user) do
       %Invitation{}
       |> Invitation.changeset(%{
         user_id: User.id(user),

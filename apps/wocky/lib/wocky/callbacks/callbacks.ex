@@ -9,10 +9,10 @@ defmodule Wocky.Callbacks do
     Wocky.Callbacks.BotItem,
     Wocky.Callbacks.BotSubscription,
     Wocky.Callbacks.Connection,
-    Wocky.Callbacks.Friend,
-    Wocky.Callbacks.FriendInvitation,
     Wocky.Callbacks.Message,
-    Wocky.Callbacks.TROSMetadata
+    Wocky.Callbacks.Relationship,
+    Wocky.Callbacks.TROSMetadata,
+    Wocky.Callbacks.UserProximity
   ]
 
   @spec register :: :ok

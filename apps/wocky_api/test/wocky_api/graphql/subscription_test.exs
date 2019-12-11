@@ -1,7 +1,7 @@
 defmodule WockyAPI.GraphQL.SubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.GeoUtils
   alias Wocky.Relation
   alias Wocky.Relation.Subscription
@@ -10,14 +10,14 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
   setup_all do
     require_watcher()
     WockyAPI.Callbacks.BotSubscription.register()
-    WockyAPI.Callbacks.Friend.register()
+    WockyAPI.Callbacks.Relationship.register()
   end
 
   describe "watch for visitor count change" do
     setup do
       user2 = Factory.insert(:user)
       bot = Factory.insert(:bot)
-      Friends.befriend(bot.user, user2)
+      Contacts.befriend(bot.user, user2)
       Relation.subscribe(user2, bot)
 
       {:ok, user2: user2, bot: bot}
@@ -47,7 +47,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       user: %{id: user_id} = user,
       token: token
     } do
-      Friends.befriend(bot.user, user)
+      Contacts.befriend(bot.user, user)
       Relation.subscribe(user, bot)
 
       authenticate(user_id, token, socket)
@@ -181,7 +181,7 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
       assert_subscription_update %{
         result: %{
@@ -208,10 +208,10 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
       ref = push_doc(socket, @subscription)
       assert_reply ref, :ok, %{subscriptionId: subscription_id}, 150
 
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
       assert_relationship_notification("FRIEND", user2, subscription_id)
 
-      Friends.unfriend(user, user2)
+      Contacts.unfriend(user, user2)
       assert_relationship_notification("NONE", user2, subscription_id)
     end
   end

@@ -3,8 +3,8 @@ defmodule Wocky.Repo.Migrations.MergeSharingRoster do
 
   import Ecto.Query
 
-  alias Wocky.Friends.Friend
-  alias Wocky.Friends.Friend.LocationShareTypeEnum
+  alias Wocky.Contacts.Relationship
+  alias Wocky.Contacts.Relationship.LocationShareTypeEnum
   alias Wocky.Repo
 
   defmodule OldShare do
@@ -42,7 +42,7 @@ defmodule Wocky.Repo.Migrations.MergeSharingRoster do
 
     flush()
 
-    Repo.update_all(Friend, set: [share_migrated: false])
+    Repo.update_all(Relationship, set: [share_migrated: false])
 
     # This isn't the most efficient way to do this, but there are currently
     # less than 100 rows to migrate in the worst case. Given that, I went for
@@ -50,7 +50,7 @@ defmodule Wocky.Repo.Migrations.MergeSharingRoster do
     OldShare
     |> Repo.all()
     |> Enum.each(fn %{user_id: uid, shared_with_id: swid} = share ->
-      Friend
+      Relationship
       |> where([i], i.user_id == ^uid and i.contact_id == ^swid)
       |> Repo.update_all(
         set: [

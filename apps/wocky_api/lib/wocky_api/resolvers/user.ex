@@ -4,8 +4,8 @@ defmodule WockyAPI.Resolvers.User do
   use Elixometer
 
   alias Wocky.Account
+  alias Wocky.Contacts
   alias Wocky.Events.LocationRequest
-  alias Wocky.Friends
   alias Wocky.Location
   alias Wocky.Location.UserLocation
   alias Wocky.Notifier
@@ -99,7 +99,7 @@ defmodule WockyAPI.Resolvers.User do
 
   defp build_lookup_result(user, numbers, requestor) do
     request_numbers = Map.get(numbers, user.phone_number)
-    relationship = Friends.relationship(requestor, user)
+    relationship = Contacts.relationship(requestor, user)
 
     {
       Enum.map(

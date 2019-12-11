@@ -1,8 +1,7 @@
-defmodule WockyAPI.GraphQL.FriendTest do
+defmodule WockyAPI.GraphQL.ContactTest do
   use WockyAPI.GraphQLCase, async: true
 
-  alias Wocky.Block
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Repo.Factory
@@ -35,7 +34,7 @@ defmodule WockyAPI.GraphQL.FriendTest do
     """
 
     test "get friends", %{user: user, user2: user2} do
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
       id2 = user2.id
 
@@ -81,7 +80,7 @@ defmodule WockyAPI.GraphQL.FriendTest do
     """
 
     test "get sent_invitations", %{user: user, user2: user2} do
-      Friends.make_friends(user, user2, :always)
+      Contacts.make_friends(user, user2, :always)
       id = user.id
       id2 = user2.id
 
@@ -129,7 +128,7 @@ defmodule WockyAPI.GraphQL.FriendTest do
     """
 
     test "get received_invitations", %{user: user, user2: user2} do
-      Friends.make_friends(user2, user, :always)
+      Contacts.make_friends(user2, user, :always)
       id = user.id
       id2 = user2.id
 
@@ -178,9 +177,9 @@ defmodule WockyAPI.GraphQL.FriendTest do
     """
 
     test "get user's sharing sessions", %{user: user, user2: user2} do
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
-      {:ok, item} = Friends.update_sharing(user, user2, :always)
+      {:ok, item} = Contacts.update_sharing(user, user2, :always)
 
       sharer = user.id
       shared_with = user2.id
@@ -231,9 +230,9 @@ defmodule WockyAPI.GraphQL.FriendTest do
     """
 
     test "get sharing sessions with user", %{user: user, user2: user2} do
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
-      {:ok, item} = Friends.update_sharing(user, user2, :always)
+      {:ok, item} = Contacts.update_sharing(user, user2, :always)
 
       sharer = user.id
       shared_with = user2.id
@@ -292,11 +291,11 @@ defmodule WockyAPI.GraphQL.FriendTest do
                }
              }
 
-      assert Friends.relationship(shared.user, shared.user2) == :invited
+      assert Contacts.relationship(shared.user, shared.user2) == :invited
     end
 
     test "should make a friend from a invited_by", shared do
-      Friends.make_friends(shared.user2, shared.user, :disabled)
+      Contacts.make_friends(shared.user2, shared.user, :disabled)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -308,11 +307,11 @@ defmodule WockyAPI.GraphQL.FriendTest do
                }
              }
 
-      assert Friends.relationship(shared.user, shared.user2) == :friend
+      assert Contacts.relationship(shared.user, shared.user2) == :friend
     end
 
     test "should return an error for a blocked user", shared do
-      Block.block(shared.user2, shared.user)
+      Contacts.block(shared.user2, shared.user)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
 
       refute has_errors(result)
@@ -323,7 +322,7 @@ defmodule WockyAPI.GraphQL.FriendTest do
                  "result" => nil,
                  "messages" => [
                    %{
-                     "field" => "inviteeId",
+                     "field" => "contactId",
                      "message" => "blocked"
                    }
                  ]
@@ -342,7 +341,7 @@ defmodule WockyAPI.GraphQL.FriendTest do
                  "result" => nil,
                  "messages" => [
                    %{
-                     "field" => "inviteeId",
+                     "field" => "contactId",
                      "message" => "self"
                    }
                  ]
@@ -361,7 +360,7 @@ defmodule WockyAPI.GraphQL.FriendTest do
                  "result" => nil,
                  "messages" => [
                    %{
-                     "field" => "inviteeId",
+                     "field" => "contact",
                      "message" => "does not exist"
                    }
                  ]
@@ -388,7 +387,7 @@ defmodule WockyAPI.GraphQL.FriendTest do
     """
 
     test "change sharing level", %{user: user, user2: user2} do
-      Friends.befriend(user, user2, share_type: :always)
+      Contacts.befriend(user, user2, :always)
 
       result =
         run_query(@query, user, %{
@@ -409,11 +408,11 @@ defmodule WockyAPI.GraphQL.FriendTest do
                }
              }
 
-      assert Friends.get_friend(user, user2).share_type == :disabled
+      assert Contacts.share_type(user, user2) == :disabled
     end
 
     test "change nearby range and cooldown", %{user: user, user2: user2} do
-      Friends.befriend(user, user2, share_type: :always)
+      Contacts.befriend(user, user2, :always)
 
       result =
         run_query(@query, user, %{
@@ -438,16 +437,18 @@ defmodule WockyAPI.GraphQL.FriendTest do
                }
              }
 
-      assert Friends.get_friend(user, user2).share_type == :nearby
-      assert Friends.get_friend(user, user2).nearby_distance == 1000
-      assert Friends.get_friend(user, user2).nearby_cooldown == 5
+      assert {:friend, relationship, _} = Contacts.get_relationship(user, user2)
+
+      assert relationship.share_type == :nearby
+      assert relationship.nearby_distance == 1000
+      assert relationship.nearby_cooldown == 5
     end
 
     test "Should fail when the nearby range is less than the minimum", %{
       user: user,
       user2: user2
     } do
-      Friends.befriend(user, user2, share_type: :always)
+      Contacts.befriend(user, user2, :always)
 
       result =
         run_query(@query, user, %{
@@ -466,7 +467,7 @@ defmodule WockyAPI.GraphQL.FriendTest do
       user: user,
       user2: user2
     } do
-      Friends.befriend(user, user2, share_type: :always)
+      Contacts.befriend(user, user2, :always)
 
       result =
         run_query(@query, user, %{
@@ -536,7 +537,7 @@ defmodule WockyAPI.GraphQL.FriendTest do
     """
 
     test "should remove all relationship with a friend", shared do
-      Friends.befriend(shared.user, shared.user2)
+      Contacts.befriend(shared.user, shared.user2)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -547,11 +548,11 @@ defmodule WockyAPI.GraphQL.FriendTest do
                }
              }
 
-      assert Friends.relationship(shared.user, shared.user2) == :none
+      assert Contacts.relationship(shared.user, shared.user2) == :none
     end
 
     test "should remove all relationship with an invitee", shared do
-      Friends.make_friends(shared.user, shared.user2, :always)
+      Contacts.make_friends(shared.user, shared.user2, :always)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -562,11 +563,11 @@ defmodule WockyAPI.GraphQL.FriendTest do
                }
              }
 
-      assert Friends.relationship(shared.user, shared.user2) == :none
+      assert Contacts.relationship(shared.user, shared.user2) == :none
     end
 
     test "should remove all relationship with an invited_by", shared do
-      Friends.make_friends(shared.user2, shared.user, :always)
+      Contacts.make_friends(shared.user2, shared.user, :always)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
 
@@ -577,11 +578,11 @@ defmodule WockyAPI.GraphQL.FriendTest do
                }
              }
 
-      assert Friends.relationship(shared.user, shared.user2) == :none
+      assert Contacts.relationship(shared.user, shared.user2) == :none
     end
 
     test "should work for a blocked user", shared do
-      Block.block(shared.user2, shared.user)
+      Contacts.block(shared.user2, shared.user)
       result = run_query(@query, shared.user, %{"userId" => shared.user2.id})
       refute has_errors(result)
     end
@@ -600,7 +601,7 @@ defmodule WockyAPI.GraphQL.FriendTest do
   # DEPRECATED
   describe "live location sharing mutations" do
     setup %{user: user, user2: user2} do
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
       :ok
     end
@@ -687,7 +688,7 @@ defmodule WockyAPI.GraphQL.FriendTest do
     """
 
     test "stop sharing location", %{user: user, user2: user2} do
-      {:ok, _} = Friends.update_sharing(user, user2, :always)
+      {:ok, _} = Contacts.update_sharing(user, user2, :always)
 
       result =
         run_query(@query, user, %{
@@ -716,7 +717,7 @@ defmodule WockyAPI.GraphQL.FriendTest do
     """
 
     test "stop all location sharing", %{user: user, user2: user2} do
-      {:ok, _} = Friends.update_sharing(user, user2, :always)
+      {:ok, _} = Contacts.update_sharing(user, user2, :always)
 
       result = run_query(@query, user, %{})
 
