@@ -5,8 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.12.11+r92017fc
+
 * Update: absinthe_phoenix (PR #2954), postgrex (PR #2955)
-  * absinthe (PR #2956), ex_twilio (PR #2963)
+  * absinthe (PR #2956), ex_twilio (PR #2963), slack_ex (PR #2968)
 * Nickname field changes
   * Remove the nickname field for friends (PR #2957)
   * Add back in the 'nickname' field (#2958)
