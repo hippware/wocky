@@ -118,7 +118,8 @@ defmodule Wocky.Location.BotEvent do
   Insert a system-generated event; i.e., one that is not tied to the user
   changing location.
   """
-  @spec insert_system(User.tid(), Bot.t(), event, String.t()) :: t()
+  @spec insert_system(User.tid(), Bot.t(), event, String.t()) ::
+          Repo.result(t())
   def insert_system(user, bot, event, reason),
     do: insert(user, "System/#{reason}", bot, nil, event)
 
@@ -128,12 +129,12 @@ defmodule Wocky.Location.BotEvent do
           Bot.t(),
           UserLocation.t() | nil,
           event
-        ) :: t()
+        ) :: Repo.result(t())
   def insert(user, device, bot, loc \\ nil, event) do
     user
     |> new(device, bot, loc, event)
     |> changeset()
-    |> Repo.insert!()
+    |> Repo.insert()
   end
 
   defp changeset(params) do
