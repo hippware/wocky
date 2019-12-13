@@ -7,6 +7,7 @@ defmodule Wocky.Notifier.Push do
 
   import Ecto.Query, warn: false
 
+  alias Ecto.Multi
   alias Pigeon.APNS.Notification, as: APNSNotification
   alias Pigeon.FCM.Notification, as: FCMNotification
   alias Wocky.Account.User
@@ -68,28 +69,46 @@ defmodule Wocky.Notifier.Push do
           Token.token(),
           String.t() | nil,
           boolean() | nil
-        ) :: :ok
+        ) :: :ok | {:error, any()}
   def enable(user, device, token, platform \\ nil, dev_mode \\ nil) do
-    %{
-      user_id: User.id(user),
-      device: device,
-      token: token,
-      platform: platform,
-      dev_mode: dev_mode
-    }
-    |> Token.register_changeset()
-    |> Repo.insert!(
+    changeset =
+      Token.register_changeset(%{
+        user_id: User.id(user),
+        device: device,
+        token: token,
+        platform: platform,
+        dev_mode: dev_mode
+      })
+
+    cleanup_query =
+      from t in Token,
+        where: t.user_id == ^User.id(user),
+        where: t.device == ^device,
+        where: t.token != ^token
+
+    case do_upsert(changeset, cleanup_query, dev_mode) do
+      {:ok, _} ->
+        :ok
+
+      {:error, _, cs, _} ->
+        {:error, cs}
+    end
+  end
+
+  defp do_upsert(changeset, cleanup_query, dev_mode) do
+    Multi.new()
+    |> Multi.insert(
+      :token,
+      changeset,
       on_conflict: [set: conflict_updates(dev_mode)],
       conflict_target: [:user_id, :device, :token]
     )
-
-    Token
-    |> where([t], t.user_id == ^User.id(user))
-    |> where([t], t.device == ^device)
-    |> where([t], t.token != ^token)
-    |> Repo.update_all(set: [valid: false, disabled_at: DateTime.utc_now()])
-
-    :ok
+    |> Multi.update_all(
+      :cleanup,
+      cleanup_query,
+      set: [valid: false, disabled_at: DateTime.utc_now()]
+    )
+    |> Repo.transaction()
   end
 
   defp conflict_updates, do: [valid: true, enabled_at: DateTime.utc_now()]

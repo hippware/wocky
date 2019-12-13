@@ -5,8 +5,15 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Don't raise on errors preallocating a bot (PR #2970)
+* Remove some more Ecto bang functions (PR #2971)
+* Add location upload forwarding (PR #2972, PR #2973)
+
+
+# 2019.12.11+r92017fc
+
 * Update: absinthe_phoenix (PR #2954), postgrex (PR #2955)
-  * absinthe (PR #2956), ex_twilio (PR #2963)
+  * absinthe (PR #2956), ex_twilio (PR #2963), slack_ex (PR #2968)
 * Nickname field changes
   * Remove the nickname field for friends (PR #2957)
   * Add back in the 'nickname' field (#2958)

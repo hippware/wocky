@@ -1066,7 +1066,7 @@ defmodule WockyAPI.GraphQL.BotTest do
     end
 
     test "update pending bot", %{user: user} do
-      bot = POI.preallocate(user)
+      {:ok, bot} = POI.preallocate(user)
 
       values =
         :bot

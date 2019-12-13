@@ -41,7 +41,7 @@ defmodule Wocky.Location.GeoFenceTest do
   end
 
   defp insert_offset_bot_event(user, bot, event, offset) do
-    event = BotEvent.insert(user, @device, bot, event)
+    {:ok, event} = BotEvent.insert(user, @device, bot, event)
     timestamp = Timex.shift(Timex.now(), seconds: offset)
 
     from(be in BotEvent, where: be.id == ^event.id)
@@ -173,8 +173,10 @@ defmodule Wocky.Location.GeoFenceTest do
     end
 
     test "who was transitioning out of the bot perimeter", ctx do
-      initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
-      to_event = BotEvent.insert(ctx.user, @device, ctx.bot, :transition_out)
+      {:ok, initial_event} = BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
+
+      {:ok, to_event} =
+        BotEvent.insert(ctx.user, @device, ctx.bot, :transition_out)
 
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
@@ -189,7 +191,7 @@ defmodule Wocky.Location.GeoFenceTest do
     end
 
     test "who was transitioning into the bot perimeter", ctx do
-      initial_event =
+      {:ok, initial_event} =
         BotEvent.insert(ctx.user, @device, ctx.bot, :transition_in)
 
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
@@ -229,7 +231,10 @@ defmodule Wocky.Location.GeoFenceTest do
 
     test "who has reactivated inside the bot perimeter", ctx do
       Relation.visit(ctx.user, ctx.bot, false)
-      initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :reactivate)
+
+      {:ok, initial_event} =
+        BotEvent.insert(ctx.user, @device, ctx.bot, :reactivate)
+
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
@@ -254,7 +259,7 @@ defmodule Wocky.Location.GeoFenceTest do
 
     test "who was already inside the bot perimeter", ctx do
       Relation.visit(ctx.user, ctx.bot, false)
-      initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
+      {:ok, initial_event} = BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
       GeoFence.check_for_bot_events(ctx.inside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
@@ -308,8 +313,10 @@ defmodule Wocky.Location.GeoFenceTest do
     end
 
     test "who was transitioning out of the bot perimeter", ctx do
-      initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
-      to_event = BotEvent.insert(ctx.user, @device, ctx.bot, :transition_out)
+      {:ok, initial_event} = BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
+
+      {:ok, to_event} =
+        BotEvent.insert(ctx.user, @device, ctx.bot, :transition_out)
 
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
@@ -350,7 +357,10 @@ defmodule Wocky.Location.GeoFenceTest do
 
     test "who has reactivated inside the bot perimeter", ctx do
       Relation.visit(ctx.user, ctx.bot, false)
-      initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :reactivate)
+
+      {:ok, initial_event} =
+        BotEvent.insert(ctx.user, @device, ctx.bot, :reactivate)
+
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
@@ -376,7 +386,8 @@ defmodule Wocky.Location.GeoFenceTest do
 
     test "who was already inside the bot perimeter", ctx do
       Relation.visit(ctx.user, ctx.bot, false)
-      initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
+      {:ok, initial_event} = BotEvent.insert(ctx.user, @device, ctx.bot, :enter)
+
       GeoFence.check_for_bot_event(ctx.bot, ctx.inside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
@@ -477,8 +488,11 @@ defmodule Wocky.Location.GeoFenceTest do
     end
 
     test "who was transitioning into the the bot perimeter", ctx do
-      initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :exit)
-      to_event = BotEvent.insert(ctx.user, @device, ctx.bot, :transition_in)
+      {:ok, initial_event} = BotEvent.insert(ctx.user, @device, ctx.bot, :exit)
+
+      {:ok, to_event} =
+        BotEvent.insert(ctx.user, @device, ctx.bot, :transition_in)
+
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
@@ -494,7 +508,7 @@ defmodule Wocky.Location.GeoFenceTest do
     test "who was transitioning out of the bot perimeter", ctx do
       Relation.visit(ctx.user, ctx.bot, false)
 
-      initial_event =
+      {:ok, initial_event} =
         BotEvent.insert(ctx.user, @device, ctx.bot, :transition_out)
 
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
@@ -547,7 +561,9 @@ defmodule Wocky.Location.GeoFenceTest do
     end
 
     test "who has reactivated outside the bot perimeter", ctx do
-      initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :deactivate)
+      {:ok, initial_event} =
+        BotEvent.insert(ctx.user, @device, ctx.bot, :deactivate)
+
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
@@ -559,7 +575,7 @@ defmodule Wocky.Location.GeoFenceTest do
     end
 
     test "who was already outside the bot perimeter", ctx do
-      initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :exit)
+      {:ok, initial_event} = BotEvent.insert(ctx.user, @device, ctx.bot, :exit)
       GeoFence.check_for_bot_events(ctx.outside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
@@ -605,8 +621,11 @@ defmodule Wocky.Location.GeoFenceTest do
     end
 
     test "who was transitioning into the the bot perimeter", ctx do
-      initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :exit)
-      to_event = BotEvent.insert(ctx.user, @device, ctx.bot, :transition_in)
+      {:ok, initial_event} = BotEvent.insert(ctx.user, @device, ctx.bot, :exit)
+
+      {:ok, to_event} =
+        BotEvent.insert(ctx.user, @device, ctx.bot, :transition_in)
+
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
@@ -660,7 +679,9 @@ defmodule Wocky.Location.GeoFenceTest do
     end
 
     test "who has reactivated outside the bot perimeter", ctx do
-      initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :deactivate)
+      {:ok, initial_event} =
+        BotEvent.insert(ctx.user, @device, ctx.bot, :deactivate)
+
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
@@ -672,7 +693,7 @@ defmodule Wocky.Location.GeoFenceTest do
     end
 
     test "who was already outside the bot perimeter", ctx do
-      initial_event = BotEvent.insert(ctx.user, @device, ctx.bot, :exit)
+      {:ok, initial_event} = BotEvent.insert(ctx.user, @device, ctx.bot, :exit)
       GeoFence.check_for_bot_event(ctx.bot, ctx.outside_loc, ctx.user)
 
       event = BotEvent.get_last_event(ctx.user.id, ctx.bot.id)
