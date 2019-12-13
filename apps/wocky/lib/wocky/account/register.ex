@@ -45,13 +45,12 @@ defmodule Wocky.Account.Register do
   end
 
   defp find_by_phone_or_external_id(phone_number, external_id, provider) do
-    query =
+    Repo.one(
       from u in User,
         where:
           (u.external_id == ^external_id and u.provider == ^provider) or
             u.phone_number == ^phone_number
-
-    Repo.one(query)
+    )
   end
 
   @spec find(String.t() | atom(), String.t(), String.t()) ::
