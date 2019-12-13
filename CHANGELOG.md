@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Don't raise on errors preallocating a bot (PR #2970)
+
+
 # 2019.12.11+r92017fc
 
 * Update: absinthe_phoenix (PR #2954), postgrex (PR #2955)
