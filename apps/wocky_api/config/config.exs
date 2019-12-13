@@ -13,7 +13,8 @@ config :wocky_api,
   allow_factory_insert:
     {:system, :boolean, "WOCKY_ENABLE_FACTORY_INSERT", false},
   enable_location_request_trigger:
-    {:system, :boolean, "WOCKY_ENABLE_LOCATION_REQUEST_TRIGGER", false}
+    {:system, :boolean, "WOCKY_ENABLE_LOCATION_REQUEST_TRIGGER", false},
+  location_forward_target: {:system, :string, "WOCKY_LOCATION_FORWARD_TARGET"}
 
 config :wocky_api, :generators,
   context_app: :wocky,

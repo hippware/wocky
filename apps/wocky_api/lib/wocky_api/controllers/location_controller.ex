@@ -4,6 +4,7 @@ defmodule WockyAPI.Controllers.LocationController do
 
   alias Wocky.Location
   alias Wocky.Location.UserLocation
+  alias WockyAPI.LocationForwarder
 
   action_fallback WockyAPI.Controllers.FallbackController
 
@@ -40,6 +41,7 @@ defmodule WockyAPI.Controllers.LocationController do
         loc = make_location(l, device)
 
         {:ok, _} = Location.set_user_location(user_id, loc, idx == length)
+        LocationForwarder.forward(user_id, l)
       end
     end
   end
