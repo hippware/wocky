@@ -7,7 +7,6 @@ defmodule Wocky.MessagingTest do
   alias Wocky.Messaging.Conversation
   alias Wocky.Messaging.Message
   alias Wocky.Repo.Factory
-  alias Wocky.Repo.ID
 
   describe "archive functions" do
     setup do
@@ -122,7 +121,7 @@ defmodule Wocky.MessagingTest do
 
     test "should return a query giving all conversations for a user", ctx do
       conversations =
-        ctx.user.id
+        ctx.user
         |> Messaging.get_conversations_query()
         |> order_by(asc: :created_at)
         |> Repo.all()
@@ -135,7 +134,8 @@ defmodule Wocky.MessagingTest do
     end
 
     test "should return an empty list if a user has no conversations" do
-      assert ID.new() |> Messaging.get_conversations_query() |> Repo.all() == []
+      new_user = Factory.insert(:user)
+      assert new_user |> Messaging.get_conversations_query() |> Repo.all() == []
     end
   end
 

@@ -1,8 +1,6 @@
 defmodule WockyAPI.Resolvers.Message do
   @moduledoc "GraphQL resolver for message objects"
 
-  import Ecto.Query
-
   alias Absinthe.Subscription
   alias Wocky.Account
   alias Wocky.Account.User
@@ -18,7 +16,6 @@ defmodule WockyAPI.Resolvers.Message do
   def get_messages(_root, args, %{context: %{current_user: user}}) do
     with {:ok, query} <- get_messages_query(args[:other_user], user) do
       query
-      |> preload([:sender, :recipient])
       |> Utils.connection_from_query(
         user,
         args,
@@ -59,9 +56,8 @@ defmodule WockyAPI.Resolvers.Message do
   end
 
   def get_conversations(user, args, _info) do
-    user.id
+    user
     |> Messaging.get_conversations_query()
-    |> preload([:other_user])
     |> Utils.connection_from_query(user, args, order_by: [desc: :created_at])
   end
 
