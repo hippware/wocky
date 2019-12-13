@@ -6,6 +6,7 @@ defmodule Wocky.POI do
   import Ecto.Changeset
   import Ecto.Query
 
+  alias Ecto.Multi
   alias Ecto.Queryable
   alias Geocalc.Point
   alias Wocky.Account
@@ -135,49 +136,56 @@ defmodule Wocky.POI do
     id = if id_valid?, do: id, else: ID.new()
     user_id = User.id(user)
 
-    case id_valid? && Repo.get(Item, id) do
+    case id_valid? && do_get_item(id) do
       x when is_nil(x) or x == false ->
-        id
-        |> do_insert_item(bot, user, content, image_url)
-        |> maybe_update_bot(bot)
+        bot
+        |> Ecto.build_assoc(:items)
+        |> Item.changeset(%{
+          id: id,
+          user_id: user_id,
+          content: content,
+          image_url: image_url
+        })
+        |> do_upsert_item(bot)
 
       %Item{user_id: ^user_id, bot_id: ^bot_id} = old_item ->
         old_item
-        |> do_update_item(content, image_url)
-        |> maybe_update_bot(bot)
+        |> Item.changeset(%{content: content, image_url: image_url})
+        |> do_upsert_item(bot)
 
       _ ->
         {:error, :permission_denied}
     end
   end
 
-  defp do_update_item(item, content, image_url) do
-    item
-    |> Item.changeset(%{content: content, image_url: image_url})
-    |> Repo.update()
+  defp do_get_item(id) do
+    # For some reason that I can't quite suss out, the upsert fails unless
+    # the associations have been preloaded.
+    Repo.one(
+      from i in Item,
+        where: i.id == ^id,
+        preload: [:user, :bot]
+    )
   end
 
-  defp do_insert_item(id, bot, user, content, image_url) do
-    %Item{}
-    |> Item.changeset(%{
-      id: id,
-      bot_id: bot.id,
-      user_id: User.id(user),
-      content: content,
-      image_url: image_url
-    })
-    |> Repo.insert()
+  defp do_upsert_item(item_cs, bot) do
+    opts = [
+      on_conflict: {:replace, [:content, :image_url]},
+      conflict_target: :id
+    ]
+
+    bot_cs = cast(bot, %{updated_at: DateTime.utc_now()}, [:updated_at])
+
+    multi =
+      Multi.new()
+      |> Multi.insert(:item, item_cs, opts)
+      |> Multi.update(:bot, bot_cs)
+
+    case Repo.transaction(multi) do
+      {:ok, %{item: item}} -> {:ok, item}
+      {:error, _, cs, _} -> {:error, cs}
+    end
   end
-
-  defp maybe_update_bot({:ok, _} = result, bot) do
-    bot
-    |> cast(%{updated_at: DateTime.utc_now()}, [:updated_at])
-    |> Repo.update!()
-
-    result
-  end
-
-  defp maybe_update_bot(result, _), do: result
 
   @spec delete_item(Bot.t(), Item.id(), User.tid()) ::
           :ok | {:error, :not_found | :permission_denied}

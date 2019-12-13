@@ -386,24 +386,28 @@ defmodule Wocky.Relation do
       where: s.user_id == ^User.id(user) and s.bot_id == ^bot.id
   end
 
-  @spec subscribe(User.tid(), Bot.t()) :: :ok | {:error, :permission_denied}
+  @spec subscribe(User.tid(), Bot.t()) :: :ok | {:error, any()}
   def subscribe(user, bot) do
     if Friends.self_or_friend?(user, bot.user_id) do
-      %Subscription{}
-      |> Subscription.changeset(%{user_id: User.id(user), bot_id: bot.id})
-      |> Repo.insert!(
-        on_conflict: [
-          set: [updated_at: DateTime.utc_now()]
-        ],
-        conflict_target: [:user_id, :bot_id]
-      )
+      with {:ok, _} <- do_subscribe(user, bot) do
+        update_counter("bot.subscription.subscribe", 1)
 
-      update_counter("bot.subscription.subscribe", 1)
-
-      :ok
+        :ok
+      end
     else
       {:error, :permission_denied}
     end
+  end
+
+  defp do_subscribe(user, bot) do
+    %Subscription{}
+    |> Subscription.changeset(%{user_id: User.id(user), bot_id: bot.id})
+    |> Repo.insert(
+      on_conflict: [
+        set: [updated_at: DateTime.utc_now()]
+      ],
+      conflict_target: [:user_id, :bot_id]
+    )
   end
 
   @spec unsubscribe(User.tid(), Bot.t()) :: :ok | {:error, any}
