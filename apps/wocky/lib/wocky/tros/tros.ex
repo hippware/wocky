@@ -2,12 +2,9 @@
 defmodule Wocky.TROS do
   @moduledoc "API module for the TROS file handling system."
 
-  use Wocky.JID
-
-  import Ecto.Query
+  use Wocky.Context
 
   alias Wocky.Account.User
-  alias Wocky.Repo
   alias Wocky.Repo.ID
   alias Wocky.TROS.Metadata
 
@@ -31,33 +28,36 @@ defmodule Wocky.TROS do
 
   @valid_content_types ["image/png", "image/jpeg"]
 
+  @regex ~r/tros:(?:([\w-]+)@)?([\w\.]+)\/file\/([\w-]+)/
+
   # ----------------------------------------------------------------------
   # Names and URLs
 
   @spec parse_url(url()) :: {:ok, file_id()} | {:error, :invalid_url}
-  def parse_url("tros:" <> jid) do
-    jid(lserver: url_server, lresource: resource) = JID.from_binary(jid)
+  def parse_url(url) do
     server = Wocky.host()
 
-    case {resource, url_server} do
-      {"file/" <> file_id, ^server} -> {:ok, file_id}
+    case Regex.run(@regex, url, capture: :all_but_first) do
+      [_user_id, ^server, file_id] -> {:ok, file_id}
       _ -> {:error, :invalid_url}
     end
   end
 
-  def parse_url(_), do: {:error, :invalid_url}
-
-  @spec make_url(User.t(), file_id()) :: url()
-  def make_url(owner, file_id),
-    do: file_id |> make_jid(owner.id) |> url_from_jid()
+  @spec make_url(User.tid(), file_id()) :: url()
+  def make_url(owner, file_id) do
+    url_prefix() <> url_userpart(User.id(owner)) <> url_filepart(file_id)
+  end
 
   @spec make_url(file_id()) :: url()
-  def make_url(file_id), do: file_id |> make_jid("") |> url_from_jid()
+  def make_url(file_id) do
+    url_prefix() <> url_filepart(file_id)
+  end
 
-  defp make_jid(file_id, owner_id),
-    do: JID.make(owner_id, Wocky.host(), "file/#{file_id}")
+  defp url_prefix, do: "tros:"
 
-  defp url_from_jid(jid), do: "tros:#{JID.to_binary(jid)}"
+  defp url_userpart(user_id), do: "#{user_id}@"
+
+  defp url_filepart(file_id), do: "#{Wocky.host()}/file/#{file_id}"
 
   @spec get_base_id(file_name()) :: file_id()
   def get_base_id(file_name) do
@@ -104,11 +104,11 @@ defmodule Wocky.TROS do
     end
   end
 
-  @spec delete_all(User.tid()) :: :ok
+  @spec delete_all(User.t()) :: :ok
   def delete_all(user) do
     Repo.transaction(fn ->
-      Metadata
-      |> where(user_id: ^User.id(user))
+      user
+      |> assoc(:tros_metadatas)
       |> Repo.stream()
       |> Stream.each(&do_delete/1)
       |> Stream.run()
@@ -123,7 +123,7 @@ defmodule Wocky.TROS do
   end
 
   @spec make_upload_response(
-          User.tid(),
+          User.t(),
           file_id(),
           integer(),
           String.t(),
@@ -131,7 +131,7 @@ defmodule Wocky.TROS do
         ) :: {:ok, {list(), list()}} | {:error, any()}
   def make_upload_response(owner, file_id, size, access, meta) do
     with true <- meta.content_type in @valid_content_types,
-         {:ok, _} <- put_metadata(file_id, User.id(owner), access) do
+         {:ok, _} <- put_metadata(file_id, owner, access) do
       reference_url = make_url(owner, file_id)
 
       result =
@@ -148,15 +148,11 @@ defmodule Wocky.TROS do
     end
   end
 
-  @spec put_metadata(file_id(), User.tid(), atom()) :: Repo.result(Metadata.t())
+  @spec put_metadata(file_id(), User.t(), atom()) :: Repo.result(Metadata.t())
   def put_metadata(id, user, access) do
-    %Metadata{}
-    |> Metadata.changeset(%{
-      id: id,
-      user_id: User.id(user),
-      access: access,
-      ready: false
-    })
+    user
+    |> build_assoc(:tros_metadatas)
+    |> Metadata.changeset(%{id: id, access: access, ready: false})
     |> Repo.insert()
   end
 

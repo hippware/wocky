@@ -21,8 +21,8 @@ defmodule Wocky.TROS.Metadata do
   schema "tros_metadatas" do
     field :id, :binary_id, primary_key: true
     field :access, :binary, default: ""
-    field :ready, :boolean
-    field :available_formats, {:array, FileTypeEnum}
+    field :ready, :boolean, default: false
+    field :available_formats, {:array, FileTypeEnum}, default: []
 
     belongs_to :user, User
 

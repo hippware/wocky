@@ -121,7 +121,6 @@ defmodule Wocky.Mixfile do
       {:redlock, "~> 1.0.9"},
       {:rexbug, ">= 1.0.0"},
       {:slack_ex, "~> 0.1"},
-      {:stringprep, "~> 1.0"},
       {:swarm, "~> 3.0"},
       {:sweet_xml, "~> 0.6"},
       {:timex, "~> 3.1"},
