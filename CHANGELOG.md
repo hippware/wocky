@@ -7,7 +7,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Don't raise on errors preallocating a bot (PR #2970)
 * Remove some more Ecto bang functions (PR #2971)
-* Add location upload forwarding (PR #2972, PR #2973)
+* Add location upload forwarding (PR #2972, PR #2973, PR #2974)
 
 
 # 2019.12.11+r92017fc
