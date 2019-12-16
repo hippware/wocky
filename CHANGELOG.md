@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+
+# 2019.12.13+r5301e4b
+
 * Don't raise on errors preallocating a bot (PR #2970)
 * Remove some more Ecto bang functions (PR #2971)
 * Add location upload forwarding (PR #2972, PR #2973, PR #2974)
