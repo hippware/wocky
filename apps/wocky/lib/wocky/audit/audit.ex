@@ -11,6 +11,8 @@ defmodule Wocky.Audit do
   alias Wocky.Location.UserLocation
   alias Wocky.Repo.ID
 
+  @type audit_target :: :traffic | :location | :push | :push_payload
+
   # ===================================================================
   # Audit management
 
@@ -112,7 +114,9 @@ defmodule Wocky.Audit do
     Logger.info(Poison.encode!(fields), class: :audit, audit_type: type)
   end
 
-  defp should_log?(mode, user, config) do
+  @spec should_log?(audit_target(), User.t(), %{optional(atom()) => any()}) ::
+          boolean()
+  def should_log?(mode, user, config \\ config()) do
     FunWithFlags.Group.in?(user, :hippware) ||
       FunWithFlags.enabled?(mode, for: user) ||
       Map.get(config, config_key(mode))

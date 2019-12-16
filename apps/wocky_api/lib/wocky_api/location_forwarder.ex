@@ -5,6 +5,7 @@ defmodule WockyAPI.LocationForwarder do
   """
 
   alias Wocky.Account.User
+  alias Wocky.Audit
 
   def forward(user_id, l) do
     target = Confex.get_env(:wocky_api, :location_forward_target)
@@ -12,15 +13,10 @@ defmodule WockyAPI.LocationForwarder do
     if target do
       user = User.hydrate(user_id)
 
-      if should_forward?(user) do
+      if Audit.should_log?(:location, user) do
         do_forward(user, l, target)
       end
     end
-  end
-
-  defp should_forward?(user) do
-    FunWithFlags.Group.in?(user, :hippware) ||
-      FunWithFlags.enabled?(:location, for: user)
   end
 
   @headers [{"Content-Type", "application/json"}]
