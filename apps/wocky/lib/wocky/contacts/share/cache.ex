@@ -44,7 +44,7 @@ defmodule Wocky.Contacts.Share.Cache do
     values =
       Repo.all(
         from r in Relationship,
-          where: r.user_id == ^User.id(user) and r.share_type != "disabled"
+          where: r.user_id == ^User.id(user) and r.share_type != ^:disabled
       )
 
     put(user, {@cache_version, Enum.map(values, &struct_to_cache/1)})
