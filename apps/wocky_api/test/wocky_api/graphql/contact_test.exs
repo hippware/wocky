@@ -69,8 +69,7 @@ defmodule WockyAPI.GraphQL.ContactTest do
       assert %{
                "currentUser" => %{
                  "friends" => %{
-                   "edges" => [
-                   ],
+                   "edges" => [],
                    "totalCount" => 0
                  }
                }
