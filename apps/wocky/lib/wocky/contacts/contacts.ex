@@ -437,7 +437,8 @@ defmodule Wocky.Contacts do
           Queryable.t() | error()
   def friend_relationships_query(user, requestor) do
     with_same_user(user, requestor, fn user ->
-      assoc(user, :relationships)
+      from r in assoc(user, :relationships),
+        where: r.state == ^:friend
     end)
   end
 

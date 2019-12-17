@@ -33,7 +33,7 @@ defmodule WockyAPI.GraphQL.ContactTest do
     }
     """
 
-    test "get friends", %{user: user, user2: user2} do
+    test "should show friends", %{user: user, user2: user2} do
       Contacts.befriend(user, user2)
 
       id2 = user2.id
@@ -54,6 +54,24 @@ defmodule WockyAPI.GraphQL.ContactTest do
                      }
                    ],
                    "totalCount" => 1
+                 }
+               }
+             } = result.data
+    end
+
+    test "should not show invitees", %{user: user, user2: user2} do
+      {:ok, :invited} = Contacts.make_friends(user, user2, :always)
+
+      result = run_query(@query, user)
+
+      refute has_errors(result)
+
+      assert %{
+               "currentUser" => %{
+                 "friends" => %{
+                   "edges" => [
+                   ],
+                   "totalCount" => 0
                  }
                }
              } = result.data
