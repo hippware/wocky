@@ -204,15 +204,15 @@ config :ex_aws,
 config :pigeon,
   debug_log: true,
   workers: [
-    {Wocky.PigeonConfig, :apns_config},
-    {Wocky.PigeonConfig, :fcm_config}
+    {Wocky.Config.PigeonConfig, :apns_config},
+    {Wocky.Config.PigeonConfig, :fcm_config}
   ]
 
 config :ex_twilio,
   account_sid: {:system, "TWILIO_ACCOUNT_SID"},
   auth_token: {:system, "TWILIO_AUTH_TOKEN"}
 
-config :goth, config_module: Wocky.GothConfig
+config :goth, config_module: Wocky.Config.GothConfig
 
 config :fun_with_flags, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},
