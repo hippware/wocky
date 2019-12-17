@@ -10,7 +10,7 @@ defmodule Wocky.Account.JWT.Client do
     secret_key: {Wocky.Account.JWT.SigningKey, :fetch, [:client]},
     token_verify_module: Wocky.Account.JWT.Verify
 
-  alias Wocky.Account.ClientVersion
+  alias Wocky.Account.Agent
   alias Wocky.Account.JWT.Firebase
   alias Wocky.Account.JWT.SigningKey
   alias Wocky.Account.Register
@@ -96,7 +96,7 @@ defmodule Wocky.Account.JWT.Client do
   end
 
   defp verify_iss(iss) do
-    if ClientVersion.supported?(iss) do
+    if Agent.supported?(iss) do
       :ok
     else
       {:error, :invalid_issuer}

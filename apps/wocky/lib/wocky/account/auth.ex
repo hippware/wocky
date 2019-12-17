@@ -7,6 +7,7 @@ defmodule Wocky.Account.Auth do
   use Elixometer
 
   alias FirebaseAdminEx.Auth, as: FirebaseAuth
+  alias Wocky.Account.Agent
   alias Wocky.Account.ClientVersion
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Firebase
@@ -14,6 +15,7 @@ defmodule Wocky.Account.Auth do
   alias Wocky.Account.Register
   alias Wocky.Account.User
   alias Wocky.PhoneNumber
+  alias Wocky.Repo
 
   require Logger
 
@@ -39,9 +41,8 @@ defmodule Wocky.Account.Auth do
         authenticate_with(:server_jwt, token, %{})
 
       %{"typ" => type} when type == "firebase" or type == "bypass" ->
-        case authenticate(token) do
-          {:ok, %{user: %User{id: id}}} -> {:ok, id}
-          error -> error
+        with {:ok, %{user: %User{id: id}}} <- authenticate(token) do
+          {:ok, id}
         end
 
       _else ->
@@ -116,8 +117,21 @@ defmodule Wocky.Account.Auth do
     end
   end
 
-  defp maybe_record_client_version(user, %{"dvc" => device, "iss" => agent}),
-    do: ClientVersion.record(user, device, agent)
+  defp maybe_record_client_version(user, %{"dvc" => device, "iss" => agent}) do
+    with {:ok, version, attrs} <- Agent.parse(agent) do
+      user
+      |> Ecto.build_assoc(:client_versions)
+      |> ClientVersion.changeset(%{
+        device: device,
+        version: version,
+        attributes: attrs
+      })
+      |> Repo.insert(
+        on_conflict: :replace_all,
+        conflict_target: [:user_id, :device]
+      )
+    end
+  end
 
   defp maybe_record_client_version(_, _), do: {:ok, nil}
 

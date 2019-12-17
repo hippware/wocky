@@ -3,9 +3,6 @@ defmodule Wocky.Account.ClientVersion do
 
   use Wocky.Repo.Schema
 
-  alias Wocky.Account.User
-  alias Wocky.Repo
-
   @foreign_key_type :binary_id
   @primary_key false
   schema "client_versions" do
@@ -16,75 +13,20 @@ defmodule Wocky.Account.ClientVersion do
 
     timestamps()
 
-    belongs_to :user, User, define_field: false
+    belongs_to :user, Wocky.Account.User, define_field: false
   end
 
   @type t :: %__MODULE__{}
 
-  @record_fields [:user_id, :device, :version, :attributes]
-
-  @spec record(User.t(), String.t(), String.t()) :: Repo.result(t())
-  def record(user, device, agent_str) do
-    with {:ok, version, attrs} <- parse_agent(agent_str) do
-      %__MODULE__{}
-      |> changeset(%{
-        user_id: user.id,
-        device: device,
-        version: version,
-        attributes: attrs
-      })
-      |> Repo.insert(
-        on_conflict: :replace_all,
-        conflict_target: [:user_id, :device]
-      )
-    end
-  end
+  @fields [:user_id, :device, :version, :attributes]
 
   @spec changeset(t(), map()) :: Changeset.t()
   def changeset(struct, params) do
     struct
-    |> cast(params, @record_fields)
-    |> validate_required(@record_fields)
+    |> cast(params, @fields)
+    |> validate_required(@fields)
+    |> validate_length(:version, min: 1)
+    |> foreign_key_constraint(:user_id)
     |> unique_constraint(:device, name: :PRIMARY)
-  end
-
-  @spec supported?(String.t() | nil) :: boolean()
-  def supported?(nil), do: false
-
-  def supported?(agent_str) do
-    case parse_agent(agent_str) do
-      {:ok, version, attrs} -> supported?(version, attrs)
-      {:error, _} -> false
-    end
-  end
-
-  defp parse_agent(agent_str) do
-    case Regex.run(agent_re(), agent_str) do
-      nil -> {:error, :unknown_client}
-      [_, _, version] -> {:ok, version, []}
-      [_, _, version, attrs] -> {:ok, version, parse_attrs(attrs)}
-    end
-  end
-
-  defp parse_attrs(""), do: []
-
-  defp parse_attrs(attrs) do
-    attrs
-    |> String.split(";", trim: true)
-    |> Enum.map(&String.trim/1)
-  end
-
-  defp supported?(_version, _attrs) do
-    # Always return true for now
-    true
-  end
-
-  def agent_re do
-    agents =
-      :wocky
-      |> Confex.get_env(:permitted_agents)
-      |> Enum.join("|")
-
-    ~r/(#{agents})\/((?:\d+\.?)+)(?: \((.*)\))?/
   end
 end
