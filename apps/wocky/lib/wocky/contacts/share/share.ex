@@ -1,4 +1,4 @@
-defmodule Wocky.Friends.Share do
+defmodule Wocky.Contacts.Share do
   @moduledoc false
 
   # This is a temporary shim to make the old location sharing API work.
@@ -8,7 +8,7 @@ defmodule Wocky.Friends.Share do
   import Ecto.Changeset
 
   alias Wocky.Account.User
-  alias Wocky.Friends.Friend
+  alias Wocky.Contacts.Relationship
   alias Wocky.Repo
   alias Wocky.Repo.Timestamp
 
@@ -41,7 +41,7 @@ defmodule Wocky.Friends.Share do
     |> DateTime.truncate(:second)
   end
 
-  @spec make_shim(Friend.t(), DateTime.t()) :: t()
+  @spec make_shim(Relationship.t(), DateTime.t()) :: t()
   def make_shim(item, expiry \\ make_expiry()) do
     item = Repo.preload(item, [:user, :contact])
 

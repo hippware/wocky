@@ -1,4 +1,4 @@
-defmodule Wocky.Friends.Share.Cache do
+defmodule Wocky.Contacts.Share.Cache do
   @moduledoc """
   A write-through cache for user location shares
   """
@@ -7,8 +7,8 @@ defmodule Wocky.Friends.Share.Cache do
 
   alias Timex.Duration
   alias Wocky.Account.User
-  alias Wocky.Friends.Friend
-  alias Wocky.Friends.Share.CachedFriend
+  alias Wocky.Contacts.Relationship
+  alias Wocky.Contacts.Share.CachedRelationship
   alias Wocky.Repo
 
   @cache_version 1
@@ -19,7 +19,7 @@ defmodule Wocky.Friends.Share.Cache do
                |> Duration.to_seconds(truncate: true)
                |> to_string()
 
-  @spec get(User.tid()) :: [CachedFriend.t()]
+  @spec get(User.tid()) :: [CachedRelationship.t()]
   def get(user) do
     {:ok, cache} = Redix.command(Redix, ["GET", key(user)])
 
@@ -39,17 +39,17 @@ defmodule Wocky.Friends.Share.Cache do
     end
   end
 
-  @spec refresh(User.tid()) :: [CachedFriend.t()]
+  @spec refresh(User.tid()) :: [CachedRelationship.t()]
   def refresh(user) do
     values =
-      Friend
-      |> where([i], i.user_id == ^User.id(user))
-      |> where([i], i.share_type != "disabled")
-      |> Repo.all()
+      Repo.all(
+        from r in Relationship,
+          where: r.user_id == ^User.id(user) and r.share_type != ^:disabled
+      )
 
     put(user, {@cache_version, Enum.map(values, &struct_to_cache/1)})
 
-    Enum.map(values, &Friend.to_cached/1)
+    Enum.map(values, &CachedRelationship.new/1)
   end
 
   # Public for testing purposes
@@ -76,13 +76,13 @@ defmodule Wocky.Friends.Share.Cache do
 
   defp decode(values), do: :erlang.binary_to_term(values)
 
-  defp struct_to_cache(%Friend{} = friend) do
-    CachedFriend.fields()
-    |> Enum.map(&Map.get(friend, &1))
+  defp struct_to_cache(%Relationship{} = relationship) do
+    CachedRelationship.fields()
+    |> Enum.map(&Map.get(relationship, &1))
   end
 
   defp cache_to_struct(members) do
-    keyword = List.zip([CachedFriend.fields(), members])
-    struct(CachedFriend, keyword)
+    keyword = List.zip([CachedRelationship.fields(), members])
+    struct(CachedRelationship, keyword)
   end
 end

@@ -5,7 +5,7 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
 
   alias Faker.Name
   alias Wocky.Account.User
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Repo
   alias Wocky.Repo.Factory
   alias Wocky.SMS.Sandbox, as: SMSSandbox
@@ -303,7 +303,7 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
 
       Enum.each(
         ctx.users,
-        fn u -> assert Friends.relationship(ctx.user, u) == :invited end
+        fn u -> assert Contacts.relationship(ctx.user, u) == :invited end
       )
     end
 
@@ -434,7 +434,7 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
 
         # Internal invitation result
         assert has_result(results, n3, n3, u, nil, "INTERNAL_INVITATION_SENT")
-        assert Friends.relationship(ctx.user, u) == :invited
+        assert Contacts.relationship(ctx.user, u) == :invited
 
         # Bad number
         assert has_result(

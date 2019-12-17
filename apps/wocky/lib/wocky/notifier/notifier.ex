@@ -9,7 +9,7 @@ defmodule Wocky.Notifier do
     Wocky.Notifier.Email
   ]
 
-  alias Wocky.Block
+  alias Wocky.Contacts
 
   @spec notify(struct()) :: :ok
   def notify(event) do
@@ -25,7 +25,7 @@ defmodule Wocky.Notifier do
   end
 
   defp deliverable?(type, %{to: to, from: from} = event) do
-    type.ignore_block?(event) || !Block.blocked?(to, from)
+    type.ignore_block?(event) || !Contacts.blocked?(to, from)
   end
 
   defp deliverable?(_, _), do: true

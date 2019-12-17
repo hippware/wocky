@@ -6,14 +6,14 @@ defmodule Wocky.UserInvite.InviteCode do
   alias Ecto.Changeset
   alias Ecto.UUID
   alias Wocky.Account.User
-  alias Wocky.Friends.Friend
+  alias Wocky.Contacts.Relationship
   alias Wocky.PhoneNumber
 
   @foreign_key_type :binary_id
   schema "user_invite_codes" do
     field :code, :string, null: false
     field :phone_number, :string
-    field :share_type, Friend.LocationShareTypeEnum
+    field :share_type, Relationship.LocationShareTypeEnum
 
     timestamps(updated_at: false)
 
@@ -22,7 +22,7 @@ defmodule Wocky.UserInvite.InviteCode do
 
   @type t :: %__MODULE__{}
 
-  @spec changeset(User.t(), PhoneNumber.t() | nil, Friend.share_type()) ::
+  @spec changeset(User.t(), PhoneNumber.t() | nil, Relationship.share_type()) ::
           Changeset.t()
   def changeset(user, phone_number, share_type) do
     params = %{phone_number: phone_number, share_type: share_type}
@@ -32,7 +32,7 @@ defmodule Wocky.UserInvite.InviteCode do
     |> cast(params, [:user_id, :phone_number, :share_type])
     |> validate_required([:user_id])
     |> foreign_key_constraint(:user_id)
-    |> validate_inclusion(:share_type, Friend.share_types())
+    |> validate_inclusion(:share_type, Relationship.share_types())
     |> validate_and_normalise_phone_number(user)
     |> put_change(:code, generate())
   end

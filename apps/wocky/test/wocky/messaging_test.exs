@@ -2,7 +2,7 @@ defmodule Wocky.MessagingTest do
   use Wocky.DataCase, async: true
 
   alias Faker.Lorem
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Messaging
   alias Wocky.Messaging.Conversation
   alias Wocky.Messaging.Message
@@ -74,7 +74,7 @@ defmodule Wocky.MessagingTest do
     setup do
       [user, friend, stranger] = Factory.insert_list(3, :user)
 
-      Friends.befriend(user, friend)
+      Contacts.befriend(user, friend)
 
       {:ok, user: user, friend: friend, stranger: stranger}
     end

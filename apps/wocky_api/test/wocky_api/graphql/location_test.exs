@@ -6,7 +6,7 @@ defmodule WockyAPI.GraphQL.LocationTest do
   import WockyAPI.WatcherHelper
 
   alias Faker.Lorem
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.GeoUtils
   alias Wocky.Location
   alias Wocky.Location.Handler
@@ -118,7 +118,7 @@ defmodule WockyAPI.GraphQL.LocationTest do
 
     test "start sharing location with current location", %{user: user} do
       user2 = Factory.insert(:user)
-      Friends.befriend(user, user2)
+      Contacts.befriend(user, user2)
 
       sharer = user.id
       shared_with = user2.id
@@ -270,7 +270,7 @@ defmodule WockyAPI.GraphQL.LocationTest do
     setup ctx do
       user2 = Factory.insert(:user)
 
-      Friends.befriend(ctx.user, user2)
+      Contacts.befriend(ctx.user, user2)
       unsubbed_bot = Factory.insert(:bot, user: user2)
 
       Factory.insert(:bot_invitation,
@@ -357,7 +357,7 @@ defmodule WockyAPI.GraphQL.LocationTest do
     setup %{user: user} do
       bot = Factory.insert(:bot, user: user)
       invitee = Factory.insert(:user)
-      Friends.befriend(user, invitee)
+      Contacts.befriend(user, invitee)
 
       %{id: id} =
         Factory.insert(:bot_invitation,

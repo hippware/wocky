@@ -13,6 +13,7 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Phone.EnUs, as: Phone
   alias Faker.String
   alias Wocky.Account.User
+  alias Wocky.Contacts.Relationship
   alias Wocky.Events.BotInvitation, as: BotInvitationEvent
   alias Wocky.Events.BotInvitationResponse
   alias Wocky.Events.BotItem
@@ -22,8 +23,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Events.NewMessage
   alias Wocky.Events.UserInvitation
   alias Wocky.Events.UserInvitationResponse
-  alias Wocky.Friends.Friend, as: Friend
-  alias Wocky.Friends.Invitation, as: FriendInvitation
   alias Wocky.GeoUtils
   alias Wocky.Location.BotEvent
   alias Wocky.Location.UserLocation
@@ -113,18 +112,11 @@ defmodule Wocky.Repo.Factory do
   end
 
   def friend_factory do
-    %Friend{
+    %Relationship{
       user: build(:user),
       contact: build(:user),
-      share_type: :always
-    }
-  end
-
-  def user_invitation_factory do
-    %FriendInvitation{
-      user: build(:user),
-      invitee: build(:user),
-      share_type: :always
+      share_type: :always,
+      state: :friend
     }
   end
 

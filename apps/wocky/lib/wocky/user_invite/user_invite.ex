@@ -3,13 +3,12 @@ defmodule Wocky.UserInvite do
   Module for sending bulk invitations, both SMS (external) and internal
   """
 
-  import Ecto.Query
+  import Ecto.Query, only: [from: 2]
 
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.Block
-  alias Wocky.Friends
-  alias Wocky.Friends.Friend
+  alias Wocky.Contacts
+  alias Wocky.Contacts
   alias Wocky.PhoneNumber
   alias Wocky.Repo
   alias Wocky.SMS.Messenger
@@ -24,7 +23,7 @@ defmodule Wocky.UserInvite do
   # ----------------------------------------------------------------------
   # Invite codes
 
-  @spec make_code(User.t(), PhoneNumber.t() | nil, Friend.share_type()) ::
+  @spec make_code(User.t(), PhoneNumber.t() | nil, Contacts.share_type()) ::
           Repo.result(String.t())
   def make_code(user, phone_number \\ nil, share_type \\ :disabled) do
     case do_insert_code(user, phone_number, share_type) do
@@ -39,16 +38,21 @@ defmodule Wocky.UserInvite do
     |> Repo.insert()
   end
 
-  @spec redeem_code(User.t(), String.t(), Friend.share_type()) :: boolean()
+  @spec redeem_code(User.t(), String.t(), Contacts.share_type()) :: boolean()
   def redeem_code(redeemer, code, share_type \\ :disabled) do
     invitation =
-      InviteCode
-      |> where(code: ^code)
-      |> preload(:user)
-      |> Block.object_visible_query(redeemer)
+      code
+      |> get_invite_by_code()
+      |> Contacts.object_visible_query(redeemer)
       |> Repo.one()
 
     do_redeem_invite_code(redeemer, invitation, share_type)
+  end
+
+  defp get_invite_by_code(code) do
+    from ic in InviteCode,
+      where: ic.code == ^code,
+      preload: :user
   end
 
   defp do_redeem_invite_code(_, nil, _), do: false
@@ -63,8 +67,8 @@ defmodule Wocky.UserInvite do
     if !code_expired?(invitation) && target_user?(redeemer, invitation) do
       inviter_stype = invitation.share_type
 
-      with {:ok, _} <- Friends.make_friends(inviter, redeemer, inviter_stype),
-           {:ok, _} <- Friends.make_friends(redeemer, inviter, share_type) do
+      with {:ok, _} <- Contacts.make_friends(inviter, redeemer, inviter_stype),
+           {:ok, _} <- Contacts.make_friends(redeemer, inviter, share_type) do
         true
       else
         {:error, _} ->
@@ -87,7 +91,7 @@ defmodule Wocky.UserInvite do
   # ----------------------------------------------------------------------
   # SMS invitations
 
-  @spec send(PhoneNumber.t(), Friend.share_type(), User.t()) :: result()
+  @spec send(PhoneNumber.t(), Contacts.share_type(), User.t()) :: result()
   def send(number, share_type, user) do
     with {:ok, cc} <- PhoneNumber.country_code(user.phone_number) do
       number
@@ -142,7 +146,7 @@ defmodule Wocky.UserInvite do
 
   defp send_internal_invitation(r, user, requestor, share_type) do
     result =
-      case Friends.make_friends(requestor, user, share_type) do
+      case Contacts.make_friends(requestor, user, share_type) do
         {:ok, :invited} -> :internal_invitation_sent
         {:ok, :friend} -> :already_friends
         {:error, _} -> :self

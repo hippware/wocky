@@ -1,7 +1,7 @@
 defmodule Wocky.Repo.Migrations.AddUserInviteSharing do
-  use Ecto.Migration
+  use Wocky.Repo.Migration
 
-  alias Wocky.Friends.Friend.LocationShareTypeEnum
+  alias Wocky.Contacts.Relationship.LocationShareTypeEnum
 
   def change do
     alter table(:user_invite_codes) do

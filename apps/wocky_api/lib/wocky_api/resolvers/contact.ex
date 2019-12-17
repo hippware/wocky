@@ -1,13 +1,11 @@
-defmodule WockyAPI.Resolvers.Friend do
+defmodule WockyAPI.Resolvers.Contact do
   @moduledoc "Resolves GraphQL queries related to friends"
 
   alias Absinthe.Subscription
   alias Wocky.Account.User
+  alias Wocky.Contacts
+  alias Wocky.Contacts.Share
   alias Wocky.Events.NearbyStart
-  alias Wocky.Friends
-  alias Wocky.Friends.Friend
-  alias Wocky.Friends.Share
-  alias Wocky.Friends.Share.CachedFriend
   alias Wocky.Location
   alias Wocky.Location.UserLocation
   alias Wocky.Location.UserLocation.Current
@@ -20,10 +18,16 @@ defmodule WockyAPI.Resolvers.Friend do
   # Connections
 
   def get_friends(user, args, %{context: %{current_user: requestor}}),
-    do: friends_query(user, args, requestor, &Friends.friend_entries_query/2)
+    do:
+      friends_query(
+        user,
+        args,
+        requestor,
+        &Contacts.friend_relationships_query/2
+      )
 
   def get_sent_invitations(user, args, %{context: %{current_user: requestor}}),
-    do: friends_query(user, args, requestor, &Friends.sent_invitations_query/2)
+    do: friends_query(user, args, requestor, &Contacts.sent_invitations_query/2)
 
   def get_received_invitations(user, args, %{
         context: %{current_user: requestor}
@@ -33,7 +37,7 @@ defmodule WockyAPI.Resolvers.Friend do
           user,
           args,
           requestor,
-          &Friends.received_invitations_query/2
+          &Contacts.received_invitations_query/2
         )
 
   defp friends_query(user, args, requestor, query, post_process \\ nil) do
@@ -49,35 +53,32 @@ defmodule WockyAPI.Resolvers.Friend do
 
   def get_location_shares(_root, args, %{context: %{current_user: user}}) do
     user
-    |> Friends.get_location_shares_query()
+    |> Contacts.get_location_shares_query()
     |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
   end
 
   def get_location_sharers(_root, args, %{context: %{current_user: user}}) do
     user
-    |> Friends.get_location_sharers_query()
+    |> Contacts.get_location_sharers_query()
     |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
   end
 
   # -------------------------------------------------------------------
   # Queries
 
-  def get_contact_user(%Friend{} = c, _args, _context) do
-    {:ok,
-     c
-     |> Repo.preload([:contact])
-     |> Map.get(:contact)}
+  def get_contact_user(%{contact_id: _} = c, _args, _context) do
+    {:ok, Contacts.get_contact_user(c)}
   end
 
   # Explicitly built map - user should already be in place
-  def get_contact_user(x, _args, _context), do: {:ok, x.user}
+  def get_contact_user(%{user: user}, _args, _context), do: {:ok, user}
 
   # -------------------------------------------------------------------
   # Mutations
 
   def friend_invite(%{input: input}, %{context: %{current_user: user}}) do
     share_type = Map.get(input, :share_type, :disabled)
-    Friends.make_friends(user, input.user_id, share_type)
+    Contacts.make_friends(user, input.user_id, share_type)
   end
 
   def friend_share_update(%{input: input}, %{context: %{current_user: user}}) do
@@ -88,8 +89,8 @@ defmodule WockyAPI.Resolvers.Friend do
         |> Enum.into([])
 
     with :ok <- check_share_opts(opts) do
-      case Friends.update_sharing(
-             user.id,
+      case Contacts.update_sharing(
+             user,
              input.user_id,
              input.share_type,
              opts
@@ -110,13 +111,13 @@ defmodule WockyAPI.Resolvers.Friend do
   defp maybe_update_location(_args, _user), do: {:ok, :skip}
 
   def friend_delete(%{input: input}, %{context: %{current_user: user}}) do
-    :ok = Friends.unfriend(user, input.user_id)
+    :ok = Contacts.unfriend(user, input.user_id)
     {:ok, true}
   end
 
   # DEPRECATED
   def live_share_location(%{input: input}, %{context: %{current_user: user}}) do
-    case Friends.update_sharing(user.id, input.shared_with_id, :always) do
+    case Contacts.update_sharing(user, input.shared_with_id, :always) do
       {:ok, item} ->
         _ = maybe_update_location(input, user)
         {:ok, Share.make_shim(item, input.expires_at)}
@@ -128,7 +129,7 @@ defmodule WockyAPI.Resolvers.Friend do
 
   # DEPRECATED
   def cancel_location_share(%{input: input}, %{context: %{current_user: user}}) do
-    case Friends.update_sharing(user.id, input.shared_with_id, :disabled) do
+    case Contacts.update_sharing(user, input.shared_with_id, :disabled) do
       {:ok, _} ->
         {:ok, true}
 
@@ -139,7 +140,7 @@ defmodule WockyAPI.Resolvers.Friend do
 
   # DEPRECATED
   def cancel_all_location_shares(_args, %{context: %{current_user: user}}) do
-    :ok = Friends.stop_sharing_location(user)
+    :ok = Contacts.stop_sharing_location(user)
 
     {:ok, true}
   end
@@ -164,7 +165,7 @@ defmodule WockyAPI.Resolvers.Friend do
     Subscription.publish(Endpoint, notification, [{:contacts, topic}])
   end
 
-  # Friends subscription
+  # Contacts subscription
 
   def friends_subscription_topic(user_id),
     do: "friends_subscription_" <> user_id
@@ -172,7 +173,7 @@ defmodule WockyAPI.Resolvers.Friend do
   def notify_friends(user) do
     Repo.transaction(fn ->
       user
-      |> Friends.friend_entries_query(user)
+      |> Contacts.friend_relationships_query(user)
       |> Repo.stream()
       |> Stream.each(&notify_friend(&1, user))
       |> Stream.run()
@@ -192,19 +193,19 @@ defmodule WockyAPI.Resolvers.Friend do
 
   def notify_location(user, location) do
     user
-    |> Friends.get_location_share_targets()
+    |> Contacts.get_location_share_targets()
     |> Enum.each(&maybe_notify_location(&1, user, location))
   end
 
   defp maybe_notify_location(
-         %CachedFriend{share_type: :always} = share_target,
+         %{share_type: :always} = share_target,
          user,
          location
        ),
        do: do_notify_location(share_target, user, location)
 
   defp maybe_notify_location(
-         %CachedFriend{share_type: :nearby} = share_target,
+         %{share_type: :nearby} = share_target,
          user,
          location
        ) do
@@ -233,7 +234,7 @@ defmodule WockyAPI.Resolvers.Friend do
 
   defp maybe_notify_start(
          user,
-         %CachedFriend{nearby_last_start_notification: nil} = target
+         %{nearby_last_start_notification: nil} = target
        ),
        do: notify_start(user, target)
 
@@ -253,14 +254,14 @@ defmodule WockyAPI.Resolvers.Friend do
     }
     |> Notifier.notify()
 
-    {:ok, _} = Friends.update_last_start_notification(user, target.contact_id)
-    Friends.refresh_share_cache(user.id)
+    {:ok, _} = Contacts.update_last_start_notification(user, target.contact_id)
+    Contacts.refresh_share_cache(user.id)
   end
 
   def location_catchup(user) do
     result =
       user
-      |> Friends.get_location_sharers()
+      |> Contacts.get_location_sharers()
       |> Enum.reduce([], &build_location_catchup/2)
 
     {:ok, result}

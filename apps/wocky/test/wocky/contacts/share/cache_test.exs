@@ -1,8 +1,8 @@
-defmodule Wocky.Friends.Share.CacheTest do
+defmodule Wocky.Contacts.Share.CacheTest do
   use Wocky.DataCase, async: true
 
-  alias Wocky.Friends.Friend
-  alias Wocky.Friends.Share.Cache
+  alias Wocky.Contacts.Share.Cache
+  alias Wocky.Contacts.Share.CachedRelationship
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
@@ -13,8 +13,8 @@ defmodule Wocky.Friends.Share.CacheTest do
 
       {:ok,
        user: share1.user,
-       shared_with1: Friend.to_cached(share1),
-       shared_with2: Friend.to_cached(share2)}
+       shared_with1: CachedRelationship.new(share1),
+       shared_with2: CachedRelationship.new(share2)}
     end
 
     test "should return the found user ids", ctx do
@@ -64,9 +64,9 @@ defmodule Wocky.Friends.Share.CacheTest do
 
   describe "get/1" do
     test "should refresh the cache automatically" do
-      share = :friend |> Factory.insert()
+      share = Factory.insert(:friend)
 
-      assert [Friend.to_cached(share)] == Cache.get(share.user.id)
+      assert [CachedRelationship.new(share)] == Cache.get(share.user.id)
     end
   end
 end

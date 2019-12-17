@@ -4,7 +4,7 @@ defmodule WockyAPI.Dataloader do
   """
 
   alias Wocky.Account.User
-  alias Wocky.Block
+  alias Wocky.Contacts
   alias Wocky.Repo
 
   def get(ctx) do
@@ -26,7 +26,7 @@ defmodule WockyAPI.Dataloader do
         _ -> :user_id
       end
 
-    Block.object_visible_query(queryable, current_user, owner_field)
+    Contacts.object_visible_query(queryable, current_user, owner_field)
   end
 
   def query(queryable, _), do: queryable

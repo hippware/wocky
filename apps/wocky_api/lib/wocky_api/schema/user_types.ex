@@ -7,7 +7,7 @@ defmodule WockyAPI.Schema.UserTypes do
 
   alias WockyAPI.Resolvers.Block
   alias WockyAPI.Resolvers.Bot
-  alias WockyAPI.Resolvers.Friend
+  alias WockyAPI.Resolvers.Contact
   alias WockyAPI.Resolvers.Media
   alias WockyAPI.Resolvers.Message
   alias WockyAPI.Resolvers.Presence
@@ -147,13 +147,13 @@ defmodule WockyAPI.Schema.UserTypes do
     @desc "The user's live location sharing sessions"
     connection field :location_shares, node_type: :user_location_live_shares do
       connection_complexity()
-      resolve &Friend.get_location_shares/3
+      resolve &Contact.get_location_shares/3
     end
 
     @desc "The live location sharing sessions with the user"
     connection field :location_sharers, node_type: :user_location_live_shares do
       connection_complexity()
-      resolve &Friend.get_location_sharers/3
+      resolve &Contact.get_location_sharers/3
     end
 
     @desc "The user's archive of messages sorted from oldest to newest"
@@ -175,17 +175,17 @@ defmodule WockyAPI.Schema.UserTypes do
 
     connection field :friends, node_type: :friends do
       connection_complexity()
-      resolve &Friend.get_friends/3
+      resolve &Contact.get_friends/3
     end
 
     connection field :sent_invitations, node_type: :invitations do
       connection_complexity()
-      resolve &Friend.get_sent_invitations/3
+      resolve &Contact.get_sent_invitations/3
     end
 
     connection field :received_invitations, node_type: :invitations do
       connection_complexity()
-      resolve &Friend.get_received_invitations/3
+      resolve &Contact.get_received_invitations/3
     end
 
     @desc "Other users that this user has blocked"

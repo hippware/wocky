@@ -7,8 +7,7 @@ defmodule Wocky.Account.AccountTest do
   alias Faker.Name
   alias Wocky.Account
   alias Wocky.Account.User
-  alias Wocky.Block
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Relation
   alias Wocky.Repo
   alias Wocky.Repo.Factory
@@ -34,7 +33,7 @@ defmodule Wocky.Account.AccountTest do
 
     test "should not return a blocked user", ctx do
       user2 = Factory.insert(:user)
-      Block.block(ctx.user, user2)
+      Contacts.block(ctx.user, user2)
 
       refute Account.get_user(user2.id, ctx.user)
     end
@@ -70,7 +69,7 @@ defmodule Wocky.Account.AccountTest do
     end
 
     test "should not return blocked users", ctx do
-      ctx.users |> tl() |> Enum.each(&Block.block(&1, ctx.user))
+      ctx.users |> tl() |> Enum.each(&Contacts.block(&1, ctx.user))
 
       assert ctx.phone_numbers
              |> Account.get_by_phone_number(ctx.user) == [hd(ctx.users)]
@@ -447,7 +446,7 @@ defmodule Wocky.Account.AccountTest do
   describe "searchable checks" do
     setup ctx do
       other_user = Factory.insert(:user)
-      Friends.befriend(ctx.user, other_user)
+      Contacts.befriend(ctx.user, other_user)
 
       owned_bot = Factory.insert(:bot, user: ctx.user)
       pending_bot = Factory.insert(:bot, user: ctx.user, pending: true)

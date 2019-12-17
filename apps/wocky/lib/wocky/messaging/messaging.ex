@@ -5,7 +5,7 @@ defmodule Wocky.Messaging do
 
   alias Ecto.Queryable
   alias Wocky.Account.User
-  alias Wocky.Friends
+  alias Wocky.Contacts
   alias Wocky.Messaging.Conversation
   alias Wocky.Messaging.Message
   alias Wocky.Repo
@@ -49,7 +49,7 @@ defmodule Wocky.Messaging do
     end
   end
 
-  defp can_send?(sender, recipient), do: Friends.friend?(sender, recipient)
+  defp can_send?(sender, recipient), do: Contacts.friend?(sender, recipient)
 
   @doc "Query to get all messages to and from the given user"
   @spec get_messages_query(User.tid()) :: Queryable.t()

@@ -1,14 +1,17 @@
 defmodule Wocky.Account do
-  @moduledoc "Schema and API for working with users."
+  @moduledoc """
+  API for the Account context.
 
-  import Ecto.Query
+  This includes user management and authentication.
+  """
+
+  use Wocky.Context
 
   alias Wocky.Account.Auth
   alias Wocky.Account.User
-  alias Wocky.Block
+  alias Wocky.Contacts
   alias Wocky.Events.NewUser
   alias Wocky.Notifier
-  alias Wocky.Repo
   alias Wocky.TROS
 
   require Logger
@@ -60,17 +63,17 @@ defmodule Wocky.Account do
 
   @spec get_user(User.id(), User.tid() | nil) :: User.t() | nil
   def get_user(id, requestor \\ nil) do
-    if is_nil(requestor) || !Block.blocked?(requestor, id) do
+    if is_nil(requestor) || !Contacts.blocked?(requestor, id) do
       Repo.get(User, id)
     end
   end
 
   @spec get_by_phone_number([String.t()], User.tid()) :: [User.t()]
   def get_by_phone_number(phone_numbers, requestor) do
-    User
-    |> where([u], u.phone_number in ^phone_numbers)
-    |> Block.object_visible_query(requestor, :id)
-    |> Repo.all()
+    Repo.all(
+      from u in Contacts.object_visible_query(User, requestor, :id),
+        where: u.phone_number in ^phone_numbers
+    )
   end
 
   @doc """
@@ -162,20 +165,19 @@ defmodule Wocky.Account do
       |> Enum.map(&Kernel.<>(&1, ":*"))
       |> Enum.join(" & ")
 
-    User
-    |> where(
-      fragment(
-        """
-        users_name_fts(name, handle)
-        @@ to_tsquery('simple', unaccent(?))
-        """,
-        ^search_term
-      )
+    Repo.all(
+      from u in Contacts.object_visible_query(User, user, :id),
+        where:
+          u.id != ^user.id and
+            fragment(
+              """
+              users_name_fts(name, handle)
+              @@ to_tsquery('simple', unaccent(?))
+              """,
+              ^search_term
+            ),
+        limit: ^limit
     )
-    |> Block.object_visible_query(user, :id)
-    |> where([u], u.id != ^user.id)
-    |> limit(^limit)
-    |> Repo.all()
   end
 
   defp search_cleanup_regex do

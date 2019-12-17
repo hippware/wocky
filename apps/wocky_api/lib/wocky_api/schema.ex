@@ -13,7 +13,7 @@ defmodule WockyAPI.Schema do
   import_types WockyAPI.Schema.AuthTypes
   import_types WockyAPI.Schema.BlockTypes
   import_types WockyAPI.Schema.BotTypes
-  import_types WockyAPI.Schema.FriendTypes
+  import_types WockyAPI.Schema.ContactTypes
   import_types WockyAPI.Schema.MediaTypes
   import_types WockyAPI.Schema.MessageTypes
   import_types WockyAPI.Schema.NotificationTypes

@@ -1,10 +1,10 @@
-defmodule Wocky.Callbacks.FriendTest do
+defmodule Wocky.Callbacks.RelationshipTest do
   use Wocky.WatcherCase
 
-  alias Wocky.Callbacks.Friend, as: Callback
-  alias Wocky.Friends
-  alias Wocky.Friends.Friend
-  alias Wocky.Friends.Share.Cache
+  alias Wocky.Callbacks.Relationship, as: Callback
+  alias Wocky.Contacts
+  alias Wocky.Contacts.Share.Cache
+  alias Wocky.Contacts.Share.CachedRelationship
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo.Factory
 
@@ -15,11 +15,11 @@ defmodule Wocky.Callbacks.FriendTest do
   setup do
     [user, friend1, friend2] = Factory.insert_list(3, :user)
 
-    Friends.befriend(user, friend1, notify: false)
-    Friends.befriend(user, friend2, notify: false)
+    Contacts.befriend(user, friend1)
+    Contacts.befriend(user, friend2)
 
-    {:ok, friendship1} = Friends.update_sharing(user, friend1, :always)
-    {:ok, friendship2} = Friends.update_sharing(user, friend2, :disabled)
+    {:ok, friendship1} = Contacts.update_sharing(user, friend1, :always)
+    {:ok, friendship2} = Contacts.update_sharing(user, friend2, :disabled)
 
     {:ok,
      user: user,
@@ -48,7 +48,7 @@ defmodule Wocky.Callbacks.FriendTest do
       assert_eventually(in_band_notification_count(ctx.friend1) == 1)
       %Notification{id: id} = Repo.get_by(Notification, user_id: ctx.friend1.id)
 
-      Friends.update_sharing(ctx.user, ctx.friend1, :disabled)
+      Contacts.update_sharing(ctx.user, ctx.friend1, :disabled)
 
       assert_eventually(in_band_notification_count(ctx.friend1) == 2)
 
@@ -66,7 +66,7 @@ defmodule Wocky.Callbacks.FriendTest do
          ending a location share generates a notification for the sharing user
          """,
          ctx do
-      Friends.update_sharing(ctx.user, ctx.friend1, :disabled)
+      Contacts.update_sharing(ctx.user, ctx.friend1, :disabled)
 
       assert_eventually(in_band_notification_count(ctx.user) == 1)
 
@@ -84,16 +84,16 @@ defmodule Wocky.Callbacks.FriendTest do
   describe "location share cache" do
     test "starting a share inserts it into the cache", ctx do
       assert_eventually(
-        [Friend.to_cached(ctx.friendship1)] == Cache.get(ctx.user.id)
+        [CachedRelationship.new(ctx.friendship1)] == Cache.get(ctx.user.id)
       )
     end
 
     test "starting another share inserts it into the cache", ctx do
-      {:ok, _} = Friends.update_sharing(ctx.user, ctx.friend2, :always)
+      {:ok, _} = Contacts.update_sharing(ctx.user, ctx.friend2, :always)
 
       assert_eventually(
         [ctx.friendship1, %{ctx.friendship2 | share_type: :always}]
-        |> Enum.map(&Friend.to_cached/1)
+        |> Enum.map(&CachedRelationship.new/1)
         |> Enum.sort() ==
           ctx.user.id |> Cache.get() |> Enum.sort()
       )
@@ -101,19 +101,19 @@ defmodule Wocky.Callbacks.FriendTest do
 
     test "ending a share removes it from the cache", ctx do
       assert_eventually(
-        [Friend.to_cached(ctx.friendship1)] == Cache.get(ctx.user.id)
+        [CachedRelationship.new(ctx.friendship1)] == Cache.get(ctx.user.id)
       )
 
-      Friends.stop_sharing_location(ctx.user)
+      Contacts.stop_sharing_location(ctx.user)
       assert_eventually([] == Cache.get(ctx.user.id))
     end
 
     test "unfriending updates the cache", ctx do
       assert_eventually(
-        [Friend.to_cached(ctx.friendship1)] == Cache.get(ctx.user.id)
+        [CachedRelationship.new(ctx.friendship1)] == Cache.get(ctx.user.id)
       )
 
-      Friends.unfriend(ctx.user, ctx.friend1)
+      Contacts.unfriend(ctx.user, ctx.friend1)
       assert_eventually([] == Cache.get(ctx.user.id))
     end
   end
