@@ -191,7 +191,7 @@ defmodule Wocky.Contacts do
       from r in Relationship,
         where: r.user_id == ^User.id(user),
         where: r.contact_id == ^User.id(contact),
-        where: r.state == "blocked"
+        where: r.state == ^:blocked
     )
 
     update_counter("blocking.unblocked", 1)
@@ -358,7 +358,7 @@ defmodule Wocky.Contacts do
   def have_shares(user_ids) do
     Repo.all(
       from r in Relationship,
-        where: r.user_id in ^user_ids and r.share_type != "disabled",
+        where: r.user_id in ^user_ids and r.share_type != ^:disabled,
         select: r.user_id,
         distinct: true
     )
@@ -384,19 +384,17 @@ defmodule Wocky.Contacts do
 
   defp nonblocked_pair(user, contact) do
     from r in relationship_pair(user, contact),
-      where: r.state != "blocked"
+      where: r.state != ^:blocked
   end
 
   defp blocked_pair(user, contact) do
     from r in relationship_pair(user, contact),
-      where: r.state == "blocked"
+      where: r.state == ^:blocked
   end
 
   defp relationship_with_state(user, contact, state) do
-    state_str = to_string(state)
-
     from r in single_relationship(user, contact),
-      where: r.state == ^state_str
+      where: r.state == ^state
   end
 
   defp with_same_user(user, requestor, fun) do
@@ -411,7 +409,7 @@ defmodule Wocky.Contacts do
   def sent_invitations_query(user, requestor) do
     with_same_user(user, requestor, fn user ->
       from r in assoc(user, :relationships),
-        where: r.state == "invited"
+        where: r.state == ^:invited
     end)
   end
 
@@ -421,7 +419,7 @@ defmodule Wocky.Contacts do
     with_same_user(user, requestor, fn user ->
       from r in Relationship,
         where: r.contact_id == ^User.id(user),
-        where: r.state == "invited"
+        where: r.state == ^:invited
     end)
   end
 
@@ -431,7 +429,7 @@ defmodule Wocky.Contacts do
       from u in User,
         left_join: r in Relationship,
         on: u.id == r.contact_id,
-        where: r.user_id == ^User.id(user) and r.state == "friend"
+        where: r.user_id == ^User.id(user) and r.state == ^:friend
     end)
   end
 
@@ -474,7 +472,7 @@ defmodule Wocky.Contacts do
 
   defp location_shares_query do
     from r in Relationship,
-      where: r.share_type != "disabled",
+      where: r.share_type != ^:disabled,
       order_by: [desc: r.share_changed_at],
       preload: [:user, :contact]
   end
@@ -482,7 +480,7 @@ defmodule Wocky.Contacts do
   @spec blocks_query(User.t()) :: Queryable.t()
   def blocks_query(user) do
     from r in assoc(user, :relationships),
-      where: r.state == "blocked",
+      where: r.state == ^:blocked,
       preload: :contact
   end
 
@@ -498,7 +496,7 @@ defmodule Wocky.Contacts do
         ((field(o, ^owner_field) == r.user_id and
             r.contact_id == ^User.id(requester)) or
            (field(o, ^owner_field) == r.contact_id and
-              r.user_id == ^User.id(requester))) and r.state == "blocked",
+              r.user_id == ^User.id(requester))) and r.state == ^:blocked,
       where: is_nil(r.user_id)
   end
 end
