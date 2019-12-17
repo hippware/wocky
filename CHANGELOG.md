@@ -10,6 +10,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Consolidate blocks, invitations, and contacts (PR #2969)
 * Clean up the TROS context (PR #2979)
 * Move logic out of ClientVersion schema module (PR #2980)
+* User becomes friend upon invite instead of invite acceptance (#2982)
 
 
 # 2019.12.13+r5301e4b
