@@ -14,6 +14,7 @@ defmodule Wocky.Account.Auth do
   alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Account.Register
   alias Wocky.Account.User
+  alias Wocky.Errors
   alias Wocky.PhoneNumber
   alias Wocky.Repo
 
@@ -72,7 +73,7 @@ defmodule Wocky.Account.Auth do
 
       {:error, reason} ->
         update_counter("auth.client_jwt.fail", 1)
-        {:error, error_to_string(reason)}
+        {:error, Errors.error_to_string(reason)}
     end
   end
 
@@ -92,7 +93,7 @@ defmodule Wocky.Account.Auth do
 
       {:error, reason} ->
         update_counter("auth.firebase.fail", 1)
-        {:error, error_to_string(reason)}
+        {:error, Errors.error_to_string(reason)}
     end
   end
 
@@ -106,7 +107,7 @@ defmodule Wocky.Account.Auth do
 
       {:error, reason} ->
         update_counter("auth.server_jwt.fail", 1)
-        {:error, error_to_string(reason)}
+        {:error, Errors.error_to_string(reason)}
     end
   end
 
@@ -137,29 +138,16 @@ defmodule Wocky.Account.Auth do
 
   defp provider_error(p), do: {:error, "Unsupported provider: #{p}"}
 
-  @doc false
-  @spec error_to_string(any()) :: String.t()
-  def error_to_string(%{message: reason}), do: reason
-  def error_to_string(reason) when is_atom(reason), do: to_string(reason)
-  def error_to_string(reason) when is_binary(reason), do: reason
-
-  def error_to_string(reason) do
-    if Exception.exception?(reason) do
-      Exception.message(reason)
-    else
-      inspect(reason)
-    end
-  end
-
   # ====================================================================
   # Account cleanup
 
   @spec cleanup(User.t()) :: :ok
-  def cleanup(user) do
-    _ =
-      if user.provider == "firebase",
-        do: FirebaseAuth.delete_user(user.external_id)
-
-    :ok
+  def cleanup(%{provider: "firebase", external_id: external_id, id: id}) do
+    Errors.log_on_failure(
+      "Deleting Firebase account for user #{id}",
+      fn -> FirebaseAuth.delete_user(external_id) end
+    )
   end
+
+  def cleanup(_), do: :ok
 end

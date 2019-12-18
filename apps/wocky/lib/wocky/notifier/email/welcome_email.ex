@@ -11,6 +11,7 @@ defmodule Wocky.Notifier.Email.WelcomeEmail do
 
   @spec send(User.t()) :: :ok
   def send(user) do
+    # The mailer doesn't return anything useful
     _ =
       new_email()
       |> to({user.name, user.email})

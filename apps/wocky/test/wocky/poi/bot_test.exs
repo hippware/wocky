@@ -1,7 +1,7 @@
 defmodule Wocky.POI.BotTest do
   use ExUnit.Case, async: true
 
-  import Wocky.DataCase
+  import Wocky.Errors, only: [errors_on: 1]
 
   alias Wocky.GeoUtils
   alias Wocky.POI.Bot

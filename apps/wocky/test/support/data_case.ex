@@ -15,7 +15,6 @@ defmodule Wocky.DataCase do
   use ExUnit.CaseTemplate
 
   alias Ecto.Adapters.SQL.Sandbox
-  alias Ecto.Changeset
 
   using do
     quote do
@@ -25,6 +24,7 @@ defmodule Wocky.DataCase do
       import Ecto.Changeset
       import Ecto.Query
       import Wocky.DataCase
+      import Wocky.Errors, only: [errors_on: 1]
     end
   end
 
@@ -40,22 +40,5 @@ defmodule Wocky.DataCase do
     Dawdle.Client.clear_all_handlers()
 
     :ok
-  end
-
-  @doc """
-  A helper that transform changeset errors to a map of messages.
-
-      assert {:error, changeset} = Accounts.create_user(%{password: "short"})
-      assert "password is too short" in errors_on(changeset).password
-      assert %{password: ["password is too short"]} = errors_on(changeset)
-
-  """
-  @spec errors_on(Changeset.t()) :: map()
-  def errors_on(changeset) do
-    Changeset.traverse_errors(changeset, fn {message, opts} ->
-      Enum.reduce(opts, message, fn {key, value}, acc ->
-        String.replace(acc, "%{#{key}}", to_string(value))
-      end)
-    end)
   end
 end

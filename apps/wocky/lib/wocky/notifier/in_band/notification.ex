@@ -4,12 +4,9 @@ defmodule Wocky.Notifier.InBand.Notification do
   use Wocky.Repo.Schema
 
   import EctoEnum
-  import Ecto.Query
 
-  alias Ecto.Queryable
   alias Wocky.Account.User
   alias Wocky.POI.Bot
-  alias Wocky.Repo
 
   defenum(GeofenceEventTypeEnum, :geofence_event_type, [:enter, :exit])
 
@@ -46,68 +43,8 @@ defmodule Wocky.Notifier.InBand.Notification do
   @type id :: non_neg_integer()
   @type t :: %__MODULE__{}
 
-  @spec put(map(), atom(), [atom()]) :: {:ok, t()} | {:error, any()}
-  def put(params, type, required) do
-    params = Map.put(params, :type, type)
-
-    %__MODULE__{}
-    |> changeset(params, required)
-    |> Repo.insert()
-  end
-
-  @spec user_query(
-          User.tid(),
-          id() | nil,
-          id() | nil,
-          [NotificationTypeEnum.t()] | nil
-        ) :: Queryable.t()
-  def user_query(user, before_id, after_id, types \\ nil) do
-    __MODULE__
-    |> where(user_id: ^User.id(user))
-    |> maybe_add_type_filter(types)
-    |> maybe_add_before_id(before_id)
-    |> maybe_add_after_id(after_id)
-  end
-
-  @spec delete(id() | User.t(), User.t()) :: :ok
-  def delete(id, requestor) when is_integer(id) do
-    __MODULE__
-    |> where([i], i.user_id == ^requestor.id and i.id == ^id)
-    |> Repo.delete_all()
-
-    :ok
-  end
-
-  def delete(%User{} = user, other_user) do
-    __MODULE__
-    |> where([i], i.user_id == ^user.id and i.other_user_id == ^other_user.id)
-    |> Repo.delete_all()
-
-    :ok
-  end
-
-  defp maybe_add_before_id(queryable, nil), do: queryable
-
-  defp maybe_add_before_id(queryable, id) do
-    queryable
-    |> where([n], n.id < ^id)
-  end
-
-  defp maybe_add_after_id(queryable, nil), do: queryable
-
-  defp maybe_add_after_id(queryable, id) do
-    queryable
-    |> where([n], n.id > ^id)
-  end
-
-  defp maybe_add_type_filter(queryable, nil), do: queryable
-
-  defp maybe_add_type_filter(queryable, types) do
-    queryable
-    |> where([n], n.type in ^types)
-  end
-
-  defp changeset(struct, params, required) do
+  @spec changeset(t(), map(), [atom()]) :: Changeset.t()
+  def changeset(struct, params, required) do
     struct
     |> cast(params, [
       :type,

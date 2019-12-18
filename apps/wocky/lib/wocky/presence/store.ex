@@ -5,6 +5,7 @@ defmodule Wocky.Presence.Store do
 
   alias Timex.Duration
   alias Wocky.Account.User
+  alias Wocky.Errors
 
   @lock_timeout_secs 5
 
@@ -17,47 +18,54 @@ defmodule Wocky.Presence.Store do
   @doc """
   Add the calling presence-tracking process to the records for a user
   """
-  @spec add_self(User.tid()) :: :ok
+  @spec add_self(User.tid()) :: :ok | {:error, any()}
   def add_self(user) do
-    {:ok, _} =
-      Redix.command(Redix, [
-        "SET",
-        key(user),
-        value(self()),
-        "EX",
-        @expire_secs
-      ])
-
-    :ok
+    with {:ok, _} <- do_add_self(user) do
+      :ok
+    end
   end
 
-  @spec set_self_online(User.tid(), pid()) :: :ok
-  def set_self_online(user, online_pid) do
-    {:ok, _} =
-      Redix.command(Redix, [
-        "SET",
-        key(user),
-        value(self(), online_pid),
-        "EX",
-        @expire_secs
-      ])
+  defp do_add_self(user) do
+    Redix.command(Redix, [
+      "SET",
+      key(user),
+      value(self()),
+      "EX",
+      @expire_secs
+    ])
+  end
 
-    :ok
+  @spec set_self_online(User.tid(), pid()) :: :ok | {:error, any()}
+  def set_self_online(user, online_pid) do
+    with {:ok, _} <- do_set_self_online(user, online_pid) do
+      :ok
+    end
+  end
+
+  defp do_set_self_online(user, online_pid) do
+    Redix.command(Redix, [
+      "SET",
+      key(user),
+      value(self(), online_pid),
+      "EX",
+      @expire_secs
+    ])
   end
 
   @doc """
   Remove the presence-tracking pid for a given user
   """
-  @spec remove(User.tid()) :: :ok
+  @spec remove(User.tid()) :: :ok | {:error, any()}
   def remove(user) do
-    {:ok, _} = Redix.command(Redix, ["DEL", key(user)])
-    :ok
+    with {:ok, _} <- Redix.command(Redix, ["DEL", key(user)]) do
+      :ok
+    end
   end
 
   @doc """
   Get the active, presence-tracking pid for a given user
   """
-  @spec get_manager(User.tid()) :: pid() | nil
+  @spec get_manager(User.tid()) :: {:ok, pid() | nil} | {:error, any()}
   def get_manager(user) do
     transaction(user, fn -> do_get_manager(user) end)
   end
@@ -65,16 +73,19 @@ defmodule Wocky.Presence.Store do
   defp do_get_manager(user) do
     case Redix.command(Redix, ["GET", key(user)]) do
       {:ok, nil} ->
-        nil
+        {:ok, nil}
 
       {:ok, pid_bin} ->
         pid_bin
         |> :erlang.binary_to_term()
         |> check_valid_manager(user)
+
+      {:error, _} = error ->
+        error
     end
   end
 
-  @spec get_online(User.tid()) :: pid() | nil
+  @spec get_online(User.tid()) :: {:ok, pid() | nil} | {:error, any()}
   def get_online(user) do
     transaction(user, fn -> do_get_online(user) end)
   end
@@ -82,12 +93,15 @@ defmodule Wocky.Presence.Store do
   defp do_get_online(user) do
     case Redix.command(Redix, ["GET", key(user)]) do
       {:ok, nil} ->
-        nil
+        {:ok, nil}
 
       {:ok, pid_bin} ->
         pid_bin
         |> :erlang.binary_to_term()
         |> check_valid_online()
+
+      {:error, _} = error ->
+        error
     end
   end
 
@@ -103,13 +117,13 @@ defmodule Wocky.Presence.Store do
   defp check_valid_manager(pid, user) when is_pid(pid) do
     case remote_alive?(pid) do
       true ->
-        pid
+        {:ok, pid}
 
       _ ->
         # Process is dead or node is unreachable;
         # take the opportunity to remove it
-        remove(user)
-        nil
+        remove_quietly(user)
+        {:ok, nil}
     end
   end
 
@@ -117,17 +131,24 @@ defmodule Wocky.Presence.Store do
   # there was a version upgrade or a bug. Whatever, we can't do anything with
   # it besides clean up.
   defp check_valid_manager(_, user) do
-    remove(user)
-    nil
+    remove_quietly(user)
+    {:ok, nil}
+  end
+
+  defp remove_quietly(user) do
+    Errors.log_on_failure(
+      "Removing Redis presence data for user #{User.id(user)}",
+      fn -> remove(user) end
+    )
   end
 
   defp check_valid_online({_pid, online_pid}) do
     case remote_alive?(online_pid) do
       true ->
-        online_pid
+        {:ok, online_pid}
 
       _ ->
-        nil
+        {:ok, nil}
     end
   end
 

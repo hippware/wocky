@@ -14,6 +14,7 @@ end
 
 defimpl Wocky.Notifier.Email.Event, for: Wocky.Events.NewUser do
   alias Ecto.Changeset
+  alias Wocky.Errors
   alias Wocky.Notifier.Email.WelcomeEmail
   alias Wocky.Repo
 
@@ -24,12 +25,14 @@ defimpl Wocky.Notifier.Email.Event, for: Wocky.Events.NewUser do
   def send(%{user: user}) do
     WelcomeEmail.send(user)
 
-    _ =
-      user
-      |> Changeset.cast(%{welcome_sent: true}, [:welcome_sent])
-      |> Repo.update()
-
-    :ok
+    Errors.log_on_failure(
+      "Updating welcome email sent flag",
+      fn ->
+        user
+        |> Changeset.cast(%{welcome_sent: true}, [:welcome_sent])
+        |> Repo.update()
+      end
+    )
   end
 
   @impl true

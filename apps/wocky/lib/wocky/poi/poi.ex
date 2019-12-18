@@ -11,6 +11,7 @@ defmodule Wocky.POI do
   alias Geocalc.Point
   alias Wocky.Account
   alias Wocky.Account.User
+  alias Wocky.Errors
   alias Wocky.POI.Bot
   alias Wocky.POI.Item
   alias Wocky.Repo
@@ -61,7 +62,12 @@ defmodule Wocky.POI do
   def insert(params, requestor) do
     with {:ok, t} <- do_update(%Bot{}, params, &Repo.insert/1) do
       update_counter("bot.created", 1)
-      Account.flag_bot_created(requestor)
+
+      Errors.log_on_failure(
+        "Flagging bot created on user",
+        fn -> Account.flag_bot_created(requestor) end
+      )
+
       {:ok, t}
     end
   end

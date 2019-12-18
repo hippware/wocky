@@ -2,7 +2,6 @@ defmodule Wocky.Account.AuthTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Account
-  alias Wocky.Account.Auth
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Firebase
   alias Wocky.Account.JWT.Server, as: ServerJWT
@@ -139,37 +138,6 @@ defmodule Wocky.Account.AuthTest do
 
     test "bad token" do
       assert {:error, _} = Account.authenticate_for_location("bogus")
-    end
-  end
-
-  defmodule TestException do
-    defexception [:foo]
-
-    @impl true
-    def message(_), do: "testing"
-  end
-
-  describe "error_to_string/1" do
-    test "should work with an error map" do
-      assert Auth.error_to_string(%{message: "testing"}) == "testing"
-    end
-
-    test "should work with an atom" do
-      assert Auth.error_to_string(:testing) == "testing"
-    end
-
-    test "should work with a string" do
-      assert Auth.error_to_string("testing") == "testing"
-    end
-
-    test "should work with an Exception" do
-      assert Auth.error_to_string(%TestException{}) == "testing"
-    end
-
-    test "should have a reasonable fallback" do
-      obj = ["testing"]
-
-      assert Auth.error_to_string(obj) == inspect(obj)
     end
   end
 end

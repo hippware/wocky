@@ -1,6 +1,7 @@
 defmodule WockyAPI.Resolvers.Notification do
   @moduledoc "GraphQL resolver for bot objects"
 
+  alias Wocky.Notifier.InBand
   alias Wocky.Notifier.InBand.Notification
   alias WockyAPI.Resolvers.Utils
 
@@ -27,7 +28,7 @@ defmodule WockyAPI.Resolvers.Notification do
 
   def get_notifications(parent, args, %{context: %{current_user: requestor}}) do
     requestor
-    |> Notification.user_query(
+    |> InBand.user_query(
       args[:before_id],
       args[:after_id],
       map_types(args[:types])
@@ -52,7 +53,7 @@ defmodule WockyAPI.Resolvers.Notification do
   # Mutations
 
   def notification_delete(args, %{context: %{current_user: requestor}}) do
-    Notification.delete(args.input.id, requestor)
+    InBand.delete(args.input.id, requestor)
 
     {:ok, true}
   end

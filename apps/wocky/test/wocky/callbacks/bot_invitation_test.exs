@@ -7,7 +7,7 @@ defmodule Wocky.Callbacks.BotInvitationTest do
   alias Pigeon.APNS.Notification
   alias Wocky.Callbacks.BotInvitation, as: Callback
   alias Wocky.Contacts
-  alias Wocky.Notifier.InBand.Notification, as: IBNotification
+  alias Wocky.Notifier.InBand
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Relation
@@ -104,5 +104,5 @@ defmodule Wocky.Callbacks.BotInvitationTest do
   end
 
   defp in_band_notifications(user),
-    do: user |> IBNotification.user_query(nil, nil) |> Repo.all() |> length()
+    do: user |> InBand.user_query(nil, nil) |> Repo.all() |> length()
 end

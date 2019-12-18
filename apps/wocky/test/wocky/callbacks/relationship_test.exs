@@ -5,6 +5,7 @@ defmodule Wocky.Callbacks.RelationshipTest do
   alias Wocky.Contacts
   alias Wocky.Contacts.Share.Cache
   alias Wocky.Contacts.Share.CachedRelationship
+  alias Wocky.Notifier.InBand
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo.Factory
 
@@ -59,7 +60,7 @@ defmodule Wocky.Callbacks.RelationshipTest do
                  type: :location_share_end,
                  other_user_id: ^other_id
                }
-             ] = ctx.friend1 |> Notification.user_query(nil, id) |> Repo.all()
+             ] = ctx.friend1 |> InBand.user_query(nil, id) |> Repo.all()
     end
 
     test """
@@ -77,7 +78,7 @@ defmodule Wocky.Callbacks.RelationshipTest do
                  type: :location_share_end_self,
                  other_user_id: ^other_id
                }
-             ] = ctx.user |> Notification.user_query(nil, nil) |> Repo.all()
+             ] = ctx.user |> InBand.user_query(nil, nil) |> Repo.all()
     end
   end
 
@@ -119,7 +120,7 @@ defmodule Wocky.Callbacks.RelationshipTest do
   end
 
   defp in_band_notifications(user),
-    do: user |> Notification.user_query(nil, nil) |> Repo.all()
+    do: user |> InBand.user_query(nil, nil) |> Repo.all()
 
   defp in_band_notification_count(user),
     do: user |> in_band_notifications() |> length()

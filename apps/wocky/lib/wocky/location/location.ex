@@ -42,7 +42,8 @@ defmodule Wocky.Location do
     as: :set_location_for_bot
 
   @doc "Gets the current location for the user."
-  @spec get_current_user_location(User.tid()) :: UserLocation.t() | nil
+  @spec get_current_user_location(User.tid()) ::
+          {:ok, UserLocation.t() | nil} | {:error, any()}
   defdelegate get_current_user_location(user), to: Current, as: :get
 
   @doc "Cleans up current location cache."

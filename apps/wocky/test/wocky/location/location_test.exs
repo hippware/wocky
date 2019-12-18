@@ -76,7 +76,7 @@ defmodule Wocky.Location.LocationTest do
       location = Factory.build(:location)
       {:ok, _} = Location.set_user_location(ctx.user, location)
 
-      loc2 = Location.get_current_user_location(ctx.user)
+      {:ok, loc2} = Location.get_current_user_location(ctx.user)
       assert loc2
       assert loc2.lat == location.lat
       assert loc2.lon == location.lon
@@ -84,7 +84,7 @@ defmodule Wocky.Location.LocationTest do
     end
 
     test "should return nil if the user's location is unknown", ctx do
-      refute Location.get_current_user_location(ctx.user)
+      assert {:ok, nil} = Location.get_current_user_location(ctx.user)
     end
   end
 

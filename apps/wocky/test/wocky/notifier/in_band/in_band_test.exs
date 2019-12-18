@@ -1,4 +1,4 @@
-defmodule Wocky.Notifier.InBand.NotificationTest do
+defmodule Wocky.Notifier.InBandTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Contacts
@@ -11,6 +11,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
   alias Wocky.Events.LocationShareEndSelf
   alias Wocky.Events.UserInvitation
   alias Wocky.Notifier
+  alias Wocky.Notifier.InBand
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Relation.Invitation
   alias Wocky.Repo.Factory
@@ -234,7 +235,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
           other_user: user3
         )
 
-      Notification.delete(user, user2)
+      InBand.delete(user, user2)
 
       {:ok, notification: notification, notification2: notification2}
     end
@@ -257,7 +258,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     test "get all notifications", ctx do
       assert ids_match(
                ctx.user
-               |> Notification.user_query(nil, nil)
+               |> InBand.user_query(nil, nil)
                |> order_by(desc: :updated_at)
                |> Repo.all(),
                ctx.notifications
@@ -267,7 +268,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     test "get head notifications", ctx do
       assert ids_match(
                ctx.user
-               |> Notification.user_query(nil, List.last(ctx.notifications).id)
+               |> InBand.user_query(nil, List.last(ctx.notifications).id)
                |> order_by(desc: :updated_at)
                |> Repo.all(),
                Enum.slice(ctx.notifications, 0..3)
@@ -277,7 +278,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     test "get tail notifications", ctx do
       assert ids_match(
                ctx.user
-               |> Notification.user_query(hd(ctx.notifications).id, nil)
+               |> InBand.user_query(hd(ctx.notifications).id, nil)
                |> order_by(desc: :updated_at)
                |> Repo.all(),
                tl(ctx.notifications)
@@ -287,7 +288,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     test "get middle notifications", ctx do
       assert ids_match(
                ctx.user
-               |> Notification.user_query(
+               |> InBand.user_query(
                  hd(ctx.notifications).id,
                  List.last(ctx.notifications).id
                )
@@ -300,7 +301,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
     test "filter on notification type", ctx do
       assert ids_match(
                ctx.user
-               |> Notification.user_query(
+               |> InBand.user_query(
                  hd(ctx.notifications).id,
                  nil,
                  [:bot_item]
@@ -312,7 +313,7 @@ defmodule Wocky.Notifier.InBand.NotificationTest do
 
       assert ids_match(
                ctx.user
-               |> Notification.user_query(
+               |> InBand.user_query(
                  hd(ctx.notifications).id,
                  nil,
                  [:geofence_event]

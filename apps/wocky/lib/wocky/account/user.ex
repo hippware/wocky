@@ -8,6 +8,7 @@ defmodule Wocky.Account.User do
   alias Wocky.Contacts.Relationship
   alias Wocky.Messaging.Conversation
   alias Wocky.Messaging.Message
+  alias Wocky.Notifier.InBand.Notification
   alias Wocky.Notifier.Push.Token, as: PushToken
   alias Wocky.POI.Bot
   alias Wocky.Presence
@@ -59,6 +60,7 @@ defmodule Wocky.Account.User do
     has_many :client_versions, ClientVersion
     has_many :conversations, Conversation
     has_many :invite_codes, InviteCode
+    has_many :notifications, Notification
     has_many :push_tokens, PushToken
     has_many :received_invitations, Invitation, foreign_key: :invitee_id
     has_many :received_messages, Message, foreign_key: :recipient_id

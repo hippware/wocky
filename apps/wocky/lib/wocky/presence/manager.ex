@@ -41,6 +41,7 @@ defmodule Wocky.Presence.Manager do
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Contacts
+  alias Wocky.Errors
   alias Wocky.Presence
   alias Wocky.Presence.ConnectionEvent
   alias Wocky.Presence.OnlineProc
@@ -55,25 +56,31 @@ defmodule Wocky.Presence.Manager do
 
   defp get_or_create(user) do
     case Store.get_manager(user) do
-      nil ->
+      {:ok, nil} ->
         Supervisor.start_child(user)
 
-      manager when is_pid(manager) ->
+      {:ok, manager} when is_pid(manager) ->
         {:ok, manager}
+
+      {:error, _} = error ->
+        error
     end
   end
 
   @spec start_link(User.tid()) :: GenServer.on_start()
   def start_link(user), do: GenServer.start_link(__MODULE__, user)
 
-  @spec stop(User.tid()) :: :ok
+  @spec stop(User.tid()) :: :ok | {:error, any()}
   def stop(user) do
     case Store.get_manager(User.id(user)) do
-      nil ->
+      {:ok, nil} ->
         :ok
 
-      manager when is_pid(manager) ->
+      {:ok, manager} when is_pid(manager) ->
         safe_op(fn -> GenServer.stop(manager, :normal) end, fn -> :ok end)
+
+      {:error, _} = error ->
+        error
     end
   end
 
@@ -89,7 +96,7 @@ defmodule Wocky.Presence.Manager do
   @impl true
   def init(user) do
     _ = PubSub.subscribe(:presence, pubsub_topic(user))
-    Store.add_self(user)
+    :ok = Store.add_self(user)
 
     {:ok, contact_refs} =
       Repo.transaction(fn ->
@@ -135,7 +142,7 @@ defmodule Wocky.Presence.Manager do
     safe_call(manager, :get_sockets, [])
   end
 
-  @spec set_status(pid(), Presence.status()) :: :ok
+  @spec set_status(pid(), Presence.status()) :: :ok | {:error, any()}
   def set_status(manager, status) do
     GenServer.call(manager, {:set_status, status})
   end
@@ -257,26 +264,29 @@ defmodule Wocky.Presence.Manager do
         _from,
         %{online_pid: nil, user: user} = s
       ) do
-    {:ok, online_pid} = OnlineProc.start_link()
+    with {:ok, online_pid} <- OnlineProc.start_link(),
+         :ok <- Store.set_self_online(user, online_pid) do
+      Presence.publish(user, user, :online)
 
-    Store.set_self_online(user, online_pid)
-    Presence.publish(user, user, :online)
-
-    Repo.transaction(fn ->
-      user
-      |> Contacts.friends_query(user)
-      |> Repo.stream()
-      |> Stream.each(fn u ->
-        PubSub.broadcast(
-          :presence,
-          pubsub_topic(u),
-          {:online, user, online_pid}
-        )
+      Repo.transaction(fn ->
+        user
+        |> Contacts.friends_query(user)
+        |> Repo.stream()
+        |> Stream.each(fn u ->
+          PubSub.broadcast(
+            :presence,
+            pubsub_topic(u),
+            {:online, user, online_pid}
+          )
+        end)
+        |> Stream.run()
       end)
-      |> Stream.run()
-    end)
 
-    {:reply, :ok, %{s | online_pid: online_pid}}
+      {:reply, :ok, %{s | online_pid: online_pid}}
+    else
+      {:error, _} = error ->
+        {:reply, error, s}
+    end
   end
 
   def handle_call({:set_status, :online}, _from, s) do
@@ -295,9 +305,15 @@ defmodule Wocky.Presence.Manager do
         %{online_pid: online_pid, user: user} = s
       ) do
     OnlineProc.go_offline(online_pid)
-    Store.add_self(user)
-    Presence.publish(user, user, :offline)
-    {:reply, :ok, %{s | online_pid: nil}}
+
+    case Store.add_self(user) do
+      :ok ->
+        Presence.publish(user, user, :offline)
+        {:reply, :ok, %{s | online_pid: nil}}
+
+      {:error, _} = error ->
+        {:reply, error, s}
+    end
   end
 
   def handle_call(:get_sockets, _from, s) do
@@ -306,12 +322,12 @@ defmodule Wocky.Presence.Manager do
 
   defp maybe_monitor(target, acc) do
     case Store.get_online(target) do
-      nil ->
-        acc
-
-      pid when is_pid(pid) ->
+      {:ok, pid} when is_pid(pid) ->
         ref = Process.monitor(pid)
         BiMap.put(acc, User.id(target), ref)
+
+      _ ->
+        acc
     end
   end
 
@@ -320,9 +336,13 @@ defmodule Wocky.Presence.Manager do
   defp delete_own_handler(ref, %{handler_mon_refs: handler_mon_refs} = s) do
     case Map.delete(handler_mon_refs, ref) do
       m when m == %{} ->
-        Store.remove(s.user)
-        # No need to publish to ourselves here - by definition we can't have any
-        # live connections to receive the message on
+        Errors.log_on_failure(
+          "Removing presence for #{s.user.id}",
+          fn -> Store.remove(s.user) end
+        )
+
+        # No need to publish to ourselves here - by definition we can't
+        # have any live connections to receive the message on
         %{s | handler_mon_refs: m}
 
       new_refs ->
@@ -331,11 +351,13 @@ defmodule Wocky.Presence.Manager do
   end
 
   defp signal_connection(user, status) do
-    _ =
-      %ConnectionEvent{user: user, status: status}
-      |> Dawdle.signal(direct: true)
-
-    :ok
+    Errors.log_on_failure(
+      "Signaling presence for user #{user.id}",
+      fn ->
+        %ConnectionEvent{user: user, status: status}
+        |> Dawdle.signal(direct: true)
+      end
+    )
   end
 
   defp delete_contact_presence(ref, %{contact_refs: contact_refs} = s) do

@@ -502,13 +502,13 @@ defmodule Wocky.Account.AccountTest do
   describe "flag_bot_created/1" do
     test "should set the user as having a created bot", ctx do
       refute Repo.get(User, ctx.user.id).bot_created
-      assert :ok == Account.flag_bot_created(ctx.user)
+      assert {:ok, _} = Account.flag_bot_created(ctx.user)
       assert Repo.get(User, ctx.user.id).bot_created
     end
 
     test "should have no effect if the flag is already set" do
       user = Factory.insert(:user, bot_created: true)
-      assert :ok == Account.flag_bot_created(user)
+      assert {:ok, _} = Account.flag_bot_created(user)
       assert Repo.get(User, user.id).bot_created
     end
   end

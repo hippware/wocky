@@ -20,10 +20,10 @@ defmodule Wocky.Location.UserLocation.CurrentTest do
 
     test "delete without shares", %{users: [u1, u2, u3, u4]} do
       assert Current.delete_when_not_shared([u1.id, u2.id, u3.id]) == 1
-      refute is_nil(Current.get(u1))
-      refute is_nil(Current.get(u2))
-      assert is_nil(Current.get(u3))
-      refute is_nil(Current.get(u4))
+      refute {:ok, nil} == Current.get(u1)
+      refute {:ok, nil} == Current.get(u2)
+      assert {:ok, nil} == Current.get(u3)
+      refute {:ok, nil} == Current.get(u4)
     end
   end
 end
