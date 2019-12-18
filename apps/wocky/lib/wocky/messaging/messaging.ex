@@ -1,17 +1,15 @@
 defmodule Wocky.Messaging do
   @moduledoc "Context for user-to-user messaging"
 
-  import Ecto.Query
+  use Wocky.Context
 
   alias Ecto.Queryable
   alias Wocky.Account.User
   alias Wocky.Contacts
-  alias Wocky.Messaging.Conversation
   alias Wocky.Messaging.Message
-  alias Wocky.Repo
 
   @spec send_message(
-          User.tid(),
+          User.t(),
           User.tid(),
           String.t(),
           String.t() | nil,
@@ -19,24 +17,26 @@ defmodule Wocky.Messaging do
         ) :: Repo.result(Message.t())
   def send_message(recipient, sender, content, image_url, client_data) do
     if can_send?(sender, recipient) do
-      %{
-        sender_id: User.id(sender),
+      sender
+      |> build_assoc(:sent_messages)
+      |> Message.changeset(%{
         recipient_id: User.id(recipient),
         content: content,
         image_url: image_url,
         client_data: client_data
-      }
-      |> Message.changeset()
+      })
       |> Repo.insert(returning: true)
     else
       {:error, :permission_denied}
     end
   end
 
-  @spec mark_read(Message.id(), User.tid(), boolean()) ::
+  defp can_send?(sender, recipient), do: Contacts.friend?(sender, recipient)
+
+  @spec mark_read(Message.id(), User.t(), boolean()) ::
           :ok | {:error, :invalid_id}
-  def mark_read(id, requestor, read \\ true) do
-    case Repo.one(received_message_query(id, requestor)) do
+  def mark_read(id, user, read \\ true) do
+    case get_received_message(user, id) do
       nil ->
         {:error, :invalid_id}
 
@@ -49,45 +49,44 @@ defmodule Wocky.Messaging do
     end
   end
 
-  defp can_send?(sender, recipient), do: Contacts.friend?(sender, recipient)
+  defp get_received_message(user, id) do
+    Repo.one(
+      from m in received_messages(user),
+        where: m.id == ^id
+    )
+  end
+
+  defp received_messages(user), do: Ecto.assoc(user, :received_messages)
 
   @doc "Query to get all messages to and from the given user"
   @spec get_messages_query(User.tid()) :: Queryable.t()
   def get_messages_query(user) do
-    where(
-      Message,
-      [m],
-      m.sender_id == ^User.id(user) or m.recipient_id == ^User.id(user)
-    )
+    from m in Message,
+      where: m.sender_id == ^User.id(user) or m.recipient_id == ^User.id(user),
+      preload: [:sender, :recipient]
   end
 
   @doc "Query to get all messages between the two specified users"
   @spec get_messages_query(User.tid(), User.tid()) :: Queryable.t()
   def get_messages_query(user, other_user) do
-    user
-    |> get_messages_query()
-    |> where(
-      [m],
-      m.sender_id == ^User.id(other_user) or
-        m.recipient_id == ^User.id(other_user)
-    )
+    from m in get_messages_query(user),
+      where:
+        m.sender_id == ^User.id(other_user) or
+          m.recipient_id == ^User.id(other_user)
   end
 
-  @spec get_conversations_query(User.tid()) :: Queryable.t()
+  @spec get_conversations_query(User.t()) :: Queryable.t()
   def get_conversations_query(user) do
-    where(Conversation, user_id: ^User.id(user))
+    from assoc(user, :conversations),
+      preload: [:other_user]
   end
 
-  @spec received_message_query(Message.id(), User.tid()) :: Queryable.t()
-  def received_message_query(id, requestor) do
-    where(Message, [m], m.id == ^id and m.recipient_id == ^User.id(requestor))
-  end
-
-  @spec unread_count(User.tid()) :: non_neg_integer()
-  def unread_count(requestor) do
-    Message
-    |> where([m], m.recipient_id == ^User.id(requestor) and not m.read)
-    |> select([m], count(1))
-    |> Repo.one()
+  @spec unread_count(User.t()) :: non_neg_integer()
+  def unread_count(user) do
+    Repo.one(
+      from m in received_messages(user),
+        where: not m.read,
+        select: count(1)
+    )
   end
 end

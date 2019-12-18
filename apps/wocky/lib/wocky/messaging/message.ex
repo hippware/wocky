@@ -26,12 +26,12 @@ defmodule Wocky.Messaging.Message do
   @fields [:sender_id, :recipient_id, :content, :image_url, :client_data, :read]
 
   @spec changeset(t(), map()) :: Changeset.t()
-  def changeset(struct \\ %__MODULE__{}, params) do
+  def changeset(struct, params) do
     struct
     |> cast(params, @fields)
     |> validate_required([:sender_id, :recipient_id])
     |> validate_required_inclusion([:content, :image_url])
-    |> foreign_key_constraint(:sender_id)
-    |> foreign_key_constraint(:recipient_id)
+    |> assoc_constraint(:sender)
+    |> assoc_constraint(:recipient)
   end
 end
