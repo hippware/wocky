@@ -6,7 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Base forwarding decision on Audit condition (PR #2975)
-* Update: geo_postgis (PR #2978)
+* Update: geo_postgis (PR #2978), postgrex/dawdle_db (PR #2981)
 * Consolidate blocks, invitations, and contacts (PR #2969)
 * Clean up the TROS context (PR #2979)
 * Move logic out of ClientVersion schema module (PR #2980)
