@@ -1,4 +1,4 @@
-defmodule Wocky.PigeonConfig do
+defmodule Wocky.Config.PigeonConfig do
   @moduledoc "Config callback module for Pigeon"
 
   alias Pigeon.APNS.JWTConfig, as: APNS
