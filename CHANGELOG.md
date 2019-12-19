@@ -5,12 +5,18 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Move goth and pigeon configs into Config context (PR #2985)
+
+
+# 2019.12.18+rc919280
+
 * Base forwarding decision on Audit condition (PR #2975)
 * Update: geo_postgis (PR #2978), postgrex/dawdle_db (PR #2981)
 * Consolidate blocks, invitations, and contacts (PR #2969)
 * Clean up the TROS context (PR #2979)
 * Move logic out of ClientVersion schema module (PR #2980)
 * User becomes friend upon invite instead of invite acceptance (#2982)
+* Clean up Messaging context (PR #2984)
 
 
 # 2019.12.13+r5301e4b
