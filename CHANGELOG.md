@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2019.12.19+r7b0eedf
+
 * Move goth and pigeon configs into Config context (PR #2985)
 
 
