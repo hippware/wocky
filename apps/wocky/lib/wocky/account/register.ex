@@ -25,8 +25,7 @@ defmodule Wocky.Account.Register do
     :pass_details
   ]
 
-  @spec get_external_id(User.t(), String.t()) ::
-          {:ok, String.t()} | Repo.error()
+  @spec get_external_id(User.t(), String.t()) :: Repo.result(String.t())
   def get_external_id(user, provider \\ "firebase") do
     case user.external_id do
       nil ->
