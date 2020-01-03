@@ -69,6 +69,10 @@ defmodule Wocky.Account.User do
     has_many :sent_messages, Message, foreign_key: :sender_id
     has_many :tros_metadatas, TROSMetadata
 
+    many_to_many :bot_invitations, Bot,
+      join_through: Invitation,
+      join_keys: [invitee_id: :id, bot_id: :id]
+
     many_to_many :bot_subscriptions, Bot, join_through: Subscription
   end
 

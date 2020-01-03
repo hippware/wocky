@@ -3,11 +3,11 @@ defmodule Wocky.Relation do
   Code that defines and manipulates relationships between users and bots
   """
 
+  use Wocky.Context
   use Elixometer
 
   import Ecto.Query
 
-  alias Ecto.Queryable
   alias Geo.Point
   alias Wocky.Account.User
   alias Wocky.Contacts
@@ -21,7 +21,6 @@ defmodule Wocky.Relation do
   alias Wocky.Relation.ClusterSearch
   alias Wocky.Relation.Invitation
   alias Wocky.Relation.Subscription
-  alias Wocky.Repo
 
   @type relationship ::
           :visible
@@ -48,44 +47,39 @@ defmodule Wocky.Relation do
     |> is_visible_query(requestor)
   end
 
-  @spec get_owned_bot(Bot.id(), User.tid(), boolean()) :: Bot.t() | nil
+  @spec get_owned_bot(Bot.id(), User.t(), boolean()) :: Bot.t() | nil
   def get_owned_bot(id, user, include_pending \\ false) do
-    Bot
-    |> where(id: ^id, user_id: ^User.id(user))
+    user
+    |> get_owned_bot_query(id)
     |> POI.maybe_filter_pending(not include_pending)
     |> Repo.one()
+  end
+
+  defp get_owned_bot_query(user, id) do
+    from b in assoc(user, :bots),
+      where: b.id == ^id
   end
 
   @doc "Returns all bots that the user owns"
   @spec get_owned_bots(User.t()) :: [Bot.t()]
   def get_owned_bots(user) do
-    user
-    |> owned_bots_query()
-    |> order_by(asc: :updated_at)
-    |> Repo.all()
-  end
-
-  @spec owned_bots_query(User.t()) :: Queryable.t()
-  def owned_bots_query(user) do
-    user
-    |> Ecto.assoc(:bots)
-    |> where(pending: false)
+    Repo.all(
+      from b in by_relationship_query(user, :owned),
+        order_by: [asc: :updated_at]
+    )
   end
 
   @doc "Returns all bots that the user subscribes to"
   @spec get_subscribed_bots(User.tid()) :: [Bot.t()]
   def get_subscribed_bots(user) do
-    Bot
-    |> where(pending: false)
-    |> join(
-      :left,
-      [b],
-      s in Subscription,
-      on: b.id == s.bot_id and s.user_id == ^User.id(user)
+    Repo.all(
+      from b in Bot,
+        where: b.pending == false,
+        left_join: s in Subscription,
+        on: b.id == s.bot_id and s.user_id == ^User.id(user),
+        where: not is_nil(s.user_id),
+        select: [:id, :title, :location]
     )
-    |> where([b, s], not is_nil(s.user_id))
-    |> select([:id, :title, :location])
-    |> Repo.all()
   end
 
   @doc """
@@ -104,16 +98,16 @@ defmodule Wocky.Relation do
 
   @spec active_bots_query(User.t()) :: Queryable.t()
   def active_bots_query(user) do
+    from b in visible_bots(user),
+      inner_join: a in "bot_activity",
+      on: b.id == a.bot_id,
+      order_by: [desc: a.visited_at]
+  end
+
+  defp visible_bots(user) do
     user
     |> by_relationship_query(:subscribed, user)
     |> is_visible_query(user)
-    |> join(
-      :inner,
-      [b],
-      a in "bot_activity",
-      on: b.id == a.bot_id
-    )
-    |> order_by([..., a], desc: a.visited_at)
   end
 
   @spec max_local_bots_search_radius :: float()
@@ -125,15 +119,20 @@ defmodule Wocky.Relation do
   def get_local_bots(user, point_a, point_b, limit) do
     with :ok <- check_area(point_a, point_b) do
       bots =
-        user
-        |> by_relationship_query(:subscribed, user)
-        |> filter_by_location(point_a, point_b)
-        |> limit(^limit)
-        |> order_by(desc: :created_at)
-        |> Repo.all()
+        Repo.all(
+          from local_bots(user, point_a, point_b),
+            order_by: [desc: :created_at],
+            limit: ^limit
+        )
 
       {:ok, bots}
     end
+  end
+
+  defp local_bots(user, point_a, point_b) do
+    user
+    |> by_relationship_query(:subscribed, user)
+    |> filter_by_location(point_a, point_b)
   end
 
   @spec get_local_bots_clustered(
@@ -159,16 +158,15 @@ defmodule Wocky.Relation do
 
   @spec filter_by_location(Queryable.t(), Point.t(), Point.t()) :: Queryable.t()
   def filter_by_location(query, point_a, point_b) do
-    query
-    |> where(
-      fragment(
-        "location && ST_MakeEnvelope(?, ?, ?, ?, 4326)::geography",
-        ^GeoUtils.get_lon(point_a),
-        ^GeoUtils.get_lat(point_a),
-        ^GeoUtils.get_lon(point_b),
-        ^GeoUtils.get_lat(point_b)
-      )
-    )
+    from query,
+      where:
+        fragment(
+          "location && ST_MakeEnvelope(?, ?, ?, ?, 4326)::geography",
+          ^GeoUtils.get_lon(point_a),
+          ^GeoUtils.get_lat(point_a),
+          ^GeoUtils.get_lon(point_b),
+          ^GeoUtils.get_lat(point_b)
+        )
   end
 
   defp check_area(point_a, point_b) do
@@ -207,40 +205,27 @@ defmodule Wocky.Relation do
   end
 
   defp by_relationship_query(user, :owned) do
-    owned_bots_query(user)
+    from b in assoc(user, :bots),
+      where: b.pending == false
   end
 
   defp by_relationship_query(user, :invited) do
-    join(
-      Bot,
-      :inner,
-      [b],
-      i in Invitation,
-      on: b.id == i.bot_id and i.invitee_id == ^user.id
-    )
+    assoc(user, :bot_invitations)
   end
 
   defp by_relationship_query(user, :subscribed) do
-    join(
-      Bot,
-      :inner,
-      [b],
-      s in Subscription,
-      on: b.id == s.bot_id and s.user_id == ^user.id
-    )
+    assoc(user, :bot_subscriptions)
   end
 
   defp by_relationship_query(user, :subscribed_not_owned) do
-    user
-    |> by_relationship_query(:subscribed)
-    |> where([b, ...], b.user_id != ^user.id)
+    from b in by_relationship_query(user, :subscribed),
+      where: b.user_id != ^user.id
   end
 
   defp by_relationship_query(user, :visiting) do
-    user
-    |> by_relationship_query(:subscribed)
-    |> where([..., s], s.visitor)
-    |> order_by([..., s], desc: s.visited_at)
+    from [..., s] in by_relationship_query(user, :subscribed),
+      where: s.visitor,
+      order_by: [desc: s.visited_at]
   end
 
   @spec is_visible_query(Queryable.t(), User.t()) :: Queryable.t()
@@ -267,7 +252,7 @@ defmodule Wocky.Relation do
 
   @spec subscribers_query(Bot.t()) :: Queryable.t()
   def subscribers_query(bot) do
-    Ecto.assoc(bot, :subscribers)
+    assoc(bot, :subscribers)
   end
 
   @spec get_subscriber(Bot.t(), User.tid()) :: User.t() | nil
@@ -277,9 +262,8 @@ defmodule Wocky.Relation do
 
   @spec subscriber_query(Bot.t(), User.tid()) :: Queryable.t()
   def subscriber_query(bot, user) do
-    bot
-    |> Ecto.assoc(:subscribers)
-    |> where([..., s], s.user_id == ^User.id(user))
+    from [..., s] in assoc(bot, :subscribers),
+      where: s.user_id == ^User.id(user)
   end
 
   @spec get_visitors(Bot.t()) :: [User.t()]
@@ -289,10 +273,9 @@ defmodule Wocky.Relation do
 
   @spec visitors_query(Bot.t()) :: Queryable.t()
   def visitors_query(bot) do
-    bot
-    |> Ecto.assoc(:subscribers)
-    |> where([..., s], s.visitor)
-    |> order_by([..., s], desc: s.visited_at)
+    from [..., s] in assoc(bot, :subscribers),
+      where: s.visitor,
+      order_by: [desc: s.visited_at]
   end
 
   @doc false
@@ -324,9 +307,10 @@ defmodule Wocky.Relation do
 
   @spec invited?(User.tid(), Bot.t()) :: boolean()
   def invited?(user, bot) do
-    Invitation
-    |> where([i], i.bot_id == ^bot.id and i.invitee_id == ^User.id(user))
-    |> Repo.exists?()
+    Repo.exists?(
+      from i in Invitation,
+        where: i.bot_id == ^bot.id and i.invitee_id == ^User.id(user)
+    )
   end
 
   @spec subscribed?(User.tid(), Bot.t()) :: boolean()
@@ -413,9 +397,10 @@ defmodule Wocky.Relation do
     Location.exit_bot(user, bot, "unsubscribe")
 
     {count, _} =
-      Subscription
-      |> where(user_id: ^User.id(user), bot_id: ^bot.id)
-      |> Repo.delete_all()
+      Repo.delete_all(
+        from s in Subscription,
+          where: s.user_id == ^User.id(user) and s.bot_id == ^bot.id
+      )
 
     update_counter("bot.subscription.unsubscribe", count)
 
@@ -473,13 +458,12 @@ defmodule Wocky.Relation do
   @spec delete_subscriptions_for_owned_bots(User.tid(), User.tid()) :: :ok
   def delete_subscriptions_for_owned_bots(bot_owner, user) do
     {count, _} =
-      Subscription
-      |> join(:inner, [s], b in assoc(s, :bot))
-      |> where(
-        [s, b],
-        b.user_id == ^User.id(bot_owner) and s.user_id == ^User.id(user)
+      Repo.delete_all(
+        from s in Subscription,
+          inner_join: b in assoc(s, :bot),
+          where:
+            b.user_id == ^User.id(bot_owner) and s.user_id == ^User.id(user)
       )
-      |> Repo.delete_all()
 
     update_counter("bot.subscription.unsubscribe", count)
 
@@ -511,10 +495,11 @@ defmodule Wocky.Relation do
 
   @spec get_invitation(Invitation.id(), User.tid()) :: Invitation.t() | nil
   def get_invitation(id, invitee) do
-    Invitation
-    |> where([i], i.id == ^id and i.invitee_id == ^User.id(invitee))
-    |> preload([:bot, :invitee])
-    |> Repo.one()
+    Repo.one(
+      from i in assoc(invitee, :received_invitations),
+        where: i.id == ^id,
+        preload: [:bot, :invitee]
+    )
   end
 
   @spec respond(Invitation.t(), boolean(), User.tid()) ::
@@ -542,14 +527,12 @@ defmodule Wocky.Relation do
     subscribe(invitation.invitee, invitation.bot)
   end
 
-  @spec delete_invitation(User.tid(), User.tid()) :: :ok
+  @spec delete_invitation(User.t(), User.tid()) :: :ok
   def delete_invitation(user, invitee) do
-    Invitation
-    |> where(
-      [i],
-      i.user_id == ^User.id(user) and i.invitee_id == ^User.id(invitee)
+    Repo.delete_all(
+      from i in assoc(user, :sent_invitations),
+        where: i.invitee_id == ^User.id(invitee)
     )
-    |> Repo.delete_all()
 
     :ok
   end

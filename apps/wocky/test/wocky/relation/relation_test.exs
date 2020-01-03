@@ -8,6 +8,7 @@ defmodule Wocky.Relation.RelationTest do
   alias Wocky.POI
   alias Wocky.POI.Bot
   alias Wocky.Relation
+  alias Wocky.Relation.Cluster
   alias Wocky.Relation.Invitation
   alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
@@ -174,6 +175,169 @@ defmodule Wocky.Relation.RelationTest do
         |> Enum.map(& &1.id)
 
       assert bot_ids == [bot2.id, ctx.bot.id]
+    end
+  end
+
+  describe "get_local_bots/4" do
+    setup ctx do
+      contact = Factory.insert(:user)
+
+      Contacts.befriend(ctx.user, contact)
+
+      {owned, subscribed, unrelated} =
+        Enum.reduce(1..4, {[], [], []}, fn x, {o, s, u} ->
+          loc = GeoUtils.point(x, x)
+
+          owned = Factory.insert(:bot, user: ctx.user, location: loc)
+          Relation.subscribe(ctx.user, owned)
+
+          subscribed = Factory.insert(:bot, user: contact, location: loc)
+          Relation.subscribe(ctx.user, subscribed)
+
+          unrelated = Factory.insert(:bot, user: contact, location: loc)
+
+          {[owned.id | o], [subscribed.id | s], [unrelated.id | u]}
+        end)
+
+      Application.put_env(:wocky, :max_local_bots_search_radius, 1_000_000)
+
+      {:ok,
+       owned: Enum.reverse(owned),
+       subscribed: Enum.reverse(subscribed),
+       unrelated: Enum.reverse(unrelated)}
+    end
+
+    test "should return local bots", ctx do
+      assert {:ok, local_bots} =
+               Relation.get_local_bots(
+                 ctx.user,
+                 GeoUtils.point(0.0, 0.0),
+                 GeoUtils.point(5.0, 5.0),
+                 10
+               )
+
+      assert length(local_bots) == 8
+
+      ids = Enum.map(local_bots, &Map.get(&1, :id))
+      assert Enum.all?(ids, &Enum.member?(ctx.owned ++ ctx.subscribed, &1))
+      refute Enum.any?(ids, &Enum.member?(ctx.unrelated, &1))
+    end
+
+    test "should return local bots in a restricted area", ctx do
+      [_, o | _] = ctx.owned
+      [_, s | _] = ctx.subscribed
+
+      assert {:ok, local_bots} =
+               Relation.get_local_bots(
+                 ctx.user,
+                 GeoUtils.point(1.5, 1.5),
+                 GeoUtils.point(2.5, 2.5),
+                 10
+               )
+
+      assert length(local_bots) == 2
+
+      ids = Enum.map(local_bots, &Map.get(&1, :id))
+      assert Enum.all?(ids, &Enum.member?([o, s], &1))
+    end
+
+    test "should limit returned bots", ctx do
+      assert {:ok, local_bots} =
+               Relation.get_local_bots(
+                 ctx.user,
+                 GeoUtils.point(0.0, 0.0),
+                 GeoUtils.point(5.0, 5.0),
+                 2
+               )
+
+      assert length(local_bots) == 2
+
+      ids = Enum.map(local_bots, &Map.get(&1, :id))
+      assert ids == [List.last(ctx.subscribed), List.last(ctx.owned)]
+    end
+
+    test "should return an error when exceeding search area", ctx do
+      assert {:error, :area_too_large} =
+               Relation.get_local_bots(
+                 ctx.user,
+                 GeoUtils.point(0.0, 0.0),
+                 GeoUtils.point(10.0, 10.0),
+                 10
+               )
+    end
+
+    test "should handle a search area straddling the 180th meridian", ctx do
+      loc = GeoUtils.point(0.0, -179.0)
+      bot = Factory.insert(:bot, user: ctx.user, location: loc)
+      Relation.subscribe(ctx.user, bot)
+
+      assert {:ok, local_bots} =
+               Relation.get_local_bots(
+                 ctx.user,
+                 GeoUtils.point(1.0, 178.0),
+                 GeoUtils.point(-1.0, -178.0),
+                 10
+               )
+
+      assert length(local_bots) == 1
+      assert hd(local_bots).id == bot.id
+    end
+  end
+
+  describe "get_local_bots_clustered/5" do
+    setup ctx do
+      Application.put_env(:wocky, :max_local_bots_search_radius, 1_000_000)
+
+      locations = [
+        {1.5, 1.5},
+        {0.1, 0.1},
+        {0.2, 0.2},
+        {0.3, 0.3},
+        {0.67, 0.67},
+        {0.68, 0.68},
+        {3.0, 3.0}
+      ]
+
+      b =
+        Enum.map(locations, fn {lat, lon} ->
+          l = GeoUtils.point(lat, lon)
+          Factory.insert(:bot, location: l, user: ctx.user)
+        end)
+
+      Enum.each(b, &Relation.subscribe(ctx.user, &1))
+
+      {:ok, bots: b}
+    end
+
+    test "should return bots in clusters", ctx do
+      assert {:ok, bots, clusters} =
+               Relation.get_local_bots_clustered(
+                 ctx.user,
+                 GeoUtils.point(0.0, 0.0),
+                 GeoUtils.point(2.0, 2.0),
+                 3,
+                 3
+               )
+
+      assert length(bots) == 1
+      assert hd(bots).id == hd(ctx.bots).id
+
+      assert length(clusters) == 2
+
+      assert has_clusters(clusters, [
+               {2, 1.0, 1.0},
+               {3, 0.3333333333333333, 0.3333333333333333}
+             ])
+    end
+
+    defp has_clusters(clusters, expected) do
+      expected
+      |> Enum.map(fn {count, lat, lon} ->
+        %Cluster{count: count, location: GeoUtils.point(lat, lon)}
+      end)
+      |> Enum.sort()
+      |> Enum.zip(Enum.sort(clusters))
+      |> Enum.all?(fn {x, y} -> x == y end)
     end
   end
 
