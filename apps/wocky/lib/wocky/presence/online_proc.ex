@@ -12,7 +12,10 @@ defmodule Wocky.Presence.OnlineProc do
   end
 
   @spec go_offline(pid()) :: :ok
-  def go_offline(pid), do: send(pid, :go_offline)
+  def go_offline(pid) do
+    send(pid, :go_offline)
+    :ok
+  end
 
   defp init(parent) do
     parent

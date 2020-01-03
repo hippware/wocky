@@ -44,13 +44,13 @@ defmodule Wocky.Account.RegisterTest do
 
   describe "get_external_id/1" do
     test "when the user has an external id" do
-      user = Factory.build(:user)
-      assert Register.get_external_id(user) == user.external_id
+      %{external_id: external_id} = user = Factory.build(:user)
+      assert {:ok, ^external_id} = Register.get_external_id(user)
     end
 
     test "when the user does not have an external id" do
       user = Factory.insert(:user, external_id: nil)
-      external_id = Register.get_external_id(user)
+      {:ok, external_id} = Register.get_external_id(user)
 
       assert external_id
 

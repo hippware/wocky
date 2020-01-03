@@ -209,7 +209,7 @@ defmodule WockyAPI.Resolvers.Contact do
          user,
          location
        ) do
-    target_loc = Current.get(share_target.contact_id)
+    {:ok, target_loc} = Current.get(share_target.contact_id)
 
     if target_loc &&
          Geocalc.within?(
@@ -268,12 +268,12 @@ defmodule WockyAPI.Resolvers.Contact do
   end
 
   defp build_location_catchup(share, acc) do
-    location = Location.get_current_user_location(share.user)
-
-    if location do
-      [make_location_data(share.user, location) | acc]
-    else
-      acc
+    with {:ok, location} <- Location.get_current_user_location(share.user) do
+      if location do
+        [make_location_data(share.user, location) | acc]
+      else
+        acc
+      end
     end
   end
 

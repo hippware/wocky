@@ -25,22 +25,19 @@ defmodule Wocky.Account.Register do
     :pass_details
   ]
 
-  @spec get_external_id(User.t(), String.t()) :: String.t()
+  @spec get_external_id(User.t(), String.t()) :: Repo.result(String.t())
   def get_external_id(user, provider \\ "firebase") do
     case user.external_id do
       nil ->
         external_id = Factory.external_id()
+        params = %{provider: provider, external_id: external_id}
 
-        {:ok, _} =
-          Account.update(user, %{
-            provider: provider,
-            external_id: external_id
-          })
-
-        external_id
+        with {:ok, _} <- Account.update(user, params) do
+          {:ok, external_id}
+        end
 
       external_id ->
-        external_id
+        {:ok, external_id}
     end
   end
 

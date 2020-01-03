@@ -7,6 +7,7 @@ defmodule Wocky.Location.Handler do
 
   alias Wocky.Account.User
   alias Wocky.Audit
+  alias Wocky.Errors
   alias Wocky.Location.BotEvent
   alias Wocky.Location.GeoFence
   alias Wocky.Location.Supervisor
@@ -364,7 +365,10 @@ defmodule Wocky.Location.Handler do
             location
         end
 
-      maybe_save_current_location(current?, user, nloc)
+      Errors.log_on_failure(
+        "Saving the current location for user #{User.id(user)}",
+        fn -> maybe_save_current_location(current?, user, nloc) end
+      )
 
       {:ok, nloc}
     end

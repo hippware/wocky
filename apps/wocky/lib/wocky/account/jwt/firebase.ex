@@ -12,7 +12,7 @@ defmodule Wocky.Account.JWT.Firebase do
 
   @impl true
   def subject_for_token(%User{} = user, _claims) do
-    {:ok, Register.get_external_id(user)}
+    Register.get_external_id(user)
   end
 
   def subject_for_token(_, _) do

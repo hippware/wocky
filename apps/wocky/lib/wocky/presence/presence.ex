@@ -5,6 +5,7 @@ defmodule Wocky.Presence do
 
   alias Wocky.Account
   alias Wocky.Account.User
+  alias Wocky.Errors
   alias Wocky.Presence.Manager
   alias Wocky.Presence.PresenceEvent
 
@@ -23,8 +24,7 @@ defmodule Wocky.Presence do
   @doc """
   Mark a user connected and return a list of their currently-online followees
   """
-  # TODO Use User.tid()
-  @spec connect(User.t()) :: [User.t()]
+  @spec connect(User.tid()) :: [User.t()]
   def connect(user) do
     user
     |> Manager.register_handler()
@@ -54,8 +54,13 @@ defmodule Wocky.Presence do
   def publish(recipient, contact, status) do
     full_contact = add_presence(contact, status)
 
-    %PresenceEvent{contact: full_contact, recipient_id: User.id(recipient)}
-    |> Dawdle.signal(direct: true)
+    Errors.log_on_failure(
+      "Publishing #{to_string(status)} presence for user #{User.id(recipient)}",
+      fn ->
+        %PresenceEvent{contact: full_contact, recipient_id: User.id(recipient)}
+        |> Dawdle.signal(direct: true)
+      end
+    )
   end
 
   @spec add_presence(User.t(), status()) :: User.t()

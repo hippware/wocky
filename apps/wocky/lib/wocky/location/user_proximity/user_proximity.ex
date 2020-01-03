@@ -53,10 +53,10 @@ defmodule Wocky.Location.UserProximity do
 
       true ->
         case Current.get(subscription.target) do
-          nil ->
+          {:ok, nil} ->
             subscription
 
-          location ->
+          {:ok, location} ->
             process_location(user, user_location, subscription, location)
         end
     end
@@ -71,10 +71,10 @@ defmodule Wocky.Location.UserProximity do
 
       true ->
         case Current.get(user) do
-          nil ->
+          {:ok, nil} ->
             subscription
 
-          user_location ->
+          {:ok, user_location} ->
             process_location(
               user,
               user_location,

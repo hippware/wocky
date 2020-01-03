@@ -69,12 +69,13 @@ defmodule WockyAPI.GraphQL.LocationTest do
                }
              }
 
-      assert %UserLocation{
-               lat: ^lat,
-               lon: ^lon,
-               device: ^device,
-               accuracy: ^accuracy
-             } = Location.get_current_user_location(user)
+      assert {:ok,
+              %UserLocation{
+                lat: ^lat,
+                lon: ^lon,
+                device: ^device,
+                accuracy: ^accuracy
+              }} = Location.get_current_user_location(user)
     end
 
     test "invalid location", %{user: user} do
@@ -96,7 +97,7 @@ defmodule WockyAPI.GraphQL.LocationTest do
                }
              }
 
-      refute Location.get_current_user_location(user)
+      assert {:ok, nil} = Location.get_current_user_location(user)
     end
 
     @query """

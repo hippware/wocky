@@ -70,7 +70,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
     test "caches location when data is valid", %{conn: conn, user: user} do
       post conn, location_path(conn, :create, user.id), packet()
 
-      cur_loc = Location.get_current_user_location(user)
+      {:ok, cur_loc} = Location.get_current_user_location(user)
       assert cur_loc
       assert cur_loc.lat == @location.coords.latitude
       assert cur_loc.lon == @location.coords.longitude
@@ -94,7 +94,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
       conn = post conn, location_path(conn, :create, user.id), packet(locations)
       assert response(conn, 201)
 
-      cur_loc = Location.get_current_user_location(user)
+      {:ok, cur_loc} = Location.get_current_user_location(user)
       assert cur_loc
       assert cur_loc.lat == current.coords.latitude
       assert cur_loc.lon == current.coords.longitude
@@ -113,7 +113,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
-      refute Location.get_current_user_location(user)
+      assert {:ok, nil} = Location.get_current_user_location(user)
     end
 
     test "silently fails when longitude is missing", %{conn: conn, user: user} do
@@ -129,7 +129,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
-      refute Location.get_current_user_location(user)
+      assert {:ok, nil} = Location.get_current_user_location(user)
     end
 
     test "silently fails when accuracy is missing", %{conn: conn, user: user} do
@@ -145,7 +145,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
-      refute Location.get_current_user_location(user)
+      assert {:ok, nil} = Location.get_current_user_location(user)
     end
 
     test "silently fails when accuracy is negative", %{conn: conn, user: user} do
@@ -162,7 +162,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
       post conn, location_path(conn, :create, user.id), invalid_attrs
 
-      refute Location.get_current_user_location(user)
+      assert {:ok, nil} = Location.get_current_user_location(user)
     end
 
     test "returns 400 when device is missing", %{conn: conn, user: user} do
@@ -174,7 +174,7 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
     test "assigns extra fields", %{conn: conn, user: user} do
       post conn, location_path(conn, :create, user.id), packet()
 
-      cur_loc = Location.get_current_user_location(user)
+      {:ok, cur_loc} = Location.get_current_user_location(user)
       assert cur_loc.extra_fields["extra_field"] == "extra_data"
       assert cur_loc.extra_fields["extra_field_2"] == "extra_data_2"
       assert Enum.count(cur_loc.extra_fields) == 2

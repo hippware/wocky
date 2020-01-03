@@ -16,7 +16,7 @@ defmodule Wocky.Notifier.Push.Backend.FCM do
 
   @impl true
   def push(params) do
-    _ =
+    :ok =
       params.event
       |> build_notification(params.token)
       |> FCM.push(

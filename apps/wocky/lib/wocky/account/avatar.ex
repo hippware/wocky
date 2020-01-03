@@ -4,6 +4,7 @@ defmodule Wocky.Account.Avatar do
   """
 
   alias Wocky.Account.User
+  alias Wocky.Errors
   alias Wocky.Repo.ID
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
@@ -48,9 +49,10 @@ defmodule Wocky.Account.Avatar do
   def maybe_delete_existing(_new_avatar, user) do
     case TROS.parse_url(user.image_url) do
       {:ok, file_id} ->
-        # TODO Do we really want to ignore this return value?
-        _ = TROS.delete(file_id, user)
-        :ok
+        Errors.log_on_failure(
+          "Replacing avatar for user #{user.id}",
+          fn -> TROS.delete(file_id, user) end
+        )
 
       {:error, _} ->
         :ok

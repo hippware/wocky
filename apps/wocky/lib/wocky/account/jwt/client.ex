@@ -23,7 +23,7 @@ defmodule Wocky.Account.JWT.Client do
 
   @impl true
   def subject_for_token(%User{} = user, _claims) do
-    {:ok, Register.get_external_id(user, "bypass")}
+    Register.get_external_id(user, "bypass")
   end
 
   def subject_for_token(token, _claims) when is_binary(token) do

@@ -140,15 +140,13 @@ defmodule Wocky.Account do
   end
 
   @doc "Mark the user as having created a bot at some point in their life"
-  @spec flag_bot_created(User.t()) :: :ok
-  def flag_bot_created(%{bot_created: true}), do: :ok
+  @spec flag_bot_created(User.t()) :: Repo.result(User.t())
+  def flag_bot_created(%{bot_created: true} = user), do: {:ok, user}
 
   def flag_bot_created(user) do
     user
     |> User.changeset(%{bot_created: true})
     |> Repo.update()
-
-    :ok
   end
 
   # ----------------------------------------------------------------------

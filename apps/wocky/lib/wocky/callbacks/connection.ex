@@ -28,7 +28,7 @@ defmodule Wocky.Callbacks.Connection do
   end
 
   defp maybe_notify_sharer(sharer) do
-    loc = Location.get_current_user_location(sharer)
+    {:ok, loc} = Location.get_current_user_location(sharer)
 
     if stale_location?(loc) do
       Notifier.notify(%LocationRequest{to: sharer})

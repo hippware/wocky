@@ -18,7 +18,7 @@ defmodule Wocky.Notifier.Push.Backend.APNS do
 
   @impl true
   def push(params) do
-    _ =
+    :ok =
       params.event
       |> build_notification(params.token)
       |> APNS.push(on_response: params.on_response)
