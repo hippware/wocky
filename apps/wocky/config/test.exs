@@ -4,7 +4,8 @@ config :wocky,
   firebase_load_on_startup: false,
   enable_recurring_tasks: false,
   bot_report_channel: "report-testing",
-  start_watcher: false
+  start_watcher: false,
+  max_local_bots_search_radius: 1_000_000
 
 # Configure your database
 config :wocky, Wocky.Repo,

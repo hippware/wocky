@@ -763,8 +763,6 @@ defmodule WockyAPI.GraphQL.BotTest do
           {[owned.id | o], [subscribed.id | s], [unrelated.id | u]}
         end)
 
-      Application.put_env(:wocky, :max_local_bots_search_radius, 1_000_000)
-
       {:ok,
        owned: Enum.reverse(owned),
        subscribed: Enum.reverse(subscribed),
@@ -902,8 +900,6 @@ defmodule WockyAPI.GraphQL.BotTest do
     }
     """
     setup ctx do
-      Application.put_env(:wocky, :max_local_bots_search_radius, 1_000_000)
-
       locations = [
         {1.5, 1.5},
         {0.1, 0.1},

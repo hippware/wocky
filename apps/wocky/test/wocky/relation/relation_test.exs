@@ -199,8 +199,6 @@ defmodule Wocky.Relation.RelationTest do
           {[owned.id | o], [subscribed.id | s], [unrelated.id | u]}
         end)
 
-      Application.put_env(:wocky, :max_local_bots_search_radius, 1_000_000)
-
       {:ok,
        owned: Enum.reverse(owned),
        subscribed: Enum.reverse(subscribed),
@@ -286,8 +284,6 @@ defmodule Wocky.Relation.RelationTest do
 
   describe "get_local_bots_clustered/5" do
     setup ctx do
-      Application.put_env(:wocky, :max_local_bots_search_radius, 1_000_000)
-
       locations = [
         {1.5, 1.5},
         {0.1, 0.1},
@@ -298,15 +294,15 @@ defmodule Wocky.Relation.RelationTest do
         {3.0, 3.0}
       ]
 
-      b =
+      bots =
         Enum.map(locations, fn {lat, lon} ->
           l = GeoUtils.point(lat, lon)
           Factory.insert(:bot, location: l, user: ctx.user)
         end)
 
-      Enum.each(b, &Relation.subscribe(ctx.user, &1))
+      Enum.each(bots, &Relation.subscribe(ctx.user, &1))
 
-      {:ok, bots: b}
+      {:ok, bots: bots}
     end
 
     test "should return bots in clusters", ctx do
