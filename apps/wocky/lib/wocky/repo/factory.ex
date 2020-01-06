@@ -35,6 +35,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Relation.Invitation, as: BotInvitation
   alias Wocky.Relation.Subscription
   alias Wocky.Repo.ID
+  alias Wocky.Server.Metadata
   alias Wocky.TROS
   alias Wocky.TROS.Metadata, as: TROSMetadata
 
@@ -261,6 +262,14 @@ defmodule Wocky.Repo.Factory do
       range: 10,
       cooldown: :timer.hours(24),
       last_notification: nil
+    }
+  end
+
+  def metadata_factory do
+    %Metadata{
+      key: Lorem.word(),
+      value: Lorem.sentence(),
+      description: Lorem.sentence()
     }
   end
 
