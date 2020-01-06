@@ -16,6 +16,7 @@ defmodule WockyAPI.Schema do
   import_types WockyAPI.Schema.ContactTypes
   import_types WockyAPI.Schema.MediaTypes
   import_types WockyAPI.Schema.MessageTypes
+  import_types WockyAPI.Schema.MetadataTypes
   import_types WockyAPI.Schema.NotificationTypes
   import_types WockyAPI.Schema.PresenceTypes
   import_types WockyAPI.Schema.TestingTypes
@@ -27,6 +28,7 @@ defmodule WockyAPI.Schema do
   query do
     import_fields :bot_queries
     import_fields :media_queries
+    import_fields :metadata_queries
     import_fields :notification_queries
     import_fields :user_queries
   end
