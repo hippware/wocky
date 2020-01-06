@@ -8,7 +8,6 @@ defmodule WockyAPI.GraphQL.WebsocketTest do
   alias Wocky.Account
   alias Wocky.Presence
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias WockyAPI.Factory, as: APIFactory
   alias WockyAPI.Test.Client
   alias WockyAPI.Test.Context

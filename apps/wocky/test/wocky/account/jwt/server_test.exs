@@ -3,7 +3,6 @@ defmodule Wocky.Account.JWT.ServerTest do
 
   alias Wocky.Account.JWT.Server, as: ServerJWT
   alias Wocky.Account.User
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
   setup do

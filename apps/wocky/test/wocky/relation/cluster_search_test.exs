@@ -6,7 +6,6 @@ defmodule Wocky.Relation.ClusterSearchTest do
   alias Wocky.Relation
   alias Wocky.Relation.Cluster
   alias Wocky.Relation.ClusterSearch
-  alias Wocky.Repo.Factory
 
   @third 1.0 / 3.0
   describe "search/5" do

@@ -11,7 +11,6 @@ defmodule Wocky.Callbacks.BotInvitationTest do
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Relation
-  alias Wocky.Repo.Factory
 
   setup_all do
     Callback.register()

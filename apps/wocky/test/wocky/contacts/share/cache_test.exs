@@ -3,7 +3,6 @@ defmodule Wocky.Contacts.Share.CacheTest do
 
   alias Wocky.Contacts.Share.Cache
   alias Wocky.Contacts.Share.CachedRelationship
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
   describe "refresh/1" do

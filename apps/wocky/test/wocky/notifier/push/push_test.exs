@@ -10,7 +10,6 @@ defmodule Wocky.Notifier.Push.PushTest do
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Notifier.Push.Token
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
 
   require Logger
 

@@ -6,7 +6,6 @@ defmodule WockyAPI.GraphQL.LocationSharingTest do
   alias Wocky.Contacts
   alias Wocky.Contacts.Share.Cache
   alias Wocky.Location
-  alias Wocky.Repo.Factory
 
   setup_all do
     require_watcher()

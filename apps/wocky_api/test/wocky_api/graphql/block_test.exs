@@ -2,7 +2,6 @@ defmodule WockyAPI.GraphQL.BlockTest do
   use WockyAPI.GraphQLCase, async: true
 
   alias Wocky.Contacts
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
   setup do

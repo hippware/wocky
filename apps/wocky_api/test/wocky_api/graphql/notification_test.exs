@@ -3,7 +3,6 @@ defmodule WockyAPI.GraphQL.NotificationTest do
 
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias WockyAPI.Factory, as: APIFactory
 
   setup do

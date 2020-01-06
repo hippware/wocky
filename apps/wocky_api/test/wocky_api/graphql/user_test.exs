@@ -9,7 +9,6 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Token
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
   setup do

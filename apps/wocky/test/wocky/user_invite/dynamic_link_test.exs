@@ -1,7 +1,6 @@
 defmodule Wocky.UserInvite.DynamicLinkTest do
   use Wocky.DataCase, async: false
 
-  alias Wocky.Repo.Factory
   alias Wocky.UserInvite
   alias Wocky.UserInvite.DynamicLink
   alias Wocky.UserInvite.DynamicLink.Sandbox

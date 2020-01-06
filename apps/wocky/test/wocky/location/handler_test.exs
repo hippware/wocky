@@ -2,7 +2,6 @@ defmodule Wocky.Location.HandlerTest do
   use Wocky.DataCase, async: false
 
   alias Wocky.Location.Handler
-  alias Wocky.Repo.Factory
 
   describe "get_handler/1" do
     test "both versions should get the same handler" do

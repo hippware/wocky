@@ -6,7 +6,6 @@ defmodule WockyAPI.GraphQL.ConnTest do
 
   use WockyAPI.ConnCase, async: true
 
-  alias Wocky.Repo.Factory
   alias WockyAPI.Factory, as: APIFactory
 
   setup do

@@ -15,6 +15,8 @@ defmodule WockyAPI.GraphQLCase do
 
   using do
     quote do
+      alias Wocky.Repo.Factory
+
       # Import conveniences for testing with GraphQL
       import WockyAPI.GraphQLHelper
 

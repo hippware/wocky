@@ -10,7 +10,6 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   alias Wocky.Presence.Manager
   alias Wocky.Relation
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias WockyAPI.Factory, as: APIFactory
 
   setup_all do

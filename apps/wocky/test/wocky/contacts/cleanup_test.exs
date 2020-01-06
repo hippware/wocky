@@ -9,7 +9,6 @@ defmodule Wocky.Contacts.CleanupTest do
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.POI
   alias Wocky.Relation
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
   setup do

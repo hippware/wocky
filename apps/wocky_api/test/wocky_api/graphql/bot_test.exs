@@ -11,7 +11,6 @@ defmodule WockyAPI.GraphQL.BotTest do
   alias Wocky.Relation
   alias Wocky.Relation.Invitation
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
   alias WockyAPI.Factory, as: APIFactory

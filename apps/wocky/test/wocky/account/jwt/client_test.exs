@@ -3,7 +3,6 @@ defmodule Wocky.Account.JWT.ClientTest do
 
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Firebase
-  alias Wocky.Repo.Factory
 
   setup do
     user = Factory.insert(:user)

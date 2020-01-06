@@ -13,7 +13,6 @@ defmodule Wocky.Callbacks.ConnectionTest do
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Presence.Manager
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.Timestamp
   alias Wocky.Test.FakeSocket
 

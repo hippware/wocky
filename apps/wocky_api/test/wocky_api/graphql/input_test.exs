@@ -9,8 +9,6 @@ defmodule WockyAPI.GraphQL.InputTest do
   """
   use WockyAPI.GraphQLCase, async: true
 
-  alias Wocky.Repo.Factory
-
   setup do
     user = Factory.insert(:user, handle: "abc")
 

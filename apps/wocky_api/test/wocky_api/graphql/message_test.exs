@@ -7,7 +7,6 @@ defmodule WockyAPI.GraphQL.MessageTest do
   alias Wocky.Messaging
   alias Wocky.Messaging.Message
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias WockyAPI.Factory, as: APIFactory
 

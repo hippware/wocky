@@ -12,7 +12,6 @@ defmodule Wocky.Location.GeoFenceTest do
   alias Wocky.POI
   alias Wocky.Relation
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
 
   @device "testing"
 

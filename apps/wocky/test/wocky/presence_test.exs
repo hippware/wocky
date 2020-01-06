@@ -9,7 +9,6 @@ defmodule Wocky.PresenceTest do
   alias Wocky.Presence
   alias Wocky.Presence.Manager
   alias Wocky.Presence.PresenceEvent
-  alias Wocky.Repo.Factory
   alias Wocky.Test.FakeSocket
 
   setup do

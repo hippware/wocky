@@ -14,7 +14,6 @@ defmodule Wocky.Notifier.InBandTest do
   alias Wocky.Notifier.InBand
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Relation.Invitation
-  alias Wocky.Repo.Factory
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)

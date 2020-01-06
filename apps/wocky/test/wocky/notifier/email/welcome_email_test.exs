@@ -8,7 +8,6 @@ defmodule Wocky.Notifier.Email.WelcomeEmailTest do
   alias Wocky.Account.User
   alias Wocky.Notifier.Email.WelcomeEmail
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
 
   test "send/1" do
     user = Factory.build(:user)

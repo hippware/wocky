@@ -7,7 +7,6 @@ defmodule Wocky.Callbacks.RelationshipTest do
   alias Wocky.Contacts.Share.CachedRelationship
   alias Wocky.Notifier.InBand
   alias Wocky.Notifier.InBand.Notification
-  alias Wocky.Repo.Factory
 
   setup_all do
     Callback.register()

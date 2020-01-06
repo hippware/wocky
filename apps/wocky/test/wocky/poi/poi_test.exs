@@ -7,7 +7,6 @@ defmodule Wocky.POI.POITest do
   alias Wocky.POI.Bot
   alias Wocky.POI.Item
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
   setup do

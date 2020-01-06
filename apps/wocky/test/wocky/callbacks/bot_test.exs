@@ -8,7 +8,6 @@ defmodule Wocky.Callbacks.BotTest do
   alias Wocky.Location.Handler
   alias Wocky.POI
   alias Wocky.Relation
-  alias Wocky.Repo.Factory
 
   setup_all do
     BotCallback.register()

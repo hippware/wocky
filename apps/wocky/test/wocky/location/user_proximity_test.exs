@@ -3,27 +3,24 @@ defmodule Wocky.Location.UserProximityTest do
 
   alias Faker.Address
   alias Wocky.Callbacks.UserProximity, as: Callback
-  alias Wocky.Factory
+  alias Wocky.Factory, as: BaseFactory
   alias Wocky.Location
   alias Wocky.Location.Handler
   alias Wocky.Location.Supervisor, as: HandlerSup
   alias Wocky.Location.UserProximity.Subscription
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo
-  alias Wocky.Repo.Factory, as: RepoFactory
 
   setup_all do
     Callback.register()
   end
 
   setup do
-    [u1, u2] = RepoFactory.insert_list(2, :user)
+    [u1, u2] = Factory.insert_list(2, :user)
 
-    prox1 =
-      RepoFactory.insert(:user_proximity, user: u1, target: u2, cooldown: 500)
+    prox1 = Factory.insert(:user_proximity, user: u1, target: u2, cooldown: 500)
 
-    prox2 =
-      RepoFactory.insert(:user_proximity, user: u2, target: u1, range: 10_000)
+    prox2 = Factory.insert(:user_proximity, user: u2, target: u1, range: 10_000)
 
     on_exit(fn ->
       HandlerSup
@@ -42,7 +39,7 @@ defmodule Wocky.Location.UserProximityTest do
       {:ok, _} =
         Location.set_user_location(
           ctx.user1,
-          Factory.build(:user_location,
+          BaseFactory.build(:user_location,
             user_id: ctx.user1.id,
             lat: lat,
             lon: lon
@@ -52,7 +49,7 @@ defmodule Wocky.Location.UserProximityTest do
       {:ok, _} =
         Location.set_user_location(
           ctx.user2,
-          Factory.build(:user_location,
+          BaseFactory.build(:user_location,
             user_id: ctx.user2.id,
             lat: lat,
             lon: lon
@@ -81,7 +78,7 @@ defmodule Wocky.Location.UserProximityTest do
       {:ok, _} =
         Location.set_user_location(
           ctx.user1,
-          Factory.build(:user_location,
+          BaseFactory.build(:user_location,
             user_id: ctx.user1.id,
             lat: lat,
             lon: lon
@@ -91,7 +88,7 @@ defmodule Wocky.Location.UserProximityTest do
       {:ok, _} =
         Location.set_user_location(
           ctx.user2,
-          Factory.build(:user_location,
+          BaseFactory.build(:user_location,
             user_id: ctx.user2.id,
             lat: lat,
             lon: lon
@@ -103,7 +100,7 @@ defmodule Wocky.Location.UserProximityTest do
       {:ok, _} =
         Location.set_user_location(
           ctx.user2,
-          Factory.build(:user_location,
+          BaseFactory.build(:user_location,
             user_id: ctx.user2.id,
             lat: lat,
             lon: lon
@@ -137,7 +134,7 @@ defmodule Wocky.Location.UserProximityTest do
       {:ok, _} =
         Location.set_user_location(
           ctx.user2,
-          Factory.build(:user_location,
+          BaseFactory.build(:user_location,
             user_id: ctx.user2.id,
             lat: lat,
             lon: lon
@@ -150,7 +147,7 @@ defmodule Wocky.Location.UserProximityTest do
       {:ok, _} =
         Location.set_user_location(
           ctx.user1,
-          Factory.build(:user_location,
+          BaseFactory.build(:user_location,
             user_id: ctx.user1.id,
             lat: lat2,
             lon: lon
@@ -216,11 +213,10 @@ defmodule Wocky.Location.UserProximityTest do
     end
 
     test "should add a new subscription when it's created", ctx do
-      user3 = RepoFactory.insert(:user)
+      user3 = Factory.insert(:user)
       h3 = Handler.get_handler(user3)
 
-      prox3 =
-        RepoFactory.insert(:user_proximity, user: user3, target: ctx.user1)
+      prox3 = Factory.insert(:user_proximity, user: user3, target: ctx.user1)
 
       assert_eventually(
         matches?(:sys.get_state(ctx.h1).proximity_subscribers, [

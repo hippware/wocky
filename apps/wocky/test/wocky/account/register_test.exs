@@ -4,7 +4,6 @@ defmodule Wocky.Account.RegisterTest do
   alias Wocky.Account.Register
   alias Wocky.Account.User
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
   @required_attrs [:external_id]

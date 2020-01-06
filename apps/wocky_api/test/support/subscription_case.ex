@@ -7,6 +7,8 @@ defmodule WockyAPI.SubscriptionCase do
 
   using do
     quote do
+      alias Wocky.Repo.Factory
+
       # Import conveniences for testing with channels
       use Phoenix.ChannelTest
 

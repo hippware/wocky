@@ -8,7 +8,6 @@ defmodule Wocky.Contacts.ContactsTest do
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
 
   setup do
     {:ok, user: Factory.insert(:user), contact: Factory.insert(:user)}

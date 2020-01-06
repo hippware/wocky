@@ -7,7 +7,6 @@ defmodule Wocky.Location.LocationTest do
   alias Wocky.Location.UserLocation
   alias Wocky.POI
   alias Wocky.Relation
-  alias Wocky.Repo.Factory
 
   setup do
     user = Factory.insert(:user)
