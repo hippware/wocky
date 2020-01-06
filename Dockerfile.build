@@ -8,7 +8,7 @@ COPY mix.exs mix.lock version.exs ./
 COPY apps/wocky/mix.exs apps/wocky/
 COPY apps/wocky_api/mix.exs apps/wocky_api/
 
-RUN mix hex.organization auth hippware --key $HEX_ORG_KEY
+#RUN mix hex.organization auth hippware --key $HEX_ORG_KEY
 RUN mix do deps.get, deps.compile && \
     MIX_ENV=prod mix deps.compile
 
