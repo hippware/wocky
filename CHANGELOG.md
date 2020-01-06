@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Fix intermittent presence test failures (PR #2988)
+* Improve error handling (PR #2986)
+* Temporarily disable private hex repo (PR #2990)
+* Clean up the Relation context module (PR #2989)
+
+
 # 2019.12.19+r7b0eedf
 
 * Move goth and pigeon configs into Config context (PR #2985)
