@@ -1,8 +1,6 @@
 defmodule WockyAPI.GraphQL.MessageSubscriptionTest do
   use WockyAPI.SubscriptionCase, async: false
 
-  alias Wocky.Repo.Factory
-
   setup_all do
     require_watcher()
     WockyAPI.Callbacks.Message.register()

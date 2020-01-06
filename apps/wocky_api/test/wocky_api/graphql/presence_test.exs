@@ -7,7 +7,6 @@ defmodule WockyAPI.GraphQL.PresenceTest do
 
   alias Wocky.Contacts
   alias Wocky.Presence
-  alias Wocky.Repo.Factory
 
   setup_all do
     # Share database access with the Presence Manager process.

@@ -3,7 +3,6 @@ defmodule WockyAPI.GraphQL.PublicTest do
 
   alias Wocky.Account
   alias Wocky.Relation
-  alias Wocky.Repo.Factory
   alias WockyAPI.Factory, as: APIFactory
 
   setup do

@@ -2,7 +2,6 @@ defmodule WockyAPI.GraphQL.AuthenticationTest do
   use WockyAPI.GraphQLCase, async: true
 
   alias Faker.Lorem
-  alias Wocky.Repo.Factory
   alias WockyAPI.Factory, as: APIFactory
 
   @query """

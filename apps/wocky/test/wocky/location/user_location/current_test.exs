@@ -3,7 +3,6 @@ defmodule Wocky.Location.UserLocation.CurrentTest do
 
   alias Wocky.Contacts
   alias Wocky.Location.UserLocation.Current
-  alias Wocky.Repo.Factory
 
   setup do
     {:ok, users: Factory.insert_list(4, :user)}

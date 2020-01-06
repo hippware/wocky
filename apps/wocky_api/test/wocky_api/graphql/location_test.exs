@@ -14,7 +14,6 @@ defmodule WockyAPI.GraphQL.LocationTest do
   alias Wocky.POI
   alias Wocky.Presence.Manager
   alias Wocky.Relation
-  alias Wocky.Repo.Factory
 
   setup do
     user = Factory.insert(:user)

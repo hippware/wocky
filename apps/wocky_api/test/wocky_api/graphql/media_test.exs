@@ -4,7 +4,6 @@ defmodule WockyAPI.GraphQL.MediaTest do
   alias Faker.Lorem
   alias Wocky.Account
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.TROS
   alias Wocky.TROS.Metadata

@@ -6,7 +6,6 @@ defmodule Wocky.MessagingTest do
   alias Wocky.Messaging
   alias Wocky.Messaging.Conversation
   alias Wocky.Messaging.Message
-  alias Wocky.Repo.Factory
 
   describe "archive functions" do
     setup do

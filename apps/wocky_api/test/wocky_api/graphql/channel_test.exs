@@ -4,7 +4,6 @@ defmodule WockyAPI.GraphQL.ChannelTest do
   import WockyAPI.GraphQLHelper
 
   alias Ecto.Adapters.SQL.Sandbox
-  alias Wocky.Repo.Factory
 
   setup_all do
     :ok = Sandbox.checkout(Wocky.Repo)

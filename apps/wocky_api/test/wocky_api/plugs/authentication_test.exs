@@ -3,7 +3,6 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
 
   import WockyAPI.Plugs.Authentication
 
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias WockyAPI.Factory, as: APIFactory
 

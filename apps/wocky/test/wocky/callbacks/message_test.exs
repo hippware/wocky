@@ -7,7 +7,6 @@ defmodule Wocky.Callbacks.MessageTest do
   alias Wocky.Callbacks.Message, as: Callback
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
-  alias Wocky.Repo.Factory
 
   setup_all do
     Callback.register()

@@ -5,7 +5,6 @@ defmodule Wocky.Account.AccountAsyncTest do
 
   alias Wocky.Account
   alias Wocky.Contacts
-  alias Wocky.Repo.Factory
 
   setup do
     user =

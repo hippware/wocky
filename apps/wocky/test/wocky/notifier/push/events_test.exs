@@ -10,7 +10,6 @@ defmodule Wocky.Notifier.Push.EventsTest do
   alias Wocky.Events.UserInvitation
   alias Wocky.Events.UserInvitationResponse
   alias Wocky.Notifier.Push.Event
-  alias Wocky.Repo.Factory
 
   @test_handle "test_handle"
   @test_title "test_title"

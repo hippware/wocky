@@ -10,7 +10,6 @@ defmodule Wocky.Relation.RelationTest do
   alias Wocky.Relation
   alias Wocky.Relation.Cluster
   alias Wocky.Relation.Invitation
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
 
   defp eq_bot(bot1, bot2),

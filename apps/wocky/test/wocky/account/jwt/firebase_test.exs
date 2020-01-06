@@ -2,7 +2,6 @@ defmodule Wocky.Account.JWT.FirebaseTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Account.JWT.Firebase
-  alias Wocky.Repo.Factory
 
   setup do
     user = Factory.insert(:user)

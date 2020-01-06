@@ -6,7 +6,6 @@ defmodule WockyAPI.GraphQL.UserSubscriptionTest do
   alias Wocky.Account
   alias Wocky.Contacts
   alias Wocky.Presence.Manager
-  alias Wocky.Repo.Factory
 
   setup_all do
     require_watcher()

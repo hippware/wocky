@@ -2,7 +2,6 @@ defmodule Wocky.SMS.MessengerTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Account.User
-  alias Wocky.Repo.Factory
   alias Wocky.SMS.Messenger
 
   describe "send/2" do

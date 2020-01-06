@@ -7,7 +7,6 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
   alias Wocky.Account.User
   alias Wocky.Contacts
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias Wocky.SMS.Sandbox, as: SMSSandbox
   alias Wocky.UserInvite
   alias Wocky.UserInvite.DynamicLink.Sandbox, as: DLSandbox

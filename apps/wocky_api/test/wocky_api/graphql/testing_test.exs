@@ -5,7 +5,6 @@ defmodule WockyAPI.GraphQL.TestingTest do
   alias Wocky.POI.Bot
   alias Wocky.Relation
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
 
   setup do
     {:ok, user: Factory.insert(:user)}

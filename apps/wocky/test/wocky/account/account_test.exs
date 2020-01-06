@@ -10,7 +10,6 @@ defmodule Wocky.Account.AccountTest do
   alias Wocky.Contacts
   alias Wocky.Relation
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.TROS
   alias Wocky.TROS.Metadata

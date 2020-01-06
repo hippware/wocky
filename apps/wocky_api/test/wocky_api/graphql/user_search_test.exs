@@ -1,8 +1,6 @@
 defmodule WockyAPI.GraphQL.UserSearchTest do
   use WockyAPI.GraphQLCase, async: true
 
-  alias Wocky.Repo.Factory
-
   describe "user search" do
     setup do
       {:ok, user: Factory.insert(:user)}

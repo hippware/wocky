@@ -2,7 +2,6 @@ defmodule Wocky.TROS.Store.SimpleTest do
   use Wocky.DataCase, async: true
 
   alias Faker.Lorem
-  alias Wocky.Repo.Factory
   alias Wocky.TROS
   alias Wocky.TROS.Store.Simple, as: SimpleStore
 

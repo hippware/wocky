@@ -9,6 +9,7 @@ defmodule Wocky.WatcherCase do
   using do
     quote do
       alias Wocky.Repo
+      alias Wocky.Repo.Factory
 
       import Ecto
       import Ecto.Changeset

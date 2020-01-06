@@ -21,8 +21,11 @@ defmodule WockyAPI.ConnCase do
 
   using do
     quote do
+      alias Wocky.Repo.Factory
+
       # Import conveniences for testing with connections
       use Phoenix.ConnTest
+
       import WockyAPI.Router.Helpers
       import WockyAPI.ConnHelper
 

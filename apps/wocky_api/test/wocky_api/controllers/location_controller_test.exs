@@ -3,7 +3,6 @@ defmodule WockyAPI.Controllers.LocationControllerTest do
 
   alias Faker.Address
   alias Wocky.Location
-  alias Wocky.Repo.Factory
   alias WockyAPI.Factory, as: APIFactory
 
   @location %{

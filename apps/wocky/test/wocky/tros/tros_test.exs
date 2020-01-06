@@ -2,7 +2,6 @@ defmodule Wocky.TROS.TROSTest do
   use Wocky.DataCase, async: true
 
   alias Wocky.Repo
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.TROS
 

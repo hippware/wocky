@@ -3,7 +3,6 @@ defmodule Wocky.TROS.Store.S3Test do
 
   alias Faker.Lorem
   alias Plug.Conn
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.TROS
   alias Wocky.TROS.Store.S3, as: S3Store

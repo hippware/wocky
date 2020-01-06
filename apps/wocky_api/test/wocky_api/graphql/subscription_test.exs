@@ -5,7 +5,6 @@ defmodule WockyAPI.GraphQL.SubscriptionTest do
   alias Wocky.GeoUtils
   alias Wocky.Relation
   alias Wocky.Relation.Subscription
-  alias Wocky.Repo.Factory
 
   setup_all do
     require_watcher()

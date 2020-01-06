@@ -4,8 +4,7 @@ defmodule Wocky.AuditTest do
   import ExUnit.CaptureLog
 
   alias Wocky.Audit
-  alias Wocky.Factory
-  alias Wocky.Repo.Factory, as: RepoFactory
+  alias Wocky.Factory, as: BaseFactory
 
   setup do
     orig_level = Logger.level()
@@ -15,12 +14,12 @@ defmodule Wocky.AuditTest do
       Logger.configure(level: orig_level)
     end)
 
-    {:ok, user: RepoFactory.build(:user)}
+    {:ok, user: Factory.build(:user)}
   end
 
   describe "log_traffic/3" do
     test "should add a traffic entry for the user", %{user: user} do
-      log = Factory.build(:traffic_log, user_id: user.id)
+      log = BaseFactory.build(:traffic_log, user_id: user.id)
 
       assert capture_log(fn ->
                assert :ok = Audit.log_traffic(log, user, log_traffic: true)
@@ -28,7 +27,7 @@ defmodule Wocky.AuditTest do
     end
 
     test "should not log when :log_traffic is false", %{user: user} do
-      log = Factory.build(:traffic_log, user_id: user.id)
+      log = BaseFactory.build(:traffic_log, user_id: user.id)
 
       assert capture_log(fn ->
                assert :ok = Audit.log_traffic(log, user, log_traffic: false)
@@ -38,7 +37,7 @@ defmodule Wocky.AuditTest do
 
   describe "log_location/3" do
     test "should add a location entry for the user", %{user: user} do
-      loc = RepoFactory.build(:location, device: "test", user_id: user.id)
+      loc = Factory.build(:location, device: "test", user_id: user.id)
 
       log =
         capture_log(fn ->
@@ -51,7 +50,7 @@ defmodule Wocky.AuditTest do
     end
 
     test "should not log when :log_location is false", %{user: user} do
-      loc = RepoFactory.build(:location, device: "test")
+      loc = Factory.build(:location, device: "test")
 
       assert capture_log(fn ->
                {:ok, nil} = Audit.log_location(loc, user, log_location: false)
@@ -61,7 +60,7 @@ defmodule Wocky.AuditTest do
 
   describe "log_push/3" do
     test "should add a push notification entry for the user", %{user: user} do
-      push = Factory.build(:push_log)
+      push = BaseFactory.build(:push_log)
 
       log =
         capture_log(fn ->
@@ -77,7 +76,7 @@ defmodule Wocky.AuditTest do
     end
 
     test "should not log payload when :log_push_payload is false", %{user: user} do
-      push = Factory.build(:push_log)
+      push = BaseFactory.build(:push_log)
 
       log =
         capture_log(fn ->
@@ -92,7 +91,7 @@ defmodule Wocky.AuditTest do
     end
 
     test "should not log when :log_push is false", %{user: user} do
-      push = Factory.build(:push_log)
+      push = BaseFactory.build(:push_log)
 
       assert capture_log(fn ->
                assert :ok = Audit.log_push(push, user, log_push: false)

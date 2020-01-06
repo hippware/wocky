@@ -10,7 +10,6 @@ defmodule Wocky.Repo.CleanerTest do
   alias Wocky.POI.Item
   alias Wocky.Repo
   alias Wocky.Repo.Cleaner
-  alias Wocky.Repo.Factory
   alias Wocky.Repo.ID
   alias Wocky.Repo.Timestamp
   alias Wocky.TROS
