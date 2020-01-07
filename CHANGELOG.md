@@ -9,6 +9,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Improve error handling (PR #2986)
 * Temporarily disable private hex repo (PR #2990)
 * Clean up the Relation context module (PR #2989)
+* Alias Wocky.Repo.Factory in test helpers (PR #2992)
+* Server metadata (PR #2991)
 
 
 # 2019.12.19+r7b0eedf
