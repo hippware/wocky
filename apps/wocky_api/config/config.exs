@@ -25,8 +25,6 @@ config :wocky_api, :generators,
 config :wocky_api, WockyAPI.Endpoint,
   http: [
     port: 4000,
-    # This must be more than the ALB idle timeout:
-    timeout: 90_000,
     # This must be infinity to prevent cowboy closing the connection after
     # a fixed number of requests:
     protocol_options: [max_keepalive: :infinity, request_timeout: 90_000]
