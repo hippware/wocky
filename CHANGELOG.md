@@ -5,6 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: plug_cowboy (PR #2997)
+
+
+# 2020.1.6+rbf42720
+
 * Fix intermittent presence test failures (PR #2988)
 * Improve error handling (PR #2986)
 * Temporarily disable private hex repo (PR #2990)
