@@ -6,6 +6,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: plug_cowboy (PR #2997)
+* Lower Plug log level to :debug (PR #3003)
 
 
 # 2020.1.6+rbf42720
