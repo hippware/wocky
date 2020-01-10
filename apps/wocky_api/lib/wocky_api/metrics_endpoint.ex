@@ -10,7 +10,6 @@ defmodule WockyAPI.MetricsEndpoint do
   end
 
   plug Plug.RequestId
-  plug Plug.Logger
 
   plug Plug.MethodOverride
   plug Plug.Head
