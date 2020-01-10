@@ -36,10 +36,15 @@ defmodule Wocky.Notifier.InBand do
         ) :: Queryable.t()
   def user_query(user, before_id, after_id, types \\ nil) do
     user
-    |> assoc(:notifications)
+    |> user_query()
     |> maybe_add_type_filter(types)
     |> maybe_add_before_id(before_id)
     |> maybe_add_after_id(after_id)
+  end
+
+  defp user_query(user) do
+    from n in assoc(user, :notifications),
+      preload: [:other_user]
   end
 
   defp maybe_add_type_filter(queryable, nil), do: queryable

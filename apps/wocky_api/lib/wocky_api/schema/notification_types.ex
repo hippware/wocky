@@ -78,7 +78,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
       resolve: dataloader(Wocky, :bot_invitation)
 
     @desc "The sender of the invitation"
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+    field :user, non_null(:user)
 
     @desc "The bot to which the recipient was invited"
     field :bot, non_null(:bot), resolve: dataloader(Wocky)
@@ -93,7 +93,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
       resolve: dataloader(Wocky, :bot_invitation)
 
     @desc "The user who replied to the invitation"
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+    field :user, non_null(:user)
 
     @desc "The bot to which the user was invited"
     field :bot, non_null(:bot), resolve: dataloader(Wocky)
@@ -106,7 +106,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   @desc "A notification for posting or updating a bot item"
   object :bot_item_notification do
     @desc "The user who made the change"
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+    field :user, non_null(:user)
 
     @desc "The bot to which the item belongs"
     field :bot, non_null(:bot), resolve: dataloader(Wocky)
@@ -126,7 +126,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   @desc "A notification that a user has entered or exited a subscribed bot"
   object :geofence_event_notification do
     @desc "The user who entered or exited"
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+    field :user, non_null(:user)
 
     @desc "The bot that was entered or exited"
     field :bot, non_null(:bot), resolve: dataloader(Wocky)
@@ -141,7 +141,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   """
   object :location_share_notification do
     @desc "The user sharing their location"
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+    field :user, non_null(:user)
 
     @desc "The ID of this share"
     field :share_id, :aint
@@ -156,7 +156,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   """
   object :location_share_end_notification do
     @desc "The user sharing their location"
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+    field :user, non_null(:user)
 
     @desc "The ID of the ending share"
     field :share_id, :aint
@@ -168,7 +168,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   """
   object :location_share_end_self_notification do
     @desc "The user to whom the recipient was sharing their location"
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+    field :user, non_null(:user)
 
     @desc "The ID of the ending share"
     field :share_id, :aint
@@ -179,7 +179,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
     The user has moved within nearby range and has begun sharing their location.
     This will be sent at most once per nearby cooldown period.
     """
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+    field :user, non_null(:user)
   end
 
   @desc """
@@ -187,7 +187,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   """
   object :user_invitation_notification do
     @desc "The user who sent the invitation"
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+    field :user, non_null(:user)
   end
 
   @desc """
@@ -195,7 +195,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   """
   object :user_proximity_notification do
     @desc "The user who is within range"
-    field :user, non_null(:user), resolve: dataloader(Wocky, :other_user)
+    field :user, non_null(:user)
   end
 
   # -------------------------------------------------------------------

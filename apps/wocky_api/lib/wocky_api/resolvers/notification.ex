@@ -18,8 +18,11 @@ defmodule WockyAPI.Resolvers.Notification do
     {:user_proximity, :user_proximity_notification}
   ]
 
-  def to_graphql(%Notification{id: id, created_at: created_at} = n),
-    do: %{data: n, id: id, created_at: created_at}
+  def to_graphql(%Notification{id: id, created_at: created_at} = n) do
+    data = Map.put(n, :user, n.other_user)
+
+    %{data: data, id: id, created_at: created_at}
+  end
 
   # -------------------------------------------------------------------
   # Connections
