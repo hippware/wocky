@@ -79,7 +79,7 @@
   "gen_state_machine": {:hex, :gen_state_machine, "2.0.5", "9ac15ec6e66acac994cc442dcc2c6f9796cf380ec4b08267223014be1c728a95", [:mix], [], "hexpm"},
   "geo": {:hex, :geo, "3.3.3", "1119302b20d21515fbcec0a180b82653524067873ed333e7fa1f55e39959d702", [:mix], [], "hexpm"},
   "geo_postgis": {:hex, :geo_postgis, "3.3.1", "45bc96b9121d0647341685dc9d44956d61338707482d655c803500676b0413a1", [:mix], [{:geo, "~> 3.3", [hex: :geo, repo: "hexpm", optional: false]}, {:jason, "~> 1.0", [hex: :jason, repo: "hexpm", optional: true]}, {:poison, "~> 2.2 or ~> 3.0 or ~> 4.0", [hex: :poison, repo: "hexpm", optional: true]}, {:postgrex, "~> 0.14", [hex: :postgrex, repo: "hexpm", optional: false]}], "hexpm"},
-  "geocalc": {:hex, :geocalc, "0.8.0", "66f389d7b1f2a5a27915bc3cf4a9336f998818f7a2da5bcefcc39c407167bd70", [:mix], [], "hexpm"},
+  "geocalc": {:git, "https://github.com/hippware/geocalc.git", "a14b00f287655449cded020b93f6f2397a92f0f6", [branch: "elixir-1.10"]},
   "gettext": {:hex, :gettext, "0.17.1", "8baab33482df4907b3eae22f719da492cee3981a26e649b9c2be1c0192616962", [:mix], [], "hexpm"},
   "goldrush": {:hex, :goldrush, "0.1.9", "f06e5d5f1277da5c413e84d5a2924174182fb108dabb39d5ec548b27424cd106", [:rebar3], [], "hexpm"},
   "goth": {:hex, :goth, "1.2.0", "92d6d926065a72a7e0da8818cc3a133229b56edf378022c00d9886c4125ce769", [:mix], [{:httpoison, "~> 0.11 or ~> 1.0", [hex: :httpoison, repo: "hexpm", optional: false]}, {:jason, "~> 1.1", [hex: :jason, repo: "hexpm", optional: false]}, {:joken, "~> 2.0", [hex: :joken, repo: "hexpm", optional: false]}], "hexpm"},

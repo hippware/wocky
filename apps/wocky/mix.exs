@@ -102,7 +102,8 @@ defmodule Wocky.Mixfile do
       {:fun_with_flags, github: "hippware/fun_with_flags", branch: "working"},
       {:gen_stage, "~> 0.12"},
       {:geo_postgis, "~> 3.0"},
-      {:geocalc, "~> 0.5"},
+      # TODO Move back to upstream package when the Elixir 1.10 issue is fixed
+      {:geocalc, github: "hippware/geocalc", branch: "elixir-1.10"},
       {:guardian_firebase, "~> 1.0"},
       {:honeybadger, "~> 0.13"},
       {:httpoison, "~> 1.6", override: true},
