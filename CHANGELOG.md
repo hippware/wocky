@@ -5,8 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: plug_cowboy (PR #2997)
+* Update: plug_cowboy (PR #2997), dataloader (PR #3007)
 * Lower Plug log level to :debug (PR #3003)
+* Don't log metrics requests (PR #3009)
+  * Error logs are filled with errors from healthcheck (#2998)
+* GraphQL error: Cannot return null for non-nullable field (#3000)
+  * Correct a race condition in the client tests (PR #3010)
 
 
 # 2020.1.6+rbf42720
