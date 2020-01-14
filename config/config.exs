@@ -48,6 +48,13 @@ config :lager,
 # Exometer uses Hut as a logging abstraction
 config :hut, :level, :info
 
+# Exometer depends on `setup`, which wants to create data and log
+# directories at startup. Suppress this behavior by setting the log and
+# data directory names to an empty string.
+config :setup,
+  data_dir: "",
+  log_dir: ""
+
 config :honeybadger, use_logger: true
 
 config :libcluster,
