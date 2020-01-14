@@ -67,7 +67,14 @@ defmodule WockyAPI.Schema.ContactTypes do
     field :share_type, non_null(:friend_share_type)
 
     @desc "The current user's location share config for the other user"
-    field :share_config, :friend_share_config
+    field :share_config, :friend_share_config,
+      resolve: fn f, _, _ ->
+        {:ok,
+         %{
+           nearby_distance: f.nearby_distance,
+           notify_cooldown: f.nearby_cooldown
+         }}
+      end
 
     @desc "The creation time of the friendship"
     field :created_at, non_null(:datetime)

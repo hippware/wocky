@@ -393,6 +393,10 @@ defmodule WockyAPI.GraphQL.ContactTest do
         result {
           user { id }
           shareType
+          shareConfig {
+            nearbyDistance
+            notifyCooldown
+          }
         }
         messages {
           field
@@ -418,7 +422,11 @@ defmodule WockyAPI.GraphQL.ContactTest do
                  "successful" => true,
                  "result" => %{
                    "user" => %{"id" => user2.id},
-                   "shareType" => "DISABLED"
+                   "shareType" => "DISABLED",
+                   "shareConfig" => %{
+                     "nearbyDistance" => 2000,
+                     "notifyCooldown" => :timer.hours(2)
+                   }
                  },
                  "messages" => []
                }
@@ -447,7 +455,11 @@ defmodule WockyAPI.GraphQL.ContactTest do
                  "successful" => true,
                  "result" => %{
                    "user" => %{"id" => user2.id},
-                   "shareType" => "NEARBY"
+                   "shareType" => "NEARBY",
+                   "shareConfig" => %{
+                     "nearbyDistance" => 1000,
+                     "notifyCooldown" => 5
+                   }
                  },
                  "messages" => []
                }
