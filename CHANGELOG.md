@@ -11,6 +11,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * Error logs are filled with errors from healthcheck (#2998)
 * GraphQL error: Cannot return null for non-nullable field (#3000)
   * Correct a race condition in the client tests (PR #3010)
+* Hide data and log dirs when running locally (PR #3012)
+  * Mnesia directories show up after running tests (#3004)
 
 
 # 2020.1.6+rbf42720
