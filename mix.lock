@@ -100,7 +100,7 @@
   "jose": {:hex, :jose, "1.10.0", "0bc2645b50c50e4a4714a593093b3ec091dddbdb7b369c3a8c7eab9998bd378f", [:mix, :rebar3], [], "hexpm"},
   "kadabra": {:hex, :kadabra, "0.4.4", "29d7f4c231d44a59d99b550fa75489a80a572140b3316809f326bf608bce33d8", [:mix], [{:hpack, "~> 0.2.3", [hex: :hpack_erl, repo: "hexpm", optional: false]}], "hexpm"},
   "lager": {:hex, :lager, "3.6.7", "2fbf823944caa0fc10df5ec13f3f047524a249bb32f0d801b7900c9610264286", [:rebar3], [{:goldrush, "0.1.9", [hex: :goldrush, repo: "hexpm", optional: false]}], "hexpm"},
-  "libcluster": {:hex, :libcluster, "3.1.1", "cbab97b96141f47f2fe5563183c444bbce9282b3991ef054d69b8805546f0122", [:mix], [{:jason, "~> 1.1.2", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm"},
+  "libcluster": {:hex, :libcluster, "3.2.0", "ed483eea1b960b89a4cee374898644930b28759226716cd7aeaf707976c5966d", [:mix], [{:jason, "~> 1.1.2", [hex: :jason, repo: "hexpm", optional: false]}], "hexpm"},
   "libring": {:hex, :libring, "1.4.0", "41246ba2f3fbc76b3971f6bce83119dfec1eee17e977a48d8a9cfaaf58c2a8d6", [:mix], [], "hexpm"},
   "loner": {:hex, :loner, "0.2.0", "fd756aefb1898cf23c416053641b91ddd25a24633275a773c0e7f1e3085de4ac", [:mix], [{:horde, "~> 0.7", [hex: :horde, repo: "hexpm", optional: false]}], "hexpm"},
   "meck": {:hex, :meck, "0.8.13", "ffedb39f99b0b99703b8601c6f17c7f76313ee12de6b646e671e3188401f7866", [:rebar3], [], "hexpm"},
