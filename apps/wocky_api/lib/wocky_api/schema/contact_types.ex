@@ -46,7 +46,7 @@ defmodule WockyAPI.Schema.ContactTypes do
     field :nearby_distance, :integer
 
     @desc "Cooldown period between 'nearby' sharing notifications"
-    field :notify_cooldown, :integer
+    field :nearby_cooldown, :integer
   end
 
   @desc "Another user with whom a friendship exists"
@@ -68,13 +68,7 @@ defmodule WockyAPI.Schema.ContactTypes do
 
     @desc "The current user's location share config for the other user"
     field :share_config, :friend_share_config,
-      resolve: fn f, _, _ ->
-        {:ok,
-         %{
-           nearby_distance: f.nearby_distance,
-           notify_cooldown: f.nearby_cooldown
-         }}
-      end
+      resolve: fn f, _, _ -> {:ok, f} end
 
     @desc "The creation time of the friendship"
     field :created_at, non_null(:datetime)

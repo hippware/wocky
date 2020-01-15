@@ -395,7 +395,7 @@ defmodule WockyAPI.GraphQL.ContactTest do
           shareType
           shareConfig {
             nearbyDistance
-            notifyCooldown
+            nearbyCooldown
           }
         }
         messages {
@@ -425,7 +425,7 @@ defmodule WockyAPI.GraphQL.ContactTest do
                    "shareType" => "DISABLED",
                    "shareConfig" => %{
                      "nearbyDistance" => 2000,
-                     "notifyCooldown" => :timer.hours(2)
+                     "nearbyCooldown" => :timer.hours(2)
                    }
                  },
                  "messages" => []
@@ -458,7 +458,7 @@ defmodule WockyAPI.GraphQL.ContactTest do
                    "shareType" => "NEARBY",
                    "shareConfig" => %{
                      "nearbyDistance" => 1000,
-                     "notifyCooldown" => 5
+                     "nearbyCooldown" => 5
                    }
                  },
                  "messages" => []
