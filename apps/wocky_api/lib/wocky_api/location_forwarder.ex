@@ -13,7 +13,7 @@ defmodule WockyAPI.LocationForwarder do
     if target do
       user = User.hydrate(user_id)
 
-      if Audit.should_log?(:location, user) do
+      if user && user.handle && Audit.should_log?(:location, user) do
         do_forward(user, l, target)
       end
     end
