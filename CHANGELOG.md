@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Suppress creation of data and log directories (PR #3015)
+* Consistently use the field name nearbyCooldown (PR #3018)
+
+
+# 2020.1.14+r51e6bde
+
 * Update: plug_cowboy (PR #2997), dataloader (PR #3007)
   * libcluster (PR #3013)
 * Lower Plug log level to :debug (PR #3003)
@@ -14,7 +20,6 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * Correct a race condition in the client tests (PR #3010)
 * Mnesia directories show up after running tests (#3004)
   * Hide data and log dirs when running locally (PR #3012)
-  * Suppress creation of data and log directories (PR #3015)
 * shareConfig is null in friendShareUpdate mutation response (#3016)
 
 
