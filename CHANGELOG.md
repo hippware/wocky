@@ -5,8 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2020.1.16+r73663d8
+
 * Suppress creation of data and log directories (PR #3015)
 * Consistently use the field name nearbyCooldown (PR #3018)
+* Don't forward location when handle is NULL (PR #3021)
+  * [Wocky/staging] ArgumentError: argument error (#3020)
 
 
 # 2020.1.14+r51e6bde
