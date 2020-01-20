@@ -128,7 +128,7 @@ defmodule Wocky.Account.User do
   def id(%__MODULE__{id: id}), do: id
   def id(id), do: id
 
-  @spec hydrate(tid()) :: t()
+  @spec hydrate(tid()) :: t() | nil
   def hydrate(%__MODULE__{} = user), do: user
   def hydrate(id), do: Repo.get(__MODULE__, id)
 
