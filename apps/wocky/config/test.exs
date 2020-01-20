@@ -23,6 +23,8 @@ config :wocky, Wocky.Notifier.Push,
 
 config :wocky, Wocky.Notifier.Push.Backend.Sandbox, reflect: true
 
+config :dawdle_db, log_cleanup_errors: false
+
 config :ex_aws,
   access_key_id: "test_id",
   secret_access_key: "test_key"
