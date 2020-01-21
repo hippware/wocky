@@ -71,6 +71,10 @@ defmodule WockyAPI.Schema.NotificationTypes do
     field :created_at, non_null(:datetime)
   end
 
+  # NOTE We aren't using dataloader for the user field in these notifications.
+  # In order to avoid a race condition that shows up in testing, we are
+  # preloading the user when the event is generated.
+
   @desc "A notification that a user has invited the recipient to a bot"
   object :bot_invitation_notification do
     @desc "The invitation object itself"
