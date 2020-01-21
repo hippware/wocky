@@ -105,6 +105,21 @@ defmodule WockyAPI.Resolvers.Contact do
     end
   end
 
+  defp check_share_opts(opts) do
+    min_distance = Confex.get_env(:wocky, :min_nearby_distance)
+
+    cond do
+      opts[:nearby_distance] && opts[:nearby_distance] < min_distance ->
+        {:error, "nearbyDistance must be at least #{min_distance}"}
+
+      opts[:nearby_cooldown] && opts[:nearby_cooldown] < 0 ->
+        {:error, "nearbyCooldown must be at least 0"}
+
+      true ->
+        :ok
+    end
+  end
+
   defp maybe_update_location(%{location: l}, user) when not is_nil(l),
     do: Location.set_user_location(user, UserLocation.new(l))
 
@@ -153,10 +168,11 @@ defmodule WockyAPI.Resolvers.Contact do
   def contacts_subscription_topic(user_id),
     do: "contacts_subscription_" <> user_id
 
-  def notify_contact(item, relationship) do
+  def notify_contact(item, relationship, share_type) do
     notification = %{
       user: item.contact,
       relationship: relationship,
+      share_type: share_type,
       created_at: item.created_at
     }
 
@@ -165,7 +181,7 @@ defmodule WockyAPI.Resolvers.Contact do
     Subscription.publish(Endpoint, notification, [{:contacts, topic}])
   end
 
-  # Contacts subscription
+  # Friends subscription
 
   def friends_subscription_topic(user_id),
     do: "friends_subscription_" <> user_id
@@ -274,21 +290,6 @@ defmodule WockyAPI.Resolvers.Contact do
       else
         acc
       end
-    end
-  end
-
-  defp check_share_opts(opts) do
-    min_distance = Confex.get_env(:wocky, :min_nearby_distance)
-
-    cond do
-      opts[:nearby_distance] && opts[:nearby_distance] < min_distance ->
-        {:error, "nearbyDistance must be at least #{min_distance}"}
-
-      opts[:nearby_cooldown] && opts[:nearby_cooldown] < 0 ->
-        {:error, "nearbyCooldown must be at least 0"}
-
-      true ->
-        :ok
     end
   end
 end

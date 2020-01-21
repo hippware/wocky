@@ -124,6 +124,9 @@ defmodule WockyAPI.Schema.ContactTypes do
     @desc "The current user's relationship with the other user"
     field :relationship, :user_contact_relationship
 
+    @desc "The sharing level of the other user"
+    field :share_type, :friend_share_type
+
     @desc "DEPRECATED Always returns an empty string"
     field :name, :string,
       deprecate: "Always returns an empty string",
