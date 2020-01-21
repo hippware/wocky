@@ -15,7 +15,10 @@ config :wocky,
   server_jwt_signing_key: {{:via, VaultAdapter}, "server-jwt-signing-key"},
   location_share_end_self: true
 
-config :wocky, Wocky.Repo, password: {{:via, VaultAdapter}, "db-password"}
+config :wocky, Wocky.Repo,
+  password: {{:via, VaultAdapter}, "db-password"},
+  ssl: true,
+  ssl_opts: [verify: :verify_peer, cacertfile: 'etc/ssl/rds-ca-2019-root.pem']
 
 config :wocky, Wocky.Location.GeoFence, visit_timeout_enabled: false
 
