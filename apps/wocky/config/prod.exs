@@ -18,7 +18,7 @@ config :wocky,
 config :wocky, Wocky.Repo,
   password: {{:via, VaultAdapter}, "db-password"},
   ssl: true,
-  ssl_opts: [verify: :verify_peer, cacertfile: 'etc/ssl/rds-ca-2019-root.pem']
+  ssl_opts: [cacertfile: 'etc/ssl/rds-ca-2019-root.pem']
 
 config :wocky, Wocky.Location.GeoFence, visit_timeout_enabled: false
 
