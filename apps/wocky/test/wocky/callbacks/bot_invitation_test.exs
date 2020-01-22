@@ -30,7 +30,7 @@ defmodule Wocky.Callbacks.BotInvitationTest do
   end
 
   describe "sending an invitation" do
-    test "should send a notification", ctx do
+    test "should send push and in-band notifications", ctx do
       assert {:ok, invitation} = Relation.invite(ctx.invitee, ctx.bot, ctx.user)
 
       msgs = Sandbox.wait_notifications(count: 1, timeout: 500, global: true)
@@ -44,6 +44,8 @@ defmodule Wocky.Callbacks.BotInvitationTest do
 
       assert message ==
                "@#{ctx.user.handle} invited you to follow #{ctx.bot.title}"
+
+      assert_eventually(in_band_notifications(ctx.invitee) == 1)
 
       assert clear_expected_notifications(1)
     end
@@ -90,6 +92,8 @@ defmodule Wocky.Callbacks.BotInvitationTest do
                "@#{ctx.invitee.handle} accepted your invitation to #{
                  ctx.bot.title
                }"
+
+      assert_eventually(in_band_notifications(ctx.user) == 1)
 
       clear_expected_notifications(1)
     end
