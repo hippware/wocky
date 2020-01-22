@@ -87,10 +87,6 @@ defmodule Wocky.Presence.Store do
 
   @spec get_online(User.tid()) :: {:ok, pid() | nil} | {:error, any()}
   def get_online(user) do
-    transaction(user, fn -> do_get_online(user) end)
-  end
-
-  defp do_get_online(user) do
     case Redix.command(Redix, ["GET", key(user)]) do
       {:ok, nil} ->
         {:ok, nil}
