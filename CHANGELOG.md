@@ -5,6 +5,12 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: bcrypt_elixir (PR #3025), excoveralls (PR #3030)
+* Small QoL fixes (PR #3026)
+* Connect to RDS over TLS (#3024, PR #3029)
+* Add shareType to contacts subscription (#3031)
+
+
 # 2020.1.16+r73663d8
 
 * Suppress creation of data and log directories (PR #3015)
