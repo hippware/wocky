@@ -8,6 +8,8 @@ defmodule WockyAPI.Schema do
   alias WockyAPI.Middleware.Auth
   alias WockyAPI.Middleware.Instrumenter
 
+  @behaviour Absinthe.Schema
+
   import_types Absinthe.Type.Custom
   import_types AbsintheErrorPayload.ValidationMessageTypes
   import_types WockyAPI.Schema.AuthTypes
@@ -57,6 +59,7 @@ defmodule WockyAPI.Schema do
     import_fields :presence_subscriptions
   end
 
+  @impl true
   def middleware(middleware, field, object) do
     [
       ApolloTracing.Middleware.Tracing
@@ -66,7 +69,9 @@ defmodule WockyAPI.Schema do
     ]
   end
 
+  @impl true
   def plugins, do: [Absinthe.Middleware.Dataloader | Absinthe.Plugin.defaults()]
 
+  @impl true
   def context(ctx), do: Map.put(ctx, :loader, Dataloader.get(ctx))
 end

@@ -10,10 +10,12 @@ defmodule WockyAPI.Middleware.AuthUser do
     Absinthe.Type.BuiltIns.Introspection
   ]
 
+  @impl true
   def call(%{context: %{current_user: _}} = resolution, _config) do
     resolution
   end
 
+  @impl true
   def call(resolution, _config) do
     module = resolution.definition.schema_node.__reference__.module
 

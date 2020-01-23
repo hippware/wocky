@@ -8,6 +8,7 @@ defmodule WockyAPI.Callbacks.Message do
   alias Wocky.Repo.Hydrator
   alias WockyAPI.Resolvers.Message, as: MessageResolver
 
+  @impl true
   def handle_insert(new) do
     Hydrator.with_assocs(new, [:sender], fn rec ->
       MessageResolver.notify_message(rec)

@@ -8,6 +8,7 @@ defmodule WockyAPI.Controllers.FallbackController do
 
   alias WockyAPI.Views.ErrorView
 
+  @impl true
   def call(conn, {:error, :not_found}) do
     conn
     |> put_status(:not_found)

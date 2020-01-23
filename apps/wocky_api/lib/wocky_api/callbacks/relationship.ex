@@ -8,11 +8,13 @@ defmodule WockyAPI.Callbacks.Relationship do
   alias Wocky.Repo.Hydrator
   alias WockyAPI.Resolvers.Contact
 
+  @impl true
   def handle_insert(%{state: :friend} = new),
     do: send_update(new, :friend, new.share_type)
 
   def handle_insert(_new), do: :ok
 
+  @impl true
   def handle_update(%{state: :friend} = new, %{state: state})
       when state != :friend do
     send_update(new, :friend, new.share_type)
@@ -20,6 +22,7 @@ defmodule WockyAPI.Callbacks.Relationship do
 
   def handle_update(_new, _old), do: :ok
 
+  @impl true
   def handle_delete(%{state: :friend} = old),
     do: send_update(old, :none, :disabled)
 

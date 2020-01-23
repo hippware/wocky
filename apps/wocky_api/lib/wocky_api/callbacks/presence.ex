@@ -5,6 +5,7 @@ defmodule WockyAPI.Callbacks.Presence do
 
   alias WockyAPI.Resolvers.Presence
 
+  @impl true
   def handle_event(%{contact: contact, recipient_id: recipient_id}) do
     Presence.publish_presence(contact, recipient_id)
   end
