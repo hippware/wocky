@@ -106,6 +106,10 @@ defmodule Wocky.Callbacks.RelationshipTest do
 
       Contacts.stop_sharing_location(ctx.user)
       assert_eventually([] == Cache.get(ctx.user.id))
+
+      # Make sure the notifications have fired
+      assert_eventually(in_band_notification_count(ctx.user) >= 1)
+      assert_eventually(in_band_notification_count(ctx.friend1) >= 1)
     end
 
     test "unfriending updates the cache", ctx do
@@ -115,6 +119,10 @@ defmodule Wocky.Callbacks.RelationshipTest do
 
       Contacts.unfriend(ctx.user, ctx.friend1)
       assert_eventually([] == Cache.get(ctx.user.id))
+
+      # Make sure the notifications have fired
+      assert_eventually(in_band_notification_count(ctx.user) >= 1)
+      assert_eventually(in_band_notification_count(ctx.friend1) >= 1)
     end
   end
 

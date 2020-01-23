@@ -307,18 +307,24 @@ defmodule Wocky.Account.AccountTest do
     end
 
     test "and the user does not have an existing avatar", ctx do
-      assert {:ok, _} = Account.update(ctx.user, %{image_url: ctx.avatar_url})
+      user =
+        ctx.user
+        |> cast(%{image_url: nil}, [:image_url])
+        |> Repo.update!()
+
+      assert {:ok, _} = Account.update(user, %{image_url: ctx.avatar_url})
 
       new_user = Repo.get(User, ctx.id)
       assert new_user.image_url == ctx.avatar_url
     end
 
     test "and the user already has that avatar", ctx do
-      ctx.user
-      |> cast(%{image_url: ctx.avatar_url}, [:image_url])
-      |> Repo.update!()
+      user =
+        ctx.user
+        |> cast(%{image_url: ctx.avatar_url}, [:image_url])
+        |> Repo.update!()
 
-      assert {:ok, _} = Account.update(ctx.user, %{image_url: ctx.avatar_url})
+      assert {:ok, _} = Account.update(user, %{image_url: ctx.avatar_url})
 
       new_user = Repo.get(User, ctx.id)
       assert new_user.image_url == ctx.avatar_url
