@@ -5,6 +5,15 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Add location forwarding target for `us1` (PR #3035)
+* Remove transaction wrapper from online status retrieval (PR #3034)
+  * MatchError: no match of right hand side (#2993)
+* Clear up spurious error messages during test runs (PR #3036)
+  * Telemetry handlers crash during test runs in wocky_api (#3002)
+
+
+# 2020.1.21+r236b1a7
+
 * Update: bcrypt_elixir (PR #3025), excoveralls (PR #3030)
 * Small QoL fixes (PR #3026)
 * Connect to RDS over TLS (#3024, PR #3029)
