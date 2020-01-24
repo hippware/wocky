@@ -10,6 +10,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * MatchError: no match of right hand side (#2993)
 * Clear up spurious error messages during test runs (PR #3036)
   * Telemetry handlers crash during test runs in wocky_api (#3002)
+* Add ex_aws to list of required apps for notification (PR #3037)
+* Update: phoenix (PR #3038)
 
 
 # 2020.1.21+r236b1a7
