@@ -4,45 +4,39 @@ defmodule WockyAPI.Resolvers.Utils do
   import Ecto.Query
 
   alias Absinthe.Relay.Connection
+  alias Absinthe.Subscription
   alias AbsintheErrorPayload.Payload
   alias Ecto.Changeset
-  alias Geo.Point
-  alias Wocky.GeoUtils
+  alias Ecto.Queryable
   alias Wocky.Repo
+  alias WockyAPI.Endpoint
 
-  def get_count(%{cached_count: count}, _args, _info) do
-    {:ok, count}
-  end
+  @spec get_count(map(), any(), any()) ::
+          {:ok, non_neg_integer()} | {:error, binary()}
+  def get_count(%{cached_count: count}, _args, _info), do: {:ok, count}
 
-  def get_count(%{parent_query: parent_query}, _args, _info) do
-    {:ok, get_count(parent_query)}
-  end
+  def get_count(%{parent_query: parent_query}, _args, _info),
+    do: {:ok, get_count(parent_query)}
 
   def get_count(_, _, _), do: {:error, "No parent query found for count"}
 
-  def add_data({:error, _} = r, _key, _value), do: r
-
-  def add_data({:ok, source}, _keykey, nil), do: {:ok, source}
-
-  def add_data({:ok, source}, key, value),
-    do: {:ok, Map.put(source, key, value)}
-
-  def add_edge_parent({:error, _} = r, _), do: r
-
-  def add_edge_parent({:ok, connection}, parent) do
-    {:ok,
-     Map.update!(connection, :edges, fn edges ->
-       for edge <- edges do
-         Map.put(edge, :parent, parent)
-       end
-     end)}
+  @spec get_count(Queryable.t()) :: non_neg_integer()
+  def get_count(query) do
+    query
+    |> exclude(:preload)
+    |> exclude(:order_by)
+    |> select([x], count(1))
+    |> Repo.one()
+    |> Kernel.||(0)
   end
 
+  @spec fix_changeset(map(), any()) :: map()
   def fix_changeset(%{errors: [%Changeset{} = cs]} = resolution, _config),
     do: %{resolution | value: cs, errors: []}
 
   def fix_changeset(resolution, _config), do: resolution
 
+  @spec fix_changeset_list(map(), any()) :: map()
   def fix_changeset_list(%{errors: []} = resolutions, config) do
     new_value =
       resolutions.value
@@ -54,6 +48,18 @@ defmodule WockyAPI.Resolvers.Utils do
 
   def fix_changeset_list(resolutions, _config), do: resolutions
 
+  @spec publish_subscription(String.t() | [String.t()], atom(), any()) :: :ok
+  def publish_subscription(topic, subscription, data) when is_binary(topic),
+    do: publish_subscription([topic], subscription, data)
+
+  def publish_subscription(topics, subscription, data) do
+    targets = Enum.map(topics, &{subscription, &1})
+
+    Subscription.publish(Endpoint, data, targets)
+  end
+
+  @spec connection_from_query(Queryable.t(), any(), map(), Keyword.t()) ::
+          {:ok, map()}
   def connection_from_query(
         query,
         parent,
@@ -80,11 +86,12 @@ defmodule WockyAPI.Resolvers.Utils do
     |> add_edge_parent(parent)
   end
 
-  @spec map_point(map()) :: Point.t()
-  def map_point(point_arg) do
-    {lat, lon} = GeoUtils.normalize_lat_lon(point_arg[:lat], point_arg[:lon])
-    GeoUtils.point(lat, lon)
-  end
+  defp maybe_order_by(query, nil), do: query
+
+  defp maybe_order_by(query, order_by), do: order_by(query, ^order_by)
+
+  defp cursor_fields(order_by),
+    do: Enum.map(order_by, fn {direction, field} -> {field, direction} end)
 
   defp get_count_if_needed(query, args) do
     if args[:last] != nil && args[:before] == nil && args[:after] == nil do
@@ -93,25 +100,6 @@ defmodule WockyAPI.Resolvers.Utils do
       nil
     end
   end
-
-  defp get_count(query) do
-    query
-    |> exclude(:preload)
-    |> exclude(:order_by)
-    |> select([x], count(1))
-    |> Repo.one()
-    |> Kernel.||(0)
-  end
-
-  defp maybe_order_by(query, nil), do: query
-
-  defp maybe_order_by(query, order_by) do
-    query
-    |> order_by(^order_by)
-  end
-
-  defp cursor_fields(order_by),
-    do: Enum.map(order_by, fn {direction, field} -> {field, direction} end)
 
   defp maybe_postprocess({:ok, %{edges: edges} = connection}, fun)
        when not is_nil(fun) do
@@ -124,8 +112,21 @@ defmodule WockyAPI.Resolvers.Utils do
 
   defp maybe_postprocess(connection, nil), do: connection
 
-  def map_edges({:error, _} = r, _), do: r
+  defp add_data({:ok, source}, _key, nil), do: {:ok, source}
 
-  def map_edges({:ok, %{edges: edges} = result}, fun),
-    do: {:ok, %{result | edges: Enum.map(edges, &update_in(&1[:node], fun))}}
+  defp add_data({:ok, source}, key, value),
+    do: {:ok, Map.put(source, key, value)}
+
+  defp add_data(result, _key, _value), do: result
+
+  defp add_edge_parent({:ok, connection}, parent) do
+    {:ok,
+     Map.update!(connection, :edges, fn edges ->
+       for edge <- edges do
+         Map.put(edge, :parent, parent)
+       end
+     end)}
+  end
+
+  defp add_edge_parent(result, _), do: result
 end

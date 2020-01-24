@@ -1,9 +1,10 @@
 defmodule WockyAPI.Resolvers.Notification do
   @moduledoc "GraphQL resolver for bot objects"
 
+  import WockyAPI.Resolvers.Utils
+
   alias Wocky.Notifier.InBand
   alias Wocky.Notifier.InBand.Notification
-  alias WockyAPI.Resolvers.Utils
 
   @type_map [
     {:bot_invitation, :bot_invitation_notification},
@@ -36,8 +37,8 @@ defmodule WockyAPI.Resolvers.Notification do
       args[:after_id],
       map_types(args[:types])
     )
-    |> Utils.connection_from_query(parent, args)
-    |> Utils.map_edges(&to_graphql/1)
+    |> connection_from_query(parent, args)
+    |> map_edges(&to_graphql/1)
   end
 
   defp map_types(nil), do: nil
@@ -51,6 +52,11 @@ defmodule WockyAPI.Resolvers.Notification do
       end
     end)
   end
+
+  defp map_edges({:ok, %{edges: edges} = result}, fun),
+    do: {:ok, %{result | edges: Enum.map(edges, &update_in(&1[:node], fun))}}
+
+  defp map_edges(result, _), do: result
 
   # -------------------------------------------------------------------
   # Mutations

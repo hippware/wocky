@@ -1,10 +1,10 @@
 defmodule WockyAPI.Resolvers.Presence do
   @moduledoc "GraphQL resolver for presence data"
 
-  alias Absinthe.Subscription
+  import WockyAPI.Resolvers.Utils
+
   alias Wocky.Account.User
   alias Wocky.Presence
-  alias WockyAPI.Endpoint
 
   # -------------------------------------------------------------------
   # Queries
@@ -43,12 +43,8 @@ defmodule WockyAPI.Resolvers.Presence do
   end
 
   def publish_presence(contact, recipient_id) do
-    Subscription.publish(
-      Endpoint,
-      contact,
-      [{:presence, presence_subscription_topic(recipient_id)}]
-    )
-
-    :ok
+    recipient_id
+    |> presence_subscription_topic()
+    |> publish_subscription(:presence, contact)
   end
 end

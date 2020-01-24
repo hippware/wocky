@@ -1,22 +1,21 @@
 defmodule WockyAPI.Resolvers.Message do
   @moduledoc "GraphQL resolver for message objects"
 
-  alias Absinthe.Subscription
+  import WockyAPI.Resolvers.Utils
+
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Messaging
   alias Wocky.Messaging.Message
-  alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.User, as: UserResolver
-  alias WockyAPI.Resolvers.Utils
 
   # -------------------------------------------------------------------
   # Connections
 
   def get_messages(_root, args, %{context: %{current_user: user}}) do
     with {:ok, query} <- get_messages_query(args[:other_user], user) do
-      query
-      |> Utils.connection_from_query(
+      connection_from_query(
+        query,
         user,
         args,
         order_by: [desc: :created_at],
@@ -58,7 +57,7 @@ defmodule WockyAPI.Resolvers.Message do
   def get_conversations(user, args, _info) do
     user
     |> Messaging.get_conversations_query()
-    |> Utils.connection_from_query(user, args, order_by: [desc: :created_at])
+    |> connection_from_query(user, args, order_by: [desc: :created_at])
   end
 
   # -------------------------------------------------------------------
@@ -115,12 +114,10 @@ defmodule WockyAPI.Resolvers.Message do
     do: "messages_subscription_" <> user_id
 
   def notify_message(message) do
-    topic = messages_subscription_topic(message.recipient_id)
+    data = map_to_graphql(message, message.recipient_id)
 
-    Subscription.publish(
-      Endpoint,
-      map_to_graphql(message, message.recipient_id),
-      [{:messages, topic}]
-    )
+    message.recipient_id
+    |> messages_subscription_topic()
+    |> publish_subscription(:messages, data)
   end
 end
