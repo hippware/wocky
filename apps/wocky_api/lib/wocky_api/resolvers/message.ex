@@ -7,7 +7,6 @@ defmodule WockyAPI.Resolvers.Message do
   alias Wocky.Account.User
   alias Wocky.Messaging
   alias Wocky.Messaging.Message
-  alias WockyAPI.Resolvers.User, as: UserResolver
 
   # -------------------------------------------------------------------
   # Connections
@@ -30,7 +29,7 @@ defmodule WockyAPI.Resolvers.Message do
   defp get_messages_query(other_user_id, requestor) do
     case Account.get_user(other_user_id, requestor) do
       nil ->
-        UserResolver.user_not_found(other_user_id)
+        user_not_found(other_user_id)
 
       other_user ->
         {:ok, Messaging.get_messages_query(requestor, other_user)}
@@ -77,7 +76,7 @@ defmodule WockyAPI.Resolvers.Message do
            ) do
       {:ok, true}
     else
-      nil -> UserResolver.user_not_found(recipient_id)
+      nil -> user_not_found(recipient_id)
       {:error, :permission_denied} -> {:error, "Permission denied"}
       error -> error
     end

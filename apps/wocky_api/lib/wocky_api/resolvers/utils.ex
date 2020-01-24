@@ -11,6 +11,9 @@ defmodule WockyAPI.Resolvers.Utils do
   alias Wocky.Repo
   alias WockyAPI.Endpoint
 
+  @spec user_not_found(User.id()) :: {:error, String.t()}
+  def user_not_found(id), do: {:error, "User not found: " <> id}
+
   @spec get_count(map(), any(), any()) ::
           {:ok, non_neg_integer()} | {:error, binary()}
   def get_count(%{cached_count: count}, _args, _info), do: {:ok, count}
