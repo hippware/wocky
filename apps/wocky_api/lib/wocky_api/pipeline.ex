@@ -2,16 +2,20 @@ defmodule WockyAPI.Pipeline do
   @moduledoc "Custom logging pipeline for GraphQL"
 
   alias Absinthe.Phoenix.Channel
+  alias Absinthe.Pipeline
   alias Absinthe.Plug
+  alias Absinthe.Schema
 
   @trace_environments ["testing"]
 
+  @spec pipeline(map(), Keyword.t()) :: Pipeline.t()
   def pipeline(config, opts) do
     config
     |> Plug.default_pipeline(opts)
     |> maybe_add_apollo(opts)
   end
 
+  @spec channel_pipeline(Schema.t(), Keyword.t()) :: Pipeline.t()
   def channel_pipeline(schema_mod, opts) do
     schema_mod
     |> Channel.default_pipeline(opts)

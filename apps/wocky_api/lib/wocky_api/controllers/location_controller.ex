@@ -2,12 +2,14 @@ defmodule WockyAPI.Controllers.LocationController do
   use Elixometer
   use WockyAPI, :controller
 
+  alias Plug.Conn
   alias Wocky.Location
   alias Wocky.Location.UserLocation
   alias WockyAPI.LocationForwarder
 
   action_fallback WockyAPI.Controllers.FallbackController
 
+  @spec create(Conn.t(), Keyword.t()) :: Conn.t() | {:error, any()}
   def create(conn, params) do
     user_id = conn.assigns.current_user_id
     device = params["device"]

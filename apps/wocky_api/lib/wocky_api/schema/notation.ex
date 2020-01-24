@@ -60,6 +60,7 @@ defmodule WockyAPI.Schema.Notation do
     end
   end
 
+  @spec connection_complexity(Keyword.t(), integer()) :: integer()
   def connection_complexity(params, children) do
     count = params[:first] || params[:last] || 1
     count * children

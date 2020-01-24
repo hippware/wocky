@@ -3,12 +3,15 @@ defmodule WockyAPI.Plugs.Authentication do
 
   import Plug.Conn
 
+  alias Plug.Conn
   alias Wocky.Account
 
+  @spec check_location_auth(Conn.t(), Keyword.t()) :: Conn.t()
   def check_location_auth(conn, _opts \\ []) do
     authenticate(conn, &Account.authenticate_for_location/1)
   end
 
+  @spec check_auth(Conn.t(), Keyword.t()) :: Conn.t()
   def check_auth(conn, _opts \\ []) do
     authenticate(conn, &Account.authenticate/1)
   end
@@ -46,6 +49,7 @@ defmodule WockyAPI.Plugs.Authentication do
     end
   end
 
+  @spec ensure_authenticated(Conn.t(), Keyword.t()) :: Conn.t()
   def ensure_authenticated(conn, _opts \\ []) do
     if Map.get(conn.assigns, :current_user_id) do
       conn
@@ -57,6 +61,7 @@ defmodule WockyAPI.Plugs.Authentication do
   defp fail_authentication(conn, reason \\ :unauthorized),
     do: conn |> send_resp(reason, "") |> halt()
 
+  @spec ensure_owner(Conn.t(), Keyword.t()) :: Conn.t()
   def ensure_owner(conn, _opts \\ []) do
     path_user = conn.path_params["user_id"]
     user_id = Map.get(conn.assigns, :current_user_id)

@@ -1,4 +1,5 @@
 defmodule WockyAPI.LoggingSocket do
+  alias Wocky.Account.User
   alias Wocky.Audit
   alias Wocky.Audit.TrafficLog
 
@@ -85,9 +86,11 @@ defmodule WockyAPI.LoggingSocket do
     end
   end
 
+  @spec set_user_info(pid(), User.t(), binary()) :: :ok
   def set_user_info(transport_pid, user, device),
     do: send(transport_pid, {:set_user_info, user, device})
 
+  @spec log(any(), {any(), Socket.t()}, boolean()) :: :ok
   def log(payload, {_channels, socket}, incoming?) do
     context = socket.assigns[:absinthe][:opts][:context]
     user = socket.assigns[:user]
@@ -105,6 +108,7 @@ defmodule WockyAPI.LoggingSocket do
     |> Audit.log_traffic(user)
   end
 
+  @spec maybe_log_reply(tuple()) :: tuple()
   def maybe_log_reply({:reply, :ok, {:text, payload}, state} = reply) do
     log(payload, state, true)
     reply
