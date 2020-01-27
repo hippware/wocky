@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule WockyAPI.Resolvers.Auth do
   @moduledoc "GraphQL resolver for authentication"
 
@@ -6,7 +7,6 @@ defmodule WockyAPI.Resolvers.Auth do
   # -------------------------------------------------------------------
   # Mutations
 
-  @spec authenticate(map(), map()) :: {:ok, any()} | {:error, any()}
   def authenticate(_input, %{context: %{current_user: _}}) do
     {:error, "already authenticated"}
   end

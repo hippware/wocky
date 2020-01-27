@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule WockyAPI.Resolvers.Presence do
   @moduledoc "GraphQL resolver for presence data"
 
