@@ -17,7 +17,7 @@ config :sasl, :sasl_error_logger, false
 config :logger,
   truncate: :infinity,
   backends: [:console],
-  compile_time_purge_level: :info,
+  compile_time_purge_matching: [[level_lower_than: :info]],
   level: :info
 
 config :logger, :console,
