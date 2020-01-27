@@ -10,7 +10,7 @@
   configs: [
     %{
       #
-      # Run any exec using `mix credo -C <name>`. If no exec name is given
+      # Run any config using `mix credo -C <name>`. If no config name is given
       # "default" is used.
       #
       name: "default",
@@ -38,6 +38,10 @@
       # experience, you can change `strict` to `true` below:
       #
       strict: true,
+      #
+      # To modify the timeout for parsing files, change this value:
+      #
+      parse_timeout: 5000,
       #
       # If you want to use uncolored output by default, you can change `color`
       # to `false` below:
@@ -142,6 +146,10 @@
         {Credo.Check.Warning.UnusedRegexOperation, []},
         {Credo.Check.Warning.UnusedStringOperation, []},
         {Credo.Check.Warning.UnusedTupleOperation, []},
+
+        #
+        # Checks scheduled for next check update (opt-in for now, just replace `false` with `[]`)
+        {Credo.Check.Warning.MixEnv, false},
 
         #
         # Controversial and experimental checks (opt-in, just replace `false` with `[]`)
