@@ -6,7 +6,7 @@ defmodule WockyAPI.Plugs.AuthenticationTest do
   alias Wocky.Repo.ID
   alias WockyAPI.Factory, as: APIFactory
 
-  def put_jwt_header(conn, jwt, prefix \\ "Bearer ") do
+  defp put_jwt_header(conn, jwt, prefix \\ "Bearer ") do
     put_req_header(conn, "authentication", prefix <> jwt)
   end
 

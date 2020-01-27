@@ -17,6 +17,7 @@ defmodule WockyAPI.WatcherHelper do
   NOTE: I haven't been able to get SQL VIEW virtual tables to function properly
   in this mode. I have no idea why.
   """
+  @spec require_watcher(map()) :: :ok
   def require_watcher(_ \\ %{}) do
     start_watcher(Wocky.Repo)
 

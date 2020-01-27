@@ -7,6 +7,7 @@ defmodule WockyAPI.Factory do
 
   alias Wocky.Account.JWT.Client, as: ClientJWT
   alias Wocky.Account.JWT.Server, as: ServerJWT
+  alias Wocky.Account.User
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo.Factory, as: RepoFactory
   alias Wocky.Repo.Timestamp
@@ -80,13 +81,16 @@ defmodule WockyAPI.Factory do
     }
   end
 
+  @spec image_url(TROS.Metadata.t()) :: TROS.url()
   def image_url(image), do: TROS.make_url(image.id)
 
+  @spec get_test_token(User.t(), map()) :: binary()
   def get_test_token(user, claims \\ %{}) do
     {:ok, token, _} = ClientJWT.encode_and_sign(user, claims)
     token
   end
 
+  @spec get_test_location_token(User.t()) :: binary()
   def get_test_location_token(user) do
     {:ok, token, _} = ServerJWT.encode_and_sign(user)
     token

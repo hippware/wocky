@@ -20,8 +20,10 @@ defmodule WockyAPI.Test.Client do
   end
 
   # Extending CommonGraphQLClient.Client:
+  @spec mutate(atom(), Keyword.t()) :: {:ok, map()} | {:error, any()}
   def mutate(term, variables), do: handle(:mutate, term, variables)
 
+  @spec mutate!(atom(), Keyword.t()) :: map() | no_return()
   def mutate!(term, variables) do
     case mutate(term, variables) do
       {:ok, result} -> result

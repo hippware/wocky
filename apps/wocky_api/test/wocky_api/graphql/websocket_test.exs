@@ -118,7 +118,7 @@ defmodule WockyAPI.GraphQL.WebsocketTest do
     end
   end
 
-  def disconnect_callback(target), do: send(target, :disconnected)
+  defp disconnect_callback(target), do: send(target, :disconnected)
 
   defp get_socket do
     query_server_name = Module.safe_concat([Client.mod(), Caller, QueryServer])
