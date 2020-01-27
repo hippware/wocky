@@ -19,6 +19,10 @@ defmodule WockyAPI.Test.Client do
     post(User.user_delete(), variables)
   end
 
+  defp handle(:mutate, _, _) do
+    {:error, :not_implemented}
+  end
+
   # Extending CommonGraphQLClient.Client:
   @spec mutate(atom(), Keyword.t()) :: {:ok, map()} | {:error, any()}
   def mutate(term, variables), do: handle(:mutate, term, variables)

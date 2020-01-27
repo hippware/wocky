@@ -59,7 +59,7 @@ defmodule WockyAPI.GraphQLHelper do
     Enum.into(map, %{}, fn {k, v} -> {to_string(k), v} end)
   end
 
-  @spec bot_create_fields :: [atom()]
+  # credo:disable-for-next-line Credo.Check.Readability.Specs
   def bot_create_fields do
     [
       :title,
@@ -73,7 +73,7 @@ defmodule WockyAPI.GraphQLHelper do
     ]
   end
 
-  @spec add_bot_lat_lon(Bot.t()) :: Bot.t()
+  # credo:disable-for-next-line Credo.Check.Readability.Specs
   def add_bot_lat_lon(%Bot{location: location} = bot) do
     {lat, lon} = GeoUtils.get_lat_lon(location)
     bot |> Map.put(:lat, lat) |> Map.put(:lon, lon)
