@@ -12,7 +12,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
   * Telemetry handlers crash during test runs in wocky_api (#3002)
 * Add ex_aws to list of required apps for notification (PR #3037)
 * Update: phoenix (PR #3038), credo (PR #3039), bamboo (PR #3040)
-  * cors_plug (PR #3041)
+  * cors_plug (PR #3041), credo (PR #3044), ecto_sql (PR #3045)
 * Update: Elixir 1.10 (PR #3011)
 
 
