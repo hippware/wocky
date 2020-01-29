@@ -15,7 +15,7 @@ defmodule WockyAPI.Resolvers.Utils do
   def user_not_found(id), do: {:error, "User not found: " <> id}
 
   @spec get_count(map(), any(), any()) ::
-          {:ok, non_neg_integer()} | {:error, binary()}
+          {:ok, non_neg_integer()} | {:error, String.t()}
   def get_count(%{cached_count: count}, _args, _info), do: {:ok, count}
 
   def get_count(%{parent_query: parent_query}, _args, _info),

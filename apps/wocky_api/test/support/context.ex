@@ -7,7 +7,7 @@ defmodule WockyAPI.Test.Context do
   use CommonGraphQLClient.Context,
     otp_app: :wocky_api
 
-  @spec authenticate(binary()) :: {:ok, map()} | {:error, any()}
+  @spec authenticate(String.t()) :: {:ok, map()} | {:error, any()}
   def authenticate(token), do: mutate(:authenticate, %{token: token})
 
   @spec user_delete :: {:ok, map()} | {:error, any()}

@@ -15,7 +15,7 @@ defmodule WockyAPI.Metrics do
   use Elixometer
   use GenServer
 
-  @spec start_link(any()) :: :ignore | {:ok, pid()} | {:error, any()}
+  @spec start_link(any()) :: GenServer.on_start()
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
