@@ -177,6 +177,10 @@ defmodule WockyAPI.Schema.ContactTypes do
     total_count_field()
 
     edge do
+      @desc "The type of share that this friend has to the requesting user"
+      field :share_type, :friend_share_type do
+        resolve &Contact.get_share_type/3
+      end
     end
   end
 
