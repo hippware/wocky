@@ -64,7 +64,7 @@ defmodule WockyAPI.Resolvers.Contact do
     |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
   end
 
-  def get_share_type(
+  def get_share_types(
         %{node: %Relationship{} = relationship},
         _args,
         _info
@@ -73,7 +73,11 @@ defmodule WockyAPI.Resolvers.Contact do
     # use of the Dataloader, but a two-constraint query such as is used here
     # requires a more sophisticated Dataloader setup than we currently have.
     # So for now I'm going to leave it the simple way.
-    {:ok, Contacts.share_type(relationship.contact_id, relationship.user_id)}
+    {:ok,
+     %{
+       from: Contacts.share_type(relationship.contact_id, relationship.user_id),
+       to: relationship.share_type
+     }}
   end
 
   # -------------------------------------------------------------------

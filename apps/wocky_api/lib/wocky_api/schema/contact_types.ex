@@ -170,6 +170,14 @@ defmodule WockyAPI.Schema.ContactTypes do
       deprecate: "Expiration is no longer supported"
   end
 
+  object :friend_share_types do
+    @desc "The share mode from the user to their friend"
+    field :to, :friend_share_type
+
+    @desc "The share mode from the friend to the user"
+    field :from, :friend_share_type
+  end
+
   # -------------------------------------------------------------------
   # Connections
 
@@ -177,9 +185,9 @@ defmodule WockyAPI.Schema.ContactTypes do
     total_count_field()
 
     edge do
-      @desc "The type of share that this friend has to the requesting user"
-      field :share_type, :friend_share_type do
-        resolve &Contact.get_share_type/3
+      @desc "The share modes between the user and this friend"
+      field :share_types, :friend_share_types do
+        resolve &Contact.get_share_types/3
       end
     end
   end
