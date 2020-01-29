@@ -22,6 +22,10 @@ defmodule WockyAPI.GraphQL.ContactTest do
         friends (first: 1) {
           totalCount
           edges {
+            shareTypes {
+              from
+              to
+            }
             node {
               user { id }
               createdAt
@@ -46,6 +50,41 @@ defmodule WockyAPI.GraphQL.ContactTest do
                  "friends" => %{
                    "edges" => [
                      %{
+                       "shareTypes" => %{
+                         "from" => "DISABLED",
+                         "to" => "DISABLED"
+                       },
+                       "node" => %{
+                         "user" => %{"id" => ^id2},
+                         "createdAt" => _
+                       }
+                     }
+                   ],
+                   "totalCount" => 1
+                 }
+               }
+             } = result.data
+    end
+
+    test "should show correct share state", %{user: user, user2: user2} do
+      Contacts.befriend(user, user2, :always)
+      Contacts.update_sharing(user, user2, :nearby)
+
+      id2 = user2.id
+
+      result = run_query(@query, user)
+
+      refute has_errors(result)
+
+      assert %{
+               "currentUser" => %{
+                 "friends" => %{
+                   "edges" => [
+                     %{
+                       "shareTypes" => %{
+                         "to" => "NEARBY",
+                         "from" => "ALWAYS"
+                       },
                        "node" => %{
                          "user" => %{"id" => ^id2},
                          "createdAt" => _

@@ -4,6 +4,7 @@ defmodule WockyAPI.Resolvers.Contact do
   alias Absinthe.Subscription
   alias Wocky.Account.User
   alias Wocky.Contacts
+  alias Wocky.Contacts.Relationship
   alias Wocky.Contacts.Share
   alias Wocky.Events.NearbyStart
   alias Wocky.Location
@@ -61,6 +62,22 @@ defmodule WockyAPI.Resolvers.Contact do
     user
     |> Contacts.get_location_sharers_query()
     |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
+  end
+
+  def get_share_types(
+        %{node: %Relationship{} = relationship},
+        _args,
+        _info
+      ) do
+    # TODO: This adds an N+1 set of queries - we could improve it with some
+    # use of the Dataloader, but a two-constraint query such as is used here
+    # requires a more sophisticated Dataloader setup than we currently have.
+    # So for now I'm going to leave it the simple way.
+    {:ok,
+     %{
+       from: Contacts.share_type(relationship.contact_id, relationship.user_id),
+       to: relationship.share_type
+     }}
   end
 
   # -------------------------------------------------------------------

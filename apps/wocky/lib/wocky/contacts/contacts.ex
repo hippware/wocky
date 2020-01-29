@@ -268,7 +268,7 @@ defmodule Wocky.Contacts do
     state
   end
 
-  @spec share_type(User.t(), User.tid()) :: share_type()
+  @spec share_type(User.tid(), User.tid()) :: share_type()
   def share_type(user, contact) do
     case do_share_type(user, contact) do
       nil -> :disabled
@@ -278,8 +278,9 @@ defmodule Wocky.Contacts do
 
   defp do_share_type(user, contact) do
     Repo.one(
-      from r in assoc(user, :relationships),
-        where: r.contact_id == ^User.id(contact),
+      from r in Relationship,
+        where:
+          r.user_id == ^User.id(user) and r.contact_id == ^User.id(contact),
         select: r.share_type
     )
   end
