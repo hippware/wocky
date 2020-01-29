@@ -13,7 +13,8 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add ex_aws to list of required apps for notification (PR #3037)
 * Update: phoenix (PR #3038), credo (PR #3039), bamboo (PR #3040)
   * cors_plug (PR #3041), credo (PR #3044), ecto_sql (PR #3045)
-* Update: Elixir 1.10 (PR #3011)
+* Update: Elixir 1.10, Erlang 22.2.4, Alpine 3.11.3 (PR #3011, PR #3046)
+  * Update Docker images to Elixir 1.10 (#3042)
 
 
 # 2020.1.21+r236b1a7
