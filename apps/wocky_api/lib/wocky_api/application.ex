@@ -5,10 +5,10 @@ defmodule WockyAPI.Application do
 
   alias WockyAPI.Callbacks
   alias WockyAPI.Endpoint
+  alias WockyAPI.Metrics.PhoenixInstrumenter
+  alias WockyAPI.Metrics.PipelineInstrumenter
+  alias WockyAPI.Metrics.PrometheusExporter
   alias WockyAPI.Middleware.Instrumenter, as: AbsintheInstrumenter
-  alias WockyAPI.PhoenixInstrumenter
-  alias WockyAPI.PipelineInstrumenter
-  alias WockyAPI.PrometheusExporter
 
   @impl true
   def start(_type, _args) do
@@ -23,7 +23,7 @@ defmodule WockyAPI.Application do
       # Start the endpoints when the application starts
       WockyAPI.Endpoint,
       {Absinthe.Subscription, WockyAPI.Endpoint},
-      WockyAPI.MetricsEndpoint
+      WockyAPI.Metrics.Endpoint
     ]
 
     opts = [strategy: :one_for_one, name: WockyAPI.Supervisor]

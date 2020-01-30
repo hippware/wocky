@@ -1,4 +1,4 @@
-defmodule WockyAPI.PipelineInstrumenter do
+defmodule WockyAPI.Metrics.PipelineInstrumenter do
   @moduledoc false
 
   use Prometheus.PlugPipelineInstrumenter

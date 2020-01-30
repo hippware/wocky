@@ -45,7 +45,7 @@ defmodule WockyAPI.Endpoint do
   #  signing_salt: "JqDu/CcJ"
 
   # measures pipeline exec times
-  plug WockyAPI.PipelineInstrumenter
+  plug WockyAPI.Metrics.PipelineInstrumenter
   plug WockyAPI.Router
 
   # Callback invoked for dynamically configuring the endpoint.
