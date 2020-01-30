@@ -5,6 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: plug_cowboy (PR #3048)
+* Add share type to contacts connection (#3049)
+* Add missing types in wocky_api (#3032)
+
+
+# 2020.1.29+r5303053
+
 * Add location forwarding target for `us1` (PR #3035)
 * Remove transaction wrapper from online status retrieval (PR #3034)
   * MatchError: no match of right hand side (#2993)
