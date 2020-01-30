@@ -1,4 +1,4 @@
-defmodule WockyAPI.Middleware.Instrumenter do
+defmodule WockyAPI.Middleware.QueryTimer do
   @moduledoc false
 
   use AbsintheMetrics,

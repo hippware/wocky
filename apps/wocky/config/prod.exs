@@ -42,8 +42,6 @@ config :exometer_core,
   report: [reporters: [{:exometer_report_prometheus, [:enable_httpd]}]]
 
 config :elixometer,
-  reporter: :exometer_report_prometheus,
-  metric_prefix: "wocky",
   env: "${WOCKY_INST}"
 
 config :ex_aws,

@@ -37,13 +37,13 @@ defmodule WockyAPI.Metrics do
 
   @impl true
   def handle_cast({:add_ws_connection, pid}, state) do
-    update_counter("phoenix.websocket.connections", 1)
+    update_gauge("phoenix.websocket.connections", 1)
     Process.monitor(pid)
     {:noreply, %{state | ws_pids: MapSet.put(state.ws_pids, pid)}}
   end
 
   def handle_cast({:add_auth_connection, pid}, state) do
-    update_counter("phoenix.websocket.authenticated_connections", 1)
+    update_gauge("phoenix.websocket.authenticated_connections", 1)
     {:noreply, %{state | auth_pids: MapSet.put(state.auth_pids, pid)}}
   end
 
@@ -51,7 +51,7 @@ defmodule WockyAPI.Metrics do
   def handle_info({:DOWN, _, :process, pid, _}, state) do
     ws_pids =
       if MapSet.member?(state.ws_pids, pid) do
-        update_counter("phoenix.websocket.connections", -1)
+        update_gauge("phoenix.websocket.connections", -1)
         MapSet.delete(state.ws_pids, pid)
       else
         state.ws_pids
@@ -59,7 +59,7 @@ defmodule WockyAPI.Metrics do
 
     auth_pids =
       if MapSet.member?(state.auth_pids, pid) do
-        update_counter("phoenix.websocket.authenticated_connections", -1)
+        update_gauge("phoenix.websocket.authenticated_connections", -1)
         MapSet.delete(state.auth_pids, pid)
       else
         state.auth_pids

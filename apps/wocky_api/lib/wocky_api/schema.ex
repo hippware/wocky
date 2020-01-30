@@ -6,7 +6,8 @@ defmodule WockyAPI.Schema do
 
   alias WockyAPI.Dataloader
   alias WockyAPI.Middleware.Auth
-  alias WockyAPI.Middleware.Instrumenter
+  alias WockyAPI.Middleware.QueryCounter
+  alias WockyAPI.Middleware.QueryTimer
 
   @behaviour Absinthe.Schema
 
@@ -65,7 +66,8 @@ defmodule WockyAPI.Schema do
       ApolloTracing.Middleware.Tracing
       | middleware
         |> Auth.middleware(field, object)
-        |> Instrumenter.instrument(field, object)
+        |> QueryTimer.instrument(field, object)
+        |> QueryCounter.instrument(field, object)
     ]
   end
 

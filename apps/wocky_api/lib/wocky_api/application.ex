@@ -8,14 +8,16 @@ defmodule WockyAPI.Application do
   alias WockyAPI.Metrics.PhoenixInstrumenter
   alias WockyAPI.Metrics.PipelineInstrumenter
   alias WockyAPI.Metrics.PrometheusExporter
-  alias WockyAPI.Middleware.Instrumenter, as: AbsintheInstrumenter
+  alias WockyAPI.Middleware.QueryCounter
+  alias WockyAPI.Middleware.QueryTimer
 
   @impl true
   def start(_type, _args) do
     PhoenixInstrumenter.setup()
     PipelineInstrumenter.setup()
     PrometheusExporter.setup()
-    _ = AbsintheInstrumenter.install(WockyAPI.Schema)
+    _ = QueryCounter.install(WockyAPI.Schema)
+    _ = QueryTimer.install(WockyAPI.Schema)
 
     # Define workers and child supervisors to be supervised
     children = [
