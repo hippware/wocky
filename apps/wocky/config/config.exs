@@ -224,4 +224,11 @@ config :fun_with_flags, :redis,
 config :vaultex,
   vault_addr: "http://vault-vault.vault:8200"
 
+config :exometer_core,
+  report: [reporters: [{:exometer_report_prometheus, [:enable_httpd]}]]
+
+config :elixometer,
+  reporter: :exometer_report_prometheus,
+  metric_prefix: "wocky"
+
 import_config "#{Mix.env()}.exs"

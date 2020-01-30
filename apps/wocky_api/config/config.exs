@@ -35,9 +35,9 @@ config :wocky_api, WockyAPI.Endpoint,
   render_errors: [view: WockyAPI.Views.ErrorView, accepts: ~w(json)],
   pubsub: [name: WockyAPI.PubSub, adapter: Phoenix.PubSub.PG2]
 
-config :wocky_api, WockyAPI.MetricsEndpoint, http: [port: 8082]
+config :wocky_api, WockyAPI.Metrics.Endpoint, http: [port: 8082]
 
-config :prometheus, WockyAPI.PhoenixInstrumenter,
+config :prometheus, WockyAPI.Metrics.PhoenixInstrumenter,
   controller_call_labels: [:controller, :action],
   duration_buckets: [
     10,
@@ -63,7 +63,7 @@ config :prometheus, WockyAPI.PhoenixInstrumenter,
   registry: :default,
   duration_unit: :microseconds
 
-config :prometheus, WockyAPI.PipelineInstrumenter,
+config :prometheus, WockyAPI.Metrics.PipelineInstrumenter,
   labels: [:status_class, :method, :host, :scheme, :request_path],
   duration_buckets: [
     10,

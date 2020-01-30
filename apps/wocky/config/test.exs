@@ -29,6 +29,9 @@ config :ex_aws,
   access_key_id: "test_id",
   secret_access_key: "test_key"
 
+config :elixometer,
+  env: Mix.env()
+
 config :guardian_firebase,
   load_keys_on_startup: false,
   local_keys: [

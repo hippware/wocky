@@ -5,17 +5,19 @@ defmodule WockyAPI.Application do
 
   alias WockyAPI.Callbacks
   alias WockyAPI.Endpoint
-  alias WockyAPI.Middleware.Instrumenter, as: AbsintheInstrumenter
-  alias WockyAPI.PhoenixInstrumenter
-  alias WockyAPI.PipelineInstrumenter
-  alias WockyAPI.PrometheusExporter
+  alias WockyAPI.Metrics.PhoenixInstrumenter
+  alias WockyAPI.Metrics.PipelineInstrumenter
+  alias WockyAPI.Metrics.PrometheusExporter
+  alias WockyAPI.Middleware.QueryCounter
+  alias WockyAPI.Middleware.QueryTimer
 
   @impl true
   def start(_type, _args) do
     PhoenixInstrumenter.setup()
     PipelineInstrumenter.setup()
     PrometheusExporter.setup()
-    _ = AbsintheInstrumenter.install(WockyAPI.Schema)
+    _ = QueryCounter.install(WockyAPI.Schema)
+    _ = QueryTimer.install(WockyAPI.Schema)
 
     # Define workers and child supervisors to be supervised
     children = [
@@ -23,7 +25,7 @@ defmodule WockyAPI.Application do
       # Start the endpoints when the application starts
       WockyAPI.Endpoint,
       {Absinthe.Subscription, WockyAPI.Endpoint},
-      WockyAPI.MetricsEndpoint
+      WockyAPI.Metrics.Endpoint
     ]
 
     opts = [strategy: :one_for_one, name: WockyAPI.Supervisor]

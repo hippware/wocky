@@ -1,4 +1,4 @@
-defmodule WockyAPI.MetricsEndpoint do
+defmodule WockyAPI.Metrics.Endpoint do
   @moduledoc "Endpoint for Prometheus metrics"
 
   use Phoenix.Endpoint, otp_app: :wocky_api
@@ -15,5 +15,5 @@ defmodule WockyAPI.MetricsEndpoint do
   plug Plug.Head
 
   # makes the /metrics URL happen
-  plug WockyAPI.PrometheusExporter
+  plug WockyAPI.Metrics.PrometheusExporter
 end
