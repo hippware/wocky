@@ -86,7 +86,7 @@ defmodule WockyAPI.LoggingSocket do
     end
   end
 
-  @spec set_user_info(pid(), User.t(), binary()) :: :ok
+  @spec set_user_info(pid(), User.t(), String.t()) :: :ok
   def set_user_info(transport_pid, user, device),
     do: send(transport_pid, {:set_user_info, user, device})
 

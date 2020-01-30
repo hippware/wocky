@@ -84,13 +84,13 @@ defmodule WockyAPI.Factory do
   @spec image_url(TROS.Metadata.t()) :: TROS.url()
   def image_url(image), do: TROS.make_url(image.id)
 
-  @spec get_test_token(User.t(), map()) :: binary()
+  @spec get_test_token(User.t(), map()) :: String.t()
   def get_test_token(user, claims \\ %{}) do
     {:ok, token, _} = ClientJWT.encode_and_sign(user, claims)
     token
   end
 
-  @spec get_test_location_token(User.t()) :: binary()
+  @spec get_test_location_token(User.t()) :: String.t()
   def get_test_location_token(user) do
     {:ok, token, _} = ServerJWT.encode_and_sign(user)
     token

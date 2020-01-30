@@ -8,7 +8,7 @@ defmodule WockyAPI.GraphQLHelper do
   alias Wocky.POI.Bot
   alias Wocky.Repo.Timestamp
 
-  @spec run_query(binary(), User.t() | nil, map()) ::
+  @spec run_query(String.t(), User.t() | nil, map()) ::
           Absinthe.result_t() | no_return()
   def run_query(query, user \\ nil, variables \\ %{}) do
     Absinthe.run!(
