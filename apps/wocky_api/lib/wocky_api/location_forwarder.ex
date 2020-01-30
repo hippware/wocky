@@ -6,17 +6,22 @@ defmodule WockyAPI.LocationForwarder do
 
   alias Wocky.Account.User
   alias Wocky.Audit
+  alias Wocky.Location.UserLocation
 
+  @spec forward(User.id(), UserLocation.t()) :: :ok
   def forward(user_id, l) do
     target = Confex.get_env(:wocky_api, :location_forward_target)
 
-    if target do
-      user = User.hydrate(user_id)
+    _ =
+      if target do
+        user = User.hydrate(user_id)
 
-      if user && user.handle && Audit.should_log?(:location, user) do
-        do_forward(user, l, target)
+        if user && user.handle && Audit.should_log?(:location, user) do
+          do_forward(user, l, target)
+        end
       end
-    end
+
+    :ok
   end
 
   @headers [{"Content-Type", "application/json"}]

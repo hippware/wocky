@@ -8,6 +8,7 @@ defmodule WockyAPI.Middleware.AuthSelf do
 
   alias Wocky.Account.User
 
+  @impl true
   def call(
         %{context: %{current_user: %User{id: id}}, source: %User{id: id}} =
           resolution,
@@ -16,6 +17,7 @@ defmodule WockyAPI.Middleware.AuthSelf do
     resolution
   end
 
+  @impl true
   def call(resolution, _config) do
     Absinthe.Resolution.put_result(
       resolution,

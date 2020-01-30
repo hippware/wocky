@@ -1,10 +1,12 @@
+# credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule WockyAPI.Resolvers.Block do
   @moduledoc "Resolver module for user blocking"
+
+  import WockyAPI.Resolvers.Utils
 
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.Contacts
-  alias WockyAPI.Resolvers.Utils
 
   # -------------------------------------------------------------------
   # Connections
@@ -12,7 +14,7 @@ defmodule WockyAPI.Resolvers.Block do
   def get_blocks(%User{} = user, args, _info) do
     user
     |> Contacts.blocks_query()
-    |> Utils.connection_from_query(
+    |> connection_from_query(
       user,
       args,
       order_by: [desc: :created_at],

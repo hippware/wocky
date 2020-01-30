@@ -10,6 +10,7 @@ defmodule WockyAPI.Middleware.RefreshCurrentUser do
   alias Wocky.Account.User
 
   # If the mutation provided a new user object, just drop that in
+  @impl true
   def call(
         %{
           context: %{current_user: %User{id: id}} = context,
@@ -38,5 +39,6 @@ defmodule WockyAPI.Middleware.RefreshCurrentUser do
   end
 
   # No action if we don't have a current user
+  @impl true
   def call(resolution, _), do: resolution
 end

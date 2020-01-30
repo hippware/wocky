@@ -15,14 +15,17 @@ defmodule WockyAPI.Metrics do
   use Elixometer
   use GenServer
 
+  @spec start_link(any()) :: GenServer.on_start()
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
   end
 
+  @spec add_ws_connection(pid()) :: :ok
   def add_ws_connection(pid) do
     GenServer.cast(__MODULE__, {:add_ws_connection, pid})
   end
 
+  @spec add_auth_connection(pid()) :: :ok
   def add_auth_connection(pid) do
     GenServer.cast(__MODULE__, {:add_auth_connection, pid})
   end

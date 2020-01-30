@@ -3,6 +3,8 @@ defmodule WockyAPI.Middleware.Auth do
   Helper functions for implementing scope-based authorization using
   `WockyAPI.Schema.Notation`'s `scope` macro.
   """
+
+  @spec middleware(list(), map(), map()) :: list()
   def middleware(middleware, %{__private__: field}, %{__private__: obj}) do
     scope =
       case obj[:meta][:scope] do

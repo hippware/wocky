@@ -10,6 +10,7 @@ defmodule WockyAPI.Callbacks.Notification do
   alias WockyAPI.Endpoint
   alias WockyAPI.Resolvers.Notification
 
+  @impl true
   def handle_insert(new) do
     Hydrator.with_assocs(new, [:other_user], fn rec ->
       rec
@@ -18,6 +19,7 @@ defmodule WockyAPI.Callbacks.Notification do
     end)
   end
 
+  @impl true
   def handle_delete(old) do
     %{id: old.id}
     |> publish(old.user_id)

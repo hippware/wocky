@@ -1,7 +1,9 @@
+# credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule WockyAPI.Resolvers.Bot do
   @moduledoc "GraphQL resolver for bot objects"
 
-  alias Absinthe.Subscription
+  import WockyAPI.Resolvers.Utils
+
   alias Wocky.Account
   alias Wocky.Account.User
   alias Wocky.GeoUtils
@@ -13,8 +15,6 @@ defmodule WockyAPI.Resolvers.Bot do
   alias Wocky.Relation.Invitation
   alias Wocky.Repo.ID
   alias Wocky.Waiter
-  alias WockyAPI.Endpoint
-  alias WockyAPI.Resolvers.Utils
 
   @max_local_bots 50
   @default_local_bots 15
@@ -39,13 +39,13 @@ defmodule WockyAPI.Resolvers.Bot do
   defp do_get_bots(user, requestor, %{id: id} = args) do
     id
     |> Relation.get_bot_query(requestor)
-    |> Utils.connection_from_query(user, args)
+    |> connection_from_query(user, args)
   end
 
   defp do_get_bots(user, requestor, %{relationship: relationship} = args) do
     user
     |> Relation.by_relationship_query(relationship, requestor)
-    |> Utils.connection_from_query(user, args)
+    |> connection_from_query(user, args)
   end
 
   defp do_get_bots(_user, _requestor, _args) do
@@ -55,13 +55,13 @@ defmodule WockyAPI.Resolvers.Bot do
   def get_active_bots(args, %{context: %{current_user: user}}) do
     user
     |> Relation.active_bots_query()
-    |> Utils.connection_from_query(user, args)
+    |> connection_from_query(user, args)
   end
 
   def get_items(bot, args, _info) do
     bot
     |> POI.get_items_query()
-    |> Utils.connection_from_query(bot, args)
+    |> connection_from_query(bot, args)
   end
 
   def get_subscribers(_root, %{id: _, type: _}, _info) do
@@ -71,7 +71,7 @@ defmodule WockyAPI.Resolvers.Bot do
   def get_subscribers(bot, %{id: id} = args, _info) do
     bot
     |> Relation.subscriber_query(id)
-    |> Utils.connection_from_query(bot, args)
+    |> connection_from_query(bot, args)
   end
 
   def get_subscribers(bot, %{type: type} = args, _info) do
@@ -82,7 +82,7 @@ defmodule WockyAPI.Resolvers.Bot do
       end
 
     subscribers_query
-    |> Utils.connection_from_query(bot, args)
+    |> connection_from_query(bot, args)
   end
 
   def get_subscribers(_root, _args, _info) do
@@ -116,8 +116,8 @@ defmodule WockyAPI.Resolvers.Bot do
     do: {:error, "Maximum local bots is #{@max_local_bots}"}
 
   def get_local_bots(args, %{context: %{current_user: requestor}}) do
-    point_a = Utils.map_point(args[:point_a])
-    point_b = Utils.map_point(args[:point_b])
+    point_a = map_point(args[:point_a])
+    point_b = map_point(args[:point_b])
     limit = args[:limit] || @default_local_bots
 
     case Relation.get_local_bots(requestor, point_a, point_b, limit) do
@@ -130,8 +130,8 @@ defmodule WockyAPI.Resolvers.Bot do
   end
 
   def get_local_bots_cluster(args, %{context: %{current_user: requestor}}) do
-    point_a = Utils.map_point(args[:point_a])
-    point_b = Utils.map_point(args[:point_b])
+    point_a = map_point(args[:point_a])
+    point_b = map_point(args[:point_b])
 
     case Relation.get_local_bots_clustered(
            requestor,
@@ -146,6 +146,11 @@ defmodule WockyAPI.Resolvers.Bot do
       {:error, :area_too_large} ->
         {:ok, %{bots: [], clusters: [], area_too_large: true}}
     end
+  end
+
+  defp map_point(point_arg) do
+    {lat, lon} = GeoUtils.normalize_lat_lon(point_arg[:lat], point_arg[:lon])
+    GeoUtils.point(lat, lon)
   end
 
   def get_lat(%{location: l}, _args, _info) do
@@ -340,12 +345,8 @@ defmodule WockyAPI.Resolvers.Bot do
       updated_at: updated_at
     }
 
-    targets =
-      Enum.map(
-        to_notify,
-        &{:bot_guest_visitors, visitor_subscription_topic(&1.id)}
-      )
-
-    Subscription.publish(Endpoint, notification, targets)
+    to_notify
+    |> Enum.map(&visitor_subscription_topic(&1.id))
+    |> publish_subscription(:bot_guest_visitors, notification)
   end
 end

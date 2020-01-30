@@ -21,6 +21,7 @@ defmodule WockyAPI.Channels.UserSocket do
   #
   # See `Phoenix.Token` documentation for examples in
   # performing token verification on connect.
+  @impl true
   def connect(_params, socket, opts) do
     peer =
       if opts[:peer_data] do
@@ -63,5 +64,6 @@ defmodule WockyAPI.Channels.UserSocket do
   #     WockyAPI.Endpoint.broadcast("user_socket:#{user.id}", "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.
+  @impl true
   def id(_socket), do: nil
 end

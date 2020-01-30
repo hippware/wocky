@@ -7,6 +7,7 @@ defmodule WockyAPI.Middleware.Socket do
 
   @behaviour Absinthe.Middleware
 
+  @impl true
   def call(resolution, :authenticated) do
     with %{value: %{user: user, device: device}} <- resolution do
       transport_pid = resolution.context[:transport_pid]

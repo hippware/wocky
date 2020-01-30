@@ -8,6 +8,8 @@ defmodule WockyAPI.SubscriptionHelper do
   import Absinthe.Phoenix.SubscriptionTest
   import ExUnit.Assertions
 
+  @spec authenticate(Wocky.Account.User.t(), String.t(), Socket.t()) ::
+          reference()
   def authenticate(user_id, token, socket) do
     authenticate = """
       mutation ($input: AuthenticateInput) {

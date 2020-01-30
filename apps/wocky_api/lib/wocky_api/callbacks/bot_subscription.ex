@@ -9,6 +9,7 @@ defmodule WockyAPI.Callbacks.BotSubscription do
   alias Wocky.Repo.Hydrator
   alias WockyAPI.Resolvers.Bot, as: BotResolver
 
+  @impl true
   def handle_update(
         %Subscription{visitor: b} = new,
         %Subscription{visitor: a}

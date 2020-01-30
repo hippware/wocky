@@ -159,7 +159,7 @@
         {Credo.Check.Design.DuplicatedCode, []},
         {Credo.Check.Readability.AliasAs, false},
         {Credo.Check.Readability.MultiAlias, []},
-        {Credo.Check.Readability.Specs, false},
+        {Credo.Check.Readability.Specs, []},
         {Credo.Check.Readability.SinglePipe, false},
         {Credo.Check.Refactor.ABCSize, false},
         {Credo.Check.Refactor.AppendSingleItem, []},

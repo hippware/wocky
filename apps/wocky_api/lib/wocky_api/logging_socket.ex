@@ -1,4 +1,5 @@
 defmodule WockyAPI.LoggingSocket do
+  alias Wocky.Account.User
   alias Wocky.Audit
   alias Wocky.Audit.TrafficLog
 
@@ -23,12 +24,15 @@ defmodule WockyAPI.LoggingSocket do
       @behaviour Phoenix.Socket.Transport
 
       @doc false
+      @impl true
       def child_spec(opts), do: Socket.__child_spec__(__MODULE__, opts)
 
       @doc false
+      @impl true
       def connect(map), do: Socket.__connect__(__MODULE__, map, @phoenix_log)
 
       @doc false
+      @impl true
       def init(state) do
         with {:ok, {channels, socket}} <- Socket.__init__(state) do
           if socket.transport == :websocket do
@@ -47,6 +51,7 @@ defmodule WockyAPI.LoggingSocket do
       end
 
       @doc false
+      @impl true
       def handle_in({payload, opcode: :text} = message, state) do
         LoggingSocket.log(payload, state, false)
 
@@ -58,6 +63,7 @@ defmodule WockyAPI.LoggingSocket do
       def handle_in(message, state), do: Socket.__in__(message, state)
 
       @doc false
+      @impl true
       def handle_info({:socket_push, :text, payload} = message, state) do
         LoggingSocket.log(payload |> to_string(), state, true)
         Socket.__info__(message, state)
@@ -75,13 +81,16 @@ defmodule WockyAPI.LoggingSocket do
       def handle_info(message, state), do: Socket.__info__(message, state)
 
       @doc false
+      @impl true
       def terminate(reason, state), do: Socket.__terminate__(reason, state)
     end
   end
 
+  @spec set_user_info(pid(), User.t(), String.t()) :: :ok
   def set_user_info(transport_pid, user, device),
     do: send(transport_pid, {:set_user_info, user, device})
 
+  @spec log(any(), {any(), Socket.t()}, boolean()) :: :ok
   def log(payload, {_channels, socket}, incoming?) do
     context = socket.assigns[:absinthe][:opts][:context]
     user = socket.assigns[:user]
@@ -99,6 +108,7 @@ defmodule WockyAPI.LoggingSocket do
     |> Audit.log_traffic(user)
   end
 
+  @spec maybe_log_reply(tuple()) :: tuple()
   def maybe_log_reply({:reply, :ok, {:text, payload}, state} = reply) do
     log(payload, state, true)
     reply

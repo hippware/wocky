@@ -1,7 +1,10 @@
+# credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule WockyAPI.Resolvers.User do
   @moduledoc "GraphQL resolver for user objects"
 
   use Elixometer
+
+  import WockyAPI.Resolvers.Utils
 
   alias Wocky.Account
   alias Wocky.Contacts
@@ -40,8 +43,6 @@ defmodule WockyAPI.Resolvers.User do
       user -> {:ok, user}
     end
   end
-
-  def user_not_found(id), do: {:error, "User not found: " <> id}
 
   def get_users(%{limit: limit}, _info) when limit < 0 do
     {:error, "limit cannot be less than 0"}

@@ -1,7 +1,9 @@
+# credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule WockyAPI.Resolvers.Contact do
   @moduledoc "Resolves GraphQL queries related to friends"
 
-  alias Absinthe.Subscription
+  import WockyAPI.Resolvers.Utils
+
   alias Wocky.Account.User
   alias Wocky.Contacts
   alias Wocky.Contacts.Relationship
@@ -12,8 +14,6 @@ defmodule WockyAPI.Resolvers.Contact do
   alias Wocky.Location.UserLocation.Current
   alias Wocky.Notifier
   alias Wocky.Repo
-  alias WockyAPI.Endpoint
-  alias WockyAPI.Resolvers.Utils
 
   # -------------------------------------------------------------------
   # Connections
@@ -44,7 +44,7 @@ defmodule WockyAPI.Resolvers.Contact do
   defp friends_query(user, args, requestor, query, post_process \\ nil) do
     user
     |> query.(requestor)
-    |> Utils.connection_from_query(
+    |> connection_from_query(
       user,
       args,
       desc: :updated_at,
@@ -55,13 +55,13 @@ defmodule WockyAPI.Resolvers.Contact do
   def get_location_shares(_root, args, %{context: %{current_user: user}}) do
     user
     |> Contacts.get_location_shares_query()
-    |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
+    |> connection_from_query(user, args, postprocess: &Share.make_shim/1)
   end
 
   def get_location_sharers(_root, args, %{context: %{current_user: user}}) do
     user
     |> Contacts.get_location_sharers_query()
-    |> Utils.connection_from_query(user, args, postprocess: &Share.make_shim/1)
+    |> connection_from_query(user, args, postprocess: &Share.make_shim/1)
   end
 
   def get_share_types(
@@ -193,9 +193,9 @@ defmodule WockyAPI.Resolvers.Contact do
       created_at: item.created_at
     }
 
-    topic = contacts_subscription_topic(item.user_id)
-
-    Subscription.publish(Endpoint, notification, [{:contacts, topic}])
+    item.user_id
+    |> contacts_subscription_topic()
+    |> publish_subscription(:contacts, notification)
   end
 
   # Friends subscription
@@ -214,9 +214,9 @@ defmodule WockyAPI.Resolvers.Contact do
   end
 
   defp notify_friend(friend_item, user) do
-    topic = friends_subscription_topic(friend_item.contact_id)
-
-    Subscription.publish(Endpoint, user, [{:friends, topic}])
+    friend_item.contact_id
+    |> friends_subscription_topic()
+    |> publish_subscription(:friends, user)
   end
 
   # Location subscription
@@ -256,10 +256,11 @@ defmodule WockyAPI.Resolvers.Contact do
   end
 
   defp do_notify_location(share_target, user, location) do
-    topic = location_subscription_topic(share_target.contact_id)
     data = make_location_data(user, location)
 
-    Subscription.publish(Endpoint, data, [{:shared_locations, topic}])
+    share_target.contact_id
+    |> location_subscription_topic()
+    |> publish_subscription(:shared_locations, data)
   end
 
   defp make_location_data(user, location),

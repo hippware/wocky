@@ -3,6 +3,9 @@ defmodule WockyAPI.Plugs.AbsintheConnData do
 
   import Plug.Conn
 
+  alias Plug.Conn
+
+  @spec load_graphql_context(Conn.t(), Keyword.t()) :: Conn.t()
   def load_graphql_context(conn, _opts \\ []) do
     base_context = %{peer: peer(conn), host: host()}
 
@@ -17,6 +20,7 @@ defmodule WockyAPI.Plugs.AbsintheConnData do
 
   defp maybe_set_user(user, context), do: Map.put(context, :current_user, user)
 
+  @spec save_conn_data(Conn.t(), Keyword.t()) :: Conn.t()
   def save_conn_data(conn, _opts \\ []) do
     conn
     |> put_private(:absinthe, %{context: %{peer: peer(conn)}})

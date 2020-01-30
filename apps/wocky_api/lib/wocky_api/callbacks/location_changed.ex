@@ -5,6 +5,7 @@ defmodule WockyAPI.Callbacks.LocationChanged do
 
   alias WockyAPI.Resolvers.Contact
 
+  @impl true
   def handle_event(%{user: user, location: location}) do
     Contact.notify_location(user, location)
   end

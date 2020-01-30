@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.Specs
 defmodule WockyAPI.Resolvers.Media do
   @moduledoc "GraphQL resolver for media objects"
 

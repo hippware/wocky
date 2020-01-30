@@ -10,12 +10,14 @@ defmodule WockyAPI.Callbacks.User do
   alias Wocky.Presence
   alias WockyAPI.Resolvers.Contact
 
+  @impl true
   def handle_update(%User{} = user, _old) do
     Contact.notify_friends(user)
   end
 
   def handle_update(_new, _old), do: :ok
 
+  @impl true
   def handle_delete(user) do
     user
     |> Presence.get_sockets()
