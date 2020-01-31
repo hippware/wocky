@@ -8,6 +8,7 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Update: plug_cowboy (PR #3048)
 * Add share type to contacts connection (#3049)
 * Add missing types in wocky_api (#3032)
+* Add query counters (PR #3056)
 
 
 # 2020.1.29+r5303053
