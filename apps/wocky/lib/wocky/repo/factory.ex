@@ -162,7 +162,8 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def bot_invitation_notification_factory do
+  @spec bot_invitation_notification_factory(map()) :: Notification.t()
+  def bot_invitation_notification_factory(attrs) do
     inviter = build(:user)
     bot = build(:bot, user: inviter)
 
@@ -172,9 +173,12 @@ defmodule Wocky.Repo.Factory do
       other_user: inviter,
       bot: bot
     }
+    |> merge_attributes(attrs)
+    |> Notification.pack_virtual_fields()
   end
 
-  def geofence_event_notification_factory do
+  @spec geofence_event_notification_factory(map()) :: Notification.t()
+  def geofence_event_notification_factory(attrs) do
     %Notification{
       type: :geofence_event,
       user: build(:user),
@@ -182,6 +186,8 @@ defmodule Wocky.Repo.Factory do
       bot: build(:bot),
       geofence_event: :enter
     }
+    |> merge_attributes(attrs)
+    |> Notification.pack_virtual_fields()
   end
 
   def bot_invitation_event_factory do

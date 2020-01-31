@@ -38,7 +38,9 @@ defmodule WockyAPI.Resolvers.Notification do
       args[:after_id],
       map_types(args[:types])
     )
-    |> connection_from_query(parent, args)
+    |> connection_from_query(parent, args,
+      postprocess: &Notification.populate_virtual_fields/1
+    )
     |> map_edges(&to_graphql/1)
   end
 
