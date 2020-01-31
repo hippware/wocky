@@ -93,9 +93,7 @@ defmodule Wocky.PresenceTest do
   end
 
   defp get_presence_result do
-    result = Agent.get(:presence_proxy, & &1)
-    Agent.update(:presence_proxy, fn _ -> nil end)
-    result
+    Agent.get_and_update(:presence_proxy, &{&1, nil})
   end
 
   describe "publishing callback" do
