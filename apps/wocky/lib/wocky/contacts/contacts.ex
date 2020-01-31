@@ -95,7 +95,8 @@ defmodule Wocky.Contacts do
       if notify do
         %UserInvitation{
           from: user,
-          to: User.hydrate(contact)
+          to: User.hydrate(contact),
+          share_type: share_type
         }
         |> Notifier.notify()
       end

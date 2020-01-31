@@ -192,6 +192,9 @@ defmodule WockyAPI.Schema.NotificationTypes do
   object :user_invitation_notification do
     @desc "The user who sent the invitation"
     field :user, non_null(:user)
+
+    @desc "The share type of the user sending the invitation to the recipient"
+    field :share_type, :friend_share_type
   end
 
   @desc """
