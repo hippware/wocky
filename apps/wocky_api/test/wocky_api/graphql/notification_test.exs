@@ -200,18 +200,6 @@ defmodule WockyAPI.GraphQL.NotificationTest do
   end
 
   describe "all fields" do
-    setup ctx do
-      share_id = Faker.random_between(0, 1_000_000)
-
-      n =
-        APIFactory.insert(:location_share_notification,
-          user: ctx.user,
-          share_id: share_id
-        )
-
-      {:ok, share_id: share_id, notification: n}
-    end
-
     @query """
     query {
       notifications (first: 1) {
@@ -232,16 +220,27 @@ defmodule WockyAPI.GraphQL.NotificationTest do
     }
     """
 
-    test "should get notification-specific fields", ctx do
+    test """
+         should get notification-specific fields for LocationShareNotification
+         """,
+         ctx do
+      share_id = Faker.random_between(0, 1_000_000)
+
+      notification =
+        APIFactory.insert(:location_share_notification,
+          user: ctx.user,
+          share_id: share_id
+        )
+
+      id = to_string(notification.id)
+      share_str = to_string(share_id)
+      created_at = DateTime.to_iso8601(notification.created_at)
+      expires_at = DateTime.to_iso8601(notification.expires_at)
+      user_id = notification.other_user.id
+
       result = run_query(@query, ctx.user)
 
       refute has_errors(result)
-
-      id = to_string(ctx.notification.id)
-      share_id = to_string(ctx.share_id)
-      created_at = DateTime.to_iso8601(ctx.notification.created_at)
-      expires_at = DateTime.to_iso8601(ctx.notification.expires_at)
-      user_id = ctx.notification.other_user.id
 
       assert %{
                "notifications" => %{
@@ -252,7 +251,62 @@ defmodule WockyAPI.GraphQL.NotificationTest do
                        "data" => %{
                          "expiresAt" => ^expires_at,
                          "user" => %{"id" => ^user_id},
-                         "shareId" => ^share_id
+                         "shareId" => ^share_str
+                       },
+                       "id" => ^id
+                     }
+                   }
+                 ]
+               }
+             } = result.data
+    end
+
+    @query """
+    query {
+      notifications (first: 1) {
+        edges {
+          node {
+            id
+            data {
+              ... on UserInvitationNotification {
+                user { id }
+                shareType
+              }
+            }
+            createdAt
+          }
+        }
+      }
+    }
+    """
+
+    test """
+         should get notification-specific fields for UserInvitationNotification
+         """,
+         ctx do
+      notification =
+        APIFactory.insert(:user_invitation_notification,
+          user: ctx.user,
+          share_type: :nearby
+        )
+
+      id = to_string(notification.id)
+      created_at = DateTime.to_iso8601(notification.created_at)
+      user_id = notification.other_user.id
+
+      result = run_query(@query, ctx.user)
+
+      refute has_errors(result)
+
+      assert %{
+               "notifications" => %{
+                 "edges" => [
+                   %{
+                     "node" => %{
+                       "createdAt" => ^created_at,
+                       "data" => %{
+                         "user" => %{"id" => ^user_id},
+                         "shareType" => "NEARBY"
                        },
                        "id" => ^id
                      }

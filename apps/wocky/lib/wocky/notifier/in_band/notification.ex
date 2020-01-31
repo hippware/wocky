@@ -6,6 +6,7 @@ defmodule Wocky.Notifier.InBand.Notification do
   import EctoEnum
 
   alias Wocky.Account.User
+  alias Wocky.Contacts.Relationship
   alias Wocky.POI.Bot
 
   defenum(GeofenceEventTypeEnum, :geofence_event_type, [:enter, :exit])
@@ -27,6 +28,7 @@ defmodule Wocky.Notifier.InBand.Notification do
   schema "notifications" do
     field :type, NotificationTypeEnum, null: false
     field :geofence_event, GeofenceEventTypeEnum
+    field :share_type, Relationship.LocationShareTypeEnum
     field :bot_invitation_accepted, :boolean
     field :expires_at, :utc_datetime
 
@@ -35,7 +37,7 @@ defmodule Wocky.Notifier.InBand.Notification do
     belongs_to :bot, Bot
     belongs_to :bot_item, Wocky.POI.Item
     belongs_to :bot_invitation, Wocky.Relation.Invitation, type: :integer
-    belongs_to :share, Wocky.Contacts.Relationship, type: :integer
+    belongs_to :share, Relationship, type: :integer
 
     timestamps()
   end
@@ -56,7 +58,8 @@ defmodule Wocky.Notifier.InBand.Notification do
       :bot_item_id,
       :bot_invitation_id,
       :bot_invitation_accepted,
-      :geofence_event
+      :geofence_event,
+      :share_type
     ])
     |> validate_required([:type | required])
     |> foreign_key_constraint(:user_id)

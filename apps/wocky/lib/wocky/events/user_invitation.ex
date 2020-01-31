@@ -2,15 +2,18 @@ defmodule Wocky.Events.UserInvitation do
   @moduledoc "Notification for a user inviting another user to be their friend"
 
   alias Wocky.Account.User
+  alias Wocky.Contacts
 
   defstruct [
     :to,
-    :from
+    :from,
+    :share_type
   ]
 
   @type t :: %__MODULE__{
           to: User.t(),
-          from: User.t()
+          from: User.t(),
+          share_type: Contacts.share_type()
         }
 
   use ExConstructor
@@ -51,14 +54,16 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.UserInvitation do
   def required_fields(_),
     do: [
       :other_user_id,
-      :user_id
+      :user_id,
+      :share_type
     ]
 
   @impl true
   def transform(event),
     do: %{
       other_user_id: event.from.id,
-      user_id: event.to.id
+      user_id: event.to.id,
+      share_type: event.share_type
     }
 
   @impl true

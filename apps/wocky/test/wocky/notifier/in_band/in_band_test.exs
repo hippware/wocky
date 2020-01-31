@@ -114,7 +114,8 @@ defmodule Wocky.Notifier.InBandTest do
     test "user invitation", ctx do
       Notifier.notify(%UserInvitation{
         to: ctx.user,
-        from: ctx.user2
+        from: ctx.user2,
+        share_type: :always
       })
 
       assert %Notification{type: :user_invitation} =
