@@ -5,10 +5,11 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
-* Update: plug_cowboy (PR #3048)
+* Update: plug_cowboy (PR #3048), phoenix_pubsub_redis (PR #3061)
 * Add share type to contacts connection (#3049)
 * Add missing types in wocky_api (#3032)
 * Add query counters (PR #3056)
+* Unit test for presence is flaky when run on CI (#3052)
 
 
 # 2020.1.29+r5303053
