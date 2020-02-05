@@ -67,6 +67,9 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
           ... on LocationShareNearbyStartNotification {
             user { id }
           }
+          ... on UserBefriendNotification {
+            user { id }
+          }
           ... on UserInvitationNotification {
             user { id }
           }
@@ -121,7 +124,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       bot: bot,
       subscription_id: subscription_id
     } do
-      Contacts.befriend(user, user2)
+      befriend(user, user2, subscription_id)
 
       Relation.visit(user2, bot, true)
 
@@ -139,7 +142,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       bot: bot,
       subscription_id: subscription_id
     } do
-      Contacts.befriend(user, user2)
+      befriend(user, user2, subscription_id)
 
       Relation.depart(user2, bot, true)
 
@@ -157,7 +160,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       subscription_id: subscription_id
     } do
       bot2 = Factory.insert(:bot, user: user2)
-      Contacts.befriend(user, user2)
+      befriend(user, user2, subscription_id)
       {:ok, invitation} = Relation.invite(user, bot2, user2)
 
       assert_notification_update(subscription_id, %{
@@ -230,7 +233,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Contacts.befriend(user, user2)
+      befriend(user, user2, subscription_id)
 
       {:ok, %{share_id: id}} = Contacts.update_sharing(user2, user, :always)
 
@@ -242,7 +245,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Contacts.befriend(user, user2)
+      befriend(user, user2, subscription_id)
 
       {:ok, %{share_id: id}} = Contacts.update_sharing(user2, user, :always)
 
@@ -262,8 +265,9 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Contacts.befriend(user, user2, :nearby)
-      assert_eventually(hd(Cache.get(user2.id)).share_type == :nearby)
+      befriend(user, user2, subscription_id, :nearby)
+      assert_eventually(length(Cache.get(user2.id)) == 1)
+      assert hd(Cache.get(user2.id)).share_type == :nearby
 
       now = DateTime.utc_now()
 
@@ -295,8 +299,9 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
            user2: user2,
            subscription_id: subscription_id
          } do
-      Contacts.befriend(user, user2, :nearby)
-      assert_eventually(hd(Cache.get(user2.id)).share_type == :nearby)
+      befriend(user, user2, subscription_id, :nearby)
+      assert_eventually(length(Cache.get(user2.id)) == 1)
+      assert hd(Cache.get(user2.id)).share_type == :nearby
 
       now = DateTime.utc_now()
 
@@ -333,12 +338,13 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
            user2: user2,
            subscription_id: subscription_id
          } do
-      Contacts.befriend(user, user2)
+      befriend(user, user2, subscription_id)
 
       {:ok, _} =
         Contacts.update_sharing(user2, user, :nearby, nearby_cooldown: 1)
 
-      assert_eventually(hd(Cache.get(user2.id)).share_type == :nearby)
+      assert_eventually(length(Cache.get(user2.id)) == 1)
+      assert hd(Cache.get(user2.id)).share_type == :nearby
 
       now = DateTime.utc_now()
 
@@ -373,7 +379,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       user2: user2,
       subscription_id: subscription_id
     } do
-      Contacts.befriend(user, user2)
+      befriend(user, user2, subscription_id)
 
       {:ok, %{share_id: id}} = Contacts.update_sharing(user, user2, :always)
 
@@ -430,5 +436,14 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       },
       subscriptionId: ^subscription_id
     }
+  end
+
+  defp befriend(user, user2, subscription_id, share_type \\ :disabled) do
+    Contacts.befriend(user, user2, share_type)
+
+    assert_notification_update(subscription_id, %{
+      "__typename" => "UserBefriendNotification",
+      "user" => %{"id" => user2.id}
+    })
   end
 end
