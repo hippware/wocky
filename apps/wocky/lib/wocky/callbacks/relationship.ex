@@ -13,7 +13,7 @@ defmodule Wocky.Callbacks.Relationship do
 
   @impl true
   def handle_insert(new) do
-    Contacts.refresh_share_cache(new.user_id)
+    _ = Contacts.refresh_share_cache(new.user_id)
 
     if new.share_type == :always do
       notify_share_start(new)
