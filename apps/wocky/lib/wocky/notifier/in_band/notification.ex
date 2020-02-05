@@ -6,6 +6,7 @@ defmodule Wocky.Notifier.InBand.Notification do
   import EctoEnum
 
   alias Wocky.Account.User
+  alias Wocky.Contacts.Relationship
   alias Wocky.POI.Bot
 
   defenum(GeofenceEventTypeEnum, :geofence_event_type, [:enter, :exit])
@@ -32,6 +33,7 @@ defmodule Wocky.Notifier.InBand.Notification do
     field :bot_invitation_accepted, :boolean, virtual: true
     field :expires_at, :utc_datetime, virtual: true
     field :share_id, :integer, virtual: true
+    field :share_type, Relationship.LocationShareTypeEnum, virtual: true
 
     belongs_to :user, User
     belongs_to :other_user, User
@@ -46,7 +48,8 @@ defmodule Wocky.Notifier.InBand.Notification do
     {:geofence_event, :atom},
     {:bot_invitation_accepted, :atom},
     {:expires_at, :utc_datetime},
-    {:share_id, :integer}
+    {:share_id, :integer},
+    {:share_type, :atom}
   ]
 
   @virtual_field_names Enum.map(@virtual_fields, &elem(&1, 0))

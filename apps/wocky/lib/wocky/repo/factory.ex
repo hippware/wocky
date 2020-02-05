@@ -190,6 +190,15 @@ defmodule Wocky.Repo.Factory do
     |> Notification.pack_virtual_fields()
   end
 
+  def user_invitation_notification_factory do
+    %Notification{
+      type: :user_invitation,
+      user: build(:user),
+      other_user: build(:user),
+      share_type: :always
+    }
+  end
+
   def bot_invitation_event_factory do
     %BotInvitationEvent{
       to: build(:user),
