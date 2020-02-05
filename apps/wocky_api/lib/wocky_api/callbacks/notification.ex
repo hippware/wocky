@@ -6,15 +6,17 @@ defmodule WockyAPI.Callbacks.Notification do
   use DawdleDB.Handler, type: Wocky.Notifier.InBand.Notification
 
   alias Absinthe.Subscription
+  alias Wocky.Notifier.InBand.Notification
   alias Wocky.Repo.Hydrator
   alias WockyAPI.Endpoint
-  alias WockyAPI.Resolvers.Notification
+  alias WockyAPI.Resolvers.Notification, as: NotificationResolver
 
   @impl true
   def handle_insert(new) do
     Hydrator.with_assocs(new, [:other_user], fn rec ->
       rec
-      |> Notification.to_graphql()
+      |> Notification.populate_virtual_fields()
+      |> NotificationResolver.to_graphql()
       |> publish(rec.user_id)
     end)
   end
@@ -26,7 +28,7 @@ defmodule WockyAPI.Callbacks.Notification do
   end
 
   defp publish(data, user_id) do
-    topic = Notification.notification_subscription_topic(user_id)
+    topic = NotificationResolver.notification_subscription_topic(user_id)
 
     Subscription.publish(Endpoint, data, [{:notifications, topic}])
   end
