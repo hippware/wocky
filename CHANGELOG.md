@@ -5,7 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Refactor notifications table to use a map for notification data (#3051)
+* Add shareType to the UserInvitationNotification (#3054)
+
+
+# 2020.2.3+rcfe9d4e
+
 * Update: plug_cowboy (PR #3048), phoenix_pubsub_redis (PR #3061)
+  * credo (PR #3064)
 * Add share type to contacts connection (#3049)
 * Add missing types in wocky_api (#3032)
 * Add query counters (PR #3056)
