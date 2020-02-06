@@ -4,6 +4,7 @@ defmodule Wocky.Callbacks.Relationship do
   use DawdleDB.Handler, type: Wocky.Contacts.Relationship
 
   alias Wocky.Contacts
+  alias Wocky.Contacts.Relationship
   alias Wocky.Contacts.Share
   alias Wocky.Events.LocationShare
   alias Wocky.Events.LocationShareEnd
@@ -30,28 +31,10 @@ defmodule Wocky.Callbacks.Relationship do
     _ = Contacts.refresh_share_cache(new.user_id)
 
     if new.state == :friend and old.state != :friend do
-      notify_befriend(new)
-
-      if new.share_type != :disabled do
-        notify_share_start(new)
-      end
+      handle_new_friendship(new)
     end
 
-    case {new.share_type, old.share_type} do
-      {stype, stype} ->
-        :ok
-
-      {_, :disabled} ->
-        if new.state == :friend and old.state == :friend do
-          notify_share_start(new)
-        end
-
-      {:disabled, _} ->
-        notify_share_end(new)
-
-      {_, _} ->
-        :ok
-    end
+    handle_share_notifications(new, old)
   end
 
   @impl true
@@ -62,6 +45,37 @@ defmodule Wocky.Callbacks.Relationship do
       notify_share_end(old)
     end
   end
+
+  defp handle_new_friendship(new) do
+    notify_befriend(new)
+
+    if new.share_type != :disabled do
+      notify_share_start(new)
+    end
+  end
+
+  # Share type is unchanged
+  defp handle_share_notifications(%Relationship{share_type: s}, %Relationship{
+         share_type: s
+       }),
+       do: :ok
+
+  # Share has been enabled for a friend
+  defp handle_share_notifications(
+         %Relationship{state: :friend} = new,
+         %Relationship{state: :friend, share_type: :disabled}
+       ),
+       do: notify_share_start(new)
+
+  # Share has been disabled
+  defp handle_share_notifications(
+         %Relationship{share_type: :disabled} = new,
+         _
+       ),
+       do: notify_share_end(new)
+
+  # Any other case
+  defp handle_share_notifications(_, _), do: :ok
 
   defp notify_share_start(share) do
     Hydrator.with_assocs(share, [:user, :contact], fn rec ->

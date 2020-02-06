@@ -199,7 +199,7 @@ defmodule Wocky.Callbacks.RelationshipTest do
       Contacts.make_friends(ctx.user, ctx.friend, :always)
 
       # Should only generate the invitation notification
-      assert_eventually in_band_notification_count(ctx.friend) == 1
+      assert_eventually(in_band_notification_count(ctx.friend) == 1)
       assert in_band_notification_count(ctx.user) == 0
     end
   end
