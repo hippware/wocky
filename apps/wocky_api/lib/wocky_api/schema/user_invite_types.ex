@@ -9,6 +9,18 @@ defmodule WockyAPI.Schema.UserInviteTypes do
   alias WockyAPI.Resolvers.UserInvite
 
   # -------------------------------------------------------------------
+  # Queries
+
+  object :user_invite_queries do
+    @desc "Retrieve the sender of an invitation"
+    field :user_invite_get_sender, :user do
+      @desc "The invitation code"
+      arg :invite_code, non_null(:string)
+      resolve &UserInvite.user_invite_get_sender/2
+    end
+  end
+
+  # -------------------------------------------------------------------
   # Mutations
 
   input_object :user_invite_send_input do

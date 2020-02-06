@@ -33,6 +33,7 @@ defmodule WockyAPI.Schema do
     import_fields :media_queries
     import_fields :metadata_queries
     import_fields :notification_queries
+    import_fields :user_invite_queries
     import_fields :user_queries
   end
 
