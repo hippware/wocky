@@ -244,7 +244,10 @@ defmodule Wocky.Repo.Factory do
     %LocationShare{
       to: build(:user),
       from: build(:user),
-      expires_at: DateTime.utc_now()
+      expires_at: DateTime.utc_now(),
+      share_id: 1,
+      share_type: :always,
+      other_user_share_type: :always
     }
   end
 

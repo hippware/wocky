@@ -35,6 +35,9 @@ defmodule Wocky.Notifier.InBand.Notification do
     field :share_id, :integer, virtual: true
     field :share_type, Relationship.LocationShareTypeEnum, virtual: true
 
+    field :other_user_share_type, Relationship.LocationShareTypeEnum,
+      virtual: true
+
     belongs_to :user, User
     belongs_to :other_user, User
     belongs_to :bot, Bot
@@ -49,7 +52,8 @@ defmodule Wocky.Notifier.InBand.Notification do
     {:bot_invitation_accepted, :atom},
     {:expires_at, :utc_datetime},
     {:share_id, :integer},
-    {:share_type, :atom}
+    {:share_type, :atom},
+    {:other_user_share_type, :atom}
   ]
 
   @virtual_field_names Enum.map(@virtual_fields, &elem(&1, 0))
