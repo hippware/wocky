@@ -75,6 +75,8 @@ defmodule WockyAPI.Schema.UserInviteTypes do
 
   payload_object(:user_invite_redeem_code_payload, :boolean)
 
+  payload_object(:user_invite_make_url_payload, :string)
+
   # DEPRECATED
   payload_object(:user_invite_make_code_payload, :string)
 
@@ -168,6 +170,13 @@ defmodule WockyAPI.Schema.UserInviteTypes do
     field :user_invite_redeem_code, type: :user_invite_redeem_code_payload do
       arg :input, non_null(:user_invite_redeem_code_input)
       resolve &UserInvite.user_invite_redeem_code/2
+    end
+
+    @desc """
+    Generate a dynamic-link URL with invite code.
+    """
+    field :user_invite_make_url, type: :user_invite_make_url_payload do
+      resolve &UserInvite.user_invite_make_url/2
     end
 
     @desc """

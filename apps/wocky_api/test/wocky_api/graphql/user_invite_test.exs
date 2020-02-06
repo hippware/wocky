@@ -256,6 +256,32 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
     end
   end
 
+  describe "userInviteMakeUrl mutation" do
+    @query """
+    mutation {
+      userInviteMakeUrl {
+        successful
+        result
+      }
+    }
+    """
+
+    test "get invitation url", %{user: user} do
+      result = run_query(@query, user)
+
+      refute has_errors(result)
+
+      assert %{
+               "userInviteMakeUrl" => %{
+                 "successful" => true,
+                 "result" => url
+               }
+             } = result.data
+
+      assert url =~ ~r"https://tinyrobot\.com/\?invitation.+"
+    end
+  end
+
   # DEPRECATED
   describe "friendBulkInvite mutation" do
     @query """
