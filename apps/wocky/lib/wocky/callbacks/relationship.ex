@@ -31,13 +31,26 @@ defmodule Wocky.Callbacks.Relationship do
 
     if new.state == :friend and old.state != :friend do
       notify_befriend(new)
+
+      if new.share_type != :disabled do
+        notify_share_start(new)
+      end
     end
 
     case {new.share_type, old.share_type} do
-      {stype, stype} -> :ok
-      {_, :disabled} -> notify_share_start(new)
-      {:disabled, _} -> notify_share_end(new)
-      {_, _} -> :ok
+      {stype, stype} ->
+        :ok
+
+      {_, :disabled} ->
+        if new.state == :friend and old.state == :friend do
+          notify_share_start(new)
+        end
+
+      {:disabled, _} ->
+        notify_share_end(new)
+
+      {_, _} ->
+        :ok
     end
   end
 
