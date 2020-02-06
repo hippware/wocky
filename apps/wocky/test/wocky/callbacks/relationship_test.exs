@@ -36,7 +36,7 @@ defmodule Wocky.Callbacks.RelationshipTest do
       assert_eventually(in_band_notification_count(ctx.friend1) == 1)
       other_id = ctx.user.id
 
-      assert_eventually %Notification{
+      assert %Notification{
                type: :location_share,
                id: id,
                other_user_id: ^other_id
@@ -186,6 +186,21 @@ defmodule Wocky.Callbacks.RelationshipTest do
                  other_user_id: ^user1_id
                }
              ] = in_band_notifications(ctx.user2)
+    end
+  end
+
+  describe "location_share when not friends" do
+    setup do
+      [user, friend] = Factory.insert_list(2, :user)
+      {:ok, user: user, friend: friend}
+    end
+
+    test "should not send location share on initial invitation", ctx do
+      Contacts.make_friends(ctx.user, ctx.friend, :always)
+
+      # Should only generate the invitation notification
+      assert_eventually in_band_notification_count(ctx.friend) == 1
+      assert in_band_notification_count(ctx.user) == 0
     end
   end
 
