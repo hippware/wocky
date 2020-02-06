@@ -36,9 +36,7 @@ defmodule Wocky.Callbacks.RelationshipTest do
       assert_eventually(in_band_notification_count(ctx.friend1) == 1)
       other_id = ctx.user.id
 
-      Process.sleep(2000)
-
-      assert %Notification{
+      assert_eventually %Notification{
                type: :location_share,
                id: id,
                other_user_id: ^other_id
