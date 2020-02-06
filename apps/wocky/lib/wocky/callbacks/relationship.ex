@@ -47,7 +47,9 @@ defmodule Wocky.Callbacks.Relationship do
         to: rec.contact,
         from: rec.user,
         expires_at: Share.make_expiry(),
-        share_id: share.share_id
+        share_id: rec.share_id,
+        share_type: rec.share_type,
+        other_user_share_type: Contacts.cached_share_type(rec.contact, rec.user)
       }
       |> Notifier.notify()
     end)

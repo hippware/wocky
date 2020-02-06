@@ -1,6 +1,8 @@
 defmodule Wocky.Contacts.ContactsTest do
   use Wocky.DataCase, async: true
 
+  import Eventually
+
   alias Faker.Code
   alias Wocky.Contacts
   alias Wocky.Contacts.Relationship
@@ -36,11 +38,33 @@ defmodule Wocky.Contacts.ContactsTest do
       assert Contacts.share_type(ctx.contact, ctx.user) == :always
     end
 
+    test "should set cached sharing for both users", ctx do
+      assert_eventually(
+        Contacts.cached_share_type(ctx.user, ctx.contact) == :always
+      )
+
+      assert_eventually(
+        Contacts.cached_share_type(ctx.contact, ctx.user) == :always
+      )
+    end
+
     test "should update sharing when friendship already exists", ctx do
       assert :ok = Contacts.befriend(ctx.user, ctx.contact, :nearby)
 
       assert Contacts.share_type(ctx.user, ctx.contact) == :nearby
       assert Contacts.share_type(ctx.contact, ctx.user) == :nearby
+    end
+
+    test "should update cached sharing when friendship already exists", ctx do
+      assert :ok = Contacts.befriend(ctx.user, ctx.contact, :nearby)
+
+      assert_eventually(
+        Contacts.cached_share_type(ctx.user, ctx.contact) == :nearby
+      )
+
+      assert_eventually(
+        Contacts.cached_share_type(ctx.contact, ctx.user) == :nearby
+      )
     end
   end
 

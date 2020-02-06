@@ -152,6 +152,9 @@ defmodule WockyAPI.Schema.NotificationTypes do
 
     @desc "When the share is scheduled to automatically expire"
     field :expires_at, :datetime
+
+    @desc "The share types between the two users"
+    field :share_types, non_null(:friend_share_types)
   end
 
   @desc """

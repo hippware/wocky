@@ -14,6 +14,7 @@ defmodule Wocky.Notifier.InBandTest do
   alias Wocky.Notifier.InBand
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Relation.Invitation
+  alias Wocky.Repo.Factory
 
   setup do
     [user, user2] = Factory.insert_list(2, :user)
@@ -78,12 +79,12 @@ defmodule Wocky.Notifier.InBandTest do
     end
 
     test "location share", ctx do
-      Notifier.notify(%LocationShare{
+      :location_share_event
+      |> Factory.build(
         to: ctx.user,
-        from: ctx.user2,
-        share_id: 1,
-        expires_at: DateTime.utc_now()
-      })
+        from: ctx.user2
+      )
+      |> Notifier.notify()
 
       assert %Notification{type: :location_share} =
                Repo.get_by(Notification, user_id: ctx.user.id)
