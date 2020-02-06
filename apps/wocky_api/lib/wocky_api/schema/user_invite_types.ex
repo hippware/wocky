@@ -78,6 +78,8 @@ defmodule WockyAPI.Schema.UserInviteTypes do
   # DEPRECATED
   payload_object(:user_invite_make_code_payload, :string)
 
+  payload_object(:user_invite_make_url_payload, :string)
+
   # DEPRECATED
   input_object :friend_bulk_invite_input do
     @desc "A list of phone numbers to which to send invitations"
@@ -199,6 +201,10 @@ defmodule WockyAPI.Schema.UserInviteTypes do
       resolve &UserInvite.friend_bulk_invite/2
       middleware &build_payload/2
       middleware WockyAPI.Middleware.RefreshCurrentUser
+    end
+
+    field :user_invite_make_url, type: :user_invite_make_url_payload do
+      resolve &UserInvite.user_invite_make_url/2
     end
   end
 end

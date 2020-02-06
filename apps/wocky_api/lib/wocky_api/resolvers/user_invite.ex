@@ -3,8 +3,8 @@ defmodule WockyAPI.Resolvers.UserInvite do
   @moduledoc """
   GraphQL resolver for invitations to join the service
   """
-
   alias Wocky.UserInvite
+  alias Wocky.UserInvite.DynamicLink
 
   # -------------------------------------------------------------------
   # Mutations
@@ -20,8 +20,16 @@ defmodule WockyAPI.Resolvers.UserInvite do
   end
 
   def user_invite_make_code(_args, %{context: %{current_user: user}}) do
-    {:ok, code} = UserInvite.make_code(user)
-    {:ok, %{successful: true, result: code}}
+    with {:ok, code} <- UserInvite.make_code(user) do
+      {:ok, %{successful: true, result: code}}
+    end
+  end
+
+  def user_invite_make_url(_args, %{context: %{current_user: user}}) do
+    with {:ok, code} <- UserInvite.make_code(user),
+         {:ok, link} <- DynamicLink.invitation_link(code) do
+      {:ok, %{successful: true, result: link}}
+    end
   end
 
   def friend_bulk_invite(%{input: input}, %{context: %{current_user: user}}) do
