@@ -158,6 +158,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   end
 
   @desc """
+  DEPRECATED
   A notification that a user has stopped sharing their location with the
   recipient
   """
@@ -170,6 +171,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
   end
 
   @desc """
+  DEPRECATED
   A notification that a user has stopped sharing their location with the
   recipient
   """
