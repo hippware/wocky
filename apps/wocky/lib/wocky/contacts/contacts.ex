@@ -286,22 +286,6 @@ defmodule Wocky.Contacts do
     )
   end
 
-  @spec cached_share_type(User.tid(), User.tid()) :: share_type()
-  def cached_share_type(user, contact) do
-    cached =
-      user
-      |> Cache.get()
-      |> Enum.find(fn %CachedRelationship{contact_id: contact_id} ->
-        contact_id == User.id(contact)
-      end)
-
-    if cached do
-      cached.share_type
-    else
-      :disabled
-    end
-  end
-
   @spec get_relationship(User.tid(), User.tid()) ::
           relationship_details() | Repo.error()
   def get_relationship(user, contact) do

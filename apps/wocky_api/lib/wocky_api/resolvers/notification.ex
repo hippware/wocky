@@ -20,21 +20,7 @@ defmodule WockyAPI.Resolvers.Notification do
     {:user_proximity, :user_proximity_notification}
   ]
 
-  def to_graphql(
-        %Notification{
-          type: :location_share,
-          share_type: share_type,
-          other_user_share_type: other_user_share_type
-        } = n
-      ) do
-    n
-    |> Map.put(:share_types, %{to: other_user_share_type, from: share_type})
-    |> common_to_graphql()
-  end
-
-  def to_graphql(%Notification{} = n), do: common_to_graphql(n)
-
-  defp common_to_graphql(%{id: id, created_at: created_at} = n) do
+  def to_graphql(%Notification{id: id, created_at: created_at} = n) do
     data = Map.put(n, :user, n.other_user)
 
     %{data: data, id: id, created_at: created_at}

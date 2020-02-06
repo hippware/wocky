@@ -172,10 +172,10 @@ defmodule WockyAPI.Schema.ContactTypes do
 
   object :friend_share_types do
     @desc "The share mode from the user to their friend"
-    field :to, non_null(:friend_share_type)
+    field :to, :friend_share_type
 
     @desc "The share mode from the friend to the user"
-    field :from, non_null(:friend_share_type)
+    field :from, :friend_share_type
   end
 
   # -------------------------------------------------------------------

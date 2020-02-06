@@ -51,10 +51,6 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
             user { id }
             shareId
             expiresAt
-            shareTypes {
-              to
-              from
-            }
           }
           ... on LocationShareEndNotification {
             shareId
@@ -212,11 +208,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
                 "__typename" => "LocationShareNotification",
                 "user" => %{"id" => ^user_id},
                 "expiresAt" => _,
-                "shareId" => ^share_id,
-                "shareTypes" => %{
-                  "to" => "DISABLED",
-                  "from" => "ALWAYS"
-                }
+                "shareId" => ^share_id
               }
             }
           }

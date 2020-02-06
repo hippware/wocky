@@ -2,24 +2,19 @@ defmodule Wocky.Events.LocationShare do
   @moduledoc "A user has started to share their location to the recipient"
 
   alias Wocky.Account.User
-  alias Wocky.Contacts.Relationship
 
   defstruct [
     :to,
     :from,
     :share_id,
-    :expires_at,
-    :share_type,
-    :other_user_share_type
+    :expires_at
   ]
 
   @type t :: %__MODULE__{
           to: User.t(),
           from: User.t(),
           share_id: non_neg_integer(),
-          expires_at: DateTime.t(),
-          share_type: Relationship.LocationShareTypeEnum.t(),
-          other_user_share_type: Relationship.LocationShareTypeEnum.t()
+          expires_at: DateTime.t()
         }
 end
 
@@ -60,9 +55,7 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShare do
       :expires_at,
       :other_user_id,
       :share_id,
-      :user_id,
-      :share_type,
-      :other_user_share_type
+      :user_id
     ]
 
   @impl true
@@ -71,9 +64,7 @@ defimpl Wocky.Notifier.InBand.Event, for: Wocky.Events.LocationShare do
       expires_at: event.expires_at,
       other_user_id: event.from.id,
       share_id: event.share_id,
-      user_id: event.to.id,
-      share_type: event.share_type,
-      other_user_share_type: event.other_user_share_type
+      user_id: event.to.id
     }
 
   @impl true

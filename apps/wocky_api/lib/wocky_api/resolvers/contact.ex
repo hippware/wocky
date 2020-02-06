@@ -69,13 +69,13 @@ defmodule WockyAPI.Resolvers.Contact do
         _args,
         _info
       ) do
+    # TODO: This adds an N+1 set of queries - we could improve it with some
+    # use of the Dataloader, but a two-constraint query such as is used here
+    # requires a more sophisticated Dataloader setup than we currently have.
+    # So for now I'm going to leave it the simple way.
     {:ok,
      %{
-       from:
-         Contacts.cached_share_type(
-           relationship.contact_id,
-           relationship.user_id
-         ),
+       from: Contacts.share_type(relationship.contact_id, relationship.user_id),
        to: relationship.share_type
      }}
   end
