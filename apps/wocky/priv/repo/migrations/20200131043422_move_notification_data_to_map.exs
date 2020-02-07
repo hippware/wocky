@@ -45,6 +45,12 @@ defmodule Wocky.Repo.Migrations.MoveNotificationDataToMap do
       |> Map.drop([:id])
       |> Jason.encode!()
 
-    execute(fn -> repo().query!("UPDATE notifications SET data = $1 WHERE id = $2", [data, row.id], [log: false]) end)
+    execute(fn ->
+      repo().query!(
+        "UPDATE notifications SET data = $1::jsonb WHERE id = $2",
+        [data, row.id],
+        log: false
+      )
+    end)
   end
 end
