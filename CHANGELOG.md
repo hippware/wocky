@@ -7,6 +7,11 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 * Refactor notifications table to use a map for notification data (#3051)
 * Add shareType to the UserInvitationNotification (#3054)
+* Add Jason encoders for types that can appear in logs (PR #3073)
+  * Fixes: Loggly audit logging broke (#3068)
+* Add share types to location_share notification (PR #3071)
+  * Tweak the LocationShareNotification event (#3062)
+* Create userInviteMakeUrl mutation (#3065)
 
 
 # 2020.2.3+rcfe9d4e

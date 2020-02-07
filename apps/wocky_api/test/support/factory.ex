@@ -92,17 +92,6 @@ defmodule WockyAPI.Factory do
     |> Notification.pack_virtual_fields()
   end
 
-  @spec user_proximity_notification_factory(map()) :: %Notification{}
-  def user_proximity_notification_factory(attrs) do
-    %Notification{
-      type: :user_proximity,
-      user: RepoFactory.build(:user),
-      other_user: RepoFactory.build(:user)
-    }
-    |> merge_attributes(attrs)
-    |> Notification.pack_virtual_fields()
-  end
-
   @spec image_url(TROS.Metadata.t()) :: TROS.url()
   def image_url(image), do: TROS.make_url(image.id)
 
