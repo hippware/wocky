@@ -5,6 +5,22 @@ defmodule WockyAPI.Resolvers.UserInvite do
   """
   alias Wocky.UserInvite
   alias Wocky.UserInvite.DynamicLink
+  alias Wocky.UserInvite.InviteCode
+
+  # -------------------------------------------------------------------
+  # Queries
+
+  def user_invite_get_sender(%{invite_code: code}, %{
+        context: %{current_user: user}
+      }) do
+    case UserInvite.get_by_code(code, user) do
+      %InviteCode{user: sender, share_type: share_type} ->
+        {:ok, %{user: sender, share_type: share_type}}
+
+      _ ->
+        {:error, "Invitation code not found"}
+    end
+  end
 
   # -------------------------------------------------------------------
   # Mutations

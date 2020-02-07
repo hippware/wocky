@@ -26,7 +26,6 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.GeoUtils
   alias Wocky.Location.BotEvent
   alias Wocky.Location.UserLocation
-  alias Wocky.Location.UserProximity.Subscription, as: ProxSubscription
   alias Wocky.Messaging.Message
   alias Wocky.Notifier.InBand.Notification
   alias Wocky.Notifier.Push.Token, as: PushToken
@@ -38,6 +37,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Server.Metadata
   alias Wocky.TROS
   alias Wocky.TROS.Metadata, as: TROSMetadata
+  alias Wocky.UserInvite.InviteCode
 
   def user_factory do
     %User{
@@ -273,13 +273,12 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
-  def user_proximity_factory do
-    %ProxSubscription{
+  def user_invite_code_factory do
+    %InviteCode{
+      code: InviteCode.generate(),
       user: build(:user),
-      target: build(:user),
-      range: 10,
-      cooldown: :timer.hours(24),
-      last_notification: nil
+      phone_number: phone_number(),
+      share_type: :always
     }
   end
 

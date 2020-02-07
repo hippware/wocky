@@ -40,9 +40,6 @@ defmodule WockyAPI.Schema.NotificationTypes do
 
     @desc "UserInvitationNotification type"
     value :user_invitation_notification
-
-    @desc "UserProximityNotification type"
-    value :user_proximity_notification
   end
 
   union :notification_data do
@@ -56,8 +53,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
       :location_share_end_self_notification,
       :location_share_nearby_start_notification,
       :user_befriend_notification,
-      :user_invitation_notification,
-      :user_proximity_notification
+      :user_invitation_notification
     ]
 
     resolve_type &Notification.resolve_type/2
@@ -212,14 +208,6 @@ defmodule WockyAPI.Schema.NotificationTypes do
 
     @desc "The share type of the user sending the invitation to the recipient"
     field :share_type, :friend_share_type
-  end
-
-  @desc """
-  A notification that a user is within range of a proximity notification
-  """
-  object :user_proximity_notification do
-    @desc "The user who is within range"
-    field :user, non_null(:user)
   end
 
   # -------------------------------------------------------------------

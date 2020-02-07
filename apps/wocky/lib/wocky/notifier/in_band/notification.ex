@@ -21,8 +21,7 @@ defmodule Wocky.Notifier.InBand.Notification do
     :location_share_end_self,
     :location_share_nearby_start,
     :user_befriend,
-    :user_invitation,
-    :user_proximity
+    :user_invitation
   ])
 
   @foreign_key_type :binary_id

@@ -13,8 +13,6 @@ defmodule Wocky.Location.Handler do
   alias Wocky.Location.Supervisor
   alias Wocky.Location.UserLocation
   alias Wocky.Location.UserLocation.Current
-  alias Wocky.Location.UserProximity
-  alias Wocky.Location.UserProximity.Subscription, as: ProximitySubscription
   alias Wocky.POI.Bot
   alias Wocky.Relation
 
@@ -32,18 +30,14 @@ defmodule Wocky.Location.Handler do
             events: BotEvent.bot_event_map(),
             watcher_count: non_neg_integer(),
             watched_status_changed_at: DateTime.t() | nil,
-            bot_subscriptions: [Bot.t()],
-            proximity_subscriptions: [ProximitySubscription.t()],
-            proximity_subscribers: [ProximitySubscription.t()]
+            bot_subscriptions: [Bot.t()]
           }
 
     defstruct user: nil,
               events: %{},
               watcher_count: 0,
               watched_status_changed_at: nil,
-              bot_subscriptions: [],
-              proximity_subscriptions: [],
-              proximity_subscribers: []
+              bot_subscriptions: []
   end
 
   @type watched_status :: %{
@@ -78,20 +72,6 @@ defmodule Wocky.Location.Handler do
     user
     |> get_handler_if_exists()
     |> maybe_call(:refresh_bot_subscriptions)
-  end
-
-  @spec set_proximity_location(User.tid(), User.t(), UserLocation.t()) :: :ok
-  def set_proximity_location(user, source_user, location) do
-    user
-    |> get_handler()
-    |> GenServer.cast({:set_proximity_location, source_user, location})
-  end
-
-  @spec refresh_proximity_subscriptions(User.tid()) :: :ok
-  def refresh_proximity_subscriptions(user) do
-    user
-    |> get_handler_if_exists()
-    |> maybe_call(:refresh_proximity_subscriptions)
   end
 
   @spec inc_watcher_count(User.tid()) :: :ok
@@ -170,16 +150,12 @@ defmodule Wocky.Location.Handler do
     Logger.debug(fn -> "Swarm initializing worker with user #{user.id}" end)
     bot_subscriptions = Relation.get_subscribed_bots(user)
     events = BotEvent.get_last_events(user.id)
-    proximity_subscriptions = UserProximity.get_subscriptions(user)
-    proximity_subscribers = UserProximity.get_subscribers(user)
 
     {:ok,
      %State{
        user: user,
        events: events,
-       bot_subscriptions: bot_subscriptions,
-       proximity_subscriptions: proximity_subscriptions,
-       proximity_subscribers: proximity_subscribers
+       bot_subscriptions: bot_subscriptions
      }, @timeout}
   end
 
@@ -190,28 +166,20 @@ defmodule Wocky.Location.Handler do
         %{
           user: user,
           bot_subscriptions: bot_subscriptions,
-          events: events,
-          proximity_subscriptions: proximity_subscriptions,
-          proximity_subscribers: proximity_subscribers
+          events: events
         } = state
       ) do
     Logger.debug(fn -> "Swarm set location with user #{user.id}" end)
 
     case prepare_location(user, location, current?) do
       {:ok, loc} = result ->
-        proximity_subscriptions =
-          UserProximity.check_targets(user, location, proximity_subscriptions)
-
-        UserProximity.notify_subscribers(user, location, proximity_subscribers)
-
         {:ok, _, new_events} =
           GeoFence.check_for_bot_events(loc, user, bot_subscriptions, events)
 
         {:reply, result,
          %{
            state
-           | events: new_events,
-             proximity_subscriptions: proximity_subscriptions
+           | events: new_events
          }, @timeout}
 
       {:error, _} = error ->
@@ -243,18 +211,6 @@ defmodule Wocky.Location.Handler do
     {:reply, :ok, %{state | bot_subscriptions: bot_subscriptions}, @timeout}
   end
 
-  def handle_call(:refresh_proximity_subscriptions, _from, state) do
-    proximity_subscriptions = UserProximity.get_subscriptions(state.user)
-    proximity_subscribers = UserProximity.get_subscribers(state.user)
-
-    {:reply, :ok,
-     %{
-       state
-       | proximity_subscribers: proximity_subscribers,
-         proximity_subscriptions: proximity_subscriptions
-     }, @timeout}
-  end
-
   def handle_call(
         :get_watched_status,
         _from,
@@ -279,24 +235,6 @@ defmodule Wocky.Location.Handler do
   end
 
   @impl true
-  def handle_cast(
-        {:set_proximity_location, %User{id: source_id}, source_location},
-        %{user: user, proximity_subscriptions: proximity_subscriptions} = state
-      ) do
-    proximity_subscriptions =
-      proximity_subscriptions
-      |> Enum.map(fn
-        %{target_id: ^source_id} = s ->
-          UserProximity.check_for_notify(user, source_location, s)
-
-        sub ->
-          sub
-      end)
-
-    {:noreply, %{state | proximity_subscriptions: proximity_subscriptions},
-     @timeout}
-  end
-
   def handle_cast(:inc_watcher_count, %{watcher_count: 0} = state) do
     {:noreply,
      %{state | watcher_count: 1, watched_status_changed_at: DateTime.utc_now()},
