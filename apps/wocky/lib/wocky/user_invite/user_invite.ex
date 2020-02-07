@@ -38,18 +38,21 @@ defmodule Wocky.UserInvite do
     |> Repo.insert()
   end
 
+  @spec get_by_code(String.t(), User.tid()) :: InviteCode.t() | nil
+  def get_by_code(code, requestor) do
+    code
+    |> by_code_query()
+    |> Contacts.object_visible_query(requestor)
+    |> Repo.one()
+  end
+
   @spec redeem_code(User.t(), String.t(), Contacts.share_type()) :: boolean()
   def redeem_code(redeemer, code, share_type \\ :disabled) do
-    invitation =
-      code
-      |> get_invite_by_code()
-      |> Contacts.object_visible_query(redeemer)
-      |> Repo.one()
-
+    invitation = get_by_code(code, redeemer)
     do_redeem_invite_code(redeemer, invitation, share_type)
   end
 
-  defp get_invite_by_code(code) do
+  defp by_code_query(code) do
     from ic in InviteCode,
       where: ic.code == ^code,
       preload: :user

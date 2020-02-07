@@ -10,11 +10,56 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
   alias Wocky.SMS.Sandbox, as: SMSSandbox
   alias Wocky.UserInvite
   alias Wocky.UserInvite.DynamicLink.Sandbox, as: DLSandbox
+  alias Wocky.UserInvite.InviteCode
 
   setup do
     user = Factory.insert(:user)
 
     {:ok, user: user}
+  end
+
+  # -------------------------------------------------------------------
+  # Queries
+
+  describe "userInviteGetSender query" do
+    @query """
+    query ($inviteCode: String!) {
+      userInviteGetSender(inviteCode: $inviteCode) {
+        user {
+          id
+          handle
+        }
+        share_type
+      }
+    }
+    """
+
+    test "should retrieve the invitation sender", ctx do
+      invite_code = Factory.insert(:user_invite_code)
+
+      result = run_query(@query, ctx.user, %{"inviteCode" => invite_code.code})
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "userInviteGetSender" => %{
+                 "user" => %{
+                   "id" => invite_code.user.id,
+                   "handle" => invite_code.user.handle
+                 },
+                 "share_type" => "ALWAYS"
+               }
+             }
+    end
+
+    test "should return an error for invalid code", ctx do
+      result =
+        run_query(@query, ctx.user, %{"inviteCode" => InviteCode.generate()})
+
+      assert has_errors(result)
+
+      assert error_msg(result) =~ "Invitation code not found"
+    end
   end
 
   # -------------------------------------------------------------------

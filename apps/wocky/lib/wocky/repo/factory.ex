@@ -37,6 +37,7 @@ defmodule Wocky.Repo.Factory do
   alias Wocky.Server.Metadata
   alias Wocky.TROS
   alias Wocky.TROS.Metadata, as: TROSMetadata
+  alias Wocky.UserInvite.InviteCode
 
   def user_factory do
     %User{
@@ -269,6 +270,15 @@ defmodule Wocky.Repo.Factory do
     %UserInvitationResponse{
       to: build(:user),
       from: build(:user)
+    }
+  end
+
+  def user_invite_code_factory do
+    %InviteCode{
+      code: InviteCode.generate(),
+      user: build(:user),
+      phone_number: phone_number(),
+      share_type: :always
     }
   end
 
