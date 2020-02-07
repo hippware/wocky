@@ -6,7 +6,7 @@ defmodule Wocky.Repo.Migrations.RemoveUserProximityTable do
   def change do
     drop table("user_proximity_subscriptions")
 
-    execute "DELETE FROM notifications WHERE type = 'user_proximity'"
+    execute "DELETE FROM notifications WHERE type::text = 'user_proximity'"
 
     reset_enum(NotificationTypeEnum, [
       {"notifications", "type", "bot_invitation"}
