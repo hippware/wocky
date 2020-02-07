@@ -126,7 +126,9 @@ defmodule Wocky.Notifier.InBand.Notification do
 
   defp to_native_type(val, :utc_datetime) do
     case DateTime.from_iso8601(val) do
-      {:ok, datetime, _offset} -> datetime
+      {:ok, datetime, _offset} ->
+        datetime
+
       {:error, :missing_offset} ->
         val
         |> NaiveDateTime.from_iso8601!()
