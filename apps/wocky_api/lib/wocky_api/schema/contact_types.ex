@@ -336,6 +336,7 @@ defmodule WockyAPI.Schema.ContactTypes do
     Receive an update when a contact's state (friended/unfriended) changes
     """
     field :contacts, non_null(:contact_relationship_change) do
+      deprecate "Use UserBefriendNotification instead"
       user_subscription_config(&Contact.contacts_subscription_topic/1)
     end
 

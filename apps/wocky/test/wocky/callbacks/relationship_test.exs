@@ -81,6 +81,27 @@ defmodule Wocky.Callbacks.RelationshipTest do
                }
              ] = in_band_notifications(ctx.user)
     end
+
+    test """
+         unfriending generates an end-share notification for the sharing user
+         """,
+         ctx do
+      assert_eventually(in_band_notification_count(ctx.friend1) == 1)
+      InBand.delete(ctx.friend1, ctx.user)
+
+      Contacts.unfriend(ctx.user, ctx.friend1)
+
+      other_id = ctx.user.id
+
+      assert_eventually(in_band_notification_count(ctx.friend1) == 1)
+
+      assert [
+               %Notification{
+                 type: :location_share_end,
+                 other_user_id: ^other_id
+               }
+             ] = in_band_notifications(ctx.friend1)
+    end
   end
 
   describe "location share cache" do
