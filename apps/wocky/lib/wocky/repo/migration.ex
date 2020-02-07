@@ -23,7 +23,10 @@ defmodule Wocky.Repo.Migration do
     |> Ecto.Migration.timestamps()
   end
 
-  @spec reset_enum(any(), [String.t()]) :: :ok
+  @doc """
+  `table_cols` is a list of elements of the form `{table, column, default}`
+  """
+  @spec reset_enum(any(), [{String.t(), String.t(), String.t()}]) :: :ok
   def reset_enum(enum, table_cols) do
     execute "ALTER TYPE #{enum.schemaless_type()} RENAME TO #{
               enum.schemaless_type()

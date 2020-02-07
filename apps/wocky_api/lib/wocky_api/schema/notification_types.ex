@@ -35,6 +35,9 @@ defmodule WockyAPI.Schema.NotificationTypes do
     @desc "LocationShareNearbyStart type"
     value :location_share_nearby_start_notification
 
+    @desc "UserBefriendNotification type"
+    value :user_befriend_notification
+
     @desc "UserInvitationNotification type"
     value :user_invitation_notification
   end
@@ -49,6 +52,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
       :location_share_end_notification,
       :location_share_end_self_notification,
       :location_share_nearby_start_notification,
+      :user_befriend_notification,
       :user_invitation_notification
     ]
 
@@ -184,6 +188,14 @@ defmodule WockyAPI.Schema.NotificationTypes do
     The user has moved within nearby range and has begun sharing their location.
     This will be sent at most once per nearby cooldown period.
     """
+    field :user, non_null(:user)
+  end
+
+  @desc """
+  A notification that a user has become friends with the recipient
+  """
+  object :user_befriend_notification do
+    @desc "The user who has become the recipient's friend"
     field :user, non_null(:user)
   end
 

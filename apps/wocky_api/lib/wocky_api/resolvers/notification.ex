@@ -16,6 +16,7 @@ defmodule WockyAPI.Resolvers.Notification do
     {:location_share_end, :location_share_end_notification},
     {:location_share_end_self, :location_share_end_self_notification},
     {:location_share_nearby_start, :location_share_nearby_start_notification},
+    {:user_befriend, :user_befriend_notification},
     {:user_invitation, :user_invitation_notification}
   ]
 
