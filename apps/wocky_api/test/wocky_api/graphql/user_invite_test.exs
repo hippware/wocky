@@ -25,8 +25,11 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
     @query """
     query ($inviteCode: String!) {
       userInviteGetSender(inviteCode: $inviteCode) {
-        id
-        handle
+        user {
+          id
+          handle
+        }
+        share_type
       }
     }
     """
@@ -40,8 +43,11 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
 
       assert result.data == %{
                "userInviteGetSender" => %{
-                 "id" => invite_code.user.id,
-                 "handle" => invite_code.user.handle
+                 "user" => %{
+                   "id" => invite_code.user.id,
+                   "handle" => invite_code.user.handle
+                 },
+                 "share_type" => "ALWAYS"
                }
              }
     end

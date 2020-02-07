@@ -14,8 +14,11 @@ defmodule WockyAPI.Resolvers.UserInvite do
         context: %{current_user: user}
       }) do
     case UserInvite.get_by_code(code, user) do
-      %InviteCode{user: sender} -> {:ok, sender}
-      _ -> {:error, "Invitation code not found"}
+      %InviteCode{user: sender, share_type: share_type} ->
+        {:ok, %{user: sender, share_type: share_type}}
+
+      _ ->
+        {:error, "Invitation code not found"}
     end
   end
 
