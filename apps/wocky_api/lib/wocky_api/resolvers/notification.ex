@@ -16,8 +16,7 @@ defmodule WockyAPI.Resolvers.Notification do
     {:location_share_end, :location_share_end_notification},
     {:location_share_end_self, :location_share_end_self_notification},
     {:location_share_nearby_start, :location_share_nearby_start_notification},
-    {:user_invitation, :user_invitation_notification},
-    {:user_proximity, :user_proximity_notification}
+    {:user_invitation, :user_invitation_notification}
   ]
 
   def to_graphql(

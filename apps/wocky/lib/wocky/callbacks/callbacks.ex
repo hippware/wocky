@@ -11,8 +11,7 @@ defmodule Wocky.Callbacks do
     Wocky.Callbacks.Connection,
     Wocky.Callbacks.Message,
     Wocky.Callbacks.Relationship,
-    Wocky.Callbacks.TROSMetadata,
-    Wocky.Callbacks.UserProximity
+    Wocky.Callbacks.TROSMetadata
   ]
 
   @spec register :: :ok

@@ -15,9 +15,6 @@ defmodule Wocky.Location do
   @spec refresh_bot_subscriptions(User.tid()) :: :ok
   defdelegate refresh_bot_subscriptions(user), to: Handler
 
-  @spec refresh_proximity_subscriptions(User.tid()) :: :ok
-  defdelegate refresh_proximity_subscriptions(user), to: Handler
-
   # ----------------------------------------------------------------------
   # User Location
 
