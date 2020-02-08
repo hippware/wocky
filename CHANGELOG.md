@@ -5,6 +5,8 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2020.2.7+r8316b9f
+
 * Refactor notifications table to use a map for notification data (#3051)
 * Add shareType to the UserInvitationNotification (#3054)
 * Add Jason encoders for types that can appear in logs (PR #3073)
@@ -12,6 +14,13 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 * Add share types to location_share notification (PR #3071)
   * Tweak the LocationShareNotification event (#3062)
 * Create userInviteMakeUrl mutation (#3065)
+* Update: plug (PR #3084), honeybadger (PR #3083)
+* Remove legacy user proximity system (#2906, PR #3082)
+* Add userInviteGetSender query (#3072)
+* Create a new notification event UserBefriendNotification (#3055)
+* Revert "Bump to elixir 1.10.0 and alpine 3.11.3" (PR #3087)
+* Cast string values to JSON objects in migration (#3088, PR #3090)
+* Add handling for dates without offset (#3089, PR #3091)
 
 
 # 2020.2.3+rcfe9d4e
