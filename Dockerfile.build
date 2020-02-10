@@ -1,4 +1,4 @@
-FROM hippware/alpine-elixir-dev:1.9.4
+FROM hippware/alpine-elixir-dev:1.10.0
 
 ENV MIX_ENV=test
 ARG HEX_ORG_KEY=""
