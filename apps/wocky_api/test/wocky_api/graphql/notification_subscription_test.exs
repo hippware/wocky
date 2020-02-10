@@ -7,6 +7,8 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   alias Wocky.Contacts.Share.Cache
   alias Wocky.Location
   alias Wocky.Location.Handler
+  alias Wocky.Notifier.Push
+  alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Presence.Manager
   alias Wocky.Relation
   alias Wocky.Repo
@@ -67,6 +69,9 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
           ... on LocationShareNearbyStartNotification {
             user { id }
           }
+          ... on LocationShareNearbyEndNotification {
+            user { id }
+          }
           ... on UserBefriendNotification {
             user { id }
           }
@@ -93,13 +98,25 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
     assert_eventually(Relation.subscribed?(user, bot))
 
+    pid = Process.whereis(Dawdle.Client)
+    Sandbox.clear_notifications(pid: pid)
+    old_reflect = Sandbox.get_config(:reflect)
+    Sandbox.put_config(:reflect, false)
+    Push.enable(user, "testing", Faker.Code.isbn13())
+
     on_exit(fn ->
       Wocky.Repo.delete_all(Wocky.Account.User)
       Handler.stop_all()
       Manager.stop_all()
+      Sandbox.put_config(:reflect, old_reflect)
     end)
 
-    {:ok, user2: user2, bot: bot, ref: ref, subscription_id: subscription_id}
+    {:ok,
+     user2: user2,
+     bot: bot,
+     ref: ref,
+     subscription_id: subscription_id,
+     pid: pid}
   end
 
   describe "event notifications" do
@@ -260,7 +277,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
       })
     end
 
-    test "moves into nearby range", %{
+    test "moves into and out of nearby range", %{
       user: user,
       user2: user2,
       subscription_id: subscription_id
@@ -288,16 +305,38 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
         "__typename" => "LocationShareNearbyStartNotification",
         "user" => %{"id" => user2.id}
       })
+
+      location2 =
+        Factory.build(:location,
+          lat: 50.0,
+          lon: 50.0,
+          captured_at: now
+        )
+
+      {:ok, _} =
+        Location.set_user_location(user2, %{location2 | user_id: user2.id})
+
+      assert_notification_update(subscription_id, %{
+        "__typename" => "LocationShareNearbyEndNotification",
+        "user" => %{"id" => user2.id}
+      })
+
+      {:ok, _} =
+        Location.set_user_location(user2, %{location2 | user_id: user2.id})
+
+      # Should not send a second consecutive end notification
+      refute_subscription_update _data
     end
 
     test """
-         moves into nearby range should only generate one notifiation in the
-         cooldown period
+         moves into nearby range should only generate one push notifiation in
+         the cooldown period
          """,
          %{
            user: user,
            user2: user2,
-           subscription_id: subscription_id
+           subscription_id: subscription_id,
+           pid: pid
          } do
       befriend(user, user2, subscription_id, :nearby)
       assert_eventually(length(Cache.get(user2.id)) == 1)
@@ -324,19 +363,28 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
         "user" => %{"id" => user2.id}
       })
 
+      notifications =
+        Sandbox.wait_notifications(count: 1, timeout: 5000, pid: pid)
+
+      assert Enum.count(notifications) == 1
+
       {:ok, _} = Location.set_user_location(user2, location2)
 
       refute_subscription_update _data
+
+      # Second push notification should not be generated
+      assert Sandbox.list_notifications(pid: pid) |> length() == 1
     end
 
     test """
-         moves into nearby range should generate a new notification once the
-         cooldown period has expired
+         moves into nearby range should generate a new push notification once
+         the cooldown period has expired
          """,
          %{
            user: user,
            user2: user2,
-           subscription_id: subscription_id
+           subscription_id: subscription_id,
+           pid: pid
          } do
       befriend(user, user2, subscription_id)
 
@@ -366,12 +414,19 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
         "user" => %{"id" => user2.id}
       })
 
+      notifications! =
+        Sandbox.wait_notifications(count: 1, timeout: 5000, pid: pid)
+
+      assert Enum.count(notifications!) == 1
+
       {:ok, _} = Location.set_user_location(user2, location2)
 
-      assert_notification_update(subscription_id, %{
-        "__typename" => "LocationShareNearbyStartNotification",
-        "user" => %{"id" => user2.id}
-      })
+      refute_subscription_update _data
+
+      notifications! =
+        Sandbox.wait_notifications(count: 2, timeout: 5000, pid: pid)
+
+      assert Enum.count(notifications!) == 2
     end
 
     test "user stops sharing their own location", %{

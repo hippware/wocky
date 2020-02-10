@@ -220,6 +220,14 @@ defmodule Wocky.Contacts do
     update_relationship(user, contact, params)
   end
 
+  @spec update_nearby(User.t(), User.tid(), boolean()) ::
+          Repo.result(Relationship.t())
+  def update_nearby(user, contact, nearby?) do
+    update_relationship(user, contact, %{
+      nearby: nearby?
+    })
+  end
+
   defp update_relationship(user, contact, changes) do
     case Repo.one(single_relationship(user, contact)) do
       nil ->

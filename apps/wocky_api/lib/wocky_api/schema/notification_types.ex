@@ -32,6 +32,9 @@ defmodule WockyAPI.Schema.NotificationTypes do
     @desc "LocationShareEndSelfNotification type"
     value :location_share_end_self_notification
 
+    @desc "LocationShareNearbyEnd type"
+    value :location_share_nearby_end_notification
+
     @desc "LocationShareNearbyStart type"
     value :location_share_nearby_start_notification
 
@@ -51,6 +54,7 @@ defmodule WockyAPI.Schema.NotificationTypes do
       :location_share_notification,
       :location_share_end_notification,
       :location_share_end_self_notification,
+      :location_share_nearby_end_notification,
       :location_share_nearby_start_notification,
       :user_befriend_notification,
       :user_invitation_notification
@@ -181,6 +185,14 @@ defmodule WockyAPI.Schema.NotificationTypes do
 
     @desc "The ID of the ending share"
     field :share_id, :aint
+  end
+
+  object :location_share_nearby_end_notification do
+    @desc """
+    The user has moved out of nearby range and has ceased sharing their
+    location.
+    """
+    field :user, non_null(:user)
   end
 
   object :location_share_nearby_start_notification do

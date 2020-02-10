@@ -1,5 +1,7 @@
 defmodule Wocky.Notifier.InBand.Notification do
-  @moduledoc "An invitation from a user to subscribe to a bot"
+  @moduledoc """
+  A notification sent directly to the app through GraphQL
+  """
 
   use Wocky.Repo.Schema
 
@@ -19,6 +21,7 @@ defmodule Wocky.Notifier.InBand.Notification do
     :location_share,
     :location_share_end,
     :location_share_end_self,
+    :location_share_nearby_end,
     :location_share_nearby_start,
     :user_befriend,
     :user_invitation
