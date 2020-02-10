@@ -2,9 +2,9 @@
 # (and thus are passed to ExJsonLogger) but are not handled by default.
 
 defimpl Jason.Encoder, for: Function do
-  @spec encode(function(), Jason.Encode.opts()) :: String.t()
+  @spec encode(function(), Jason.Encode.opts()) :: iolist()
   def encode(fun, _opts) do
-    inspect(fun)
+    [?\", inspect(fun), ?\"]
   end
 end
 
@@ -17,6 +17,6 @@ defimpl Jason.Encoder, for: Tuple do
       |> Enum.map(&inspect/1)
       |> Enum.join(", ")
 
-    "{" <> values <> "}"
+    "\"{" <> values <> "}\""
   end
 end
