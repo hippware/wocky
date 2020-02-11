@@ -5,8 +5,13 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2020.2.11+r9e7d71f
+
 * Update the version of Redis used for tests (#3092)
 * Fix JSON log encoding for Elixir 1.10 (#3095)
+* Update: plug (PR #3097), honeybadger (PR #3096)
+* Add notification when user sharing nearby leaves the area (#3093)
+* Fix user invite URL test (PR #3099, PR #3100)
 
 
 # 2020.2.7+r8316b9f
