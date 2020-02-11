@@ -5,6 +5,10 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update the version of Redis used for tests (#3092)
+* Fix JSON log encoding for Elixir 1.10 (#3095)
+
+
 # 2020.2.7+r8316b9f
 
 * Refactor notifications table to use a map for notification data (#3051)
