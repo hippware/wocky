@@ -117,7 +117,8 @@ defmodule Wocky.Repo.Factory do
       user: build(:user),
       contact: build(:user),
       share_type: :always,
-      state: :friend
+      state: :friend,
+      nearby: false
     }
   end
 

@@ -8,6 +8,7 @@ defmodule WockyAPI.Resolvers.Contact do
   alias Wocky.Contacts
   alias Wocky.Contacts.Relationship
   alias Wocky.Contacts.Share
+  alias Wocky.Events.NearbyEnd
   alias Wocky.Events.NearbyStart
   alias Wocky.Location
   alias Wocky.Location.UserLocation
@@ -243,6 +244,7 @@ defmodule WockyAPI.Resolvers.Contact do
          location
        ) do
     {:ok, target_loc} = Current.get(share_target.contact_id)
+    contact = User.hydrate(share_target.contact_id)
 
     if target_loc &&
          Geocalc.within?(
@@ -251,7 +253,11 @@ defmodule WockyAPI.Resolvers.Contact do
            Location.to_point(location)
          ) do
       do_notify_location(share_target, user, location)
-      maybe_notify_start(user, share_target)
+      notify_nearby_start(user, contact, share_target)
+      Contacts.update_nearby(user, contact, true)
+    else
+      notify_nearby_end(user, contact, share_target)
+      Contacts.update_nearby(user, contact, false)
     end
   end
 
@@ -266,30 +272,24 @@ defmodule WockyAPI.Resolvers.Contact do
   defp make_location_data(user, location),
     do: %{user: user, location: location}
 
-  defp maybe_notify_start(
-         user,
-         %{nearby_last_start_notification: nil} = target
-       ),
-       do: notify_start(user, target)
-
-  defp maybe_notify_start(user, target) do
-    result =
-      target.nearby_last_start_notification
-      |> DateTime.add(target.nearby_cooldown, :millisecond)
-      |> DateTime.compare(DateTime.utc_now())
-
-    if result == :lt, do: notify_start(user, target)
-  end
-
-  defp notify_start(user, target) do
+  defp notify_nearby_start(user, contact, target) do
     %NearbyStart{
-      to: User.hydrate(target.contact_id),
-      from: user
+      to: contact,
+      from: user,
+      last_push: target.nearby_last_start_notification,
+      push_cooldown: target.nearby_cooldown,
+      previously_nearby: target.nearby
     }
     |> Notifier.notify()
+  end
 
-    {:ok, _} = Contacts.update_last_start_notification(user, target.contact_id)
-    Contacts.refresh_share_cache(user.id)
+  defp notify_nearby_end(user, contact, target) do
+    %NearbyEnd{
+      to: contact,
+      from: user,
+      previously_nearby: target.nearby
+    }
+    |> Notifier.notify()
   end
 
   def location_catchup(user) do

@@ -11,7 +11,8 @@ defmodule Wocky.Contacts.Share.CachedRelationship do
     :share_type,
     :nearby_distance,
     :nearby_cooldown,
-    :nearby_last_start_notification
+    :nearby_last_start_notification,
+    :nearby
   ]
 
   defstruct @fields
@@ -21,7 +22,8 @@ defmodule Wocky.Contacts.Share.CachedRelationship do
           share_type: Relationship.share_type(),
           nearby_distance: integer(),
           nearby_cooldown: integer(),
-          nearby_last_start_notification: DateTime.t()
+          nearby_last_start_notification: DateTime.t(),
+          nearby: boolean()
         }
 
   def fields, do: @fields

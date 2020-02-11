@@ -26,6 +26,7 @@ defmodule Wocky.Contacts.Relationship do
     field :nearby_distance, :integer, default: 2000
     field :nearby_cooldown, :integer, default: :timer.hours(2)
     field :nearby_last_start_notification, :utc_datetime_usec
+    field :nearby, :boolean
 
     # TODO These fields are used to support the legacy sharing API. They
     # should be removed when that API is decommissioned.
@@ -50,7 +51,8 @@ defmodule Wocky.Contacts.Relationship do
           updated_at: DateTime.t(),
           nearby_distance: integer(),
           nearby_cooldown: integer(),
-          nearby_last_start_notification: DateTime.t()
+          nearby_last_start_notification: DateTime.t(),
+          nearby: boolean()
         }
 
   @fields [
@@ -60,7 +62,8 @@ defmodule Wocky.Contacts.Relationship do
     :share_type,
     :nearby_distance,
     :nearby_cooldown,
-    :nearby_last_start_notification
+    :nearby_last_start_notification,
+    :nearby
   ]
 
   def share_types, do: @share_types
