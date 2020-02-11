@@ -262,6 +262,9 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
       }
     }
     """
+    setup do
+      DLSandbox.set_result(:ok)
+    end
 
     test "redeem invitation code", %{user: user} do
       inviter = Factory.insert(:user)
