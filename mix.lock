@@ -4,7 +4,7 @@
   "absinthe_metrics": {:git, "https://github.com/hippware/absinthe-metrics.git", "d6df8e63f51c27b4839dff0596055312f8693147", [branch: "working"]},
   "absinthe_phoenix": {:git, "https://github.com/hippware/absinthe_phoenix.git", "3573eb620cb20cf8c0d36961f5771c7e194b8a6e", [branch: "working"]},
   "absinthe_plug": {:git, "https://github.com/hippware/absinthe_plug.git", "0bc5510a351096f313ea1d6feffda8b71c3ac816", []},
-  "absinthe_relay": {:git, "https://github.com/hippware/absinthe_relay.git", "64ddb94e3274e445668ae10444e88926224a635a", [branch: "working"]},
+  "absinthe_relay": {:git, "https://github.com/hippware/absinthe_relay.git", "3fbdf614c034fd2b59708fc0d9c80fb04e9b056d", [branch: "working"]},
   "absinthe_websocket": {:git, "https://github.com/annkissam/absinthe_websocket.git", "a3fa41d2738e6f9813b36526ca4e1dbc892060e5", [branch: "master"]},
   "accept": {:hex, :accept, "0.3.3", "548ebb6fb2e8b0d170e75bb6123aea6ceecb0189bb1231eeadf52eac08384a97", [:rebar3], [], "hexpm", "9df23358b4d0c62d058fb84281aae5e7a850dcc923d4907d12b938b189e20208"},
   "apollo_tracing": {:hex, :apollo_tracing, "0.4.3", "6bc56132f4ab87223b10dc7ab91bf4374ba4033411ba80873f9f89caf15d7476", [:mix], [{:absinthe, "~> 1.4", [hex: :absinthe, repo: "hexpm", optional: false]}, {:absinthe_plug, "~> 1.4", [hex: :absinthe_plug, repo: "hexpm", optional: true]}, {:jason, "~> 1.1.2", [hex: :jason, repo: "hexpm", optional: true]}], "hexpm", "150077363f588fa6881b77f936d7e671cfcaf6f6b4783b7682f6705c898bfc53"},
