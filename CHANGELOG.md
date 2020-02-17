@@ -5,6 +5,9 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+* Update: absinthe_relay (PR #3103), absinthe (PR #3102), phoenix (PR #3101)
+
+
 # 2020.2.11+r9e7d71f
 
 * Update the version of Redis used for tests (#3092)
