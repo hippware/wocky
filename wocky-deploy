@@ -72,17 +72,10 @@ pod=$(kubectl get pods \
   | tail -n 1 \
   | cut -f2 -d ' ')
 
-# Tag the release with the version number if this is the first non-testing deploy
-if [ "${wocky_env}" = "staging" ]; then
-  version=$(kubectl exec -it -n "${namespace}" "${pod}" bin/wocky version)
-  git tag -f "${version}" "${REVISION}"
-  git push --force origin "${version}"
-fi
-
-# Tag the release with a moving tag indicating the current deployment
-git tag -f "${wocky_env}-deployed" "${REVISION}"
-git push --force origin "${wocky_env}-deployed"
-
 kubectl exec -it -n "${namespace}" "${pod}" bin/wocky notify_complete "${status}" "${msg}"
+
+# As our last act, print out the deployed version on the last line. This allows
+# the calling script to easily pick up the version.
+kubectl exec -it -n "${namespace}" "${pod}" bin/wocky version
 
 exit $result
