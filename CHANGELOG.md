@@ -6,6 +6,10 @@ Ticket numbers refer to the ticket tracker for this project if not specified.
 
 
 * Update: absinthe_relay (PR #3103), absinthe (PR #3102), phoenix (PR #3101)
+  * ecto_sql (PR #3106)
+* WIP: Automate tagging releases (#3075)
+  * Add tagging of version and deployment status (PR #3104)
+  * Move tagging back to the promote script (PR #3105)
 
 
 # 2020.2.11+r9e7d71f
