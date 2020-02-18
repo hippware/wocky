@@ -5,11 +5,14 @@ Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deplo
 Ticket numbers refer to the ticket tracker for this project if not specified. 
 
 
+# 2020.2.18+ra271b3c
+
 * Update: absinthe_relay (PR #3103), absinthe (PR #3102), phoenix (PR #3101)
   * ecto_sql (PR #3106)
-* WIP: Automate tagging releases (#3075)
+* Automate tagging releases (#3075)
   * Add tagging of version and deployment status (PR #3104)
   * Move tagging back to the promote script (PR #3105)
+  * Fix version output (PR #3109)
 
 
 # 2020.2.11+r9e7d71f
