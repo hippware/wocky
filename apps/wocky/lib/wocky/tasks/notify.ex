@@ -29,6 +29,12 @@ defmodule Wocky.Tasks.Notify do
     do_notify(msg!)
   end
 
+  @spec changelog(String.t()) :: :ok
+  def changelog(log) do
+    msg = "Changelog:\n" <> log
+    do_notify(msg)
+  end
+
   defp wocky_version_and_target do
     version = Application.spec(:wocky, :vsn)
     "Wocky version `#{version}` to #{instance_name()}"
