@@ -4,7 +4,6 @@ defmodule Wocky.Repo.Migrations.MoveNotificationDataToMap do
   alias Wocky.Repo
 
   import Ecto.Query
-  import DawdleDB.Migration
 
   require Logger
 
