@@ -1,0 +1,33 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: wocky-deploy
+  namespace: wocky-us1
+  labels:
+    app: wocky-cron
+    mod: deploy
+    env: us1
+spec:
+  schedule: "0 20 * * 2"
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: wocky-deploy
+            mod: deploy
+            env: us1
+          annotations:
+            iam.amazonaws.com/role: <%= wocky_deploy_role_arn['value'] %>
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: eks-deploy
+              image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/eks-deploy:latest
+              imagePullPolicy: Always
+              args: ["./promote-build", "staging", "us1"]
+              securityContext:
+                capabilities:
+                  add:
+                    - "IPC_LOCK"
+                procMount: "Default"
