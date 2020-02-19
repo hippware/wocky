@@ -18,8 +18,8 @@ log=$(git log --oneline ${previous_commit}..${last_commit} \
     | grep -v "changelog \\[skip ci\\]" \
     | grep -v " Merge pull request #")
 
-changes="${version}\n\n${log}"
+changes="# ${version}\n\n${log}"
 
-echo -e "${changes}\n\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
+echo -e "${changes}\n\n$(cat CHANGELOG.md)" > CHANGELOG.md
 
 echo -e "${changes}"
