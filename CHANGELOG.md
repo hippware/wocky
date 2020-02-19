@@ -1,13 +1,3 @@
-# Change Log
-
-Also: [Deployment history](https://github.com/hippware/tr-wiki/wiki/Server-deployment-history)
-
-Ticket numbers refer to the ticket tracker for this project if not specified. 
-
-
-* Update: absinthe (PR #3107), elixir to 1.10.1, erlang to 22.2.6 (PR #3108)
-
-
 # 2020.2.18+ra271b3c
 
 * Update: absinthe_relay (PR #3103), absinthe (PR #3102), phoenix (PR #3101)
