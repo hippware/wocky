@@ -1,0 +1,2 @@
+#!/bin/sh
+github_changelog_generator --token ${1} --user hippware --project wocky --no-unreleased --exclude-tags-regex ".*-deployed"

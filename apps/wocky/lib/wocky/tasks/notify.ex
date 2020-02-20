@@ -29,9 +29,8 @@ defmodule Wocky.Tasks.Notify do
     do_notify(msg!)
   end
 
-  @spec changelog(String.t()) :: :ok
-  def changelog(log) do
-    msg = "Changelog:\n" <> log
+  @spec notify(String.t()) :: :ok
+  def notify(msg) do
     do_notify(msg)
   end
 
