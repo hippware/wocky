@@ -42,6 +42,11 @@ defmodule WockyAPI.Schema.UserInviteTypes do
     field :share_type, non_null(:friend_share_type)
   end
 
+  input_object :user_invite_make_url_input do
+    @desc "The preferred sharing mode with the target user"
+    field :share_type, non_null(:friend_share_type)
+  end
+
   enum :user_invite_send_status do
     @desc "An invitation was sent externally (e.g. SMS)"
     value :external_invitation_sent
@@ -199,6 +204,7 @@ defmodule WockyAPI.Schema.UserInviteTypes do
     Generate a dynamic-link URL with invite code.
     """
     field :user_invite_make_url, type: :user_invite_make_url_payload do
+      arg :input, non_null(:user_invite_make_url_input)
       resolve &UserInvite.user_invite_make_url/2
     end
 

@@ -41,8 +41,10 @@ defmodule WockyAPI.Resolvers.UserInvite do
     end
   end
 
-  def user_invite_make_url(_args, %{context: %{current_user: user}}) do
-    with {:ok, code} <- UserInvite.make_code(user),
+  def user_invite_make_url(%{input: input}, %{context: %{current_user: user}}) do
+    share_type = input[:share_type]
+
+    with {:ok, code} <- UserInvite.make_code(user, nil, share_type),
          {:ok, link} <- DynamicLink.invitation_link(code) do
       {:ok, %{successful: true, result: link}}
     end

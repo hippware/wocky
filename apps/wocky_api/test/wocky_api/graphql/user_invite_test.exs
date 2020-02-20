@@ -303,8 +303,8 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
 
   describe "userInviteMakeUrl mutation" do
     @query """
-    mutation {
-      userInviteMakeUrl {
+    mutation ($input: UserInviteMakeUrlInput!) {
+      userInviteMakeUrl(input: $input) {
         successful
         result
       }
@@ -315,7 +315,7 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
     end
 
     test "get invitation url", %{user: user} do
-      result = run_query(@query, user)
+      result = run_query(@query, user, %{"input" => %{"ShareType" => "NEARBY"}})
 
       refute has_errors(result)
 
@@ -327,6 +327,8 @@ defmodule WockyAPI.GraphQL.UserInviteTest do
              } = result.data
 
       assert url =~ ~r"https://tinyrobot\.com/\?invitation.+"
+
+      assert Repo.get_by(InviteCode, user_id: user.id).share_type == :nearby
     end
   end
 
