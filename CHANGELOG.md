@@ -86,6 +86,7 @@
 - Bump absinthe\_relay from `64ddb94` to `3fbdf61` [\#3103](https://github.com/hippware/wocky/pull/3103) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump absinthe from `e728d45` to `43d9644` [\#3102](https://github.com/hippware/wocky/pull/3102) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump phoenix from 1.4.12 to 1.4.13 [\#3101](https://github.com/hippware/wocky/pull/3101) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Fix user invite URL test [\#3099](https://github.com/hippware/wocky/pull/3099) ([bernardd](https://github.com/bernardd))
 
 ## [2020.2.11+r9e7d71f](https://github.com/hippware/wocky/tree/2020.2.11+r9e7d71f) (2020-02-11)
 
@@ -94,7 +95,6 @@
 **Merged pull requests:**
 
 - Really fix URL test [\#3100](https://github.com/hippware/wocky/pull/3100) ([bernardd](https://github.com/bernardd))
-- Fix user invite URL test [\#3099](https://github.com/hippware/wocky/pull/3099) ([bernardd](https://github.com/bernardd))
 - 3093 leave nearby notifciation [\#3098](https://github.com/hippware/wocky/pull/3098) ([bernardd](https://github.com/bernardd))
 - Bump plug from 1.8.3 to 1.9.0 [\#3097](https://github.com/hippware/wocky/pull/3097) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump honeybadger from 0.13.0 to 0.13.1 [\#3096](https://github.com/hippware/wocky/pull/3096) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
@@ -171,7 +171,6 @@
 - Bump plug\_cowboy from 2.1.1 to 2.1.2 [\#3048](https://github.com/hippware/wocky/pull/3048) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add share type edge attribute [\#3047](https://github.com/hippware/wocky/pull/3047) ([bernardd](https://github.com/bernardd))
 - Add types to wocky\_api [\#3043](https://github.com/hippware/wocky/pull/3043) ([toland](https://github.com/toland))
-- Bump bamboo from 1.3.0 to 1.4.0 [\#3040](https://github.com/hippware/wocky/pull/3040) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 
 ## [2020.1.29+r5303053](https://github.com/hippware/wocky/tree/2020.1.29+r5303053) (2020-01-29)
 
@@ -183,12 +182,14 @@
 - Bump ecto\_sql from 3.3.2 to 3.3.3 [\#3045](https://github.com/hippware/wocky/pull/3045) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump credo from 1.2.0 to 1.2.1 [\#3044](https://github.com/hippware/wocky/pull/3044) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump cors\_plug from 2.0.0 to 2.0.1 [\#3041](https://github.com/hippware/wocky/pull/3041) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Bump bamboo from 1.3.0 to 1.4.0 [\#3040](https://github.com/hippware/wocky/pull/3040) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump credo from 1.1.5 to 1.2.0 [\#3039](https://github.com/hippware/wocky/pull/3039) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump phoenix from 1.4.11 to 1.4.12 [\#3038](https://github.com/hippware/wocky/pull/3038) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add ex\_aws to list of required apps for notification [\#3037](https://github.com/hippware/wocky/pull/3037) ([bernardd](https://github.com/bernardd))
 - Clear up spurious error messages during test runs [\#3036](https://github.com/hippware/wocky/pull/3036) ([toland](https://github.com/toland))
 - Add location forwarding target for us1 [\#3035](https://github.com/hippware/wocky/pull/3035) ([bernardd](https://github.com/bernardd))
 - Remove transaction wrapper from online status retrieval [\#3034](https://github.com/hippware/wocky/pull/3034) ([bernardd](https://github.com/bernardd))
+- Bump excoveralls from 0.12.1 to 0.12.2 [\#3030](https://github.com/hippware/wocky/pull/3030) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Elixir 1.10 [\#3011](https://github.com/hippware/wocky/pull/3011) ([toland](https://github.com/toland))
 
 ## [2020.1.21+r236b1a7](https://github.com/hippware/wocky/tree/2020.1.21+r236b1a7) (2020-01-21)
@@ -203,7 +204,6 @@
 **Merged pull requests:**
 
 - Add shareType to the contacts subscription [\#3033](https://github.com/hippware/wocky/pull/3033) ([toland](https://github.com/toland))
-- Bump excoveralls from 0.12.1 to 0.12.2 [\#3030](https://github.com/hippware/wocky/pull/3030) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Rds ssl [\#3029](https://github.com/hippware/wocky/pull/3029) ([bernardd](https://github.com/bernardd))
 - Revert "Use SSL for RDS connection" [\#3028](https://github.com/hippware/wocky/pull/3028) ([bernardd](https://github.com/bernardd))
 - Use SSL for RDS connection [\#3027](https://github.com/hippware/wocky/pull/3027) ([bernardd](https://github.com/bernardd))
@@ -228,6 +228,7 @@
 - Don't forward location when handle is NULL [\#3021](https://github.com/hippware/wocky/pull/3021) ([toland](https://github.com/toland))
 - Consistently use the field name nearbyCooldown [\#3018](https://github.com/hippware/wocky/pull/3018) ([toland](https://github.com/toland))
 - Suppress creation of data and log directories [\#3015](https://github.com/hippware/wocky/pull/3015) ([toland](https://github.com/toland))
+- Hide data and log dirs when running locally [\#3012](https://github.com/hippware/wocky/pull/3012) ([toland](https://github.com/toland))
 
 ## [2020.1.14+r51e6bde](https://github.com/hippware/wocky/tree/2020.1.14+r51e6bde) (2020-01-14)
 
@@ -246,7 +247,6 @@
 
 - Fix GQL shareConfig resolution [\#3014](https://github.com/hippware/wocky/pull/3014) ([toland](https://github.com/toland))
 - Bump libcluster from 3.1.1 to 3.2.0 [\#3013](https://github.com/hippware/wocky/pull/3013) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Hide data and log dirs when running locally [\#3012](https://github.com/hippware/wocky/pull/3012) ([toland](https://github.com/toland))
 - Correct a race condition in the client tests [\#3010](https://github.com/hippware/wocky/pull/3010) ([toland](https://github.com/toland))
 - Don't log metrics requests [\#3009](https://github.com/hippware/wocky/pull/3009) ([toland](https://github.com/toland))
 - Bump dataloader from 1.0.6 to 1.0.7 [\#3007](https://github.com/hippware/wocky/pull/3007) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
@@ -463,7 +463,6 @@ Key \(bot\_id\)=\(e65a09f8-50d1-447a-9cf0-5f62609d76cd\) is not present in table
 - Bump mix\_test\_watch from 1.0.0 to 1.0.1 [\#2892](https://github.com/hippware/wocky/pull/2892) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump mix\_test\_watch from 0.9.0 to 1.0.0 [\#2888](https://github.com/hippware/wocky/pull/2888) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump credo\_naming from 0.4.0 to 0.4.1 [\#2887](https://github.com/hippware/wocky/pull/2887) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Bump observer\_cli from 1.5.2 to 1.5.3 [\#2886](https://github.com/hippware/wocky/pull/2886) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Merge sharing data into roster\_items table [\#2876](https://github.com/hippware/wocky/pull/2876) ([toland](https://github.com/toland))
 
 ## [2019.10.22+rf55d9bd](https://github.com/hippware/wocky/tree/2019.10.22+rf55d9bd) (2019-10-22)
@@ -489,6 +488,7 @@ Key \(bot\_id\)=\(e65a09f8-50d1-447a-9cf0-5f62609d76cd\) is not present in table
 
 **Merged pull requests:**
 
+- Bump observer\_cli from 1.5.2 to 1.5.3 [\#2886](https://github.com/hippware/wocky/pull/2886) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump geocalc from 0.7.2 to 0.8.0 [\#2883](https://github.com/hippware/wocky/pull/2883) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump excoveralls from 0.11.2 to 0.12.0 [\#2882](https://github.com/hippware/wocky/pull/2882) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Better presence manager shutdown handling [\#2870](https://github.com/hippware/wocky/pull/2870) ([bernardd](https://github.com/bernardd))
@@ -608,6 +608,7 @@ Applied changes
 - 2821 loc share end self [\#2824](https://github.com/hippware/wocky/pull/2824) ([bernardd](https://github.com/bernardd))
 - Bump postgrex from 0.15.0 to 0.15.1 [\#2823](https://github.com/hippware/wocky/pull/2823) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add counters for active connections and location uploads [\#2817](https://github.com/hippware/wocky/pull/2817) ([bernardd](https://github.com/bernardd))
+- Bump rexbug from 1.0.0 to 1.0.3 [\#2811](https://github.com/hippware/wocky/pull/2811) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 
 ## [2019.9.13+r03d6457](https://github.com/hippware/wocky/tree/2019.9.13+r03d6457) (2019-09-13)
 
@@ -631,7 +632,6 @@ Applied changes
 
 - User prox fix [\#2815](https://github.com/hippware/wocky/pull/2815) ([bernardd](https://github.com/bernardd))
 - Bump ex\_check from 0.10.0 to 0.11.0 [\#2813](https://github.com/hippware/wocky/pull/2813) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Bump rexbug from 1.0.0 to 1.0.3 [\#2811](https://github.com/hippware/wocky/pull/2811) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump phoenix from 1.4.9 to 1.4.10 [\#2810](https://github.com/hippware/wocky/pull/2810) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Move us1 to SSL redis [\#2809](https://github.com/hippware/wocky/pull/2809) ([bernardd](https://github.com/bernardd))
 - Use a non-FIFO queue for Dawdle messages [\#2807](https://github.com/hippware/wocky/pull/2807) ([toland](https://github.com/toland))
@@ -1090,6 +1090,7 @@ Attempted function clauses \(showing 1 out of 1\):
 **Merged pull requests:**
 
 - Add/update push notifications [\#2616](https://github.com/hippware/wocky/pull/2616) ([bernardd](https://github.com/bernardd))
+- Extra audit fields [\#2611](https://github.com/hippware/wocky/pull/2611) ([toland](https://github.com/toland))
 - Refactor bots and relations [\#2607](https://github.com/hippware/wocky/pull/2607) ([toland](https://github.com/toland))
 
 ## [2019.6.21+r21d76f0](https://github.com/hippware/wocky/tree/2019.6.21+r21d76f0) (2019-06-21)
@@ -1120,7 +1121,6 @@ Attempted function clauses \(showing 1 out of 1\):
 
 **Merged pull requests:**
 
-- Extra audit fields [\#2611](https://github.com/hippware/wocky/pull/2611) ([toland](https://github.com/toland))
 - Allow storing client data for messages [\#2610](https://github.com/hippware/wocky/pull/2610) ([toland](https://github.com/toland))
 
 ## [2019.6.19+reb549c5](https://github.com/hippware/wocky/tree/2019.6.19+reb549c5) (2019-06-19)
@@ -1876,6 +1876,7 @@ The changeset has not defined any constraint. [\#2269](https://github.com/hippwa
 - Bump plug from 1.7.1 to 1.7.2 [\#2232](https://github.com/hippware/wocky/pull/2232) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Enable Twilio SMS sending on next and staging [\#2230](https://github.com/hippware/wocky/pull/2230) ([bernardd](https://github.com/bernardd))
 - Bump ex\_phone\_number from 0.1.1 to 0.1.2 [\#2228](https://github.com/hippware/wocky/pull/2228) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Bump dataloader from 1.0.5 to 1.0.6 [\#2227](https://github.com/hippware/wocky/pull/2227) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Fix image ready check and handling [\#2226](https://github.com/hippware/wocky/pull/2226) ([bernardd](https://github.com/bernardd))
 - Fix crash when own number is in bulk lookup [\#2225](https://github.com/hippware/wocky/pull/2225) ([bernardd](https://github.com/bernardd))
 
@@ -1929,7 +1930,6 @@ A simple i... [\#2181](https://github.com/hippware/wocky/issues/2181)
 
 **Merged pull requests:**
 
-- Bump dataloader from 1.0.5 to 1.0.6 [\#2227](https://github.com/hippware/wocky/pull/2227) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump faker from 0.11.2 to 0.12.0 [\#2224](https://github.com/hippware/wocky/pull/2224) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump ecto\_sql from 3.0.4 to 3.0.5 [\#2223](https://github.com/hippware/wocky/pull/2223) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add notificationDelete mutation [\#2222](https://github.com/hippware/wocky/pull/2222) ([bernardd](https://github.com/bernardd))
@@ -2449,7 +2449,6 @@ Params
 
 - Support invitation response with user location [\#1922](https://github.com/hippware/wocky/pull/1922) ([toland](https://github.com/toland))
 - Enable connection draining for all environments [\#1916](https://github.com/hippware/wocky/pull/1916) ([bernardd](https://github.com/bernardd))
-- Migrate shares to invitations [\#1914](https://github.com/hippware/wocky/pull/1914) ([toland](https://github.com/toland))
 
 ## [2018.10.9+r3399de5](https://github.com/hippware/wocky/tree/2018.10.9+r3399de5) (2018-10-09)
 
@@ -2465,6 +2464,7 @@ Params
 
 **Merged pull requests:**
 
+- Migrate shares to invitations [\#1914](https://github.com/hippware/wocky/pull/1914) ([toland](https://github.com/toland))
 - Fix blocking tests [\#1911](https://github.com/hippware/wocky/pull/1911) ([bernardd](https://github.com/bernardd))
 - Bump gen\_stage from 0.14.0 to 0.14.1 [\#1910](https://github.com/hippware/wocky/pull/1910) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump ex\_guard from 1.3.2 to 1.3.3 [\#1909](https://github.com/hippware/wocky/pull/1909) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
@@ -2810,6 +2810,7 @@ from m in Wocky.TROS.Metadata,
 - Use the makefile to deploy instead of the script [\#1777](https://github.com/hippware/wocky/pull/1777) ([toland](https://github.com/toland))
 - Update logging location for service LBs [\#1776](https://github.com/hippware/wocky/pull/1776) ([toland](https://github.com/toland))
 - Add names for ports; remove non-required service [\#1773](https://github.com/hippware/wocky/pull/1773) ([bernardd](https://github.com/bernardd))
+- Deploy Wocky to testing when tests on master pass [\#1772](https://github.com/hippware/wocky/pull/1772) ([toland](https://github.com/toland))
 - Bump distillery from 2.0.3 to 2.0.4 [\#1771](https://github.com/hippware/wocky/pull/1771) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 
 ## [2018.8.20+r5001d7d](https://github.com/hippware/wocky/tree/2018.8.20+r5001d7d) (2018-08-20)
@@ -2833,7 +2834,6 @@ from m in Wocky.TROS.Metadata,
 
 **Merged pull requests:**
 
-- Deploy Wocky to testing when tests on master pass [\#1772](https://github.com/hippware/wocky/pull/1772) ([toland](https://github.com/toland))
 - Bump distillery from 2.0.2 to 2.0.3 [\#1768](https://github.com/hippware/wocky/pull/1768) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump ranch from 1.6.0 to 1.6.1 [\#1767](https://github.com/hippware/wocky/pull/1767) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add role bindings [\#1766](https://github.com/hippware/wocky/pull/1766) ([bernardd](https://github.com/bernardd))
@@ -3088,6 +3088,7 @@ Here are the params we sent:
 - 1576 bot update with location [\#1583](https://github.com/hippware/wocky/pull/1583) ([bernardd](https://github.com/bernardd))
 - Fix media delete mutation [\#1582](https://github.com/hippware/wocky/pull/1582) ([toland](https://github.com/toland))
 - Bump honeybadger from 0.9.0 to 0.10.0 [\#1580](https://github.com/hippware/wocky/pull/1580) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Bump pigeon from 1.1.6 to 1.2.0 [\#1578](https://github.com/hippware/wocky/pull/1578) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 
 ## [2018.5.29+r0ba814c](https://github.com/hippware/wocky/tree/2018.5.29+r0ba814c) (2018-05-29)
 
@@ -3100,7 +3101,6 @@ Here are the params we sent:
 **Merged pull requests:**
 
 - Move hasUsedGeofence field to currentUser object [\#1579](https://github.com/hippware/wocky/pull/1579) ([bernardd](https://github.com/bernardd))
-- Bump pigeon from 1.1.6 to 1.2.0 [\#1578](https://github.com/hippware/wocky/pull/1578) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Enable dead link cleaning [\#1575](https://github.com/hippware/wocky/pull/1575) ([bernardd](https://github.com/bernardd))
 - 1570 add media delete query [\#1574](https://github.com/hippware/wocky/pull/1574) ([bernardd](https://github.com/bernardd))
 
