@@ -27,6 +27,10 @@
 
 [Full Changelog](https://github.com/hippware/wocky/compare/2020.2.19+r2900ecc...2020.2.19+re7742f8)
 
+**Merged pull requests:**
+
+- Add regen to notify enum; fix warning [\#3116](https://github.com/hippware/wocky/pull/3116) ([bernardd](https://github.com/bernardd))
+
 ## [2020.2.19+r2900ecc](https://github.com/hippware/wocky/tree/2020.2.19+r2900ecc) (2020-02-19)
 
 [Full Changelog](https://github.com/hippware/wocky/compare/2020.2.19+rcbcb990...2020.2.19+r2900ecc)
@@ -45,7 +49,6 @@
 
 **Merged pull requests:**
 
-- Add regen to notify enum; fix warning [\#3116](https://github.com/hippware/wocky/pull/3116) ([bernardd](https://github.com/bernardd))
 - 3058 auto changelog [\#3114](https://github.com/hippware/wocky/pull/3114) ([bernardd](https://github.com/bernardd))
 - Bump elixir to 1.10.1 and erlang to 22.2.6 [\#3108](https://github.com/hippware/wocky/pull/3108) ([bernardd](https://github.com/bernardd))
 - Bump absinthe to version with SDL rendering fix [\#3107](https://github.com/hippware/wocky/pull/3107) ([bernardd](https://github.com/bernardd))
@@ -168,6 +171,7 @@
 - Bump plug\_cowboy from 2.1.1 to 2.1.2 [\#3048](https://github.com/hippware/wocky/pull/3048) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add share type edge attribute [\#3047](https://github.com/hippware/wocky/pull/3047) ([bernardd](https://github.com/bernardd))
 - Add types to wocky\_api [\#3043](https://github.com/hippware/wocky/pull/3043) ([toland](https://github.com/toland))
+- Bump bamboo from 1.3.0 to 1.4.0 [\#3040](https://github.com/hippware/wocky/pull/3040) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 
 ## [2020.1.29+r5303053](https://github.com/hippware/wocky/tree/2020.1.29+r5303053) (2020-01-29)
 
@@ -179,7 +183,6 @@
 - Bump ecto\_sql from 3.3.2 to 3.3.3 [\#3045](https://github.com/hippware/wocky/pull/3045) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump credo from 1.2.0 to 1.2.1 [\#3044](https://github.com/hippware/wocky/pull/3044) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump cors\_plug from 2.0.0 to 2.0.1 [\#3041](https://github.com/hippware/wocky/pull/3041) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Bump bamboo from 1.3.0 to 1.4.0 [\#3040](https://github.com/hippware/wocky/pull/3040) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump credo from 1.1.5 to 1.2.0 [\#3039](https://github.com/hippware/wocky/pull/3039) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump phoenix from 1.4.11 to 1.4.12 [\#3038](https://github.com/hippware/wocky/pull/3038) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add ex\_aws to list of required apps for notification [\#3037](https://github.com/hippware/wocky/pull/3037) ([bernardd](https://github.com/bernardd))
@@ -460,6 +463,7 @@ Key \(bot\_id\)=\(e65a09f8-50d1-447a-9cf0-5f62609d76cd\) is not present in table
 - Bump mix\_test\_watch from 1.0.0 to 1.0.1 [\#2892](https://github.com/hippware/wocky/pull/2892) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump mix\_test\_watch from 0.9.0 to 1.0.0 [\#2888](https://github.com/hippware/wocky/pull/2888) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump credo\_naming from 0.4.0 to 0.4.1 [\#2887](https://github.com/hippware/wocky/pull/2887) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Bump observer\_cli from 1.5.2 to 1.5.3 [\#2886](https://github.com/hippware/wocky/pull/2886) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Merge sharing data into roster\_items table [\#2876](https://github.com/hippware/wocky/pull/2876) ([toland](https://github.com/toland))
 
 ## [2019.10.22+rf55d9bd](https://github.com/hippware/wocky/tree/2019.10.22+rf55d9bd) (2019-10-22)
@@ -485,7 +489,6 @@ Key \(bot\_id\)=\(e65a09f8-50d1-447a-9cf0-5f62609d76cd\) is not present in table
 
 **Merged pull requests:**
 
-- Bump observer\_cli from 1.5.2 to 1.5.3 [\#2886](https://github.com/hippware/wocky/pull/2886) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump geocalc from 0.7.2 to 0.8.0 [\#2883](https://github.com/hippware/wocky/pull/2883) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump excoveralls from 0.11.2 to 0.12.0 [\#2882](https://github.com/hippware/wocky/pull/2882) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Better presence manager shutdown handling [\#2870](https://github.com/hippware/wocky/pull/2870) ([bernardd](https://github.com/bernardd))
@@ -1056,7 +1059,6 @@ Attempted function clauses \(showing 1 out of 1\):
 - Move back to upstream pigeon using callback-powered config [\#2632](https://github.com/hippware/wocky/pull/2632) ([bernardd](https://github.com/bernardd))
 - Another try at fixing deployment notification race [\#2631](https://github.com/hippware/wocky/pull/2631) ([bernardd](https://github.com/bernardd))
 - Bump elixir version to 1.9 [\#2630](https://github.com/hippware/wocky/pull/2630) ([bernardd](https://github.com/bernardd))
-- Bump distillery from 2.0.14 to 2.1.0 [\#2627](https://github.com/hippware/wocky/pull/2627) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 
 ## [2019.6.26+redac896](https://github.com/hippware/wocky/tree/2019.6.26+redac896) (2019-06-26)
 
@@ -1065,6 +1067,7 @@ Attempted function clauses \(showing 1 out of 1\):
 **Merged pull requests:**
 
 - Remove lager\_logger [\#2629](https://github.com/hippware/wocky/pull/2629) ([toland](https://github.com/toland))
+- Bump distillery from 2.0.14 to 2.1.0 [\#2627](https://github.com/hippware/wocky/pull/2627) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Only use Running pods for post-deploy [\#2626](https://github.com/hippware/wocky/pull/2626) ([bernardd](https://github.com/bernardd))
 - SSL redis [\#2625](https://github.com/hippware/wocky/pull/2625) ([bernardd](https://github.com/bernardd))
 - Replace Kronky with AbsintheErrorPayload [\#2618](https://github.com/hippware/wocky/pull/2618) ([bernardd](https://github.com/bernardd))
@@ -1873,7 +1876,6 @@ The changeset has not defined any constraint. [\#2269](https://github.com/hippwa
 - Bump plug from 1.7.1 to 1.7.2 [\#2232](https://github.com/hippware/wocky/pull/2232) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Enable Twilio SMS sending on next and staging [\#2230](https://github.com/hippware/wocky/pull/2230) ([bernardd](https://github.com/bernardd))
 - Bump ex\_phone\_number from 0.1.1 to 0.1.2 [\#2228](https://github.com/hippware/wocky/pull/2228) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Bump dataloader from 1.0.5 to 1.0.6 [\#2227](https://github.com/hippware/wocky/pull/2227) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Fix image ready check and handling [\#2226](https://github.com/hippware/wocky/pull/2226) ([bernardd](https://github.com/bernardd))
 - Fix crash when own number is in bulk lookup [\#2225](https://github.com/hippware/wocky/pull/2225) ([bernardd](https://github.com/bernardd))
 
@@ -1927,6 +1929,7 @@ A simple i... [\#2181](https://github.com/hippware/wocky/issues/2181)
 
 **Merged pull requests:**
 
+- Bump dataloader from 1.0.5 to 1.0.6 [\#2227](https://github.com/hippware/wocky/pull/2227) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump faker from 0.11.2 to 0.12.0 [\#2224](https://github.com/hippware/wocky/pull/2224) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump ecto\_sql from 3.0.4 to 3.0.5 [\#2223](https://github.com/hippware/wocky/pull/2223) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add notificationDelete mutation [\#2222](https://github.com/hippware/wocky/pull/2222) ([bernardd](https://github.com/bernardd))
@@ -2446,6 +2449,7 @@ Params
 
 - Support invitation response with user location [\#1922](https://github.com/hippware/wocky/pull/1922) ([toland](https://github.com/toland))
 - Enable connection draining for all environments [\#1916](https://github.com/hippware/wocky/pull/1916) ([bernardd](https://github.com/bernardd))
+- Migrate shares to invitations [\#1914](https://github.com/hippware/wocky/pull/1914) ([toland](https://github.com/toland))
 
 ## [2018.10.9+r3399de5](https://github.com/hippware/wocky/tree/2018.10.9+r3399de5) (2018-10-09)
 
@@ -2461,7 +2465,6 @@ Params
 
 **Merged pull requests:**
 
-- Migrate shares to invitations [\#1914](https://github.com/hippware/wocky/pull/1914) ([toland](https://github.com/toland))
 - Fix blocking tests [\#1911](https://github.com/hippware/wocky/pull/1911) ([bernardd](https://github.com/bernardd))
 - Bump gen\_stage from 0.14.0 to 0.14.1 [\#1910](https://github.com/hippware/wocky/pull/1910) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump ex\_guard from 1.3.2 to 1.3.3 [\#1909](https://github.com/hippware/wocky/pull/1909) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
@@ -2807,7 +2810,6 @@ from m in Wocky.TROS.Metadata,
 - Use the makefile to deploy instead of the script [\#1777](https://github.com/hippware/wocky/pull/1777) ([toland](https://github.com/toland))
 - Update logging location for service LBs [\#1776](https://github.com/hippware/wocky/pull/1776) ([toland](https://github.com/toland))
 - Add names for ports; remove non-required service [\#1773](https://github.com/hippware/wocky/pull/1773) ([bernardd](https://github.com/bernardd))
-- Deploy Wocky to testing when tests on master pass [\#1772](https://github.com/hippware/wocky/pull/1772) ([toland](https://github.com/toland))
 - Bump distillery from 2.0.3 to 2.0.4 [\#1771](https://github.com/hippware/wocky/pull/1771) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 
 ## [2018.8.20+r5001d7d](https://github.com/hippware/wocky/tree/2018.8.20+r5001d7d) (2018-08-20)
@@ -2831,6 +2833,7 @@ from m in Wocky.TROS.Metadata,
 
 **Merged pull requests:**
 
+- Deploy Wocky to testing when tests on master pass [\#1772](https://github.com/hippware/wocky/pull/1772) ([toland](https://github.com/toland))
 - Bump distillery from 2.0.2 to 2.0.3 [\#1768](https://github.com/hippware/wocky/pull/1768) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump ranch from 1.6.0 to 1.6.1 [\#1767](https://github.com/hippware/wocky/pull/1767) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add role bindings [\#1766](https://github.com/hippware/wocky/pull/1766) ([bernardd](https://github.com/bernardd))
@@ -4502,6 +4505,7 @@ Please check the given list or call inspect/1 to get the list representation, go
 - Reenable the Location API [\#770](https://github.com/hippware/wocky/pull/770) ([toland](https://github.com/toland))
 - Reduce the logging threshold for user IQ errors [\#769](https://github.com/hippware/wocky/pull/769) ([toland](https://github.com/toland))
 - Fix a crash on testing when calling geosearch [\#768](https://github.com/hippware/wocky/pull/768) ([toland](https://github.com/toland))
+- Fix TROS download error for thumbnails [\#762](https://github.com/hippware/wocky/pull/762) ([bernardd](https://github.com/bernardd))
 - Shift roster group filtering over to DB server [\#752](https://github.com/hippware/wocky/pull/752) ([bernardd](https://github.com/bernardd))
 - 606 add roster timestamps [\#750](https://github.com/hippware/wocky/pull/750) ([bernardd](https://github.com/bernardd))
 - Change remaining time formats to Z-suffix form [\#723](https://github.com/hippware/wocky/pull/723) ([bernardd](https://github.com/bernardd))
@@ -4525,7 +4529,6 @@ Please check the given list or call inspect/1 to get the list representation, go
 
 **Merged pull requests:**
 
-- Fix TROS download error for thumbnails [\#762](https://github.com/hippware/wocky/pull/762) ([bernardd](https://github.com/bernardd))
 - Remove null values before migration [\#756](https://github.com/hippware/wocky/pull/756) ([bernardd](https://github.com/bernardd))
 - Revert "Add image processing blocking delay for download" [\#755](https://github.com/hippware/wocky/pull/755) ([bernardd](https://github.com/bernardd))
 - Add image processing blocking delay for download [\#738](https://github.com/hippware/wocky/pull/738) ([bernardd](https://github.com/bernardd))
