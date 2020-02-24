@@ -248,7 +248,8 @@ defmodule Wocky.Repo.Factory do
       expires_at: DateTime.utc_now(),
       share_id: 1,
       share_type: :always,
-      other_user_share_type: :always
+      other_user_share_type: :always,
+      new_friend?: false
     }
   end
 

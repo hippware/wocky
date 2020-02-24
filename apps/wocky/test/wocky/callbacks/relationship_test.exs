@@ -1,6 +1,8 @@
 defmodule Wocky.Callbacks.RelationshipTest do
   use Wocky.WatcherCase
 
+  alias Faker.Code
+  alias Pigeon.APNS.Notification, as: PushNotification
   alias Wocky.Callbacks.Relationship, as: Callback
   alias Wocky.Contacts
   alias Wocky.Contacts.Share.Cache
@@ -8,6 +10,8 @@ defmodule Wocky.Callbacks.RelationshipTest do
   alias Wocky.NotificationHelper
   alias Wocky.Notifier.InBand
   alias Wocky.Notifier.InBand.Notification
+  alias Wocky.Notifier.Push
+  alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.UserHelper
 
   setup_all do
@@ -151,32 +155,85 @@ defmodule Wocky.Callbacks.RelationshipTest do
 
   describe "befriend notifications" do
     setup do
-      [user1, user2] = Factory.insert_list(2, :user)
+      user1 = Factory.insert(:user, device: Factory.device())
+      user2 = Factory.insert(:user, device: Factory.device())
 
       {:ok, user1: user1, user2: user2}
     end
 
     test "befriending generates notification",
          ctx = %{user1: %{id: user1_id}, user2: %{id: user2_id}} do
-      Contacts.befriend(ctx.user1, ctx.user2)
+      Contacts.befriend(ctx.user1, ctx.user2, :always)
 
-      assert_eventually(in_band_notification_count(ctx.user1) == 1)
+      assert_eventually(in_band_notification_count(ctx.user1) == 2)
 
-      assert [
-               %Notification{
-                 type: :user_befriend,
-                 other_user_id: ^user2_id
-               }
-             ] = in_band_notifications(ctx.user1)
+      notifications! = in_band_notifications(ctx.user1)
 
-      assert_eventually(in_band_notification_count(ctx.user2) == 1)
+      assert Enum.any?(
+               notifications!,
+               &match?(
+                 %Notification{
+                   type: :user_befriend,
+                   other_user_id: ^user2_id
+                 },
+                 &1
+               )
+             )
 
-      assert [
-               %Notification{
-                 type: :user_befriend,
-                 other_user_id: ^user1_id
-               }
-             ] = in_band_notifications(ctx.user2)
+      assert Enum.any?(
+               notifications!,
+               &match?(
+                 %Notification{
+                   type: :location_share,
+                   other_user_id: ^user2_id
+                 },
+                 &1
+               )
+             )
+
+      assert_eventually(in_band_notification_count(ctx.user2) == 2)
+
+      notifications! = in_band_notifications(ctx.user2)
+
+      assert Enum.any?(
+               notifications!,
+               &match?(
+                 %Notification{
+                   type: :user_befriend,
+                   other_user_id: ^user1_id
+                 },
+                 &1
+               )
+             )
+
+      assert Enum.any?(
+               notifications!,
+               &match?(
+                 %Notification{
+                   type: :location_share,
+                   other_user_id: ^user1_id
+                 },
+                 &1
+               )
+             )
+    end
+
+    test "befriend push notifications", ctx do
+      token = Code.isbn13()
+      :ok = Push.enable(ctx.user1, ctx.user1.device, token)
+      Sandbox.clear_notifications(global: true)
+
+      Contacts.make_friends(ctx.user1, ctx.user2, :always)
+      Contacts.make_friends(ctx.user2, ctx.user1, :always)
+
+      # Look for two, but should receive only 1 - user1 shouldn't get a
+      # location share notification because we want to avoid spamming pushes
+      # on friendship
+      [n] = Sandbox.wait_notifications(count: 2, timeout: 100, global: true)
+
+      assert %PushNotification{payload: %{"aps" => %{"alert" => message}}} = n
+
+      assert message = "@#{ctx.user2.handle} connected with you"
     end
 
     test "accepting invitation generates notification",
