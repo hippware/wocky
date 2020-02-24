@@ -10,7 +10,8 @@ defmodule Wocky.Events.LocationShare do
     :share_id,
     :expires_at,
     :share_type,
-    :other_user_share_type
+    :other_user_share_type,
+    :new_friend?
   ]
 
   @type t :: %__MODULE__{
@@ -19,7 +20,8 @@ defmodule Wocky.Events.LocationShare do
           share_id: non_neg_integer(),
           expires_at: DateTime.t(),
           share_type: Relationship.LocationShareTypeEnum.t(),
-          other_user_share_type: Relationship.LocationShareTypeEnum.t()
+          other_user_share_type: Relationship.LocationShareTypeEnum.t(),
+          new_friend?: boolean()
         }
 end
 
@@ -27,7 +29,10 @@ defimpl Wocky.Notifier.Push.Event, for: Wocky.Events.LocationShare do
   import Wocky.Notifier.Push.Utils
 
   @impl true
-  def notify?(_), do: true
+  # Only send a push when this has been generated for existing friends,
+  # otherwise users get two pushes at once: one saying they're now friends
+  # and one saying sharing has started.
+  def notify?(%{new_friend?: new_friend?}), do: !new_friend?
 
   @impl true
   def recipient(%{to: to}), do: to

@@ -1,5 +1,8 @@
 defmodule Wocky.Events.UserBefriend do
-  @moduledoc "Notification for a user being befriended by a user they invited"
+  @moduledoc """
+  Notification for a user becoming friends with another user - sent to both the
+  inviter and invitee upon completion of the friendship ritual.
+  """
 
   alias Wocky.Account.User
 
