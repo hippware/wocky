@@ -30,7 +30,8 @@ defmodule Wocky.Callbacks.Connection do
   defp maybe_notify_sharer(sharer) do
     {:ok, loc} = Location.get_current_user_location(sharer)
 
-    if stale_location?(loc) do
+    if stale_location?(loc) &&
+         Confex.get_env(:wocky, :update_location_on_watcher_connect) do
       Notifier.notify(%LocationRequest{to: sharer})
     end
   end

@@ -92,7 +92,9 @@ config :wocky,
     {:system, :integer, "WOCKY_MAX_LOCAL_BOTS_SEARCH_RADIUS", 50_000},
 
   # Location sharing
-  min_nearby_distance: {:system, :integer, "WOCKY_MIN_NEARBY_DISTANCE", 500}
+  min_nearby_distance: {:system, :integer, "WOCKY_MIN_NEARBY_DISTANCE", 500},
+  update_location_on_watcher_connect:
+    {:system, :boolean, "WOCKY_UPDATE_LOCATION_ON_WATCHER_CONNECT", false}
 
 config :wocky, :redis,
   host: {:system, :string, "REDIS_HOST", "localhost"},

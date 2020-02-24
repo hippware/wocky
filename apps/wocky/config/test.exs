@@ -5,7 +5,8 @@ config :wocky,
   enable_recurring_tasks: false,
   bot_report_channel: "report-testing",
   start_watcher: false,
-  max_local_bots_search_radius: 1_000_000
+  max_local_bots_search_radius: 1_000_000,
+  update_location_on_watcher_connect: true
 
 # Configure your database
 config :wocky, Wocky.Repo,
