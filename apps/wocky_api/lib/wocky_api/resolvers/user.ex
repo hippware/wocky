@@ -7,6 +7,7 @@ defmodule WockyAPI.Resolvers.User do
   import WockyAPI.Resolvers.Utils
 
   alias Wocky.Account
+  alias Wocky.Audit
   alias Wocky.Contacts
   alias Wocky.Events.LocationRequest
   alias Wocky.Location
@@ -220,5 +221,20 @@ defmodule WockyAPI.Resolvers.User do
     else
       {:ok, false}
     end
+  end
+
+  # -------------------------------------------------------------------
+  # Debug mutations
+
+  def user_full_audit(%{input: %{enable: enable}}, %{
+        context: %{current_user: user}
+      }) do
+    if enable do
+      Audit.enable_user_audit(user)
+    else
+      Audit.disable_user_audit(user)
+    end
+
+    {:ok, true}
   end
 end
