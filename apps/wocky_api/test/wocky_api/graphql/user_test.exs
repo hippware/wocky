@@ -792,4 +792,41 @@ defmodule WockyAPI.GraphQL.UserTest do
       assert is_binary(token)
     end
   end
+
+  # -------------------------------------------------------------------
+  # Debug mutations
+
+  describe "userFullAudit mutation" do
+    @query """
+    mutation ($input: UserFullAuditInput!) {
+      userFullAudit (input: $input) {
+        successful
+      }
+    }
+    """
+
+    @audit_types [:traffic, :location, :push, :push_payload]
+
+    test "enable user auditing", %{user: user} do
+      result = run_query(@query, user, %{"input" => %{"enable" => true}})
+
+      refute has_errors(result)
+      assert result.data["userFullAudit"]["successful"] == true
+
+      Enum.each(@audit_types, fn t ->
+        assert FunWithFlags.enabled?(t, for: user)
+      end)
+    end
+
+    test "disable user auditing", %{user: user} do
+      result = run_query(@query, user, %{"input" => %{"enable" => false}})
+
+      refute has_errors(result)
+      assert result.data["userFullAudit"]["successful"] == true
+
+      Enum.each(@audit_types, fn t ->
+        refute FunWithFlags.enabled?(t, for: user)
+      end)
+    end
+  end
 end

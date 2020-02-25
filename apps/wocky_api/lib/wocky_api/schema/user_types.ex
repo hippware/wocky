@@ -463,4 +463,29 @@ defmodule WockyAPI.Schema.UserTypes do
       changeset_mutation_middleware()
     end
   end
+
+  # -------------------------------------------------------------------
+  # Debug mutations
+
+  payload_object(:user_full_audit_payload, :boolean)
+
+  @desc "Parameters for setting a user's audit status"
+  input_object :user_full_audit_input do
+    @desc "True if auditing is to be turned on, false to turn off"
+    field :enable, non_null(:boolean)
+  end
+
+  object :debug_mutations do
+    @desc """
+    Turn on/off full auditing for a user (traffic, location,
+    push notifications). Note that setting this value to false will *not*
+    override other settings that may enable auditing, such as having an
+    @hippware.com address.
+    """
+    field :user_full_audit, type: :user_full_audit_payload do
+      arg :input, non_null(:user_full_audit_input)
+      resolve &User.user_full_audit/2
+      middleware &build_payload/2
+    end
+  end
 end

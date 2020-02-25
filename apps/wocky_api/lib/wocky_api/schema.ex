@@ -41,6 +41,7 @@ defmodule WockyAPI.Schema do
     import_fields :auth_mutations
     import_fields :block_mutations
     import_fields :bot_mutations
+    import_fields :debug_mutations
     import_fields :friend_mutations
     import_fields :location_mutations
     import_fields :media_mutations
