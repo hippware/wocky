@@ -27,7 +27,16 @@ config :wocky, Wocky.Notifier.Email.Mailer,
 
 config :wocky, :pigeon,
   apns: [
-    key: {{:via, VaultAdapter}, "apns-key", ""},
+    key:
+      {{:via, VaultAdapter}, "apns-key",
+       """
+       -----BEGIN PRIVATE KEY-----
+       XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+       XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+       XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+       XXXXXXXX
+       -----END PRIVATE KEY-----
+       """},
     key_identifier: {:system, :string, "APNS_KEY_IDENTIFIER", "NBJ9A4785H"},
     team_id: {:system, :string, "APNS_TEAM_ID", "W6M2PMRSBT"},
     mode: :prod
