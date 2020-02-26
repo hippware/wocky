@@ -14,6 +14,7 @@ defmodule Wocky.Repo.Migrations.SafetyAlerts do
       add :link, :text
       add :geometry, :geometry, null: false
       add :data, :map, null: false, default: %{}
+      add :imported, :boolean, null: false, default: true
     end
 
     create index("safety_alerts", [:source, :source_id], unique: true)
