@@ -123,16 +123,9 @@ config :wocky, :redlock,
 
 config :wocky, :pigeon,
   apns: [
-    key: """
-    -----BEGIN PRIVATE KEY-----
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    XXXXXXXX
-    -----END PRIVATE KEY-----
-    """,
-    key_identifier: "dummy-id",
-    team_id: "dummy-team",
+    key: "",
+    key_identifier: "",
+    team_id: "",
     mode: :dev
   ],
   fcm: [
