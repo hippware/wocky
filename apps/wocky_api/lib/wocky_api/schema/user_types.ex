@@ -138,6 +138,11 @@ defmodule WockyAPI.Schema.UserTypes do
     """
     field :client_data, :string
 
+    @desc "Whether the user has enabled extended auditing and debug logging"
+    field :full_audit, :boolean do
+      resolve &User.get_user_full_audit/2
+    end
+
     @desc "The active bots to which a user is subscribed, in last visited order"
     connection field :active_bots, node_type: :bots do
       connection_complexity()

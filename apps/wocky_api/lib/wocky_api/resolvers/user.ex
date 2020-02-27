@@ -226,6 +226,10 @@ defmodule WockyAPI.Resolvers.User do
   # -------------------------------------------------------------------
   # Debug mutations
 
+  def get_user_full_audit(_, %{context: %{current_user: user}}) do
+    {:ok, Audit.user_audit_enabled?(user)}
+  end
+
   def user_full_audit(%{input: %{enable: enable}}, %{
         context: %{current_user: user}
       }) do
