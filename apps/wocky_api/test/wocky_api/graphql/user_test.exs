@@ -5,6 +5,7 @@ defmodule WockyAPI.GraphQL.UserTest do
   alias Faker.Name
   alias Wocky.Account
   alias Wocky.Account.User
+  alias Wocky.Audit
   alias Wocky.Contacts
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Token
@@ -30,7 +31,8 @@ defmodule WockyAPI.GraphQL.UserTest do
         media {
           tros_url
         }
-        updated_at
+        updatedAt
+        fullAudit
       }
     }
     """
@@ -48,7 +50,29 @@ defmodule WockyAPI.GraphQL.UserTest do
                  "media" => %{
                    "tros_url" => user.image_url
                  },
-                 "updated_at" => DateTime.to_iso8601(user.updated_at)
+                 "updatedAt" => DateTime.to_iso8601(user.updated_at),
+                 "fullAudit" => false
+               }
+             }
+    end
+
+    test "get user audit state", %{user: user} do
+      Audit.enable_user_audit(user)
+
+      result = run_query(@query, user)
+
+      refute has_errors(result)
+
+      assert result.data == %{
+               "currentUser" => %{
+                 "id" => user.id,
+                 "firstName" => Account.first_name(user),
+                 "email" => user.email,
+                 "media" => %{
+                   "tros_url" => user.image_url
+                 },
+                 "updatedAt" => DateTime.to_iso8601(user.updated_at),
+                 "fullAudit" => true
                }
              }
     end
@@ -805,17 +829,13 @@ defmodule WockyAPI.GraphQL.UserTest do
     }
     """
 
-    @audit_types [:traffic, :location, :push, :push_payload]
-
     test "enable user auditing", %{user: user} do
       result = run_query(@query, user, %{"input" => %{"enable" => true}})
 
       refute has_errors(result)
       assert result.data["userFullAudit"]["successful"] == true
 
-      Enum.each(@audit_types, fn t ->
-        assert FunWithFlags.enabled?(t, for: user)
-      end)
+      assert Audit.user_audit_enabled?(user)
     end
 
     test "disable user auditing", %{user: user} do
@@ -824,9 +844,7 @@ defmodule WockyAPI.GraphQL.UserTest do
       refute has_errors(result)
       assert result.data["userFullAudit"]["successful"] == true
 
-      Enum.each(@audit_types, fn t ->
-        refute FunWithFlags.enabled?(t, for: user)
-      end)
+      refute Audit.user_audit_enabled?(user)
     end
   end
 end

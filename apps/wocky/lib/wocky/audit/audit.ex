@@ -13,8 +13,16 @@ defmodule Wocky.Audit do
 
   @type audit_target :: :traffic | :location | :push | :push_payload
 
+  @audit_types [:traffic, :location, :push, :push_payload]
+
   # ===================================================================
   # Audit management
+
+  @doc "Returns true if all auditing is enabled"
+  @spec user_audit_enabled?(User.t()) :: boolean()
+  def user_audit_enabled?(user) do
+    Enum.all?(@audit_types, &FunWithFlags.enabled?(&1, for: user))
+  end
 
   @doc "Enable auditing for a user"
   @spec enable_user_audit(User.t()) :: :ok
