@@ -100,7 +100,7 @@ defmodule Wocky.Mixfile do
        github: "scripbox/firebase-admin-ex", branch: "master"},
       # {:fun_with_flags, "~> 1.4", organization: "hippware"},
       {:fun_with_flags, github: "hippware/fun_with_flags", branch: "working"},
-      {:gen_stage, "~> 0.12"},
+      {:gen_stage, "~> 1.0"},
       {:geo_postgis, "~> 3.0"},
       # TODO Move back to upstream package when the Elixir 1.10 issue is fixed
       {:geocalc, github: "hippware/geocalc", branch: "elixir-1.10"},
