@@ -1,8 +1,24 @@
 # Changelog
 
+## [2020.3.4+rc1a326f](https://github.com/hippware/wocky/tree/2020.3.4+rc1a326f) (2020-03-04)
+
+[Full Changelog](https://github.com/hippware/wocky/compare/staging-deployed...2020.3.4+rc1a326f)
+
 ## [2020.2.26+re248f22](https://github.com/hippware/wocky/tree/2020.2.26+re248f22) (2020-03-04)
 
-[Full Changelog](https://github.com/hippware/wocky/compare/staging-deployed...2020.2.26+re248f22)
+[Full Changelog](https://github.com/hippware/wocky/compare/us1-deployed...2020.2.26+re248f22)
+
+**Fixed bugs:**
+
+- Old notifications are missing required share\_type [\#3122](https://github.com/hippware/wocky/issues/3122)
+
+**Closed issues:**
+
+- Allow client to en/disable auditing for the current user [\#3138](https://github.com/hippware/wocky/issues/3138)
+- Please disable 'location request' silent push notification when watcher becomes online [\#3131](https://github.com/hippware/wocky/issues/3131)
+- Only send 1 push notification when users connect [\#3129](https://github.com/hippware/wocky/issues/3129)
+- Update the app for Pigeon 1.5 [\#3119](https://github.com/hippware/wocky/issues/3119)
+- Automate deployment to production [\#3076](https://github.com/hippware/wocky/issues/3076)
 
 **Merged pull requests:**
 
@@ -667,6 +683,10 @@ Applied changes
 - Change accuracy uncertainty/range to 65 or 66. [\#2799](https://github.com/hippware/wocky/issues/2799)
 - Upgrade to DynamicSupervisor [\#2797](https://github.com/hippware/wocky/issues/2797)
 
+**Merged pull requests:**
+
+- Bump credo from 1.1.3 to 1.1.4 [\#2805](https://github.com/hippware/wocky/pull/2805) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+
 ## [2019.8.27+r5ea6673](https://github.com/hippware/wocky/tree/2019.8.27+r5ea6673) (2019-08-27)
 
 [Full Changelog](https://github.com/hippware/wocky/compare/2019.8.27+r7cedac4...2019.8.27+r5ea6673)
@@ -686,7 +706,6 @@ Applied changes
 
 **Merged pull requests:**
 
-- Bump credo from 1.1.3 to 1.1.4 [\#2805](https://github.com/hippware/wocky/pull/2805) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Move from simple\_one\_for\_one to DynamicSupervisor [\#2801](https://github.com/hippware/wocky/pull/2801) ([bernardd](https://github.com/bernardd))
 - Add backend support for user proximity [\#2798](https://github.com/hippware/wocky/pull/2798) ([bernardd](https://github.com/bernardd))
 
@@ -2088,6 +2107,7 @@ The result must be one of the following...
 - Reupdate Guardian [\#2167](https://github.com/hippware/wocky/pull/2167) ([toland](https://github.com/toland))
 - Bump guardian from 1.1.1 to 1.2.0 [\#2164](https://github.com/hippware/wocky/pull/2164) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - 1986 bot clustering search [\#2163](https://github.com/hippware/wocky/pull/2163) ([bernardd](https://github.com/bernardd))
+- Add bulk user lookup and invitation operations [\#2157](https://github.com/hippware/wocky/pull/2157) ([bernardd](https://github.com/bernardd))
 
 ## [2019.1.16+r9a91d02](https://github.com/hippware/wocky/tree/2019.1.16+r9a91d02) (2019-01-16)
 
@@ -2112,36 +2132,10 @@ The result must be one of the following...
 - Add bot\_created flag to user [\#2160](https://github.com/hippware/wocky/pull/2160) ([bernardd](https://github.com/bernardd))
 - Alter blocked user data to be under a user object [\#2159](https://github.com/hippware/wocky/pull/2159) ([bernardd](https://github.com/bernardd))
 - Remove public scope operations [\#2158](https://github.com/hippware/wocky/pull/2158) ([bernardd](https://github.com/bernardd))
-- Add bulk user lookup and invitation operations [\#2157](https://github.com/hippware/wocky/pull/2157) ([bernardd](https://github.com/bernardd))
 
 ## [2019.1.9+r47ead10](https://github.com/hippware/wocky/tree/2019.1.9+r47ead10) (2019-01-09)
 
-[Full Changelog](https://github.com/hippware/wocky/compare/2018.12.20+r9697983...2019.1.9+r47ead10)
-
-**Closed issues:**
-
-- \[Wocky/next\] ErlangError: :with\_clause [\#1953](https://github.com/hippware/wocky/issues/1953)
-
-**Merged pull requests:**
-
-- Add handler for invalid pid construction [\#2151](https://github.com/hippware/wocky/pull/2151) ([bernardd](https://github.com/bernardd))
-- Fix handling for contacts permission error [\#2150](https://github.com/hippware/wocky/pull/2150) ([bernardd](https://github.com/bernardd))
-- Bump meck from 0.8.12 to 0.8.13 [\#2148](https://github.com/hippware/wocky/pull/2148) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Bump wocky\_db\_watcher from `a7eadfe` to `ada707d` [\#2147](https://github.com/hippware/wocky/pull/2147) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Add mediaurls query [\#2145](https://github.com/hippware/wocky/pull/2145) ([bernardd](https://github.com/bernardd))
-- Bump confex from `8c1c252` to `903632d` [\#2144](https://github.com/hippware/wocky/pull/2144) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Bump excoveralls from 0.10.3 to 0.10.4 [\#2143](https://github.com/hippware/wocky/pull/2143) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Add id field to message object [\#2142](https://github.com/hippware/wocky/pull/2142) ([bernardd](https://github.com/bernardd))
-- Redesign contact management API [\#2141](https://github.com/hippware/wocky/pull/2141) ([bernardd](https://github.com/bernardd))
-- Bump phoenix\_pubsub\_redis back to official release [\#2135](https://github.com/hippware/wocky/pull/2135) ([bernardd](https://github.com/bernardd))
-- Bump ecto\_sql from 3.0.3 to 3.0.4 [\#2134](https://github.com/hippware/wocky/pull/2134) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Bump geocalc from 0.7.1 to 0.7.2 [\#2133](https://github.com/hippware/wocky/pull/2133) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Bump absinthe\_metrics from 0.9.0 to 1.0.0 [\#2132](https://github.com/hippware/wocky/pull/2132) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Allow client versions with more than 3 digit groups [\#2131](https://github.com/hippware/wocky/pull/2131) ([toland](https://github.com/toland))
-
-## [2018.12.20+r9697983](https://github.com/hippware/wocky/tree/2018.12.20+r9697983) (2018-12-20)
-
-[Full Changelog](https://github.com/hippware/wocky/compare/2018.12.13+rb32e32f...2018.12.20+r9697983)
+[Full Changelog](https://github.com/hippware/wocky/compare/2018.12.13+rb32e32f...2019.1.9+r47ead10)
 
 **Security fixes:**
 
@@ -2159,11 +2153,26 @@ The result must be one of the following...
 - \[Wocky/next\] ErlangError: Erlang error: {{%Phoenix.Router.NoRouteError{conn: %Plug.Conn{adapter: {Plug.Cowboy.Conn, :... [\#2072](https://github.com/hippware/wocky/issues/2072)
 - New API to upload a list of contacts and send invites to them [\#1975](https://github.com/hippware/wocky/issues/1975)
 - Research and/or implement SMS integration [\#1974](https://github.com/hippware/wocky/issues/1974)
+- \[Wocky/next\] ErlangError: :with\_clause [\#1953](https://github.com/hippware/wocky/issues/1953)
 - Investigate slow database queries [\#1547](https://github.com/hippware/wocky/issues/1547)
 - Continuous deployment workflow [\#1142](https://github.com/hippware/wocky/issues/1142)
 
 **Merged pull requests:**
 
+- Add handler for invalid pid construction [\#2151](https://github.com/hippware/wocky/pull/2151) ([bernardd](https://github.com/bernardd))
+- Fix handling for contacts permission error [\#2150](https://github.com/hippware/wocky/pull/2150) ([bernardd](https://github.com/bernardd))
+- Bump meck from 0.8.12 to 0.8.13 [\#2148](https://github.com/hippware/wocky/pull/2148) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Bump wocky\_db\_watcher from `a7eadfe` to `ada707d` [\#2147](https://github.com/hippware/wocky/pull/2147) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Add mediaurls query [\#2145](https://github.com/hippware/wocky/pull/2145) ([bernardd](https://github.com/bernardd))
+- Bump confex from `8c1c252` to `903632d` [\#2144](https://github.com/hippware/wocky/pull/2144) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Bump excoveralls from 0.10.3 to 0.10.4 [\#2143](https://github.com/hippware/wocky/pull/2143) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Add id field to message object [\#2142](https://github.com/hippware/wocky/pull/2142) ([bernardd](https://github.com/bernardd))
+- Redesign contact management API [\#2141](https://github.com/hippware/wocky/pull/2141) ([bernardd](https://github.com/bernardd))
+- Bump phoenix\_pubsub\_redis back to official release [\#2135](https://github.com/hippware/wocky/pull/2135) ([bernardd](https://github.com/bernardd))
+- Bump ecto\_sql from 3.0.3 to 3.0.4 [\#2134](https://github.com/hippware/wocky/pull/2134) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Bump geocalc from 0.7.1 to 0.7.2 [\#2133](https://github.com/hippware/wocky/pull/2133) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Bump absinthe\_metrics from 0.9.0 to 1.0.0 [\#2132](https://github.com/hippware/wocky/pull/2132) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Allow client versions with more than 3 digit groups [\#2131](https://github.com/hippware/wocky/pull/2131) ([toland](https://github.com/toland))
 - Improve errors on message sending [\#2129](https://github.com/hippware/wocky/pull/2129) ([bernardd](https://github.com/bernardd))
 - Fix crash on invalid bot item publication changeset [\#2128](https://github.com/hippware/wocky/pull/2128) ([bernardd](https://github.com/bernardd))
 - Don't send Honeybadgers for PN errors [\#2127](https://github.com/hippware/wocky/pull/2127) ([toland](https://github.com/toland))
@@ -4676,7 +4685,7 @@ Please check the given list or call inspect/1 to get the list representation, go
 
 ## [2017.5.24+2186.ae67e94](https://github.com/hippware/wocky/tree/2017.5.24+2186.ae67e94) (2017-05-24)
 
-[Full Changelog](https://github.com/hippware/wocky/compare/2017.5.23+2177.2daf71f...2017.5.24+2186.ae67e94)
+[Full Changelog](https://github.com/hippware/wocky/compare/17.5.23+2177.2daf71f...2017.5.24+2186.ae67e94)
 
 **Fixed bugs:**
 
@@ -4702,13 +4711,13 @@ Please check the given list or call inspect/1 to get the list representation, go
 - Enable bypass prefixes on staging server [\#675](https://github.com/hippware/wocky/pull/675) ([bernardd](https://github.com/bernardd))
 - Fix up conversations interface \(maintaining backwards compatibility\) [\#674](https://github.com/hippware/wocky/pull/674) ([bernardd](https://github.com/bernardd))
 
-## [2017.5.23+2177.2daf71f](https://github.com/hippware/wocky/tree/2017.5.23+2177.2daf71f) (2017-05-23)
-
-[Full Changelog](https://github.com/hippware/wocky/compare/17.5.23+2177.2daf71f...2017.5.23+2177.2daf71f)
-
 ## [17.5.23+2177.2daf71f](https://github.com/hippware/wocky/tree/17.5.23+2177.2daf71f) (2017-05-23)
 
-[Full Changelog](https://github.com/hippware/wocky/compare/17.04.26+1768.151aff7...17.5.23+2177.2daf71f)
+[Full Changelog](https://github.com/hippware/wocky/compare/2017.5.23+2177.2daf71f...17.5.23+2177.2daf71f)
+
+## [2017.5.23+2177.2daf71f](https://github.com/hippware/wocky/tree/2017.5.23+2177.2daf71f) (2017-05-23)
+
+[Full Changelog](https://github.com/hippware/wocky/compare/17.04.26+1768.151aff7...2017.5.23+2177.2daf71f)
 
 **Closed issues:**
 
