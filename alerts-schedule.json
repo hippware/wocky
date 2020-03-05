@@ -1,0 +1,29 @@
+{
+    "alert_sources":
+    [
+        {
+            "name": "au_bom",
+            "schedule": "1,31 * * * *"
+        },
+        {
+            "name": "au_nsw_rfs",
+            "schedule": "3,33 * * * *"
+        },
+        {
+            "name": "us_nws",
+            "schedule": "5,35 * * * *"
+        }
+    ],
+
+    "geometry_sources":
+    [
+        {
+            "name": "au_bom",
+            "schedule": "15 0 1 * *"
+        },
+        {
+            "name": "us_nws",
+            "schedule": "20 0 1 * *"
+        }
+    ]
+}

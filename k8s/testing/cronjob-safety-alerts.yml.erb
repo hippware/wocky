@@ -1,0 +1,66 @@
+<% alert_sources.each do |source| %>
+<%    dns_name = source['name'].gsub("_", "-") %>
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: safety-alerts-alert-importer-<%= dns_name %>
+  namespace: wocky-testing
+  labels:
+    app: safety-alerts
+    env: testing
+spec:
+  schedule: <%= source['schedule'] %>
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: safety-alerts
+            env: testing
+          annotations:
+            iam.amazonaws.com/role: <%= wocky_app_role_arn['value'] %>
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: safety-alerts-<%= dns_name %>
+              image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/safety-alerts:latest
+              command: ["./import_alerts"]
+              args: ["<%= source['name'] %>"]
+              envFrom:
+                - configMapRef:
+                    name: wocky-config
+<% end %>
+<% geometry_sources.each do |source| %>
+<%    dns_name = source['name'].gsub("_", "-") %>
+---
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: safety-alerts-geometry-importer-<%= dns_name %>
+  namespace: wocky-testing
+  labels:
+    app: safety-alerts
+    env: testing
+spec:
+  schedule: <%= source['schedule'] %>
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: safety-alerts
+            env: testing
+          annotations:
+            iam.amazonaws.com/role: <%= wocky_app_role_arn['value'] %>
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: safety-alerts-<%= dns_name %>
+              image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/safety-alerts:latest
+              command: ["./import_geometry"]
+              args: ["<%= source['name'] %>"]
+              envFrom:
+                - configMapRef:
+                    name: wocky-config
+<% end %>
