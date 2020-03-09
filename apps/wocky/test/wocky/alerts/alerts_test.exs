@@ -47,7 +47,7 @@ defmodule Wocky.AlertsTest do
       rec2 = Repo.get_by(Geometry, source: "test", source_id: ctx.source_id)
 
       assert rec2.geometry.coordinates == {200.0, 1.0}
-      assert rec2.updated_at > rec1.updated_at
+      assert Timex.after?(rec2.updated_at, rec1.updated_at)
     end
   end
 
@@ -94,7 +94,7 @@ defmodule Wocky.AlertsTest do
       rec2 = Repo.get_by(Alert, source: "test", source_id: ctx.source_id)
 
       assert rec2.geometry.coordinates == {200.0, 1.0}
-      assert rec2.updated_at > rec1.updated_at
+      assert Timex.after?(rec2.updated_at, rec1.updated_at)
     end
   end
 end
