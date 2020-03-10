@@ -3,6 +3,9 @@ defmodule Wocky.Alerts do
 
   use Wocky.Context
 
+  import Ecto.Query, only: [from: 2, subquery: 1]
+  import Geo.PostGIS
+
   alias Wocky.Alerts.Alert
   alias Wocky.Alerts.Geometry
 
@@ -18,7 +21,10 @@ defmodule Wocky.Alerts do
 
   @spec insert_alert(map()) :: Repo.result(Alert.t())
   def insert_alert(params) do
+    geometry = lookup_geometry(params)
+
     params
+    |> Map.put("geometry", geometry)
     |> Alert.changeset()
     |> Repo.insert(
       on_conflict: {
@@ -36,5 +42,17 @@ defmodule Wocky.Alerts do
       },
       conflict_target: [:source, :source_id]
     )
+  end
+
+  defp lookup_geometry(%{"geometry" => geometry}), do: geometry
+
+  defp lookup_geometry(%{"source" => source, "geometry_source_ids" => ids})
+       when is_list(ids) and is_binary(source) do
+    geoms =
+      from g in Geometry,
+        where: g.source == ^source and g.source_id in ^ids,
+        select: g.geometry
+
+    Repo.one(from g in subquery(geoms), select: st_union(g.geometry))
   end
 end

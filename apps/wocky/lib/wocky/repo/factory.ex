@@ -6,6 +6,7 @@ defmodule Wocky.Repo.Factory do
   use ExMachina.Ecto, repo: Wocky.Repo
 
   alias Faker.Address
+  alias Faker.Code
   alias Faker.Company
   alias Faker.Internet
   alias Faker.Lorem
@@ -268,6 +269,16 @@ defmodule Wocky.Repo.Factory do
       key: Lorem.word(),
       value: Lorem.sentence(),
       description: Lorem.sentence()
+    }
+  end
+
+  def safety_alert_geometry_factory do
+    %Wocky.Alerts.Geometry{
+      source: Lorem.word(),
+      source_id: Code.isbn13(),
+      geometry: %Geo.Point{
+        coordinates: {Address.longitude(), Address.latitude()}
+      }
     }
   end
 
