@@ -21,7 +21,16 @@
         # You can give explicit globs or simply directories.
         # In the latter case `**/*.{ex,exs}` will be used.
         #
-        included: ["lib/", "src/", "test/", "web/", "apps/"],
+        included: [
+          "lib/",
+          "src/",
+          "test/",
+          "web/",
+          "apps/*/lib/",
+          "apps/*/src/",
+          "apps/*/test/",
+          "apps/*/web/"
+        ],
         excluded: [~r"/_build/", ~r"/deps/", ~r"/node_modules/"]
       },
       #
@@ -106,8 +115,7 @@
         {Credo.Check.Readability.StringSigils, []},
         {Credo.Check.Readability.TrailingBlankLine, []},
         {Credo.Check.Readability.TrailingWhiteSpace, []},
-        # TODO: enable by default in Credo 1.1
-        {Credo.Check.Readability.UnnecessaryAliasExpansion, false},
+        {Credo.Check.Readability.UnnecessaryAliasExpansion, []},
         {Credo.Check.Readability.VariableNames, []},
 
         #
@@ -135,6 +143,7 @@
         {Credo.Check.Warning.IoInspect, []},
         # Not an issue with Elixir 1.8.1
         {Credo.Check.Warning.LazyLogging, false},
+        {Credo.Check.Warning.MixEnv, false},
         {Credo.Check.Warning.OperationOnSameValues, []},
         {Credo.Check.Warning.OperationWithConstantResult, []},
         {Credo.Check.Warning.RaiseInsideRescue, []},
@@ -146,14 +155,15 @@
         {Credo.Check.Warning.UnusedRegexOperation, []},
         {Credo.Check.Warning.UnusedStringOperation, []},
         {Credo.Check.Warning.UnusedTupleOperation, []},
+        {Credo.Check.Warning.UnsafeExec, []},
 
         #
         # Checks scheduled for next check update (opt-in for now, just replace `false` with `[]`)
-        {Credo.Check.Warning.MixEnv, false},
 
         #
         # Controversial and experimental checks (opt-in, just replace `false` with `[]`)
         #
+        {Credo.Check.Readability.StrictModuleLayout, false},
         {Credo.Check.Consistency.MultiAliasImportRequireUse, []},
         {Credo.Check.Consistency.UnusedVariableNames, false},
         {Credo.Check.Design.DuplicatedCode, []},
@@ -161,10 +171,12 @@
         {Credo.Check.Readability.MultiAlias, []},
         {Credo.Check.Readability.Specs, []},
         {Credo.Check.Readability.SinglePipe, false},
+        {Credo.Check.Readability.WithCustomTaggedTuple, []},
         {Credo.Check.Refactor.ABCSize, false},
         {Credo.Check.Refactor.AppendSingleItem, []},
         {Credo.Check.Refactor.DoubleBooleanNegation, []},
         {Credo.Check.Refactor.ModuleDependencies, false},
+        {Credo.Check.Refactor.NegatedIsNil, false},
         {Credo.Check.Refactor.PipeChainStart,
          [
            excluded_argument_types: [:atom, :binary, :fn, :keyword, :number],
@@ -173,6 +185,7 @@
         {Credo.Check.Refactor.VariableRebinding, [allow_bang: true]},
         {Credo.Check.Warning.MapGetUnsafePass, []},
         {Credo.Check.Warning.UnsafeToAtom, []},
+        {Credo.Check.Warning.LeakyEnvironment, []},
 
         #
         # Custom checks can be created using `mix credo.gen.check`.
