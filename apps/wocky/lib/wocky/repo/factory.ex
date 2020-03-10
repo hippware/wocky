@@ -12,35 +12,14 @@ defmodule Wocky.Repo.Factory do
   alias Faker.Name
   alias Faker.Phone.EnUs, as: Phone
   alias Faker.String
-  alias Wocky.Account.User
-  alias Wocky.Contacts.Relationship
-  alias Wocky.Events.BotInvitation, as: BotInvitationEvent
-  alias Wocky.Events.BotInvitationResponse
-  alias Wocky.Events.BotItem
-  alias Wocky.Events.GeofenceEvent
-  alias Wocky.Events.LocationRequest
-  alias Wocky.Events.LocationShare
-  alias Wocky.Events.NewMessage
-  alias Wocky.Events.UserInvitation
-  alias Wocky.Events.UserInvitationResponse
   alias Wocky.GeoUtils
-  alias Wocky.Location.BotEvent
-  alias Wocky.Location.UserLocation
-  alias Wocky.Messaging.Message
   alias Wocky.Notifier.InBand.Notification
-  alias Wocky.Notifier.Push.Token, as: PushToken
-  alias Wocky.POI.Bot
-  alias Wocky.POI.Item
-  alias Wocky.Relation.Invitation, as: BotInvitation
-  alias Wocky.Relation.Subscription
   alias Wocky.Repo.ID
-  alias Wocky.Server.Metadata
   alias Wocky.TROS
-  alias Wocky.TROS.Metadata, as: TROSMetadata
   alias Wocky.UserInvite.InviteCode
 
   def user_factory do
-    %User{
+    %Wocky.Account.User{
       id: ID.new(),
       external_id: external_id(),
       handle: handle(),
@@ -59,7 +38,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def bot_factory do
-    %Bot{
+    %Wocky.POI.Bot{
       id: ID.new(),
       user: build(:user),
       pending: false,
@@ -78,7 +57,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def item_factory do
-    %Item{
+    %Wocky.POI.Item{
       id: ID.new(),
       bot: build(:bot),
       content: Lorem.sentence()
@@ -86,14 +65,14 @@ defmodule Wocky.Repo.Factory do
   end
 
   def subscription_factory do
-    %Subscription{
+    %Wocky.Relation.Subscription{
       user: build(:user),
       bot: build(:bot)
     }
   end
 
   def message_factory do
-    %Message{
+    %Wocky.Messaging.Message{
       sender: build(:user),
       recipient: build(:user),
       content: Lorem.paragraph(),
@@ -103,7 +82,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def tros_metadata_factory do
-    %TROSMetadata{
+    %Wocky.TROS.Metadata{
       id: ID.new(),
       user: build(:user),
       access: Lorem.sentence(),
@@ -113,7 +92,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def friend_factory do
-    %Relationship{
+    %Wocky.Contacts.Relationship{
       user: build(:user),
       contact: build(:user),
       share_type: :always,
@@ -123,7 +102,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def location_factory do
-    %UserLocation{
+    %Wocky.Location.UserLocation{
       user_id: build(:user).id,
       device: device(),
       lat: Address.latitude(),
@@ -135,7 +114,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def bot_event_factory do
-    %BotEvent{
+    %Wocky.Location.BotEvent{
       bot: build(:bot),
       user: build(:user),
       device: device(),
@@ -145,7 +124,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def push_token_factory do
-    %PushToken{
+    %Wocky.Notifier.Push.Token{
       user: build(:user),
       device: device(),
       token: ID.new(),
@@ -155,7 +134,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def bot_invitation_factory do
-    %BotInvitation{
+    %Wocky.Relation.Invitation{
       user: build(:user),
       invitee: build(:user),
       bot: build(:bot),
@@ -201,7 +180,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def bot_invitation_event_factory do
-    %BotInvitationEvent{
+    %Wocky.Events.BotInvitation{
       to: build(:user),
       from: build(:user),
       bot: build(:bot),
@@ -210,7 +189,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def bot_invitation_response_event_factory do
-    %BotInvitationResponse{
+    %Wocky.Events.BotInvitationResponse{
       to: build(:user),
       from: build(:user),
       bot: build(:bot),
@@ -219,7 +198,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def bot_item_event_factory do
-    %BotItem{
+    %Wocky.Events.BotItem{
       to: build(:user),
       from: build(:user),
       item: build(:item)
@@ -227,7 +206,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def geofence_event_factory do
-    %GeofenceEvent{
+    %Wocky.Events.GeofenceEvent{
       to: build(:user),
       from: build(:user),
       bot: build(:bot),
@@ -236,13 +215,13 @@ defmodule Wocky.Repo.Factory do
   end
 
   def location_request_event_factory do
-    %LocationRequest{
+    %Wocky.Events.LocationRequest{
       to: build(:user)
     }
   end
 
   def location_share_event_factory do
-    %LocationShare{
+    %Wocky.Events.LocationShare{
       to: build(:user),
       from: build(:user),
       expires_at: DateTime.utc_now(),
@@ -254,7 +233,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def new_message_event_factory do
-    %NewMessage{
+    %Wocky.Events.NewMessage{
       to: build(:user),
       from: build(:user),
       content: "testing"
@@ -262,14 +241,14 @@ defmodule Wocky.Repo.Factory do
   end
 
   def user_invitation_event_factory do
-    %UserInvitation{
+    %Wocky.Events.UserInvitation{
       to: build(:user),
       from: build(:user)
     }
   end
 
   def user_invitation_response_event_factory do
-    %UserInvitationResponse{
+    %Wocky.Events.UserInvitationResponse{
       to: build(:user),
       from: build(:user)
     }
@@ -285,7 +264,7 @@ defmodule Wocky.Repo.Factory do
   end
 
   def metadata_factory do
-    %Metadata{
+    %Wocky.Server.Metadata{
       key: Lorem.word(),
       value: Lorem.sentence(),
       description: Lorem.sentence()
