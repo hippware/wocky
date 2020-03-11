@@ -14,9 +14,9 @@ defmodule Wocky.AlertsTest do
       source_id = Code.isbn13()
 
       data = %{
-        "source" => "test",
-        "source_id" => source_id,
-        "geometry" => %{"type" => "Point", "coordinates" => [100.0, 0.0]}
+        source: "test",
+        source_id: source_id,
+        geometry: %{"type" => "Point", "coordinates" => [100.0, 0.0]}
       }
 
       result = Alerts.insert_geometry(data)
@@ -38,9 +38,9 @@ defmodule Wocky.AlertsTest do
       rec1 = Repo.get_by(Geometry, source: "test", source_id: ctx.source_id)
 
       data = %{
-        "source" => "test",
-        "source_id" => ctx.source_id,
-        "geometry" => %{"type" => "Point", "coordinates" => [200.0, 1.0]}
+        source: "test",
+        source_id: ctx.source_id,
+        geometry: %{"type" => "Point", "coordinates" => [200.0, 1.0]}
       }
 
       assert {:ok, _} = Alerts.insert_geometry(data)
@@ -57,11 +57,11 @@ defmodule Wocky.AlertsTest do
       source_id = Code.isbn13()
 
       data = %{
-        "source" => "test",
-        "source_id" => source_id,
-        "title" => Lorem.sentence(),
-        "summary" => Lorem.paragraph(),
-        "geometry" => %{"type" => "Point", "coordinates" => [100.0, 0.0]}
+        source: "test",
+        source_id: source_id,
+        title: Lorem.sentence(),
+        summary: Lorem.paragraph(),
+        geometry: %{"type" => "Point", "coordinates" => [100.0, 0.0]}
       }
 
       result = Alerts.insert_alert(data)
@@ -83,11 +83,11 @@ defmodule Wocky.AlertsTest do
       rec1 = Repo.get_by(Alert, source: "test", source_id: ctx.source_id)
 
       data = %{
-        "source" => "test",
-        "source_id" => ctx.source_id,
-        "title" => Lorem.sentence(),
-        "summary" => Lorem.paragraph(),
-        "geometry" => %{"type" => "Point", "coordinates" => [200.0, 1.0]}
+        source: "test",
+        source_id: ctx.source_id,
+        title: Lorem.sentence(),
+        summary: Lorem.paragraph(),
+        geometry: %{"type" => "Point", "coordinates" => [200.0, 1.0]}
       }
 
       assert {:ok, _} = Alerts.insert_alert(data)
@@ -107,11 +107,11 @@ defmodule Wocky.AlertsTest do
       source_id = Code.isbn13()
 
       data = %{
-        "source" => "test",
-        "source_id" => source_id,
-        "title" => Lorem.sentence(),
-        "summary" => Lorem.paragraph(),
-        "geometry_source_ids" => [geom1.source_id, geom2.source_id]
+        source: "test",
+        source_id: source_id,
+        title: Lorem.sentence(),
+        summary: Lorem.paragraph(),
+        geometry_source_ids: [geom1.source_id, geom2.source_id]
       }
 
       result = Alerts.insert_alert(data)
@@ -136,11 +136,11 @@ defmodule Wocky.AlertsTest do
       geom3 = Factory.insert(:safety_alert_geometry, source: "test")
 
       data = %{
-        "source" => "test",
-        "source_id" => ctx.source_id,
-        "title" => Lorem.sentence(),
-        "summary" => Lorem.paragraph(),
-        "geometry_source_ids" => [ctx.geom1.source_id, geom3.source_id]
+        source: "test",
+        source_id: ctx.source_id,
+        title: Lorem.sentence(),
+        summary: Lorem.paragraph(),
+        geometry_source_ids: [ctx.geom1.source_id, geom3.source_id]
       }
 
       assert {:ok, _} = Alerts.insert_alert(data)

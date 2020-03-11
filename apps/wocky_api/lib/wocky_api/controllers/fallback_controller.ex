@@ -22,4 +22,11 @@ defmodule WockyAPI.Controllers.FallbackController do
     |> put_view(ErrorView)
     |> render(:"400", %{message: "JSON payload missing required keys."})
   end
+
+  def call(conn, {:error, %Ecto.Changeset{}}) do
+    conn
+    |> put_status(:unprocessable_entity)
+    |> put_view(ErrorView)
+    |> render(:"422")
+  end
 end

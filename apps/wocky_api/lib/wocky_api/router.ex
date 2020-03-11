@@ -21,6 +21,12 @@ defmodule WockyAPI.Router do
     pipe_through :rest_api
 
     resources "/users/:user_id/locations", LocationController, only: [:create]
+
+    put "/safety/geometries/:source/:source_id", GeometriesController, :create
+
+    put "/safety/alerts/:source/import", AlertsController, :start_import
+    delete "/safety/alerts/:source/import", AlertsController, :stop_import
+    put "/safety/alerts/:source/:source_id", AlertsController, :create
   end
 
   pipeline :graphql do

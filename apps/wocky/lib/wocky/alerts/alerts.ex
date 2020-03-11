@@ -24,7 +24,7 @@ defmodule Wocky.Alerts do
     geometry = lookup_geometry(params)
 
     params
-    |> Map.put("geometry", geometry)
+    |> Map.put(:geometry, geometry)
     |> Alert.changeset()
     |> Repo.insert(
       on_conflict: {
@@ -44,9 +44,7 @@ defmodule Wocky.Alerts do
     )
   end
 
-  defp lookup_geometry(%{"geometry" => geometry}), do: geometry
-
-  defp lookup_geometry(%{"source" => source, "geometry_source_ids" => ids})
+  defp lookup_geometry(%{:source => source, :geometry_source_ids => ids})
        when is_list(ids) and is_binary(source) do
     geoms =
       from g in Geometry,
@@ -55,4 +53,6 @@ defmodule Wocky.Alerts do
 
     Repo.one(from g in subquery(geoms), select: st_union(g.geometry))
   end
+
+  defp lookup_geometry(%{:geometry => geometry}), do: geometry
 end
