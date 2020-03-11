@@ -231,7 +231,7 @@ config :fun_with_flags, :redis,
   database: {:system, :integer, "REDIS_DB", 0}
 
 config :vaultex,
-  vault_addr: "http://vault-vault.vault:8200"
+  vault_addr: "http://vault.vault:8200"
 
 config :exometer_core,
   report: [reporters: [{:exometer_report_prometheus, [:enable_httpd]}]]
