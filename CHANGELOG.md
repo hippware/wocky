@@ -100,7 +100,6 @@
 **Merged pull requests:**
 
 - 3058 auto changelog [\#3114](https://github.com/hippware/wocky/pull/3114) ([bernardd](https://github.com/bernardd))
-- Fix version output [\#3109](https://github.com/hippware/wocky/pull/3109) ([bernardd](https://github.com/bernardd))
 - Bump elixir to 1.10.1 and erlang to 22.2.6 [\#3108](https://github.com/hippware/wocky/pull/3108) ([bernardd](https://github.com/bernardd))
 - Bump absinthe to version with SDL rendering fix [\#3107](https://github.com/hippware/wocky/pull/3107) ([bernardd](https://github.com/bernardd))
 
@@ -130,6 +129,7 @@
 
 **Merged pull requests:**
 
+- Fix version output [\#3109](https://github.com/hippware/wocky/pull/3109) ([bernardd](https://github.com/bernardd))
 - Bump ecto\_sql from 3.3.3 to 3.3.4 [\#3106](https://github.com/hippware/wocky/pull/3106) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Move tagging back to the promote script [\#3105](https://github.com/hippware/wocky/pull/3105) ([bernardd](https://github.com/bernardd))
 - Add tagging of version and deployment status [\#3104](https://github.com/hippware/wocky/pull/3104) ([bernardd](https://github.com/bernardd))
@@ -476,7 +476,6 @@ Key \(bot\_id\)=\(e65a09f8-50d1-447a-9cf0-5f62609d76cd\) is not present in table
 - Use new postgrex with notification reconnection [\#2912](https://github.com/hippware/wocky/pull/2912) ([bernardd](https://github.com/bernardd))
 - Bump absinthe to latest version [\#2911](https://github.com/hippware/wocky/pull/2911) ([bernardd](https://github.com/bernardd))
 - 2873 nearby support [\#2910](https://github.com/hippware/wocky/pull/2910) ([bernardd](https://github.com/bernardd))
-- Bump ecto\_sql from 3.2.0 to 3.2.1 [\#2907](https://github.com/hippware/wocky/pull/2907) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 
 ## [2019.11.5+rc1ef34f](https://github.com/hippware/wocky/tree/2019.11.5+rc1ef34f) (2019-11-05)
 
@@ -491,6 +490,7 @@ Key \(bot\_id\)=\(e65a09f8-50d1-447a-9cf0-5f62609d76cd\) is not present in table
 **Merged pull requests:**
 
 - GraphQL code cleanup [\#2908](https://github.com/hippware/wocky/pull/2908) ([toland](https://github.com/toland))
+- Bump ecto\_sql from 3.2.0 to 3.2.1 [\#2907](https://github.com/hippware/wocky/pull/2907) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Update ecto and ecto\_enum [\#2905](https://github.com/hippware/wocky/pull/2905) ([bernardd](https://github.com/bernardd))
 - New sharing model GraphQL API [\#2904](https://github.com/hippware/wocky/pull/2904) ([toland](https://github.com/toland))
 - Remove more deprecated stuff [\#2901](https://github.com/hippware/wocky/pull/2901) ([toland](https://github.com/toland))
@@ -1832,7 +1832,6 @@ The changeset has not defined any constraint. [\#2269](https://github.com/hippwa
 - Add API to cancel all active location shares [\#2278](https://github.com/hippware/wocky/pull/2278) ([toland](https://github.com/toland))
 - Bump ex\_phone\_number from 0.1.2 to 0.2.0 [\#2277](https://github.com/hippware/wocky/pull/2277) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add Rexbug [\#2274](https://github.com/hippware/wocky/pull/2274) ([bernardd](https://github.com/bernardd))
-- Only notify \#dev-deployments of deployment [\#2267](https://github.com/hippware/wocky/pull/2267) ([toland](https://github.com/toland))
 
 ## [2019.2.19+r8eb3a56](https://github.com/hippware/wocky/tree/2019.2.19+r8eb3a56) (2019-02-19)
 
@@ -1841,6 +1840,7 @@ The changeset has not defined any constraint. [\#2269](https://github.com/hippwa
 **Merged pull requests:**
 
 - Maintain state in swarm worker handoff [\#2273](https://github.com/hippware/wocky/pull/2273) ([bernardd](https://github.com/bernardd))
+- Only notify \#dev-deployments of deployment [\#2267](https://github.com/hippware/wocky/pull/2267) ([toland](https://github.com/toland))
 - The user may not exist during location callback [\#2264](https://github.com/hippware/wocky/pull/2264) ([toland](https://github.com/toland))
 
 ## [2019.2.18+rad3b125](https://github.com/hippware/wocky/tree/2019.2.18+rad3b125) (2019-02-18)
@@ -1882,7 +1882,6 @@ The changeset has not defined any constraint. [\#2269](https://github.com/hippwa
 - Update alpine and erlang/elixir versions [\#2247](https://github.com/hippware/wocky/pull/2247) ([bernardd](https://github.com/bernardd))
 - Add query for live location shares to the current user [\#2245](https://github.com/hippware/wocky/pull/2245) ([toland](https://github.com/toland))
 - Add location share notification [\#2242](https://github.com/hippware/wocky/pull/2242) ([bernardd](https://github.com/bernardd))
-- Bump redix from 0.9.1 to 0.9.2 [\#2233](https://github.com/hippware/wocky/pull/2233) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 
 ## [2019.2.13+r3f29a23](https://github.com/hippware/wocky/tree/2019.2.13+r3f29a23) (2019-02-13)
 
@@ -1906,6 +1905,7 @@ The changeset has not defined any constraint. [\#2269](https://github.com/hippwa
 
 - Bump geo\_postgis from 3.0.0 to 3.1.0 [\#2235](https://github.com/hippware/wocky/pull/2235) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump bcrypt\_elixir from 1.1.1 to 2.0.0 [\#2234](https://github.com/hippware/wocky/pull/2234) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Bump redix from 0.9.1 to 0.9.2 [\#2233](https://github.com/hippware/wocky/pull/2233) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 
 ## [2019.2.11+re4e2a40](https://github.com/hippware/wocky/tree/2019.2.11+re4e2a40) (2019-02-11)
 
@@ -1928,6 +1928,7 @@ The changeset has not defined any constraint. [\#2269](https://github.com/hippwa
 - Bump ex\_phone\_number from 0.1.1 to 0.1.2 [\#2228](https://github.com/hippware/wocky/pull/2228) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump dataloader from 1.0.5 to 1.0.6 [\#2227](https://github.com/hippware/wocky/pull/2227) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Fix image ready check and handling [\#2226](https://github.com/hippware/wocky/pull/2226) ([bernardd](https://github.com/bernardd))
+- Fix crash when own number is in bulk lookup [\#2225](https://github.com/hippware/wocky/pull/2225) ([bernardd](https://github.com/bernardd))
 
 ## [2019.2.5+ra60052c](https://github.com/hippware/wocky/tree/2019.2.5+ra60052c) (2019-02-05)
 
@@ -1979,7 +1980,6 @@ A simple i... [\#2181](https://github.com/hippware/wocky/issues/2181)
 
 **Merged pull requests:**
 
-- Fix crash when own number is in bulk lookup [\#2225](https://github.com/hippware/wocky/pull/2225) ([bernardd](https://github.com/bernardd))
 - Bump faker from 0.11.2 to 0.12.0 [\#2224](https://github.com/hippware/wocky/pull/2224) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump ecto\_sql from 3.0.4 to 3.0.5 [\#2223](https://github.com/hippware/wocky/pull/2223) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add notificationDelete mutation [\#2222](https://github.com/hippware/wocky/pull/2222) ([bernardd](https://github.com/bernardd))
@@ -2120,7 +2120,6 @@ The result must be one of the following...
 - Reupdate Guardian [\#2167](https://github.com/hippware/wocky/pull/2167) ([toland](https://github.com/toland))
 - Bump guardian from 1.1.1 to 1.2.0 [\#2164](https://github.com/hippware/wocky/pull/2164) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - 1986 bot clustering search [\#2163](https://github.com/hippware/wocky/pull/2163) ([bernardd](https://github.com/bernardd))
-- Add bot\_created flag to user [\#2160](https://github.com/hippware/wocky/pull/2160) ([bernardd](https://github.com/bernardd))
 - Add bulk user lookup and invitation operations [\#2157](https://github.com/hippware/wocky/pull/2157) ([bernardd](https://github.com/bernardd))
 
 ## [2019.1.16+r9a91d02](https://github.com/hippware/wocky/tree/2019.1.16+r9a91d02) (2019-01-16)
@@ -2143,6 +2142,7 @@ The result must be one of the following...
 
 **Merged pull requests:**
 
+- Add bot\_created flag to user [\#2160](https://github.com/hippware/wocky/pull/2160) ([bernardd](https://github.com/bernardd))
 - Alter blocked user data to be under a user object [\#2159](https://github.com/hippware/wocky/pull/2159) ([bernardd](https://github.com/bernardd))
 - Remove public scope operations [\#2158](https://github.com/hippware/wocky/pull/2158) ([bernardd](https://github.com/bernardd))
 
@@ -2347,7 +2347,6 @@ Params
 - Bump bimap from 0.1.1 to 1.0.0 [\#1963](https://github.com/hippware/wocky/pull/1963) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump jsx from 2.8.3 to 2.9.0 [\#1962](https://github.com/hippware/wocky/pull/1962) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Convert Espec tests to ExUnit [\#1958](https://github.com/hippware/wocky/pull/1958) ([toland](https://github.com/toland))
-- 1832 graphql roster [\#1941](https://github.com/hippware/wocky/pull/1941) ([bernardd](https://github.com/bernardd))
 
 ## [2018.11.28+r024235c](https://github.com/hippware/wocky/tree/2018.11.28+r024235c) (2018-11-28)
 
@@ -2449,7 +2448,7 @@ Params
 - Bump phoenix\_pubsub from 1.1.0 to 1.1.1 [\#1944](https://github.com/hippware/wocky/pull/1944) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add schema docs for contacts [\#1943](https://github.com/hippware/wocky/pull/1943) ([bernardd](https://github.com/bernardd))
 - Exit bot on unsubscribe [\#1942](https://github.com/hippware/wocky/pull/1942) ([toland](https://github.com/toland))
-- Bump pigeon from 1.2.3 to 1.2.4 [\#1938](https://github.com/hippware/wocky/pull/1938) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- 1832 graphql roster [\#1941](https://github.com/hippware/wocky/pull/1941) ([bernardd](https://github.com/bernardd))
 
 ## [2018.10.17+r06b8c08](https://github.com/hippware/wocky/tree/2018.10.17+r06b8c08) (2018-10-17)
 
@@ -2461,6 +2460,7 @@ Params
 
 **Merged pull requests:**
 
+- Bump pigeon from 1.2.3 to 1.2.4 [\#1938](https://github.com/hippware/wocky/pull/1938) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump phoenix\_ecto from 3.4.0 to 3.5.0 [\#1937](https://github.com/hippware/wocky/pull/1937) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump geocalc from 0.6.1 to 0.7.0 [\#1936](https://github.com/hippware/wocky/pull/1936) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump lager from 3.6.6 to 3.6.7 [\#1933](https://github.com/hippware/wocky/pull/1933) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
@@ -2678,12 +2678,10 @@ from m in Wocky.TROS.Metadata,
 
 - Invite codes [\#1900](https://github.com/hippware/wocky/pull/1900) ([toland](https://github.com/toland))
 - Bump prometheus\_ecto from 1.0.3 to 1.3.0 [\#1897](https://github.com/hippware/wocky/pull/1897) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
-- Bump bypass from 0.8.1 to 0.9.0 [\#1896](https://github.com/hippware/wocky/pull/1896) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump hackney from 1.14.2 to 1.14.3 [\#1895](https://github.com/hippware/wocky/pull/1895) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump hackney from 1.14.0 to 1.14.2 [\#1894](https://github.com/hippware/wocky/pull/1894) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Reduce logging [\#1893](https://github.com/hippware/wocky/pull/1893) ([toland](https://github.com/toland))
 - Use a version of PostgreSQL with Healthcheck for tests [\#1892](https://github.com/hippware/wocky/pull/1892) ([toland](https://github.com/toland))
-- Bump faker from 0.10.0 to 0.11.0 [\#1890](https://github.com/hippware/wocky/pull/1890) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 
 ## [2018.9.25+r50db3a0](https://github.com/hippware/wocky/tree/2018.9.25+r50db3a0) (2018-09-25)
 
@@ -2709,6 +2707,8 @@ from m in Wocky.TROS.Metadata,
 
 **Merged pull requests:**
 
+- Bump bypass from 0.8.1 to 0.9.0 [\#1896](https://github.com/hippware/wocky/pull/1896) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
+- Bump faker from 0.10.0 to 0.11.0 [\#1890](https://github.com/hippware/wocky/pull/1890) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump excoveralls from 0.10.0 to 0.10.1 [\#1883](https://github.com/hippware/wocky/pull/1883) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump credo from 0.10.1 to 0.10.2 [\#1882](https://github.com/hippware/wocky/pull/1882) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add beforeID to match afterID on notification query [\#1877](https://github.com/hippware/wocky/pull/1877) ([bernardd](https://github.com/bernardd))
@@ -2781,7 +2781,6 @@ from m in Wocky.TROS.Metadata,
 - Bump lager from 3.6.4 to 3.6.5 [\#1818](https://github.com/hippware/wocky/pull/1818) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump prometheus\_ex from 3.0.2 to 3.0.3 [\#1816](https://github.com/hippware/wocky/pull/1816) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add migration to recreate hs functions [\#1815](https://github.com/hippware/wocky/pull/1815) ([bernardd](https://github.com/bernardd))
-- Add retry system to push notifications [\#1814](https://github.com/hippware/wocky/pull/1814) ([bernardd](https://github.com/bernardd))
 - Formatting [\#1813](https://github.com/hippware/wocky/pull/1813) ([bernardd](https://github.com/bernardd))
 - Modify invite mutation to allow multiple users [\#1812](https://github.com/hippware/wocky/pull/1812) ([bernardd](https://github.com/bernardd))
 - Remove collections code [\#1807](https://github.com/hippware/wocky/pull/1807) ([toland](https://github.com/toland))
@@ -2797,6 +2796,7 @@ from m in Wocky.TROS.Metadata,
 
 **Merged pull requests:**
 
+- Add retry system to push notifications [\#1814](https://github.com/hippware/wocky/pull/1814) ([bernardd](https://github.com/bernardd))
 - Set the accuracy threshold to 90m across the board [\#1806](https://github.com/hippware/wocky/pull/1806) ([toland](https://github.com/toland))
 
 ## [2018.8.30+r5280dc0](https://github.com/hippware/wocky/tree/2018.8.30+r5280dc0) (2018-08-30)
@@ -2894,6 +2894,7 @@ from m in Wocky.TROS.Metadata,
 - Bump distillery from 2.0.0-rc.12 to 2.0.0 [\#1758](https://github.com/hippware/wocky/pull/1758) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add invitations and notification support [\#1757](https://github.com/hippware/wocky/pull/1757) ([bernardd](https://github.com/bernardd))
 - Reinstate new bot item IDs [\#1756](https://github.com/hippware/wocky/pull/1756) ([bernardd](https://github.com/bernardd))
+- Bump phoenix\_pubsub from 1.0.2 to 1.1.0 [\#1743](https://github.com/hippware/wocky/pull/1743) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - EKS deployment changes [\#1738](https://github.com/hippware/wocky/pull/1738) ([toland](https://github.com/toland))
 
 ## [2018.8.14+r3c0b954](https://github.com/hippware/wocky/tree/2018.8.14+r3c0b954) (2018-08-14)
@@ -2918,7 +2919,6 @@ from m in Wocky.TROS.Metadata,
 - Bump guardian\_firebase from 0.1.0 to 0.2.1 [\#1750](https://github.com/hippware/wocky/pull/1750) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump distillery from 2.0.0-rc.11 to 2.0.0-rc.12 [\#1749](https://github.com/hippware/wocky/pull/1749) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Formatting pass [\#1747](https://github.com/hippware/wocky/pull/1747) ([bernardd](https://github.com/bernardd))
-- Bump phoenix\_pubsub from 1.0.2 to 1.1.0 [\#1743](https://github.com/hippware/wocky/pull/1743) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump distillery from 2.0.0-rc.8 to 2.0.0-rc.11 [\#1742](https://github.com/hippware/wocky/pull/1742) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump espec from 1.6.0 to 1.6.1 [\#1741](https://github.com/hippware/wocky/pull/1741) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Bump excoveralls from 0.9.1 to 0.9.2 [\#1740](https://github.com/hippware/wocky/pull/1740) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
@@ -3021,7 +3021,6 @@ from m in Wocky.TROS.Metadata,
 - Move APNS call to async/on\_response mode [\#1663](https://github.com/hippware/wocky/pull/1663) ([bernardd](https://github.com/bernardd))
 - Bump ex\_guard from 1.3.0 to 1.3.2 [\#1660](https://github.com/hippware/wocky/pull/1660) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - Add test for botGuestVisitors [\#1658](https://github.com/hippware/wocky/pull/1658) ([bernardd](https://github.com/bernardd))
-- Bump pigeon from 1.2.0 to 1.2.2 [\#1656](https://github.com/hippware/wocky/pull/1656) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 
 ## [2018.7.9+r7386f6f](https://github.com/hippware/wocky/tree/2018.7.9+r7386f6f) (2018-07-09)
 
@@ -3051,6 +3050,7 @@ from m in Wocky.TROS.Metadata,
 **Merged pull requests:**
 
 - Fix debounce override [\#1657](https://github.com/hippware/wocky/pull/1657) ([toland](https://github.com/toland))
+- Bump pigeon from 1.2.0 to 1.2.2 [\#1656](https://github.com/hippware/wocky/pull/1656) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - 1654 reload user after hide [\#1655](https://github.com/hippware/wocky/pull/1655) ([bernardd](https://github.com/bernardd))
 - Bump peerage from 1.0.2 to 1.0.3 [\#1653](https://github.com/hippware/wocky/pull/1653) ([dependabot-preview[bot]](https://github.com/apps/dependabot-preview))
 - 1651 discover bots [\#1652](https://github.com/hippware/wocky/pull/1652) ([bernardd](https://github.com/bernardd))
@@ -3751,7 +3751,6 @@ constraint name. The changeset defined the following constraints:
 **Merged pull requests:**
 
 - Return an error for upload request for a missing user [\#1242](https://github.com/hippware/wocky/pull/1242) ([toland](https://github.com/toland))
-- Return an error when the contacts RSM id isn't valid [\#1241](https://github.com/hippware/wocky/pull/1241) ([toland](https://github.com/toland))
 - Return an error when updating a nonexistent user [\#1240](https://github.com/hippware/wocky/pull/1240) ([toland](https://github.com/toland))
 - Fix a warning from Phoenix in the log files [\#1239](https://github.com/hippware/wocky/pull/1239) ([toland](https://github.com/toland))
 
@@ -3797,6 +3796,7 @@ constraint name. The changeset defined the following constraints:
 
 **Merged pull requests:**
 
+- Return an error when the contacts RSM id isn't valid [\#1241](https://github.com/hippware/wocky/pull/1241) ([toland](https://github.com/toland))
 - Codeship updates [\#1233](https://github.com/hippware/wocky/pull/1233) ([toland](https://github.com/toland))
 - Deployment updates [\#1232](https://github.com/hippware/wocky/pull/1232) ([toland](https://github.com/toland))
 - Tros pregen urls [\#1229](https://github.com/hippware/wocky/pull/1229) ([bernardd](https://github.com/bernardd))
@@ -4686,7 +4686,6 @@ Please check the given list or call inspect/1 to get the list representation, go
 - Add explanatory comment to Bot.public? [\#705](https://github.com/hippware/wocky/pull/705) ([bernardd](https://github.com/bernardd))
 - Move multicast hook priority up [\#704](https://github.com/hippware/wocky/pull/704) ([bernardd](https://github.com/bernardd))
 - Reenable diagnostic log traces [\#698](https://github.com/hippware/wocky/pull/698) ([toland](https://github.com/toland))
-- Add a config setting to control the Digits bypass [\#696](https://github.com/hippware/wocky/pull/696) ([toland](https://github.com/toland))
 - Add validation to prevent a negative bot radius [\#695](https://github.com/hippware/wocky/pull/695) ([toland](https://github.com/toland))
 - Fix compiler warning [\#688](https://github.com/hippware/wocky/pull/688) ([bernardd](https://github.com/bernardd))
 
@@ -4696,6 +4695,7 @@ Please check the given list or call inspect/1 to get the list representation, go
 
 **Merged pull requests:**
 
+- Add a config setting to control the Digits bypass [\#696](https://github.com/hippware/wocky/pull/696) ([toland](https://github.com/toland))
 - Really fix hash case [\#691](https://github.com/hippware/wocky/pull/691) ([bernardd](https://github.com/bernardd))
 - Use lower-case hashes [\#690](https://github.com/hippware/wocky/pull/690) ([bernardd](https://github.com/bernardd))
 - Fix thumbnail permissions [\#687](https://github.com/hippware/wocky/pull/687) ([bernardd](https://github.com/bernardd))
@@ -4858,7 +4858,6 @@ Please check the given list or call inspect/1 to get the list representation, go
 - Tiny fix for cron config [\#610](https://github.com/hippware/wocky/pull/610) ([bernardd](https://github.com/bernardd))
 - Re add vis changes [\#608](https://github.com/hippware/wocky/pull/608) ([bernardd](https://github.com/bernardd))
 - More cron fixes [\#607](https://github.com/hippware/wocky/pull/607) ([bernardd](https://github.com/bernardd))
-- Configure ODBC MAM [\#604](https://github.com/hippware/wocky/pull/604) ([bernardd](https://github.com/bernardd))
 
 ## [17.03.31+1707.7751e35](https://github.com/hippware/wocky/tree/17.03.31+1707.7751e35) (2017-03-31)
 
@@ -5044,7 +5043,6 @@ Please check the given list or call inspect/1 to get the list representation, go
 - 440 add bot tags [\#476](https://github.com/hippware/wocky/pull/476) ([bernardd](https://github.com/bernardd))
 - 414 add new-id function to bots [\#472](https://github.com/hippware/wocky/pull/472) ([bernardd](https://github.com/bernardd))
 - Remove chat messages from home stream [\#471](https://github.com/hippware/wocky/pull/471) ([bernardd](https://github.com/bernardd))
-- Disable geofence notifications [\#446](https://github.com/hippware/wocky/pull/446) ([toland](https://github.com/toland))
 
 ## [17.02.02+1521](https://github.com/hippware/wocky/tree/17.02.02+1521) (2017-02-02)
 
@@ -5191,6 +5189,7 @@ Please check the given list or call inspect/1 to get the list representation, go
 - 416 add CLI to fix broken bot image permissions [\#456](https://github.com/hippware/wocky/pull/456) ([bernardd](https://github.com/bernardd))
 - Handle change to HS mnesia ram table schema [\#454](https://github.com/hippware/wocky/pull/454) ([bernardd](https://github.com/bernardd))
 - Fix notifications in production [\#447](https://github.com/hippware/wocky/pull/447) ([toland](https://github.com/toland))
+- Disable geofence notifications [\#446](https://github.com/hippware/wocky/pull/446) ([toland](https://github.com/toland))
 - Revert workarounds for multiple resource ID issue [\#445](https://github.com/hippware/wocky/pull/445) ([toland](https://github.com/toland))
 - Update Credo [\#444](https://github.com/hippware/wocky/pull/444) ([toland](https://github.com/toland))
 - Make publishing notify messages 'headline' type [\#439](https://github.com/hippware/wocky/pull/439) ([bernardd](https://github.com/bernardd))
@@ -5250,6 +5249,7 @@ Please check the given list or call inspect/1 to get the list representation, go
 - Fix multi-node HS subscription [\#303](https://github.com/hippware/wocky/pull/303) ([bernardd](https://github.com/bernardd))
 - 290 bot geofence alerts [\#302](https://github.com/hippware/wocky/pull/302) ([toland](https://github.com/toland))
 - Server side "follow me" for bots [\#294](https://github.com/hippware/wocky/pull/294) ([toland](https://github.com/toland))
+- 159 tros s3 config [\#284](https://github.com/hippware/wocky/pull/284) ([bernardd](https://github.com/bernardd))
 
 
 
