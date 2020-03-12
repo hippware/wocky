@@ -25,4 +25,22 @@ defmodule WockyAPI.Controllers.AlertsController do
       send_resp(conn, :created, "")
     end
   end
+
+  @spec start_import(Conn.t(), Keyword.t()) :: Conn.t() | {:error, any()}
+  def start_import(conn, _params) do
+    source = conn.path_params["source"]
+
+    Alerts.alert_import_begin(source)
+
+    send_resp(conn, 204, "")
+  end
+
+  @spec stop_import(Conn.t(), Keyword.t()) :: Conn.t() | {:error, any()}
+  def stop_import(conn, _params) do
+    source = conn.path_params["source"]
+
+    Alerts.alert_import_end(source)
+
+    send_resp(conn, 204, "")
+  end
 end

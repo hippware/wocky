@@ -282,6 +282,18 @@ defmodule Wocky.Repo.Factory do
     }
   end
 
+  def safety_alert_factory do
+    %Wocky.Alerts.Alert{
+      source: Lorem.word(),
+      source_id: Code.isbn13(),
+      title: Lorem.sentence(),
+      summary: Lorem.paragraph(),
+      geometry: %Geo.Point{
+        coordinates: {Address.longitude(), Address.latitude()}
+      }
+    }
+  end
+
   def phone_number do
     "+1555#{Phone.exchange_code()}#{Phone.extension()}"
   end

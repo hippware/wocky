@@ -153,4 +153,50 @@ defmodule Wocky.AlertsTest do
       assert Timex.after?(rec2.updated_at, rec1.updated_at)
     end
   end
+
+  describe "alert_import_begin/1" do
+    setup do
+      Factory.insert_list(5, :safety_alert, source: "test1", imported: true)
+      Factory.insert_list(5, :safety_alert, source: "test2", imported: true)
+
+      :ok = Alerts.alert_import_begin("test1")
+    end
+
+    test "sets imported=false for a single source" do
+      alerts = Repo.all(from a in Alert, where: a.source == "test1")
+
+      assert Enum.all?(alerts, &(&1.imported == false))
+    end
+
+    test "does not set imported flag for other sources" do
+      alerts = Repo.all(from a in Alert, where: a.source == "test2")
+
+      assert Enum.all?(alerts, &(&1.imported == true))
+    end
+  end
+
+  describe "alert_import_end/1" do
+    setup do
+      Factory.insert_list(5, :safety_alert, source: "test1", imported: true)
+      Factory.insert_list(5, :safety_alert, source: "test1", imported: false)
+      Factory.insert_list(5, :safety_alert, source: "test2", imported: true)
+      Factory.insert_list(5, :safety_alert, source: "test2", imported: false)
+
+      :ok = Alerts.alert_import_end("test1")
+    end
+
+    test "removes records with imported=false for a single source" do
+      alerts = Repo.all(from a in Alert, where: a.source == "test1")
+
+      assert length(alerts) == 5
+      assert Enum.all?(alerts, &(&1.imported == true))
+    end
+
+    test "does not remove records from another source" do
+      alerts = Repo.all(from a in Alert, where: a.source == "test2")
+
+      assert length(alerts) == 10
+      refute Enum.all?(alerts, &(&1.imported == true))
+    end
+  end
 end

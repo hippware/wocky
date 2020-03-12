@@ -19,6 +19,26 @@ defmodule Wocky.Alerts do
     )
   end
 
+  @spec alert_import_begin(String.t()) :: :ok
+  def alert_import_begin(source) do
+    Repo.update_all(
+      from(a in Alert, where: a.source == ^source),
+      set: [imported: false]
+    )
+
+    :ok
+  end
+
+  @spec alert_import_end(String.t()) :: :ok
+  def alert_import_end(source) do
+    Repo.delete_all(
+      from a in Alert,
+        where: a.source == ^source and a.imported == false
+    )
+
+    :ok
+  end
+
   @spec insert_alert(map()) :: Repo.result(Alert.t())
   def insert_alert(params) do
     geometry = lookup_geometry(params)
