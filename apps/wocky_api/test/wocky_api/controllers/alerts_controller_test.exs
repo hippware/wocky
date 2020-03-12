@@ -7,19 +7,11 @@ defmodule WockyAPI.Controllers.AlertsControllerTest do
   alias Faker.Lorem
   alias Wocky.Alerts.Alert
   alias Wocky.Repo
-  alias WockyAPI.Factory, as: APIFactory
 
   setup %{conn: conn} do
-    user = Factory.insert(:user, device: "testing")
-    token = APIFactory.get_test_location_token(user)
+    conn = put_req_header(conn, "content-type", "application/json")
 
-    conn =
-      conn
-      |> put_req_header("accept", "application/json")
-      |> put_req_header("authentication", "Bearer #{token}")
-      |> put_req_header("content-type", "application/json")
-
-    {:ok, conn: conn, user: user}
+    {:ok, conn: conn}
   end
 
   describe "create alert with embedded geometry" do

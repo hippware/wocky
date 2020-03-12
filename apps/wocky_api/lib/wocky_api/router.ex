@@ -12,15 +12,23 @@ defmodule WockyAPI.Router do
 
   pipeline :rest_api do
     plug :accepts, ["json"]
+  end
+
+  pipeline :location_api do
+    plug :accepts, ["json"]
     plug :check_location_auth
     plug :ensure_authenticated
     plug :ensure_owner
   end
 
   scope "/api/v1", WockyAPI.Controllers do
-    pipe_through :rest_api
+    pipe_through :location_api
 
     resources "/users/:user_id/locations", LocationController, only: [:create]
+  end
+
+  scope "/api/v1", WockyAPI.Controllers do
+    pipe_through :rest_api
 
     put "/safety/geometries/:source/:source_id", GeometriesController, :create
 
