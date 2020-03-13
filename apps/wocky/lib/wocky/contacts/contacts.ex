@@ -220,12 +220,20 @@ defmodule Wocky.Contacts do
     update_relationship(user, contact, params)
   end
 
-  @spec update_nearby(User.t(), User.tid(), boolean()) ::
-          Repo.result(Relationship.t())
+  @doc """
+  Update the nearby flag for one or both users if they have nearby
+  sharing enabled.
+  """
+  @spec update_nearby(User.t(), User.tid(), boolean()) :: :ok
   def update_nearby(user, contact, nearby?) do
-    update_relationship(user, contact, %{
-      nearby: nearby?
-    })
+    Repo.update_all(
+      from(rp in relationship_pair(user, contact),
+        where: rp.share_type == "nearby"
+      ),
+      set: [nearby: nearby?]
+    )
+
+    :ok
   end
 
   defp update_relationship(user, contact, changes) do
