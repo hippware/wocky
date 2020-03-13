@@ -318,6 +318,15 @@ defmodule Wocky.Contacts do
     end
   end
 
+  @doc "Returns one side of a relationship."
+  @spec get_single_relationship(User.tid(), User.tid()) ::
+          Relationship.t() | nil
+  def get_single_relationship(user, contact) do
+    user
+    |> single_relationship(contact)
+    |> Repo.one()
+  end
+
   @spec get_relationship(User.tid(), User.tid()) ::
           relationship_details() | Repo.error()
   def get_relationship(user, contact) do

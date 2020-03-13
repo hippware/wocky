@@ -613,8 +613,8 @@ defmodule Wocky.Contacts.ContactsTest do
 
   describe "update_nearby/3 when one user is sharing nearby" do
     setup ctx do
-      Contacts.befriend(ctx.user, ctx.contact, :always)
-      Contacts.update_sharing(ctx.user, ctx.contact, :nearby)
+      Contacts.make_friends(ctx.user, ctx.contact, :nearby)
+      Contacts.make_friends(ctx.contact, ctx.user, :always)
       Contacts.update_nearby(ctx.user, ctx.contact, true)
 
       {_, user_rel, contact_rel} =
@@ -706,6 +706,29 @@ defmodule Wocky.Contacts.ContactsTest do
 
     test "should return :disabled when no relationship exists", ctx do
       assert Contacts.share_type(ctx.user, ctx.contact) == :disabled
+    end
+  end
+
+  describe "get_single_relationship/2 when a relationship exists" do
+    setup ctx do
+      Contacts.befriend(ctx.user, ctx.contact)
+
+      result = Contacts.get_single_relationship(ctx.user, ctx.contact)
+
+      {:ok, result: result}
+    end
+
+    test "returns the relationship record", ctx do
+      assert %Relationship{} = ctx.result
+      assert ctx.result.user_id == ctx.user.id
+      assert ctx.result.contact_id == ctx.contact.id
+    end
+  end
+
+  describe "get_single_relationship/2 when no relationship exists" do
+    test "returns nil", ctx do
+      refute Contacts.get_single_relationship(ctx.user, ctx.contact)
+      refute Contacts.get_single_relationship(ctx.contact, ctx.user)
     end
   end
 

@@ -246,19 +246,24 @@ defmodule WockyAPI.Resolvers.Contact do
     {:ok, target_loc} = Current.get(share_target.contact_id)
     contact = User.hydrate(share_target.contact_id)
 
-    if target_loc &&
-         Geocalc.within?(
-           share_target.nearby_distance,
-           Location.to_point(target_loc),
-           Location.to_point(location)
-         ) do
+    if nearby?(location, target_loc, share_target.nearby_distance) do
       do_notify_location(share_target, user, location)
-      notify_nearby_start(user, contact, share_target)
+      notify_nearby_users(user, contact, share_target, &notify_nearby_start/3)
       Contacts.update_nearby(user, contact, true)
     else
-      notify_nearby_end(user, contact, share_target)
+      notify_nearby_users(user, contact, share_target, &notify_nearby_end/3)
       Contacts.update_nearby(user, contact, false)
     end
+  end
+
+  defp nearby?(_, nil, _), do: false
+
+  defp nearby?(location, target_loc, nearby_distance) do
+    Geocalc.within?(
+      nearby_distance,
+      Location.to_point(target_loc),
+      Location.to_point(location)
+    )
   end
 
   defp do_notify_location(share_target, user, location) do
@@ -271,6 +276,16 @@ defmodule WockyAPI.Resolvers.Contact do
 
   defp make_location_data(user, location),
     do: %{user: user, location: location}
+
+  defp notify_nearby_users(user, contact, target, fun) do
+    fun.(user, contact, target)
+
+    rel = Contacts.get_single_relationship(contact, user)
+
+    if rel && rel.share_type == :nearby do
+      fun.(contact, user, rel)
+    end
+  end
 
   defp notify_nearby_start(user, contact, target) do
     %NearbyStart{

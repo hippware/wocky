@@ -7,6 +7,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
   alias Wocky.Contacts.Share.Cache
   alias Wocky.Location
   alias Wocky.Location.Handler
+  alias Wocky.Location.UserLocation.Current
   alias Wocky.Notifier.Push
   alias Wocky.Notifier.Push.Backend.Sandbox
   alias Wocky.Presence.Manager
@@ -295,8 +296,7 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
           captured_at: now
         )
 
-      {:ok, _} =
-        Location.set_user_location(user, %{location | user_id: user.id})
+      :ok = Current.set(user, %{location | user_id: user.id})
 
       {:ok, _} =
         Location.set_user_location(user2, %{location | user_id: user2.id})
@@ -323,6 +323,56 @@ defmodule WockyAPI.GraphQL.NotificationSubscriptionTest do
 
       {:ok, _} =
         Location.set_user_location(user2, %{location2 | user_id: user2.id})
+
+      # Should not send a second consecutive end notification
+      refute_subscription_update _data
+    end
+
+    test "moves into and out of nearby range notifies other user", %{
+      user: user,
+      user2: user2,
+      subscription_id: subscription_id
+    } do
+      befriend(user, user2, subscription_id, :nearby)
+      assert_eventually(length(Cache.get(user2.id)) == 1)
+      assert hd(Cache.get(user2.id)).share_type == :nearby
+
+      now = DateTime.utc_now()
+
+      location =
+        Factory.build(:location,
+          lat: 0.0,
+          lon: 0.0,
+          captured_at: now
+        )
+
+      :ok = Current.set(user2, %{location | user_id: user2.id})
+
+      {:ok, _} =
+        Location.set_user_location(user, %{location | user_id: user.id})
+
+      assert_notification_update(subscription_id, %{
+        "__typename" => "LocationShareNearbyStartNotification",
+        "user" => %{"id" => user2.id}
+      })
+
+      location2 =
+        Factory.build(:location,
+          lat: 50.0,
+          lon: 50.0,
+          captured_at: now
+        )
+
+      {:ok, _} =
+        Location.set_user_location(user, %{location2 | user_id: user.id})
+
+      assert_notification_update(subscription_id, %{
+        "__typename" => "LocationShareNearbyEndNotification",
+        "user" => %{"id" => user2.id}
+      })
+
+      {:ok, _} =
+        Location.set_user_location(user, %{location2 | user_id: user.id})
 
       # Should not send a second consecutive end notification
       refute_subscription_update _data
