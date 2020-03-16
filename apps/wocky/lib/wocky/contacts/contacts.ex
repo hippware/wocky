@@ -228,7 +228,7 @@ defmodule Wocky.Contacts do
   def update_nearby(user, contact, nearby?) do
     Repo.update_all(
       from(rp in relationship_pair(user, contact),
-        where: rp.share_type == "nearby"
+        where: rp.share_type == ^:nearby
       ),
       set: [nearby: nearby?]
     )
@@ -516,7 +516,9 @@ defmodule Wocky.Contacts do
 
   defp location_shares_query do
     from r in Relationship,
-      where: r.share_type != ^:disabled,
+      where:
+        r.share_type == ^:always or
+          (r.share_type == ^:nearby and r.nearby == true),
       order_by: [desc: r.share_changed_at],
       preload: [:user, :contact]
   end
