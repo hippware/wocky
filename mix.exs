@@ -33,7 +33,7 @@ defmodule Wocky.Release.Mixfile do
   defp deps do
     [
       {:credo, "~> 1.1", only: [:dev, :test], runtime: false},
-      {:dialyxir, "~> 1.0.0-rc.4", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev, :test], runtime: false},
       {:ex_check, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:ex_guard, "~> 1.1", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.8", only: [:dev, :test], runtime: false},
