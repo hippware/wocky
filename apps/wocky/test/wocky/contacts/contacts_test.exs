@@ -521,11 +521,11 @@ defmodule Wocky.Contacts.ContactsTest do
     end
 
     test "should update share type when sharing is already enabled", ctx do
-      assert {:ok, _} = Contacts.update_sharing(ctx.user, ctx.contact, :always)
       assert {:ok, _} = Contacts.update_sharing(ctx.user, ctx.contact, :nearby)
+      assert {:ok, _} = Contacts.update_sharing(ctx.user, ctx.contact, :always)
 
       assert [%Relationship{} = share] = Contacts.get_location_shares(ctx.user)
-      assert share.share_type == :nearby
+      assert share.share_type == :always
     end
 
     test "should disable sharing", ctx do
@@ -936,7 +936,33 @@ defmodule Wocky.Contacts.ContactsTest do
   end
 
   describe "get_location_shares/1" do
-    test "should not return disabled location shares", ctx do
+    test "returns always shares", ctx do
+      Contacts.befriend(ctx.user, ctx.contact, :always)
+
+      assert [%Relationship{} = rel] = Contacts.get_location_shares(ctx.user)
+      assert rel.user_id == ctx.user.id
+      assert rel.contact_id == ctx.contact.id
+      assert rel.share_type == :always
+    end
+
+    test "returns nearby shares if the user is nearby", ctx do
+      Contacts.befriend(ctx.user, ctx.contact, :nearby)
+      Contacts.update_nearby(ctx.user, ctx.contact, true)
+
+      assert [%Relationship{} = rel] = Contacts.get_location_shares(ctx.user)
+      assert rel.user_id == ctx.user.id
+      assert rel.contact_id == ctx.contact.id
+      assert rel.share_type == :nearby
+      assert rel.nearby == true
+    end
+
+    test "does not return nearby shares if the user is not nearby", ctx do
+      Contacts.befriend(ctx.user, ctx.contact, :nearby)
+
+      assert Contacts.get_location_shares(ctx.user) == []
+    end
+
+    test "does not return disabled shares", ctx do
       Contacts.befriend(ctx.user, ctx.contact, :disabled)
 
       assert Contacts.get_location_shares(ctx.user) == []
@@ -944,7 +970,37 @@ defmodule Wocky.Contacts.ContactsTest do
   end
 
   describe "get_location_sharers/1" do
-    test "should not return disabled location shares", ctx do
+    test "returns always shares", ctx do
+      Contacts.befriend(ctx.user, ctx.contact, :always)
+
+      assert [%Relationship{} = rel] =
+               Contacts.get_location_sharers(ctx.contact)
+
+      assert rel.user_id == ctx.user.id
+      assert rel.contact_id == ctx.contact.id
+      assert rel.share_type == :always
+    end
+
+    test "returns nearby shares if the user is nearby", ctx do
+      Contacts.befriend(ctx.user, ctx.contact, :nearby)
+      Contacts.update_nearby(ctx.user, ctx.contact, true)
+
+      assert [%Relationship{} = rel] =
+               Contacts.get_location_sharers(ctx.contact)
+
+      assert rel.user_id == ctx.user.id
+      assert rel.contact_id == ctx.contact.id
+      assert rel.share_type == :nearby
+      assert rel.nearby == true
+    end
+
+    test "does not return nearby shares if the user is not nearby", ctx do
+      Contacts.befriend(ctx.user, ctx.contact, :nearby)
+
+      assert Contacts.get_location_sharers(ctx.contact) == []
+    end
+
+    test "does not return disabled shares", ctx do
       Contacts.befriend(ctx.user, ctx.contact, :disabled)
 
       assert Contacts.get_location_sharers(ctx.contact) == []
