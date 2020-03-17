@@ -26,7 +26,7 @@ defmodule WockyAPI.Controllers.AlertsController do
     end
   end
 
-  @spec start_import(Conn.t(), Keyword.t()) :: Conn.t() | {:error, any()}
+  @spec start_import(Conn.t(), Keyword.t()) :: Conn.t()
   def start_import(conn, _params) do
     source = conn.path_params["source"]
 
@@ -35,7 +35,7 @@ defmodule WockyAPI.Controllers.AlertsController do
     send_resp(conn, 204, "")
   end
 
-  @spec stop_import(Conn.t(), Keyword.t()) :: Conn.t() | {:error, any()}
+  @spec stop_import(Conn.t(), Keyword.t()) :: Conn.t()
   def stop_import(conn, _params) do
     source = conn.path_params["source"]
 
