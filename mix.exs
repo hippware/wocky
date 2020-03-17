@@ -37,6 +37,7 @@ defmodule Wocky.Release.Mixfile do
       {:ex_check, ">= 0.0.0", only: [:dev, :test], runtime: false},
       {:ex_guard, "~> 1.1", only: [:dev, :test], runtime: false},
       {:excoveralls, "~> 0.8", only: [:dev, :test], runtime: false},
+      {:mix_audit, "~> 0.1", only: [:dev, :test], runtime: false},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false}
     ]
   end
