@@ -3,6 +3,9 @@ defmodule WockyAPI.Metrics do
   Module for gathering metrics from various parts of the API
   """
 
+  use Elixometer
+  use GenServer
+
   defmodule State do
     @moduledoc false
 
@@ -11,9 +14,6 @@ defmodule WockyAPI.Metrics do
       :auth_pids
     ]
   end
-
-  use Elixometer
-  use GenServer
 
   @spec start_link(any()) :: GenServer.on_start()
   def start_link(args) do

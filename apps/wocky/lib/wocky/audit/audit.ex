@@ -3,13 +3,13 @@ defmodule Wocky.Audit do
 
   use ModuleConfig, otp_app: :wocky
 
-  require Logger
-
   alias Wocky.Account.User
   alias Wocky.Audit.PushLog
   alias Wocky.Audit.TrafficLog
   alias Wocky.Location.UserLocation
   alias Wocky.Repo.ID
+
+  require Logger
 
   @type audit_target :: :traffic | :location | :push | :push_payload
 

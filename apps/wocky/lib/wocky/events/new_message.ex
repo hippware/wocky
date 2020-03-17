@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.StrictModuleLayout
 defmodule Wocky.Events.NewMessage do
   @moduledoc false
 

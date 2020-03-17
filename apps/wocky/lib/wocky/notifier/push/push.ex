@@ -2,6 +2,9 @@ defmodule Wocky.Notifier.Push do
   @moduledoc """
   The Push context. Single interface for push notifications.
   """
+
+  @behaviour Wocky.Notifier
+
   use Elixometer
   use ModuleConfig, otp_app: :wocky
 
@@ -21,8 +24,6 @@ defmodule Wocky.Notifier.Push do
   alias Wocky.Repo
 
   require Logger
-
-  @behaviour Wocky.Notifier
 
   @max_retries 5
 

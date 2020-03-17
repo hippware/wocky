@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.StrictModuleLayout
 defmodule Wocky.Events.GeofenceEvent do
   @moduledoc """
   Notification for a guest entering or exiting a bot to which the notified

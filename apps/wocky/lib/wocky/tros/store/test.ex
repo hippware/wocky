@@ -1,9 +1,9 @@
 defmodule Wocky.TROS.Store.Test do
   @moduledoc "Test backend for the TROS file management system"
 
-  alias Wocky.TROS
-
   @behaviour TROS
+
+  alias Wocky.TROS
 
   defmacro record(params) do
     quote do
