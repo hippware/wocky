@@ -1,6 +1,6 @@
 %{
   "absinthe": {:git, "https://github.com/hippware/absinthe.git", "34f2b72df5b82c1a437da9dd764df30168337ebf", [branch: "working"]},
-  "absinthe_error_payload": {:hex, :absinthe_error_payload, "1.0.1", "0696314517f2d42a4e942cdeaf0c42a05db4135c6e9257607b4b13ebc83f894f", [:make, :mix], [{:absinthe, "~> 1.3", [hex: :absinthe, repo: "hexpm", optional: false]}, {:ecto, "~> 3.1", [hex: :ecto, repo: "hexpm", optional: false]}], "hexpm", "03b300138a2fd4b0c012401ce4e1d038f89d22f3aa49f8066c959208902469b7"},
+  "absinthe_error_payload": {:hex, :absinthe_error_payload, "1.1.1", "48c89baaff23c8fdf93313a3e2637648456a60f010e5cde34b1ed3309feceabc", [:make, :mix], [{:absinthe, "~> 1.3", [hex: :absinthe, repo: "hexpm", optional: false]}, {:ecto, "~> 3.1", [hex: :ecto, repo: "hexpm", optional: false]}], "hexpm", "5c6e5722a6be8aa1a5fd32f98d1306a962a55414aa4e949fea904507da1f0425"},
   "absinthe_metrics": {:git, "https://github.com/hippware/absinthe-metrics.git", "d6df8e63f51c27b4839dff0596055312f8693147", [branch: "working"]},
   "absinthe_phoenix": {:git, "https://github.com/hippware/absinthe_phoenix.git", "3573eb620cb20cf8c0d36961f5771c7e194b8a6e", [branch: "working"]},
   "absinthe_plug": {:git, "https://github.com/hippware/absinthe_plug.git", "0bc5510a351096f313ea1d6feffda8b71c3ac816", []},
