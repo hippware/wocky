@@ -4,7 +4,7 @@ defmodule Wocky.TROS.Store.Simple do
   https://hub.docker.com/r/mayth/simple-upload-server/
   """
 
-  @behaviour TROS
+  @behaviour Wocky.TROS
 
   alias Wocky.Repo
   alias Wocky.TROS

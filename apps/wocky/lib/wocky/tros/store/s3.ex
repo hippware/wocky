@@ -1,7 +1,7 @@
 defmodule Wocky.TROS.Store.S3 do
   @moduledoc "S3 backend for the TROS file management system"
 
-  @behaviour TROS
+  @behaviour Wocky.TROS
 
   alias ExAws.Auth
   alias ExAws.Config
