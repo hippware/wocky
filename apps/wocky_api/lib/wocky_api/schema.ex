@@ -17,6 +17,7 @@ defmodule WockyAPI.Schema do
   import_types WockyAPI.Schema.BlockTypes
   import_types WockyAPI.Schema.BotTypes
   import_types WockyAPI.Schema.ContactTypes
+  import_types WockyAPI.Schema.GeoJSONTypes
   import_types WockyAPI.Schema.MediaTypes
   import_types WockyAPI.Schema.MessageTypes
   import_types WockyAPI.Schema.MetadataTypes
@@ -26,6 +27,7 @@ defmodule WockyAPI.Schema do
   import_types WockyAPI.Schema.UserInviteTypes
   import_types WockyAPI.Schema.UserTypes
   import_types WockyAPI.Types.AInt
+  import_types WockyAPI.Types.GeoJSON
   import_types WockyAPI.Types.UUID
 
   query do
