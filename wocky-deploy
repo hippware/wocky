@@ -26,6 +26,7 @@ ssl_conf=/tmp/ssl.tfstate.json
 wocky_conf=/tmp/wocky.tfstate.json
 wocky_shared_conf=/tmp/wocky_shared.tfstate.json
 db_dumper_conf=/tmp/db_dumper.tfstate.json
+safety_alerts_conf=alerts-schedule.json
 output_bindings=/tmp/bindings.json
 
 export REVISION="${CI_COMMIT_ID:-"$(git rev-parse HEAD)"}"
@@ -36,7 +37,9 @@ aws s3 cp s3://hippware-terraform-state/ssl/terraform.tfstate ${ssl_conf}
 aws s3 cp s3://hippware-terraform-state/wocky-${wocky_env}/terraform.tfstate ${wocky_conf}
 aws s3 cp s3://hippware-terraform-state/wocky-shared/terraform.tfstate ${wocky_shared_conf}
 aws s3 cp s3://hippware-terraform-state/db-dumper/terraform.tfstate ${db_dumper_conf}
-jq -s '[.[].outputs] | add' ${cluster_conf} ${ssl_conf} ${wocky_conf} ${wocky_shared_conf} ${db_dumper_conf} > ${output_bindings}
+
+jq -s '[.[].outputs] | add' ${cluster_conf} ${ssl_conf} ${wocky_conf} ${wocky_shared_conf} ${db_dumper_conf} > /tmp/intermediate.json
+jq -s 'add' ${safety_alerts_conf} /tmp/intermediate.json > ${output_bindings}
 
 kubernetes-deploy "${namespace}" "${context}" \
   --template-dir="${template_dir}" \
