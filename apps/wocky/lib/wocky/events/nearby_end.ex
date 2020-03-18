@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.StrictModuleLayout
 defmodule Wocky.Events.NearbyEnd do
   @moduledoc "Notification for a user exiting range for nearby sharing"
 

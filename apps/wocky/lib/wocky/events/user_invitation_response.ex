@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.StrictModuleLayout
 defmodule Wocky.Events.UserInvitationResponse do
   @moduledoc "Notification for a user accepting a friend invitation"
 

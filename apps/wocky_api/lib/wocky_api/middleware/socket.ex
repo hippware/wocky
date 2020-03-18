@@ -1,11 +1,11 @@
 defmodule WockyAPI.Middleware.Socket do
   @moduledoc "Middleware for handling socket-related operations"
 
+  @behaviour Absinthe.Middleware
+
   alias Wocky.Presence
   alias WockyAPI.LoggingSocket
   alias WockyAPI.Metrics
-
-  @behaviour Absinthe.Middleware
 
   @impl true
   def call(resolution, :authenticated) do

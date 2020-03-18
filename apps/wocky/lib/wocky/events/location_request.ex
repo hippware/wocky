@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.StrictModuleLayout
 defmodule Wocky.Events.LocationRequest do
   @moduledoc """
   Notification to requeset a user's device to send its current location

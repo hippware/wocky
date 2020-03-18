@@ -1,6 +1,8 @@
 defmodule Wocky.Notifier do
   @moduledoc "Send notifications to the user via several channels"
 
+  alias Wocky.Contacts
+
   @callback notify(struct()) :: :ok
 
   @known_notifiers [
@@ -8,8 +10,6 @@ defmodule Wocky.Notifier do
     Wocky.Notifier.InBand,
     Wocky.Notifier.Email
   ]
-
-  alias Wocky.Contacts
 
   @spec notify(struct()) :: :ok
   def notify(event) do

@@ -3,13 +3,13 @@ defmodule Wocky.Config.VaultAdapter do
   Adapter to allow Confex to read secrets from Vault.
   """
 
-  use ModuleConfig, otp_app: :wocky
+  @behaviour Confex.Adapter
 
-  require Logger
+  use ModuleConfig, otp_app: :wocky
 
   alias Vaultex.Client, as: Vaultex
 
-  @behaviour Confex.Adapter
+  require Logger
 
   @impl true
   def fetch_value(key) do

@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.StrictModuleLayout
 defmodule Wocky.Events.BotInvitation do
   @moduledoc "New invitation sent to the notified user"
 

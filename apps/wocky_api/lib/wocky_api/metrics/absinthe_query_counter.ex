@@ -5,9 +5,9 @@ defmodule WockyAPI.Metrics.AbsintheQueryCounter do
 
   @behaviour AbsintheMetrics
 
-  require Logger
-
   use Elixometer
+
+  require Logger
 
   @impl true
   def field(_object, _field, _args \\ []), do: :ok

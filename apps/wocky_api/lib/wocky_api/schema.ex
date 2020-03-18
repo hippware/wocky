@@ -1,6 +1,8 @@
 defmodule WockyAPI.Schema do
   @moduledoc "GraphQL schema for the Wocky API"
 
+  @behaviour Absinthe.Schema
+
   use Absinthe.Schema
   use Absinthe.Relay.Schema, :modern
 
@@ -8,8 +10,6 @@ defmodule WockyAPI.Schema do
   alias WockyAPI.Middleware.Auth
   alias WockyAPI.Middleware.QueryCounter
   alias WockyAPI.Middleware.QueryTimer
-
-  @behaviour Absinthe.Schema
 
   import_types Absinthe.Type.Custom
   import_types AbsintheErrorPayload.ValidationMessageTypes

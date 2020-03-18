@@ -1,9 +1,9 @@
 defmodule Wocky.Errors do
   @moduledoc "Utility module for handling errors."
 
-  require Logger
-
   alias Ecto.Changeset
+
+  require Logger
 
   @doc """
   A helper that transform changeset errors to a map of messages.

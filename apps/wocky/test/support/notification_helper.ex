@@ -1,10 +1,11 @@
 defmodule Wocky.NotificationHelper do
   @moduledoc "Helper functions for dealing with in-band notifications"
-  alias Wocky.Account.User
-  alias Wocky.Repo
 
   import Ecto
   import Ecto.Query
+
+  alias Wocky.Account.User
+  alias Wocky.Repo
 
   @retry_interval 200
 

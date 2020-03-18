@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.StrictModuleLayout
 defmodule Wocky.Events.UserBefriend do
   @moduledoc """
   Notification for a user becoming friends with another user - sent to both the

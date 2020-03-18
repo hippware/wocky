@@ -1,12 +1,12 @@
 defmodule Wocky.TROS.Store.S3 do
   @moduledoc "S3 backend for the TROS file management system"
 
+  @behaviour Wocky.TROS
+
   alias ExAws.Auth
   alias ExAws.Config
   alias ExAws.S3
   alias Wocky.TROS
-
-  @behaviour TROS
 
   # 10 minute expiry on upload/download links.
   @link_expiry 60 * 10

@@ -3,6 +3,20 @@ defmodule Wocky.Presence.Manager do
   Per-user manager process for contact presence reporting.
   """
 
+  use GenServer, restart: :temporary
+
+  alias Phoenix.PubSub
+  alias Wocky.Account
+  alias Wocky.Account.User
+  alias Wocky.Contacts
+  alias Wocky.Errors
+  alias Wocky.Presence
+  alias Wocky.Presence.ConnectionEvent
+  alias Wocky.Presence.OnlineProc
+  alias Wocky.Presence.Store
+  alias Wocky.Presence.Supervisor
+  alias Wocky.Repo
+
   @max_register_retries 5
 
   defmodule State do
@@ -34,20 +48,6 @@ defmodule Wocky.Presence.Manager do
             socket_mon_refs: %{optional(reference()) => pid()}
           }
   end
-
-  use GenServer, restart: :temporary
-
-  alias Phoenix.PubSub
-  alias Wocky.Account
-  alias Wocky.Account.User
-  alias Wocky.Contacts
-  alias Wocky.Errors
-  alias Wocky.Presence
-  alias Wocky.Presence.ConnectionEvent
-  alias Wocky.Presence.OnlineProc
-  alias Wocky.Presence.Store
-  alias Wocky.Presence.Supervisor
-  alias Wocky.Repo
 
   @spec acquire(User.tid()) :: {:ok, pid()} | {:error, any()}
   def acquire(user) do

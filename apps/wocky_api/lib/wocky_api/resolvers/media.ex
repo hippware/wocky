@@ -2,14 +2,14 @@
 defmodule WockyAPI.Resolvers.Media do
   @moduledoc "GraphQL resolver for media objects"
 
-  @ready_timeout 10_000
-
   use Elixometer
 
   alias Wocky.Repo.ID
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
   alias Wocky.Waiter
+
+  @ready_timeout 10_000
 
   # -------------------------------------------------------------------
   # Queries

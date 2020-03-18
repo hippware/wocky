@@ -8,13 +8,13 @@ defmodule Wocky.Notifier.Push.Backend.Sandbox do
   passed explicitly otherwise.
   """
 
+  @behaviour Wocky.Notifier.Push.Backend
+
   use GenServer
   use ModuleConfig, otp_app: :wocky
 
   alias Pigeon.APNS.Notification
   alias Wocky.Notifier.Push.Backend.APNS
-
-  @behaviour Wocky.Notifier.Push.Backend
 
   @impl true
   def push(params) do

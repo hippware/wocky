@@ -4,11 +4,11 @@ defmodule Wocky.TROS.Store.Simple do
   https://hub.docker.com/r/mayth/simple-upload-server/
   """
 
+  @behaviour Wocky.TROS
+
   alias Wocky.Repo
   alias Wocky.TROS
   alias Wocky.TROS.Metadata
-
-  @behaviour TROS
 
   @impl true
   def delete(_file_id) do

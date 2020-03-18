@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.StrictModuleLayout
 defmodule Wocky.Events.NearbyStart do
   @moduledoc "Notification for a user being within range for nearby sharing"
 

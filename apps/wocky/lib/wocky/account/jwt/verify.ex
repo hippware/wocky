@@ -1,12 +1,12 @@
 defmodule Wocky.Account.JWT.Verify do
   @moduledoc "Basic claims verification for JWT tokens."
 
+  @behaviour Guardian.Token.Verify
+
   use Guardian.Token.Verify
 
   alias Guardian.Token.Jwt.Verify, as: Base
   alias Guardian.Token.Verify
-
-  @behaviour Guardian.Token.Verify
 
   @impl true
   def verify_claim(_mod, "iat", %{"iat" => nil} = claims, _opts),

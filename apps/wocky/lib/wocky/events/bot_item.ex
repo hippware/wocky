@@ -1,3 +1,4 @@
+# credo:disable-for-this-file Credo.Check.Readability.StrictModuleLayout
 defmodule Wocky.Events.BotItem do
   @moduledoc """
   Notification for a newly posted or updated bot item on a bot
