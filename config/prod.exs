@@ -8,18 +8,18 @@ config :logger, :utc_log, true
 config :honeybadger, environment_name: "${HONEYBADGER_ENV}"
 
 # Log as JSON and turn off ANSI colors
-config :logger, :console,
-  colors: [enabled: false],
-  format: {ExJsonLogger, :format},
-  metadata: :all
+# config :logger, :console,
+#   colors: [enabled: false],
+#   format: {ExJsonLogger, :format},
+#   metadata: :all
 
-config :libcluster,
-  topologies: [
-    k8s_wocky: [
-      strategy: Cluster.Strategy.Kubernetes.DNS,
-      config: [
-        service: "wocky-private",
-        application_name: "wocky"
-      ]
-    ]
-  ]
+# config :libcluster,
+#   topologies: [
+#     k8s_wocky: [
+#       strategy: Cluster.Strategy.Kubernetes.DNS,
+#       config: [
+#         service: "wocky-private",
+#         application_name: "wocky"
+#       ]
+#     ]
+#   ]
