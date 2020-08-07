@@ -84,7 +84,6 @@ defmodule WockyAPI.Mixfile do
        override: true},
       {:common_graphql_client, "~> 0.2", only: :test, runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
-      {:ex_guard, "~> 1.1", only: :dev, runtime: false},
       {:excoveralls, "~> 0.6", only: :test},
       {:reprise, "~> 0.5", only: :dev}
     ]
