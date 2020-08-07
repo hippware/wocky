@@ -3,7 +3,6 @@
 
 VERSION       ?= $(shell elixir ./version.exs)
 RELEASE_NAME  ?= wocky
-IMAGE_REPO    ?= 773488857071.dkr.ecr.us-west-2.amazonaws.com
 IMAGE_NAME    ?= hippware/$(shell echo $(RELEASE_NAME) | tr "_" "-")
 IMAGE_TAG     ?= $(shell git rev-parse HEAD)
 WOCKY_ENV     ?= testing
@@ -13,7 +12,7 @@ WOCKY_DB_USER ?= postgres
 MIX_ENV       ?= dev
 
 help:
-	@echo "Repo:    $(IMAGE_REPO)/$(IMAGE_NAME)"
+	@echo "Repo:    $(IMAGE_NAME)"
 	@echo "Tag:     $(IMAGE_TAG)"
 	@echo "Version: $(VERSION)"
 	@echo ""
@@ -69,12 +68,12 @@ build: ## Build the release Docker image
 		wocky-build:latest make release
 	docker build . -f Dockerfile.release \
 		--build-arg RELEASE_NAME=$(RELEASE_NAME) \
-		-t $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG) \
-		-t $(IMAGE_REPO)/$(IMAGE_NAME):latest
+		-t $(IMAGE_NAME):$(IMAGE_TAG) \
+		-t $(IMAGE_NAME):latest
 
 push: ## Push the Docker image to ECR
-	docker push $(IMAGE_REPO)/$(IMAGE_NAME):$(IMAGE_TAG)
-	docker push $(IMAGE_REPO)/$(IMAGE_NAME):latest
+	docker push $(IMAGE_NAME):$(IMAGE_TAG)
+	docker push $(IMAGE_NAME):latest
 
 ########################################################################
 ### Cluster deployment

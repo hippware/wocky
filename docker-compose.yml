@@ -20,7 +20,7 @@ services:
         depends_on:
             - redis
             - postgres
-        image: 773488857071.dkr.ecr.us-west-2.amazonaws.com/hippware/wocky:latest
+        image: hippware/wocky:latest
         ports:
             - "5222:5222"
             - "5280:5280"
