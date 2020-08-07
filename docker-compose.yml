@@ -35,6 +35,7 @@ services:
             BAMBOO_ADAPTER: "Bamboo.TestAdapter"
             MANDRILL_API_KEY: ""
             HONEYBADGER_API_KEY: ""
+            HONEYBADGER_ENV: "dev"
             DAWDLE_BACKEND: "Dawdle.Backend.Local"
             KUBE_POD_NS: "local-dev"
             KUBE_POD_IP: "wocky-private.local-dev.svc.cluster.local"
