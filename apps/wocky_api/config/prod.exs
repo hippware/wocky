@@ -1,7 +1,5 @@
 use Mix.Config
 
-alias Wocky.Config.VaultAdapter
-
 # For production, we often load configuration from external
 # sources, such as your system environment. For this reason,
 # you won't find the :http configuration below, but set inside
@@ -18,7 +16,7 @@ alias Wocky.Config.VaultAdapter
 config :wocky_api, WockyAPI.Endpoint,
   http: [port: 8080],
   url: [host: "${WOCKY_HOST}"],
-  secret_key_base: {{:via, VaultAdapter}, "secret-key-base"}
+  secret_key_base: "${WOCKY_SECRET_KEY_BASE}"
 
 # cache_static_manifest: "priv/static/cache_manifest.json"
 

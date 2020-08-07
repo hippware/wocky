@@ -24,9 +24,6 @@ environment :prod do
   set include_src: false
   set cookie: :"%dmqKgt{[Wt.Np>}s|,y(F0y!4h`R)nBgsMoO<!=0)p/Sxuj=0o;z*=y`zF1`^o]"
 
-  set config_providers: [
-    {Wocky.Config.ConfexProvider, []}
-  ]
 end
 
 # You may define one or more releases in this file.
@@ -53,4 +50,3 @@ release :wocky do
     version: "rel/commands/version.sh"
   ]
 end
-

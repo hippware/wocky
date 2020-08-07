@@ -123,14 +123,16 @@ config :wocky, :redlock,
 
 config :wocky, :pigeon,
   apns: [
-    key: """
-    -----BEGIN PRIVATE KEY-----
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
-    XXXXXXXX
-    -----END PRIVATE KEY-----
-    """,
+    key:
+      {:system, :string, "WOCKY_APNS_KEY",
+       """
+       -----BEGIN PRIVATE KEY-----
+       XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+       XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+       XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+       XXXXXXXX
+       -----END PRIVATE KEY-----
+       """},
     key_identifier: "dummy-id",
     team_id: "dummy-team",
     mode: :dev
@@ -191,9 +193,6 @@ config :wocky, Wocky.Notifier.Email.Mailer,
   adapter: {:system, :module, "BAMBOO_ADAPTER", Bamboo.TestAdapter},
   api_key: {:system, :string, "MANDRILL_API_KEY", ""}
 
-config :wocky, Wocky.Config.VaultAdapter,
-  vault_prefix: {:system, :string, "WOCKY_VAULT_PREFIX", ""}
-
 config :dawdle, start_pollers: true
 
 config :dawdle_db, channel: "wocky_db_watcher_notify"
@@ -229,9 +228,6 @@ config :fun_with_flags, :redis,
   ssl: {:system, :boolean, "REDIS_SSL", false},
   password: {:system, :string, "REDIS_PASSWORD", nil},
   database: {:system, :integer, "REDIS_DB", 0}
-
-config :vaultex,
-  vault_addr: "http://vault.vault:8200"
 
 config :exometer_core,
   report: [reporters: [{:exometer_report_prometheus, [:enable_httpd]}]]

@@ -46,7 +46,7 @@ defmodule Wocky.Tasks.Notify do
   end
 
   defp do_notify(message) do
-    for app <- [:slack_ex, :vaultex, :ex_aws] do
+    for app <- [:slack_ex, :ex_aws] do
       {:ok, _} = Application.ensure_all_started(app)
     end
 

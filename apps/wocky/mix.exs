@@ -131,7 +131,6 @@ defmodule Wocky.Mixfile do
       {:swarm, "~> 3.0"},
       {:sweet_xml, "~> 0.6"},
       {:timex, "~> 3.1"},
-      {:vaultex, "~> 0.12"},
       # Non-prod
       {:bypass, "~> 1.0", only: :test, runtime: false},
       {:credo, "~> 1.0", only: [:dev, :test], runtime: false},
